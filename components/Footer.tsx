@@ -22,7 +22,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <h3 className="font-bold text-lg mb-2">കേരള പി.എസ്.സി ഗുരു</h3>
             <p className="text-slate-400 text-sm">നിങ്ങളുടെ സർക്കാർ ജോലി സ്വപ്നത്തിലേക്കുള്ള വഴികാട്ടി.</p>
              <div className="mt-4">
-                <p className="font-semibold text-sm">Powered by Annapoorna Exam app</p>
+                <p className="font-semibold text-sm">Powered by Annapoorna Exam App</p>
                 <a 
                   href="https://annapoornainfo.com/"
                   target="_blank"

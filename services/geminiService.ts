@@ -1,12 +1,20 @@
+interface ImportMetaEnv {
+  readonly VITE_CLERK_PUBLISHABLE_KEY: string;
+  readonly VITE_API_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
 
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuizQuestion, Notification } from '../types';
 import { MOCK_NOTIFICATIONS } from "../constants";
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Using mocked data for all API calls.");
+  console.warn("VITE_API_KEY environment variable not set. Using mocked data for all API calls.");
 }
 
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
