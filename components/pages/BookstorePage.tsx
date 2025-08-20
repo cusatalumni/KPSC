@@ -25,7 +25,7 @@ const BookstorePage: React.FC<PageProps> = ({ onBack }) => {
         {BOOKSTORE_DATA.map((book) => (
           <div key={book.id} className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col group transform hover:-translate-y-2 transition-all duration-300">
             <div className="h-64 overflow-hidden">
-              <img src={book.imageUrl} alt={book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+              <img src={book.imageUrl} alt={book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" referrerPolicy="no-referrer" />
             </div>
             <div className="p-4 flex flex-col flex-grow">
               <h3 className="text-lg font-bold text-slate-800">{book.title}</h3>

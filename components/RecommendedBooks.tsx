@@ -16,7 +16,7 @@ const RecommendedBooks: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {recommended.map(book => (
           <div key={book.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-center space-x-4">
-            <img src={book.imageUrl} alt={book.title} className="w-20 h-24 object-cover rounded-md" />
+            <img src={book.imageUrl} alt={book.title} className="w-20 h-24 object-cover rounded-md" referrerPolicy="no-referrer" />
             <div className="flex-1">
               <h3 className="font-bold text-slate-800">{book.title}</h3>
               <p className="text-sm text-slate-500">{book.author}</p>

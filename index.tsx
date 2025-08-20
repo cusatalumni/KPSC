@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 
@@ -14,7 +14,7 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-const root = ReactDOM.createRoot(rootElement);
+const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
