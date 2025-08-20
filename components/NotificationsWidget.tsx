@@ -82,7 +82,9 @@ const NotificationsWidget: React.FC = () => {
                     ))}
                 </div>
             )}
-             <p className="text-xs text-slate-400 mt-4 text-center italic">AI-യുടെ സഹായത്തോടെ തയ്യാറാക്കിയ അറിയിപ്പുകൾ</p>
+             <div className="text-xs text-slate-500 mt-4 text-center bg-slate-100 p-2 rounded-md border border-slate-200">
+                <span className="font-semibold text-teal-700">AI Powered:</span> ഈ അറിയിപ്പുകൾ ഏറ്റവും പുതിയ വിവരങ്ങൾ നൽകാൻ AI ഉപയോഗിച്ച് തയ്യാറാക്കിയതാണ്.
+            </div>
         </section>
     );
 };

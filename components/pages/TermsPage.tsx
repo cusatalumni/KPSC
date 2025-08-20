@@ -14,7 +14,10 @@ const TermsPage: React.FC<PageProps> = ({ onBack }) => {
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
       <div className="space-y-6 text-base leading-relaxed text-slate-700">
-        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">നിബന്ധനകളും വ്യവസ്ഥകളും</h1>
+        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">
+          നിബന്ധനകളും വ്യവസ്ഥകളും
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">Terms & Conditions</span>
+        </h1>
         <p>
           'കേരള പി.എസ്.സി ഗുരു' വെബ്സൈറ്റ് ഉപയോഗിക്കുന്നതിന് മുമ്പ് ദയവായി ഈ നിബന്ധനകളും വ്യവസ്ഥകളും ശ്രദ്ധാപൂർവ്വം വായിക്കുക. ഈ വെബ്സൈറ്റ് ഉപയോഗിക്കുന്നതിലൂടെ, ഈ നിബന്ധനകൾ നിങ്ങൾ അംഗീകരിക്കുന്നു.
         </p>

@@ -1,12 +1,3 @@
-interface ImportMetaEnv {
-  readonly VITE_CLERK_PUBLISHABLE_KEY: string;
-  readonly VITE_API_KEY: string;
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuizQuestion, Notification } from '../types';
 import { MOCK_NOTIFICATIONS } from "../constants";

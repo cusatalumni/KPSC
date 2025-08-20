@@ -37,7 +37,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
     }, 1000);
 
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks-exhaustive-deps
   }, []);
   
 
@@ -81,9 +81,10 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
-         <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-        <p className="mt-4 text-lg text-slate-600">നിങ്ങൾക്കായി പരീക്ഷ തയ്യാറാക്കുന്നു...</p>
+      <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-lg text-slate-600">AI നിങ്ങൾക്കായി പുതിയ ചോദ്യങ്ങൾ തയ്യാറാക്കുന്നു...</p>
+        <p className="text-sm text-slate-500">AI is generating fresh questions for you...</p>
       </div>
     );
   }

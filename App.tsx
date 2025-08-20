@@ -87,7 +87,8 @@ const App: React.FC = () => {
         handleNavigate('upgrade');
         return;
     }
-    setActiveTest({ title: `${examTitle} - ${test.title}`, questionsCount: 'questions' in test ? test.questions : test.questionsCount });
+    const testTitle = typeof test.title === 'string' ? test.title : test.title.ml;
+    setActiveTest({ title: `${examTitle} - ${testTitle}`, questionsCount: 'questions' in test ? test.questions : test.questionsCount });
     setPreviousPage(currentPage);
     setCurrentPage('test');
   };
@@ -97,7 +98,7 @@ const App: React.FC = () => {
       handleNavigate('upgrade');
       return;
     }
-    setActiveTest({ title: category.title, questionsCount: 10 }); // All quizzes are 10 questions
+    setActiveTest({ title: category.title.ml, questionsCount: 10 }); // All quizzes are 10 questions
     setPreviousPage(currentPage);
     setCurrentPage('test');
   }
@@ -136,7 +137,7 @@ const App: React.FC = () => {
             exam={selectedExam} 
             content={LDC_EXAM_CONTENT} // NOTE: Using mock LDC content for now
             onBack={() => handleNavigate('dashboard')}
-            onStartTest={(test) => handleStartTest(test, selectedExam.title)}
+            onStartTest={(test) => handleStartTest(test, selectedExam.title.ml)}
           />;
       case 'bookstore':
         return <BookstorePage onBack={() => handleNavigate('dashboard')} />;

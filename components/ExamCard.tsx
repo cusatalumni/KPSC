@@ -16,8 +16,9 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate }) => {
               {exam.icon}
           </div>
           <div>
-              <h4 className="text-xl font-bold text-slate-800">{exam.title}</h4>
-              <p className="text-slate-600 mt-1 text-base">{exam.description}</p>
+              <h4 className="text-xl font-bold text-slate-800">{exam.title.ml}</h4>
+              <p className="text-sm text-slate-500 -mt-1">{exam.title.en}</p>
+              <p className="text-slate-600 mt-2 text-base">{exam.description.ml}</p>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-reac
 import { NAV_LINKS } from '../constants';
 import { LogoIcon } from './icons/LogoIcon';
 import type { Page } from '../App';
+import AiBadge from './AiBadge';
 
 interface HeaderProps {
     onNavigate: (page: Page) => void;
@@ -17,7 +18,10 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onNavigate('dashboard')}>
             <LogoIcon className="h-12 w-12" />
             <div>
-              <h1 className="text-2xl font-bold text-slate-800" style={{fontFamily: "'Manjari', sans-serif"}}>കേരള പി.എസ്.സി ഗുരു</h1>
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-slate-800" style={{fontFamily: "'Manjari', sans-serif"}}>കേരള പി.എസ്.സി ഗുരു</h1>
+                <AiBadge />
+              </div>
               <p className="text-sm text-indigo-700 font-medium -mt-1">PSC Guidance Kerala</p>
             </div>
           </div>

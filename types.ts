@@ -1,8 +1,23 @@
+declare global {
+  interface ImportMetaEnv {
+    readonly VITE_CLERK_PUBLISHABLE_KEY: string;
+    readonly VITE_API_KEY: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+}
+
+export interface BilingualText {
+  ml: string;
+  en: string;
+}
 
 export interface Exam {
   id: string;
-  title: string;
-  description: string;
+  title: BilingualText;
+  description: BilingualText;
   icon: React.ReactNode;
 }
 
@@ -14,8 +29,8 @@ export interface QuizQuestion {
 
 export interface QuizCategory {
   id: string;
-  title: string;
-  description: string;
+  title: BilingualText;
+  description: BilingualText;
   icon: React.ReactNode;
   isPro?: boolean;
 }
@@ -84,8 +99,8 @@ export interface ExamCalendarEntry {
 export interface MockTest {
   id: string;
   examId: string; // To link with an exam like 'ldc', 'lgs'
-  title: string;
-  description: string;
+  title: BilingualText;
+  description: BilingualText;
   questionsCount: number;
   duration: number; // in minutes
   isPro?: boolean;

@@ -18,7 +18,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
   
   const handleStartFullMockTest = () => {
     // Let's assume a full mock test has 50 questions
-    onStartTest({ title: 'പൂർണ്ണമായ മോക്ക് ടെസ്റ്റ്', questions: 50 }, exam.title);
+    onStartTest({ title: 'പൂർണ്ണമായ മോക്ക് ടെസ്റ്റ്', questions: 50 }, exam.title.ml);
   };
   
   return (
@@ -29,8 +29,9 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
       </button>
 
       <header className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-800">{exam.title}</h1>
-        <p className="text-lg text-slate-600 mt-2">{exam.description}</p>
+        <h1 className="text-4xl font-bold text-slate-800">{exam.title.ml}</h1>
+        <p className="text-2xl text-slate-500">{exam.title.en}</p>
+        <p className="text-lg text-slate-600 mt-2">{exam.description.ml}</p>
       </header>
 
       <div className="space-y-10">
@@ -48,7 +49,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
                   <h3 className="font-bold text-slate-800">{test.title}</h3>
                   <p className="text-sm text-slate-500">{test.questions} ചോദ്യങ്ങൾ • {test.duration} മിനിറ്റ്</p>
                 </div>
-                <button onClick={() => onStartTest(test, exam.title)} className="bg-indigo-100 text-indigo-700 font-semibold px-4 py-2 rounded-md hover:bg-indigo-200 transition">
+                <button onClick={() => onStartTest(test, exam.title.ml)} className="bg-indigo-100 text-indigo-700 font-semibold px-4 py-2 rounded-md hover:bg-indigo-200 transition">
                   തുടങ്ങുക
                 </button>
               </div>

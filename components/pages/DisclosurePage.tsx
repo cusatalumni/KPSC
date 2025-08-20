@@ -14,7 +14,10 @@ const DisclosurePage: React.FC<PageProps> = ({ onBack }) => {
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
       <div className="space-y-6 text-lg leading-relaxed text-slate-700">
-        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ</h1>
+        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">
+          അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">Affiliate Disclosure</span>
+        </h1>
         <p>
           ഈ വെബ്സൈറ്റിലെ ചില ലിങ്കുകൾ അഫിലിയേറ്റ് ലിങ്കുകളാണ്. ഇതിനർത്ഥം, നിങ്ങൾ ആ ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് ഒരു ഉൽപ്പന്നം വാങ്ങുകയാണെങ്കിൽ, നിങ്ങൾക്ക് അധികച്ചെലവില്ലാതെ ഞങ്ങൾക്ക് ഒരു ചെറിയ കമ്മീഷൻ ലഭിച്ചേക്കാം.
         </p>

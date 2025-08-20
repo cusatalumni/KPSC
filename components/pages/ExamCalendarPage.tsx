@@ -59,7 +59,10 @@ const ExamCalendarPage: React.FC<PageProps> = ({ onBack }) => {
       </button>
 
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-slate-800">പരീക്ഷാ കലണ്ടർ 2025</h1>
+        <h1 className="text-4xl font-bold text-slate-800">
+          പരീക്ഷാ കലണ്ടർ 2025
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">Exam Calendar 2025</span>
+        </h1>
         <p className="text-lg text-slate-600 mt-2">കേരള PSC പ്രസിദ്ധീകരിച്ച ഔദ്യോഗിക പരീക്ഷാ തീയതികൾ</p>
       </header>
       

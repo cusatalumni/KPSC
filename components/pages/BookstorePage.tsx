@@ -15,7 +15,10 @@ const BookstorePage: React.FC<PageProps> = ({ onBack }) => {
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-slate-800">പുസ്തകശാല</h1>
+        <h1 className="text-4xl font-bold text-slate-800">
+          പുസ്തകശാല
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">Bookstore</span>
+        </h1>
         <p className="text-lg text-slate-600 mt-2">പി.എസ്.സി പഠനത്തിനായുള്ള മികച്ച പുസ്തകങ്ങൾ ഇവിടെനിന്നും തിരഞ്ഞെടുക്കാം.</p>
       </header>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

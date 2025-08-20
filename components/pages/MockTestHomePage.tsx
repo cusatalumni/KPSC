@@ -15,7 +15,7 @@ interface MockTestCardProps {
 
 const MockTestCard: React.FC<MockTestCardProps> = ({ test, subscriptionStatus, onStart }) => {
   const exam = EXAMS_DATA.find(e => e.id === test.examId);
-  const examTitle = exam ? exam.title : 'Mock Test';
+  const examTitle = exam ? exam.title.ml : 'Mock Test';
   const isPro = test.isPro;
   const canStart = !isPro || subscriptionStatus === 'pro';
 
@@ -28,13 +28,13 @@ const MockTestCard: React.FC<MockTestCardProps> = ({ test, subscriptionStatus, o
           </div>
           <div>
               <div className="flex items-center space-x-2">
-                <h4 className="text-xl font-bold text-slate-800">{test.title}</h4>
+                <h4 className="text-xl font-bold text-slate-800">{test.title.ml}</h4>
                 {isPro && <ProBadge />}
               </div>
-              <p className="text-sm text-slate-500">{examTitle}</p>
+              <p className="text-sm text-slate-500 -mt-1">{test.title.en}</p>
           </div>
         </div>
-        <p className="text-slate-600 mt-1">{test.description}</p>
+        <p className="text-slate-600 mt-1">{test.description.ml}</p>
       </div>
       <div className="mt-6 border-t border-slate-200 pt-4 flex justify-between items-center text-sm text-slate-500">
          <span>{test.questionsCount} ചോദ്യങ്ങൾ</span>
@@ -66,7 +66,10 @@ const MockTestHomePage: React.FC<PageProps> = ({ subscriptionStatus, onBack, onS
       </button>
       <header className="mb-8 text-center">
         <DocumentChartBarIcon className="h-16 w-16 mx-auto text-slate-400" />
-        <h1 className="text-4xl font-bold text-slate-800 mt-4">മോക്ക് ടെസ്റ്റുകൾ</h1>
+        <h1 className="text-4xl font-bold text-slate-800 mt-4">
+          മോക്ക് ടെസ്റ്റുകൾ
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">Mock Tests</span>
+        </h1>
         <p className="text-lg text-slate-600 mt-2">യഥാർത്ഥ പരീക്ഷയ്ക്ക് മുൻപ് നിങ്ങളുടെ അറിവ് പരീക്ഷിക്കാൻ ഏറ്റവും മികച്ച അവസരം.</p>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

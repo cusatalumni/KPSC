@@ -14,7 +14,10 @@ const PrivacyPolicyPage: React.FC<PageProps> = ({ onBack }) => {
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
       <div className="space-y-6 text-base leading-relaxed text-slate-700">
-        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">പ്രൈവസി പോളിസി</h1>
+        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">
+          പ്രൈവസി പോളിസി
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">Privacy Policy</span>
+        </h1>
         <p>
           ഈ പ്രൈവസി പോളിസി, 'കേരള പി.എസ്.സി ഗുരു' വെബ്സൈറ്റ് ഉപയോഗിക്കുമ്പോൾ നിങ്ങളുടെ വിവരങ്ങൾ എങ്ങനെ ശേഖരിക്കുകയും ഉപയോഗിക്കുകയും സംരക്ഷിക്കുകയും ചെയ്യുന്നുവെന്ന് വ്യക്തമാക്കുന്നു. നിങ്ങളുടെ സ്വകാര്യത ഉറപ്പാക്കാൻ ഞങ്ങൾ പ്രതിജ്ഞാബദ്ധരാണ്.
         </p>

@@ -14,7 +14,10 @@ const AboutUsPage: React.FC<PageProps> = ({ onBack }) => {
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
       <div className="space-y-6 text-lg leading-relaxed text-slate-700">
-        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">ഞങ്ങളെക്കുറിച്ച്</h1>
+        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">
+          ഞങ്ങളെക്കുറിച്ച്
+          <span className="block text-2xl text-slate-500 mt-1 font-normal">About Us</span>
+        </h1>
         <p>
           'കേരള പി.എസ്.സി ഗുരു'-വിലേക്ക് സ്വാഗതം! കേരള പബ്ലിക് സർവീസ് കമ്മീഷൻ (PSC) പരീക്ഷകൾക്ക് തയ്യാറെടുക്കുന്ന ഉദ്യോഗാർത്ഥികൾക്കായി ഒരു സമ്പൂർണ്ണ ഡിജിറ്റൽ പഠനസഹായി ഒരുക്കുക എന്ന ലക്ഷ്യത്തോടെയാണ് ഞങ്ങൾ ഈ പ്ലാറ്റ്ഫോം ആരംഭിച്ചത്. സർക്കാർ ജോലി എന്ന നിങ്ങളുടെ സ്വപ്നം സാക്ഷാത്കരിക്കാൻ ആവശ്യമായ ഏറ്റവും മികച്ച പരിശീലനവും വിഭവങ്ങളും നൽകാൻ ഞങ്ങൾ പ്രതിജ്ഞാബദ്ധരാണ്.
         </p>

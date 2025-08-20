@@ -12,7 +12,7 @@ import { ScaleIcon } from './components/icons/ScaleIcon';
 import { GlobeAltIcon } from './components/icons/GlobeAltIcon';
 
 export const NAV_LINKS = [
-  { name: 'ഡാഷ്ബോർഡ്', target: 'dashboard' },
+  { name: 'ഹോം', target: 'dashboard' },
   { name: 'കോഴ്സുകൾ', target: 'dashboard' },
   { name: 'ക്വിസുകൾ', target: 'quiz_home' },
   { name: 'മോക്ക് ടെസ്റ്റുകൾ', target: 'mock_test_home' },
@@ -23,26 +23,26 @@ export const NAV_LINKS = [
 export const EXAMS_DATA: Exam[] = [
   {
     id: 'ldc',
-    title: 'LDC ക്ലർക്ക്',
-    description: 'ലോവർ ഡിവിഷൻ ക്ലർക്ക് പരീക്ഷയ്ക്കുള്ള സമഗ്രമായ പരിശീലനം.',
+    title: { ml: 'LDC ക്ലർക്ക്', en: 'LDC Clerk' },
+    description: { ml: 'ലോവർ ഡിവിഷൻ ക്ലർക്ക് പരീക്ഷയ്ക്കുള്ള സമഗ്രമായ പരിശീലനം.', en: 'Comprehensive coaching for Lower Division Clerk exam.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" })
   },
   {
     id: 'lgs',
-    title: 'LGS',
-    description: 'ലാസ്റ്റ് ഗ്രേഡ് സർവന്റ്സ് പരീക്ഷയിൽ ഉന്നത വിജയം നേടാം.',
+    title: { ml: 'LGS', en: 'Last Grade Servants' },
+    description: { ml: 'ലാസ്റ്റ് ഗ്രേഡ് സർവന്റ്സ് പരീക്ഷയിൽ ഉന്നത വിജയം നേടാം.', en: 'Achieve top ranks in the Last Grade Servants exam.' },
     icon: React.createElement(StarIcon, { className: "h-8 w-8 text-teal-500" })
   },
   {
     id: 'kerala_police',
-    title: 'പോലീസ് കോൺസ്റ്റബിൾ',
-    description: 'കായികക്ഷമതാ പരീക്ഷയിലും എഴുത്തുപരീക്ഷയിലും സമ്പൂർണ്ണ പരിശീലനം.',
+    title: { ml: 'പോലീസ് കോൺസ്റ്റബിൾ', en: 'Police Constable' },
+    description: { ml: 'കായികക്ഷമതാ പരീക്ഷയിലും എഴുത്തുപരീക്ഷയിലും സമ്പൂർണ്ണ പരിശീലനം.', en: 'Complete training for physical and written exams.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-slate-500" })
   },
   {
     id: 'fireman',
-    title: 'ഫയർമാൻ',
-    description: 'ഫയർമാൻ ആകാനുള്ള നിങ്ങളുടെ സ്വപ്നം ഞങ്ങൾ സാക്ഷാത്കരിക്കും.',
+    title: { ml: 'ഫയർമാൻ', en: 'Fireman' },
+    description: { ml: 'ഫയർമാൻ ആകാനുള്ള നിങ്ങളുടെ സ്വപ്നം ഞങ്ങൾ സാക്ഷാത്കരിക്കും.', en: 'We help you achieve your dream of becoming a fireman.' },
     icon: React.createElement(StarIcon, { className: "h-8 w-8 text-red-500" })
   }
 ];
@@ -136,22 +136,22 @@ export const BOOKSTORE_DATA: Book[] = [
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
-  { id: 'gk', title: 'പൊതുവിജ്ഞാനം', description: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, തുടങ്ങിയവ.', icon: React.createElement(SparklesIcon, { className: "h-8 w-8 text-indigo-500" }) },
-  { id: 'ca', title: 'ആനുകാലിക സംഭവങ്ങൾ', description: 'ഏറ്റവും പുതിയ വാർത്തകൾ.', icon: React.createElement(NewspaperIcon, { className: "h-8 w-8 text-teal-500" }) },
-  { id: 'ms', title: 'മലയാള സാഹിത്യം', description: 'എഴുത്തുകാരും കൃതികളും.', icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-slate-500" }), isPro: true },
-  { id: 'sc', title: 'ജനപ്രിയ ശാസ്ത്രം', description: 'അടിസ്ഥാന ശാസ്ത്ര തത്വങ്ങൾ.', icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-green-500" }) },
-  { id: 'en', title: 'English Grammar', description: 'വ്യാകരണ നിയമങ്ങളും പ്രയോഗങ്ങളും.', icon: React.createElement(ChatBubbleLeftRightIcon, { className: "h-8 w-8 text-red-500" }) },
-  { id: 'kh', title: 'കേരള ചരിത്രം', description: 'കേരളത്തിന്റെ ഇന്നലെകൾ.', icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-600" }) },
-  { id: 'ih', title: 'ഇന്ത്യൻ ചരിത്രം', description: 'സ്വാതന്ത്ര്യ സമരവും മറ്റും.', icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-teal-600" }), isPro: true },
-  { id: 'gp', title: 'ഭൂമിശാസ്ത്രം', description: 'ലോകവും ഇന്ത്യയും.', icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-slate-600" }) },
+  { id: 'gk', title: { ml: 'പൊതുവിജ്ഞാനം', en: 'General Knowledge' }, description: { ml: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, തുടങ്ങിയവ.', en: 'History, Geography, etc.' }, icon: React.createElement(SparklesIcon, { className: "h-8 w-8 text-indigo-500" }) },
+  { id: 'ca', title: { ml: 'ആനുകാലിക സംഭവങ്ങൾ', en: 'Current Affairs' }, description: { ml: 'ഏറ്റവും പുതിയ വാർത്തകൾ.', en: 'The latest news and events.' }, icon: React.createElement(NewspaperIcon, { className: "h-8 w-8 text-teal-500" }) },
+  { id: 'ms', title: { ml: 'മലയാള സാഹിത്യം', en: 'Malayalam Literature' }, description: { ml: 'എഴുത്തുകാരും കൃതികളും.', en: 'Authors and their works.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-slate-500" }), isPro: true },
+  { id: 'sc', title: { ml: 'ജനപ്രിയ ശാസ്ത്രം', en: 'Popular Science' }, description: { ml: 'അടിസ്ഥാന ശാസ്ത്ര തത്വങ്ങൾ.', en: 'Basic scientific principles.' }, icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-green-500" }) },
+  { id: 'en', title: { ml: 'English Grammar', en: 'English Grammar' }, description: { ml: 'വ്യാകരണ നിയമങ്ങളും പ്രയോഗങ്ങളും.', en: 'Grammar rules and usage.' }, icon: React.createElement(ChatBubbleLeftRightIcon, { className: "h-8 w-8 text-red-500" }) },
+  { id: 'kh', title: { ml: 'കേരള ചരിത്രം', en: 'Kerala History' }, description: { ml: 'കേരളത്തിന്റെ ഇന്നലെകൾ.', en: 'The history of Kerala.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-600" }) },
+  { id: 'ih', title: { ml: 'ഇന്ത്യൻ ചരിത്രം', en: 'Indian History' }, description: { ml: 'സ്വാതന്ത്ര്യ സമരവും മറ്റും.', en: 'Freedom struggle and more.' }, icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-teal-600" }), isPro: true },
+  { id: 'gp', title: { ml: 'ഭൂമിശാസ്ത്രം', en: 'Geography' }, description: { ml: 'ലോകവും ഇന്ത്യയും.', en: 'World and Indian geography.' }, icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-slate-600" }) },
 ];
 
 
 export const MOCK_TESTS_DATA: MockTest[] = [
-  { id: 'ldc-mt-1', examId: 'ldc', title: 'LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #1', description: 'പുതിയ സിലബസ് പ്രകാരമുള്ള 100 ചോദ്യങ്ങൾ ഉൾക്കൊള്ളുന്ന സമ്പൂർണ്ണ മോക്ക് ടെസ്റ്റ്.', questionsCount: 100, duration: 75, isPro: true },
-  { id: 'lgs-mt-1', examId: 'lgs', title: 'LGS ഫുൾ മോക്ക് ടെസ്റ്റ് #1', description: 'LGS പരീക്ഷയ്ക്കായി തയ്യാറാക്കിയ 100 ചോദ്യങ്ങളുടെ മാതൃകാ പരീക്ഷ.', questionsCount: 100, duration: 75, isPro: true },
-  { id: 'police-mt-1', examId: 'kerala_police', title: 'പോലീസ് കോൺസ്റ്റബിൾ മോക്ക് ടെസ്റ്റ്', description: 'കായികക്ഷമതാ പരീക്ഷയ്ക്ക് മുൻപുള്ള നിങ്ങളുടെ അറിവ് പരീക്ഷിക്കുക.', questionsCount: 100, duration: 75, isPro: true },
-  { id: 'ldc-mt-2', examId: 'ldc', title: 'LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2', description: 'നിങ്ങളുടെ തയ്യാറെടുപ്പുകൾ അടുത്ത ഘട്ടത്തിലേക്ക് കൊണ്ടുപോകാൻ സഹായിക്കുന്ന 100 ചോദ്യങ്ങൾ.', questionsCount: 100, duration: 75, isPro: true },
+  { id: 'ldc-mt-1', examId: 'ldc', title: { ml: 'LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #1', en: 'LDC Full Mock Test #1' }, description: { ml: 'പുതിയ സിലബസ് പ്രകാരമുള്ള 100 ചോദ്യങ്ങൾ ഉൾക്കൊള്ളുന്ന സമ്പൂർണ്ണ മോക്ക് ടെസ്റ്റ്.', en: 'A complete mock test with 100 questions as per the new syllabus.' }, questionsCount: 100, duration: 75, isPro: true },
+  { id: 'lgs-mt-1', examId: 'lgs', title: { ml: 'LGS ഫുൾ മോക്ക് ടെസ്റ്റ് #1', en: 'LGS Full Mock Test #1' }, description: { ml: 'LGS പരീക്ഷയ്ക്കായി തയ്യാറാക്കിയ 100 ചോദ്യങ്ങളുടെ മാതൃകാ പരീക്ഷ.', en: 'A model exam with 100 questions prepared for the LGS exam.' }, questionsCount: 100, duration: 75, isPro: true },
+  { id: 'police-mt-1', examId: 'kerala_police', title: { ml: 'പോലീസ് കോൺസ്റ്റബിൾ മോക്ക് ടെസ്റ്റ്', en: 'Police Constable Mock Test' }, description: { ml: 'കായികക്ഷമതാ പരീക്ഷയ്ക്ക് മുൻപുള്ള നിങ്ങളുടെ അറിവ് പരീക്ഷിക്കുക.', en: 'Test your knowledge before the physical efficiency test.' }, questionsCount: 100, duration: 75, isPro: true },
+  { id: 'ldc-mt-2', examId: 'ldc', title: { ml: 'LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2', en: 'LDC Full Mock Test #2' }, description: { ml: 'നിങ്ങളുടെ തയ്യാറെടുപ്പുകൾ അടുത്ത ഘട്ടത്തിലേക്ക് കൊണ്ടുപോകാൻ സഹായിക്കുന്ന 100 ചോദ്യങ്ങൾ.', en: '100 questions to help take your preparation to the next level.' }, questionsCount: 100, duration: 75, isPro: true },
 ];
 
 export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [
