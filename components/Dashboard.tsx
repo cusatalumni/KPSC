@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { EXAMS_DATA } from '../constants';
 import ExamCard from './ExamCard';
@@ -7,6 +8,7 @@ import StudyMaterialWidget from './StudyMaterialWidget';
 import Testimonials from './Testimonials';
 import CalendarWidget from './CalendarWidget';
 import QuizHomeWidget from './QuizHomeWidget';
+import PscLiveWidget from './PscLiveWidget';
 import type { Exam } from '../types';
 import type { Page } from '../App';
 
@@ -42,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) =
           <NotificationsWidget />
         </div>
         <aside className="space-y-8">
+           <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
            <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
            <CalendarWidget onNavigate={() => onNavigate('exam_calendar')} />
            <StudyMaterialWidget />

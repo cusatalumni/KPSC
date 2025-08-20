@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
@@ -16,6 +16,7 @@ export const NAV_LINKS = [
   { name: 'കോഴ്സുകൾ', target: 'dashboard' },
   { name: 'ക്വിസുകൾ', target: 'quiz_home' },
   { name: 'മോക്ക് ടെസ്റ്റുകൾ', target: 'mock_test_home' },
+  { name: 'PSC Live', target: 'psc_live_updates'},
   { name: 'പുസ്തകശാല', target: 'bookstore' },
   { name: 'പരീക്ഷാ കലണ്ടർ', target: 'exam_calendar' },
 ];
@@ -77,6 +78,28 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     link: '#',
   },
 ];
+
+export const MOCK_PSC_UPDATES: PscUpdateItem[] = [
+    {
+        title: 'RANKED LIST - STATISTICAL ASSISTANT GR II - STATISTICAL ASSISTANT GR II/STATISTICAL INVESTIGATOR GR II/COMPUTER OPERATOR GR II - ECONOMICS AND STATISTICS - ERNAKULAM',
+        url: 'https://www.keralapsc.gov.in/ranked-list/ranked-list-statistical-assistant-gr-ii-statistical-assistant-gr-iistatistical',
+        section: 'Ranked Lists',
+        published_date: '2024-07-29',
+    },
+    {
+        title: 'SHORT LIST - JUNIOR INSTRUCTOR (INTERIOR DECORATION AND DESIGNING) - INDUSTRIAL TRAINING DEPARTMENT',
+        url: 'https://www.keralapsc.gov.in/short-list/short-list-junior-instructor-interior-decoration-and-designing-industrial-training',
+        section: 'Short Lists',
+        published_date: '2024-07-29',
+    },
+    {
+        title: 'ADDENDUM NOTIFICATION - I GRADE DRAFTSMAN/ I GRADE OVERSEER (CIVIL) (SR FOR ST ONLY) IN LOCAL SELF GOVERNMENT DEPARTMENT',
+        url: 'https://www.keralapsc.gov.in/addendum-notification/addendum-notification-i-grade-draftsman-i-grade-overseer-civil-sr-st-only',
+        section: 'Notifications',
+        published_date: '2024-07-26',
+    },
+];
+
 
 export const STUDY_MATERIALS_DATA: StudyMaterial[] = [
     { id: '1', title: 'പ്രധാനപ്പെട്ട GK ചോദ്യങ്ങൾ PDF', link: '#' },

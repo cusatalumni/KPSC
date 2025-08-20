@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -16,6 +17,7 @@ import ExamCalendarPage from './components/pages/ExamCalendarPage';
 import QuizHomePage from './components/pages/QuizHomePage';
 import MockTestHomePage from './components/pages/MockTestHomePage';
 import UpgradePage from './components/pages/UpgradePage';
+import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
 import type { Exam, PracticeTest, MockTest, QuizCategory, SubscriptionStatus } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
@@ -33,7 +35,8 @@ export type Page =
   | 'exam_calendar'
   | 'quiz_home'
   | 'mock_test_home'
-  | 'upgrade';
+  | 'upgrade'
+  | 'psc_live_updates';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -157,6 +160,8 @@ const App: React.FC = () => {
         return <MockTestHomePage subscriptionStatus={subscriptionStatus} onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
       case 'upgrade':
         return <UpgradePage onBack={() => handleNavigate(previousPage)} onUpgrade={handleUpgrade} />;
+      case 'psc_live_updates':
+        return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;

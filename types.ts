@@ -1,3 +1,4 @@
+
 export {};
 
 declare global {
@@ -43,6 +44,13 @@ export interface Notification {
   date: string;
   category: string;
   link: string;
+}
+
+export interface PscUpdateItem {
+    title: string;
+    url: string;
+    section: string;
+    published_date: string;
 }
 
 export interface StudyMaterial {

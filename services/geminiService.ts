@@ -1,6 +1,7 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { QuizQuestion, Notification } from '../types';
-import { MOCK_NOTIFICATIONS } from "../constants";
+import type { QuizQuestion, Notification, PscUpdateItem } from '../types';
+import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES } from "../constants";
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 
@@ -111,6 +112,46 @@ export const getLatestNotifications = async (): Promise<Notification[]> => {
         return MOCK_NOTIFICATIONS;
     }
 };
+
+export const getPscUpdates = async (): Promise<PscUpdateItem[]> => {
+    if (!ai) {
+        return new Promise(resolve => setTimeout(() => resolve(MOCK_PSC_UPDATES), 1000));
+    }
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Act as a web scraper. Fetch the 10 most recent updates from keralapsc.gov.in. Check the "Ranked Lists", "Latest Updates", and "Notifications" sections. For each item, provide its title, the full direct URL, the section it was found in (e.g., 'Ranked Lists'), and the publication date in 'YYYY-MM-DD' format. Return the result as a JSON array.`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            url: { type: Type.STRING },
+                            section: { type: Type.STRING },
+                            published_date: { type: Type.STRING }
+                        },
+                        required: ["title", "url", "section", "published_date"]
+                    }
+                }
+            }
+        });
+        const jsonString = response.text.trim();
+        const parsedJson = JSON.parse(jsonString);
+        if (Array.isArray(parsedJson) && parsedJson.length > 0) {
+            return parsedJson as PscUpdateItem[];
+        } else {
+            console.error("Received empty/malformed JSON from Gemini for PSC updates, falling back to mock.", parsedJson);
+            return MOCK_PSC_UPDATES;
+        }
+    } catch (error) {
+        console.error("Error fetching PSC updates from Gemini API:", error);
+        return MOCK_PSC_UPDATES;
+    }
+};
+
 
 export const getMockTestQuestions = async (topic: string, count: number): Promise<QuizQuestion[]> => {
     if (!ai) {
