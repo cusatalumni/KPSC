@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
@@ -14,8 +14,10 @@ import BookstorePage from './components/pages/BookstorePage';
 import ExamCalendarPage from './components/pages/ExamCalendarPage';
 import QuizHomePage from './components/pages/QuizHomePage';
 import MockTestHomePage from './components/pages/MockTestHomePage';
-import type { Exam, PracticeTest, MockTest } from './types';
+import UpgradePage from './components/pages/UpgradePage';
+import type { Exam, PracticeTest, MockTest, QuizCategory, User } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
+import { authService } from './services/authService';
 
 export type Page = 
   | 'dashboard' 
@@ -29,7 +31,8 @@ export type Page =
   | 'disclosure'
   | 'exam_calendar'
   | 'quiz_home'
-  | 'mock_test_home';
+  | 'mock_test_home'
+  | 'upgrade';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -37,6 +40,30 @@ const App: React.FC = () => {
   const [activeTest, setActiveTest] = useState<{ title: string; questionsCount: number; } | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number } | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('dashboard');
+  const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
+
+  useEffect(() => {
+    // This could be used to check session status on app load in a real app
+    setCurrentUser(authService.getCurrentUser());
+  }, []);
+
+  const handleLogin = () => {
+    authService.login();
+    setCurrentUser(authService.getCurrentUser());
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    handleNavigate('dashboard'); // Go to dashboard on logout
+  };
+
+  const handleUpgrade = () => {
+    authService.upgradeToPro();
+    setCurrentUser(authService.getCurrentUser());
+    handleNavigate('dashboard'); // Or a "thank you" page
+  };
+
 
   const resetState = () => {
     setSelectedExam(null);
@@ -58,13 +85,22 @@ const App: React.FC = () => {
   };
 
   const handleStartTest = (test: PracticeTest | MockTest | { title: string; questions: number }, examTitle: string) => {
+     const isProContent = 'isPro' in test && test.isPro;
+    if (isProContent && currentUser?.subscription !== 'pro') {
+        handleNavigate('upgrade');
+        return;
+    }
     setActiveTest({ title: `${examTitle} - ${test.title}`, questionsCount: 'questions' in test ? test.questions : test.questionsCount });
     setPreviousPage(currentPage);
     setCurrentPage('test');
   };
   
-  const handleStartQuiz = (topic: string) => {
-    setActiveTest({ title: topic, questionsCount: 10 }); // All quizzes are 10 questions
+  const handleStartQuiz = (category: QuizCategory) => {
+    if (category.isPro && currentUser?.subscription !== 'pro') {
+      handleNavigate('upgrade');
+      return;
+    }
+    setActiveTest({ title: category.title, questionsCount: 10 }); // All quizzes are 10 questions
     setPreviousPage(currentPage);
     setCurrentPage('test');
   }
@@ -118,9 +154,11 @@ const App: React.FC = () => {
       case 'exam_calendar':
         return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
       case 'quiz_home':
-        return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={handleStartQuiz} />;
+        return <QuizHomePage user={currentUser} onBack={() => handleNavigate('dashboard')} onStartQuiz={handleStartQuiz} />;
       case 'mock_test_home':
-        return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
+        return <MockTestHomePage user={currentUser} onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
+      case 'upgrade':
+        return <UpgradePage onBack={() => handleNavigate(previousPage)} onUpgrade={handleUpgrade} />;
       case 'dashboard':
       default:
         return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;
@@ -129,7 +167,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-      <Header onNavigate={handleNavigate} />
+      <Header user={currentUser} onNavigate={handleNavigate} onLogin={handleLogin} onLogout={handleLogout} />
       <main className="container mx-auto px-4 py-8 flex-grow">
         {renderContent()}
       </main>

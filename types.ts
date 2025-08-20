@@ -17,6 +17,7 @@ export interface QuizCategory {
   title: string;
   description: string;
   icon: React.ReactNode;
+  isPro?: boolean;
 }
 
 export interface Notification {
@@ -87,4 +88,12 @@ export interface MockTest {
   description: string;
   questionsCount: number;
   duration: number; // in minutes
+  isPro?: boolean;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  subscription: 'free' | 'pro';
 }
