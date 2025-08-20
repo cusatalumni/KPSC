@@ -5,19 +5,19 @@ import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { DocumentChartBarIcon } from '../icons/DocumentChartBarIcon';
 import ProBadge from '../ProBadge';
 import { LockClosedIcon } from '../icons/LockClosedIcon';
-import type { MockTest, User } from '../../types';
+import type { MockTest, SubscriptionStatus } from '../../types';
 
 interface MockTestCardProps {
   test: MockTest;
-  user: User | null;
+  subscriptionStatus: SubscriptionStatus;
   onStart: (test: MockTest, examTitle: string) => void;
 }
 
-const MockTestCard: React.FC<MockTestCardProps> = ({ test, user, onStart }) => {
+const MockTestCard: React.FC<MockTestCardProps> = ({ test, subscriptionStatus, onStart }) => {
   const exam = EXAMS_DATA.find(e => e.id === test.examId);
   const examTitle = exam ? exam.title : 'Mock Test';
   const isPro = test.isPro;
-  const canStart = !isPro || (user && user.subscription === 'pro');
+  const canStart = !isPro || subscriptionStatus === 'pro';
 
   return (
     <div className={`bg-white p-6 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300 flex flex-col justify-between border border-slate-200 ${!canStart ? 'bg-slate-50' : ''}`}>
@@ -41,7 +41,7 @@ const MockTestCard: React.FC<MockTestCardProps> = ({ test, user, onStart }) => {
          <span>{test.duration} മിനിറ്റ്</span>
          <button 
             onClick={() => onStart(test, examTitle)}
-            className={`flex items-center space-x-2 text-center font-bold px-4 py-2 rounded-lg transition duration-200 ${canStart ? 'bg-amber-400 text-amber-900 hover:bg-amber-500' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+            className={`flex items-center space-x-2 text-center font-bold px-4 py-2 rounded-lg transition duration-200 ${canStart ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
          >
             { !canStart && <LockClosedIcon className="h-4 w-4" /> }
             <span>{canStart ? 'തുടങ്ങുക' : 'Pro Only'}</span>
@@ -52,15 +52,15 @@ const MockTestCard: React.FC<MockTestCardProps> = ({ test, user, onStart }) => {
 };
 
 interface PageProps {
-  user: User | null;
+  subscriptionStatus: SubscriptionStatus;
   onBack: () => void;
   onStartTest: (test: MockTest, examTitle: string) => void;
 }
 
-const MockTestHomePage: React.FC<PageProps> = ({ user, onBack, onStartTest }) => {
+const MockTestHomePage: React.FC<PageProps> = ({ subscriptionStatus, onBack, onStartTest }) => {
   return (
     <div className="animate-fade-in">
-      <button onClick={onBack} className="flex items-center space-x-2 text-sky-600 font-semibold hover:underline mb-6">
+      <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
         <ChevronLeftIcon className="h-5 w-5" />
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
@@ -71,7 +71,7 @@ const MockTestHomePage: React.FC<PageProps> = ({ user, onBack, onStartTest }) =>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {MOCK_TESTS_DATA.map((test) => (
-          <MockTestCard key={test.id} test={test} user={user} onStart={onStartTest} />
+          <MockTestCard key={test.id} test={test} subscriptionStatus={subscriptionStatus} onStart={onStartTest} />
         ))}
       </div>
     </div>

@@ -23,7 +23,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate }) => {
       </div>
        <button 
         onClick={() => onNavigate(exam)}
-        className="mt-6 w-full text-center bg-amber-400 text-amber-900 font-bold px-4 py-2.5 rounded-lg hover:bg-amber-500 transition duration-200 shadow-sm hover:shadow-md"
+        className="mt-6 w-full text-center bg-indigo-600 text-white font-bold px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition duration-200 shadow-sm hover:shadow-md"
        >
           തുടങ്ങുക
         </button>

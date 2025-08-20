@@ -91,9 +91,4 @@ export interface MockTest {
   isPro?: boolean;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  subscription: 'free' | 'pro';
-}
+export type SubscriptionStatus = 'free' | 'pro';

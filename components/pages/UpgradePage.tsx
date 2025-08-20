@@ -19,14 +19,14 @@ const ProFeature: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
-       <button onClick={onBack} className="flex items-center space-x-2 text-sky-600 font-semibold hover:underline mb-6">
+       <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
         <ChevronLeftIcon className="h-5 w-5" />
         <span>മുമ്പത്തെ പേജിലേക്ക് മടങ്ങുക</span>
       </button>
       
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-8 text-center">
-            <StarIcon className="h-16 w-16 mx-auto text-amber-400" />
+            <StarIcon className="h-16 w-16 mx-auto text-teal-400" />
             <h1 className="text-4xl font-bold text-white mt-4">PRO-യിലേക്ക് അപ്‌ഗ്രേഡ് ചെയ്യുക</h1>
             <p className="text-lg text-slate-300 mt-2">ഞങ്ങളുടെ എല്ലാ പ്രീമിയം ഫീച്ചറുകളും അൺലോക്ക് ചെയ്ത് നിങ്ങളുടെ പഠനം അടുത്ത ഘട്ടത്തിലേക്ക് കൊണ്ടുപോകൂ!</p>
         </div>
@@ -50,7 +50,7 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                 
                 <button 
                     onClick={onUpgrade}
-                    className="mt-6 w-full bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 font-bold py-3 px-6 rounded-lg text-lg hover:scale-105 transform transition-transform duration-300 shadow-lg"
+                    className="mt-6 w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold py-3 px-6 rounded-lg text-lg hover:scale-105 transform transition-transform duration-300 shadow-lg"
                 >
                     ഇപ്പോൾ അപ്‌ഗ്രേഡ് ചെയ്യുക
                 </button>

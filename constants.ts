@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, User } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
@@ -25,13 +25,13 @@ export const EXAMS_DATA: Exam[] = [
     id: 'ldc',
     title: 'LDC ക്ലർക്ക്',
     description: 'ലോവർ ഡിവിഷൻ ക്ലർക്ക് പരീക്ഷയ്ക്കുള്ള സമഗ്രമായ പരിശീലനം.',
-    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-sky-500" })
+    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" })
   },
   {
     id: 'lgs',
     title: 'LGS',
     description: 'ലാസ്റ്റ് ഗ്രേഡ് സർവന്റ്സ് പരീക്ഷയിൽ ഉന്നത വിജയം നേടാം.',
-    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-amber-500" })
+    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-teal-500" })
   },
   {
     id: 'kerala_police',
@@ -136,13 +136,13 @@ export const BOOKSTORE_DATA: Book[] = [
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
-  { id: 'gk', title: 'പൊതുവിജ്ഞാനം', description: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, തുടങ്ങിയവ.', icon: React.createElement(SparklesIcon, { className: "h-8 w-8 text-amber-500" }) },
-  { id: 'ca', title: 'ആനുകാലിക സംഭവങ്ങൾ', description: 'ഏറ്റവും പുതിയ വാർത്തകൾ.', icon: React.createElement(NewspaperIcon, { className: "h-8 w-8 text-sky-500" }) },
+  { id: 'gk', title: 'പൊതുവിജ്ഞാനം', description: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, തുടങ്ങിയവ.', icon: React.createElement(SparklesIcon, { className: "h-8 w-8 text-indigo-500" }) },
+  { id: 'ca', title: 'ആനുകാലിക സംഭവങ്ങൾ', description: 'ഏറ്റവും പുതിയ വാർത്തകൾ.', icon: React.createElement(NewspaperIcon, { className: "h-8 w-8 text-teal-500" }) },
   { id: 'ms', title: 'മലയാള സാഹിത്യം', description: 'എഴുത്തുകാരും കൃതികളും.', icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-slate-500" }), isPro: true },
   { id: 'sc', title: 'ജനപ്രിയ ശാസ്ത്രം', description: 'അടിസ്ഥാന ശാസ്ത്ര തത്വങ്ങൾ.', icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-green-500" }) },
   { id: 'en', title: 'English Grammar', description: 'വ്യാകരണ നിയമങ്ങളും പ്രയോഗങ്ങളും.', icon: React.createElement(ChatBubbleLeftRightIcon, { className: "h-8 w-8 text-red-500" }) },
-  { id: 'kh', title: 'കേരള ചരിത്രം', description: 'കേരളത്തിന്റെ ഇന്നലെകൾ.', icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-amber-600" }) },
-  { id: 'ih', title: 'ഇന്ത്യൻ ചരിത്രം', description: 'സ്വാതന്ത്ര്യ സമരവും മറ്റും.', icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-sky-600" }), isPro: true },
+  { id: 'kh', title: 'കേരള ചരിത്രം', description: 'കേരളത്തിന്റെ ഇന്നലെകൾ.', icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-600" }) },
+  { id: 'ih', title: 'ഇന്ത്യൻ ചരിത്രം', description: 'സ്വാതന്ത്ര്യ സമരവും മറ്റും.', icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-teal-600" }), isPro: true },
   { id: 'gp', title: 'ഭൂമിശാസ്ത്രം', description: 'ലോകവും ഇന്ത്യയും.', icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-slate-600" }) },
 ];
 
@@ -153,14 +153,6 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   { id: 'police-mt-1', examId: 'kerala_police', title: 'പോലീസ് കോൺസ്റ്റബിൾ മോക്ക് ടെസ്റ്റ്', description: 'കായികക്ഷമതാ പരീക്ഷയ്ക്ക് മുൻപുള്ള നിങ്ങളുടെ അറിവ് പരീക്ഷിക്കുക.', questionsCount: 100, duration: 75, isPro: true },
   { id: 'ldc-mt-2', examId: 'ldc', title: 'LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2', description: 'നിങ്ങളുടെ തയ്യാറെടുപ്പുകൾ അടുത്ത ഘട്ടത്തിലേക്ക് കൊണ്ടുപോകാൻ സഹായിക്കുന്ന 100 ചോദ്യങ്ങൾ.', questionsCount: 100, duration: 75, isPro: true },
 ];
-
-export const LOGGED_IN_USER: User = {
-  id: 'usr_12345',
-  name: 'അനൂപ്',
-  email: 'anoop@example.com',
-  subscription: 'free',
-};
-
 
 export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [
   { slNo: '1', catNo: '093/2023', postName: 'Confidential Assistant Gr II (Main Examination)', department: 'KERALA WATER AUTHORITY', examDate: '06/10/2025', syllabusLink: '#'},

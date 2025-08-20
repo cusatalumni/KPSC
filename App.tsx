@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
@@ -15,9 +16,9 @@ import ExamCalendarPage from './components/pages/ExamCalendarPage';
 import QuizHomePage from './components/pages/QuizHomePage';
 import MockTestHomePage from './components/pages/MockTestHomePage';
 import UpgradePage from './components/pages/UpgradePage';
-import type { Exam, PracticeTest, MockTest, QuizCategory, User } from './types';
+import type { Exam, PracticeTest, MockTest, QuizCategory, SubscriptionStatus } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
-import { authService } from './services/authService';
+import { subscriptionService } from './services/subscriptionService';
 
 export type Page = 
   | 'dashboard' 
@@ -40,30 +41,26 @@ const App: React.FC = () => {
   const [activeTest, setActiveTest] = useState<{ title: string; questionsCount: number; } | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number } | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('dashboard');
-  const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
+  
+  const { user, isSignedIn } = useUser();
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
 
   useEffect(() => {
-    // This could be used to check session status on app load in a real app
-    setCurrentUser(authService.getCurrentUser());
-  }, []);
-
-  const handleLogin = () => {
-    authService.login();
-    setCurrentUser(authService.getCurrentUser());
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    setCurrentUser(null);
-    handleNavigate('dashboard'); // Go to dashboard on logout
-  };
+    if (isSignedIn && user?.id) {
+      const status = subscriptionService.getSubscriptionStatus(user.id);
+      setSubscriptionStatus(status);
+    } else {
+      setSubscriptionStatus('free');
+    }
+  }, [user, isSignedIn]);
 
   const handleUpgrade = () => {
-    authService.upgradeToPro();
-    setCurrentUser(authService.getCurrentUser());
-    handleNavigate('dashboard'); // Or a "thank you" page
+    if (user?.id) {
+      subscriptionService.upgradeToPro(user.id);
+      setSubscriptionStatus('pro');
+      handleNavigate('dashboard'); // Or a "thank you" page
+    }
   };
-
 
   const resetState = () => {
     setSelectedExam(null);
@@ -85,8 +82,8 @@ const App: React.FC = () => {
   };
 
   const handleStartTest = (test: PracticeTest | MockTest | { title: string; questions: number }, examTitle: string) => {
-     const isProContent = 'isPro' in test && test.isPro;
-    if (isProContent && currentUser?.subscription !== 'pro') {
+    const isProContent = 'isPro' in test && test.isPro;
+    if (isProContent && subscriptionStatus !== 'pro') {
         handleNavigate('upgrade');
         return;
     }
@@ -96,7 +93,7 @@ const App: React.FC = () => {
   };
   
   const handleStartQuiz = (category: QuizCategory) => {
-    if (category.isPro && currentUser?.subscription !== 'pro') {
+    if (category.isPro && subscriptionStatus !== 'pro') {
       handleNavigate('upgrade');
       return;
     }
@@ -154,9 +151,9 @@ const App: React.FC = () => {
       case 'exam_calendar':
         return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
       case 'quiz_home':
-        return <QuizHomePage user={currentUser} onBack={() => handleNavigate('dashboard')} onStartQuiz={handleStartQuiz} />;
+        return <QuizHomePage subscriptionStatus={subscriptionStatus} onBack={() => handleNavigate('dashboard')} onStartQuiz={handleStartQuiz} />;
       case 'mock_test_home':
-        return <MockTestHomePage user={currentUser} onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
+        return <MockTestHomePage subscriptionStatus={subscriptionStatus} onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
       case 'upgrade':
         return <UpgradePage onBack={() => handleNavigate(previousPage)} onUpgrade={handleUpgrade} />;
       case 'dashboard':
@@ -167,7 +164,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-      <Header user={currentUser} onNavigate={handleNavigate} onLogin={handleLogin} onLogout={handleLogout} />
+      <Header onNavigate={handleNavigate} />
       <main className="container mx-auto px-4 py-8 flex-grow">
         {renderContent()}
       </main>

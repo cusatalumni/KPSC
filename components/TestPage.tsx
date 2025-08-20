@@ -82,7 +82,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
-         <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+         <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
         <p className="mt-4 text-lg text-slate-600">നിങ്ങൾക്കായി പരീക്ഷ തയ്യാറാക്കുന്നു...</p>
       </div>
     );
@@ -97,7 +97,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
 
   return (
     <div className="max-w-4xl mx-auto">
-       <button onClick={onBack} className="flex items-center space-x-2 text-sky-600 font-semibold hover:underline mb-4">
+       <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-4">
         <ChevronLeftIcon className="h-5 w-5" />
         <span>മുമ്പത്തെ പേജിലേക്ക് മടങ്ങുക</span>
       </button>
@@ -116,7 +116,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
                 <span>{Math.round(progress)}%</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-2.5">
-              <div className="bg-sky-500 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+              <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
             </div>
           </div>
         </header>
@@ -127,14 +127,14 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
 
         <div className="space-y-3">
           {currentQuestion.options.map((option, index) => (
-             <label key={index} className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${answers[currentIndex] === index ? 'bg-sky-50 border-sky-500' : 'bg-white hover:bg-slate-50 border-slate-200'}`}>
+             <label key={index} className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${answers[currentIndex] === index ? 'bg-indigo-50 border-indigo-500' : 'bg-white hover:bg-slate-50 border-slate-200'}`}>
                 <input 
                     type="radio" 
                     name="option" 
                     value={index} 
                     checked={answers[currentIndex] === index}
                     onChange={() => handleAnswerSelect(index)}
-                    className="h-5 w-5 text-sky-600 focus:ring-sky-500 border-slate-300"
+                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
                 />
                 <span className="ml-4 text-lg text-slate-800">{option}</span>
              </label>
@@ -159,7 +159,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
             ) : (
                 <button 
                     onClick={() => setCurrentIndex(prev => prev + 1)} 
-                    className="bg-sky-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-600 transition"
+                    className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition"
                 >
                     അടുത്തത്
                 </button>

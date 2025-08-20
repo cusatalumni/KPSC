@@ -9,12 +9,12 @@ interface PageProps {
 const DisclosurePage: React.FC<PageProps> = ({ onBack }) => {
   return (
     <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg animate-fade-in">
-      <button onClick={onBack} className="flex items-center space-x-2 text-blue-600 font-semibold hover:underline mb-6">
+      <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
         <ChevronLeftIcon className="h-5 w-5" />
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
-      <div className="space-y-6 text-lg leading-relaxed text-gray-700">
-        <h1 className="text-4xl font-bold text-gray-800 border-b pb-4">അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ</h1>
+      <div className="space-y-6 text-lg leading-relaxed text-slate-700">
+        <h1 className="text-4xl font-bold text-slate-800 border-b pb-4">അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ</h1>
         <p>
           ഈ വെബ്സൈറ്റിലെ ചില ലിങ്കുകൾ അഫിലിയേറ്റ് ലിങ്കുകളാണ്. ഇതിനർത്ഥം, നിങ്ങൾ ആ ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് ഒരു ഉൽപ്പന്നം വാങ്ങുകയാണെങ്കിൽ, നിങ്ങൾക്ക് അധികച്ചെലവില്ലാതെ ഞങ്ങൾക്ക് ഒരു ചെറിയ കമ്മീഷൻ ലഭിച്ചേക്കാം.
         </p>

@@ -18,12 +18,12 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) => {
   return (
     <div className="space-y-12">
-      <section className="text-center bg-gradient-to-br from-slate-50 to-sky-100 py-16 px-6 rounded-2xl shadow-sm">
+      <section className="text-center bg-gradient-to-br from-slate-50 to-indigo-100 py-16 px-6 rounded-2xl shadow-sm">
         <h2 className="text-4xl font-bold text-slate-800 mb-3">PSC പരീക്ഷകൾക്ക് തയ്യാറെടുക്കാൻ ഒരു പുതിയ വഴി</h2>
         <p className="text-lg text-slate-600 max-w-3xl mx-auto">നിങ്ങളുടെ സർക്കാർ ജോലി സ്വപ്നം, ഞങ്ങളുടെ വഴികാട്ടി ഉപയോഗിച്ച് സാക്ഷാത്കരിക്കൂ.</p>
          <button 
             onClick={() => onNavigate('mock_test_home')}
-            className="mt-8 bg-gradient-to-r from-amber-400 to-amber-500 text-amber-900 font-semibold px-8 py-3 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out text-lg"
+            className="mt-8 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out text-lg"
         >
             മോക്ക് ടെസ്റ്റുകൾ പരിശീലിക്കൂ
         </button>

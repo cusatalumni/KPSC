@@ -11,19 +11,19 @@ interface ExamPageProps {
   exam: Exam;
   content: ExamPageContent;
   onBack: () => void;
-  onStartTest: (test: PracticeTest | { title: string; questions: number }, exam: Exam) => void;
+  onStartTest: (test: PracticeTest | { title: string; questions: number }, examTitle: string) => void;
 }
 
 const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest }) => {
   
   const handleStartFullMockTest = () => {
     // Let's assume a full mock test has 50 questions
-    onStartTest({ title: 'പൂർണ്ണമായ മോക്ക് ടെസ്റ്റ്', questions: 50 }, exam);
+    onStartTest({ title: 'പൂർണ്ണമായ മോക്ക് ടെസ്റ്റ്', questions: 50 }, exam.title);
   };
   
   return (
     <div className="animate-fade-in">
-      <button onClick={onBack} className="flex items-center space-x-2 text-sky-600 font-semibold hover:underline mb-6">
+      <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
         <ChevronLeftIcon className="h-5 w-5" />
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
       </button>
@@ -38,7 +38,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
         {/* Practice Tests */}
         <section>
           <h2 className="text-2xl font-semibold text-slate-700 mb-4 flex items-center">
-            <ClipboardListIcon className="h-7 w-7 text-sky-500 mr-3" />
+            <ClipboardListIcon className="h-7 w-7 text-indigo-500 mr-3" />
             പരിശീലന പരീക്ഷകൾ
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -48,7 +48,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
                   <h3 className="font-bold text-slate-800">{test.title}</h3>
                   <p className="text-sm text-slate-500">{test.questions} ചോദ്യങ്ങൾ • {test.duration} മിനിറ്റ്</p>
                 </div>
-                <button onClick={() => onStartTest(test, exam)} className="bg-sky-100 text-sky-700 font-semibold px-4 py-2 rounded-md hover:bg-sky-200 transition">
+                <button onClick={() => onStartTest(test, exam.title)} className="bg-indigo-100 text-indigo-700 font-semibold px-4 py-2 rounded-md hover:bg-indigo-200 transition">
                   തുടങ്ങുക
                 </button>
               </div>
@@ -60,7 +60,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
         <section className="bg-gradient-to-r from-slate-800 to-slate-900 text-white p-8 rounded-xl text-center shadow-lg">
             <h2 className="text-3xl font-bold mb-2">പൂർണ്ണമായ മോക്ക് ടെസ്റ്റ് എടുക്കുക</h2>
             <p className="mb-6">യഥാർത്ഥ പരീക്ഷയുടെ അതേ മാതൃകയിൽ നിങ്ങളുടെ അറിവ് പരീക്ഷിക്കുക.</p>
-            <button onClick={handleStartFullMockTest} className="bg-amber-400 text-amber-900 font-bold px-8 py-3 rounded-full text-lg hover:bg-amber-300 transform hover:scale-105 transition duration-300">
+            <button onClick={handleStartFullMockTest} className="bg-teal-500 text-white font-bold px-8 py-3 rounded-full text-lg hover:bg-teal-600 transform hover:scale-105 transition duration-300">
                 മോക്ക് ടെസ്റ്റ് ആരംഭിക്കുക
             </button>
         </section>
@@ -76,8 +76,8 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
                  {content.studyNotes.map(note => (
                    <a key={note.id} href={note.link} className="flex items-center p-2 rounded hover:bg-slate-50 group">
-                      <span className="text-slate-700 font-medium group-hover:text-sky-600">{note.title}</span>
-                      <span className="ml-auto text-sky-500 opacity-0 group-hover:opacity-100 transition">→</span>
+                      <span className="text-slate-700 font-medium group-hover:text-indigo-600">{note.title}</span>
+                      <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
                    </a>
                  ))}
                </div>
@@ -86,14 +86,14 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
             {/* Previous Year Papers */}
             <section>
               <h2 className="text-2xl font-semibold text-slate-700 mb-4 flex items-center">
-                <DocumentDuplicateIcon className="h-7 w-7 text-amber-500 mr-3" />
+                <DocumentDuplicateIcon className="h-7 w-7 text-yellow-500 mr-3" />
                 മുൻവർഷത്തെ ചോദ്യപേപ്പറുകൾ
               </h2>
                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
                  {content.previousPapers.map(paper => (
                    <a key={paper.id} href={paper.link} className="flex items-center p-2 rounded hover:bg-slate-50 group">
-                      <span className="text-slate-700 font-medium group-hover:text-sky-600">{paper.title}</span>
-                      <span className="ml-auto text-sky-500 opacity-0 group-hover:opacity-100 transition">→</span>
+                      <span className="text-slate-700 font-medium group-hover:text-indigo-600">{paper.title}</span>
+                      <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
                    </a>
                  ))}
                </div>

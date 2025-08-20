@@ -10,7 +10,7 @@ const RecommendedBooks: React.FC = () => {
   return (
     <section>
       <h2 className="text-2xl font-semibold text-slate-700 mb-4 flex items-center">
-        <BookOpenIcon className="h-7 w-7 text-sky-500 mr-3" />
+        <BookOpenIcon className="h-7 w-7 text-indigo-500 mr-3" />
         ശുപാർശ ചെയ്യുന്ന പുസ്തകങ്ങൾ
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -24,7 +24,7 @@ const RecommendedBooks: React.FC = () => {
                 href={book.amazonLink} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-block mt-2 text-sm text-center bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-md hover:bg-amber-500 transition duration-200"
+                className="inline-block mt-2 text-sm text-center bg-indigo-600 text-white font-bold px-3 py-1 rounded-md hover:bg-indigo-700 transition duration-200"
               >
                 Amazon-ൽ വാങ്ങുക
               </a>
