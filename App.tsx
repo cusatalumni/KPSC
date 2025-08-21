@@ -18,6 +18,7 @@ import QuizHomePage from './components/pages/QuizHomePage';
 import MockTestHomePage from './components/pages/MockTestHomePage';
 import UpgradePage from './components/pages/UpgradePage';
 import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
+import PreviousPapersPage from './components/pages/PreviousPapersPage';
 import type { Exam, PracticeTest, MockTest, QuizCategory, SubscriptionStatus } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
@@ -36,7 +37,8 @@ export type Page =
   | 'quiz_home'
   | 'mock_test_home'
   | 'upgrade'
-  | 'psc_live_updates';
+  | 'psc_live_updates'
+  | 'previous_papers';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -162,6 +164,8 @@ const App: React.FC = () => {
         return <UpgradePage onBack={() => handleNavigate(previousPage)} onUpgrade={handleUpgrade} />;
       case 'psc_live_updates':
         return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
+      case 'previous_papers':
+        return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;

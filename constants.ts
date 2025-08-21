@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
@@ -16,6 +16,7 @@ export const NAV_LINKS = [
   { name: 'കോഴ്സുകൾ', target: 'dashboard' },
   { name: 'ക്വിസുകൾ', target: 'quiz_home' },
   { name: 'മോക്ക് ടെസ്റ്റുകൾ', target: 'mock_test_home' },
+  { name: 'ചോദ്യപേപ്പറുകൾ', target: 'previous_papers'},
   { name: 'PSC Live', target: 'psc_live_updates'},
   { name: 'പുസ്തകശാല', target: 'bookstore' },
   { name: 'പരീക്ഷാ കലണ്ടർ', target: 'exam_calendar' },
@@ -98,6 +99,19 @@ export const MOCK_PSC_UPDATES: PscUpdateItem[] = [
         section: 'Notifications',
         published_date: '2024-07-26',
     },
+];
+
+export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
+    {
+        title: "LOWER DIVISION CLERK (SR FROM ST ONLY) - VARIOUS",
+        url: "https://www.keralapsc.gov.in/question-paper-and-answer-key/lower-division-clerk-sr-st-only-various-0",
+        date: "2024"
+    },
+    {
+        title: "BEAT FOREST OFFICER (PART I - DIRECT) (CATEGORY NO. 207/2023) - FOREST",
+        url: "https://www.keralapsc.gov.in/question-paper-and-answer-key/beat-forest-officer-part-i-direct-category-no-2072023-forest-0",
+        date: "2024"
+    }
 ];
 
 

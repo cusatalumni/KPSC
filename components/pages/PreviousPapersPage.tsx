@@ -1,0 +1,107 @@
+
+import React, { useState, useCallback } from 'react';
+import { searchPreviousPapers } from '../../services/geminiService';
+import type { QuestionPaper } from '../../types';
+import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
+import { ArchiveBoxIcon } from '../icons/ArchiveBoxIcon';
+
+const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<QuestionPaper[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [searched, setSearched] = useState(false);
+
+    const handleSearch = useCallback(async () => {
+        if (!query.trim()) return;
+        setLoading(true);
+        setError(null);
+        setSearched(true);
+        try {
+            const data = await searchPreviousPapers(query);
+            setResults(data);
+        } catch (err) {
+            setError('വിവരങ്ങൾ ലഭിക്കുന്നതിൽ പിഴവ് സംഭവിച്ചു.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }, [query]);
+
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    return (
+        <div className="animate-fade-in">
+            <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
+                <ChevronLeftIcon className="h-5 w-5" />
+                <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
+            </button>
+
+            <header className="mb-8 text-center border-b border-slate-200 pb-6">
+                <ArchiveBoxIcon className="h-16 w-16 mx-auto text-indigo-400" />
+                <h1 className="text-4xl font-bold text-slate-800 mt-4">
+                മുൻവർഷ ചോദ്യപേപ്പറുകൾ
+                <span className="block text-2xl text-slate-500 mt-1 font-normal">Previous Question Papers</span>
+                </h1>
+                <p className="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">AI ഉപയോഗിച്ച് ഔദ്യോഗിക PSC വെബ്സൈറ്റിൽ നിന്നും പഴയ ചോദ്യപേപ്പറുകൾ കണ്ടെത്തുക.</p>
+            </header>
+
+            <div className="max-w-2xl mx-auto mb-8">
+                <div className="flex space-x-2">
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="ഉദാ: LDC 2020, Police Constable..."
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                        aria-label="Search for question papers"
+                    />
+                    <button
+                        onClick={handleSearch}
+                        disabled={loading || !query.trim()}
+                        className="flex items-center justify-center bg-indigo-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        )}
+                        <span className="ml-2 hidden sm:inline">തിരയുക</span>
+                    </button>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <p className="mt-4 text-lg text-slate-600">AI നിങ്ങൾക്കായി ചോദ്യപേപ്പറുകൾ കണ്ടെത്തുന്നു...</p>
+                </div>
+            ) : error ? (
+                <div className="text-center text-red-500 bg-red-50 p-6 rounded-lg">{error}</div>
+            ) : searched && results.length === 0 ? (
+                <div className="text-center text-slate-600 bg-slate-50 p-10 rounded-lg">
+                    <h3 className="text-xl font-semibold">ഫലങ്ങളൊന്നും കണ്ടെത്തിയില്ല</h3>
+                    <p>നിങ്ങളുടെ തിരയലുമായി ബന്ധപ്പെട്ട ചോദ്യപേപ്പറുകൾ കണ്ടെത്താനായില്ല. ദയവായി മറ്റൊന്ന് പരീക്ഷിക്കുക.</p>
+                </div>
+            ) : results.length > 0 && (
+                <div className="space-y-4">
+                    {results.map((item, index) => (
+                        <a href={item.url} key={index} target="_blank" rel="noopener noreferrer" className="block bg-white p-5 rounded-xl shadow-md border border-slate-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 group">
+                            <div className="flex justify-between items-start gap-4">
+                                <h3 className="text-lg font-semibold text-slate-800 group-hover:text-indigo-600 flex-1">{item.title}</h3>
+                                <p className="text-sm text-slate-500 font-medium whitespace-nowrap bg-slate-100 px-2 py-1 rounded">Date: {item.date}</p>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default PreviousPapersPage;

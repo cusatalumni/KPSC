@@ -9,6 +9,7 @@ import Testimonials from './Testimonials';
 import CalendarWidget from './CalendarWidget';
 import QuizHomeWidget from './QuizHomeWidget';
 import PscLiveWidget from './PscLiveWidget';
+import PreviousPapersWidget from './PreviousPapersWidget';
 import type { Exam } from '../types';
 import type { Page } from '../App';
 
@@ -45,6 +46,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) =
         </div>
         <aside className="space-y-8">
            <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
+           <PreviousPapersWidget onNavigate={() => onNavigate('previous_papers')} />
            <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
            <CalendarWidget onNavigate={() => onNavigate('exam_calendar')} />
            <StudyMaterialWidget />

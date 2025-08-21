@@ -53,6 +53,12 @@ export interface PscUpdateItem {
     published_date: string;
 }
 
+export interface QuestionPaper {
+    title: string;
+    url: string;
+    date: string;
+}
+
 export interface StudyMaterial {
     id: string;
     title: string;
