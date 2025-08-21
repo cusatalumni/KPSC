@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -54,21 +55,6 @@ const App: React.FC = () => {
   
   const { user, isSignedIn } = useUser();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
-
-  useEffect(() => {
-    // Client-side redirect handler for masked external links
-    if (window.location.pathname === '/go') {
-        const params = new URLSearchParams(window.location.search);
-        const targetUrl = params.get('url');
-        if (targetUrl) {
-            // Use replace to avoid adding the redirector to browser history
-            window.location.replace(decodeURIComponent(targetUrl));
-        } else {
-            // If no URL is provided, go back to the homepage
-            window.location.href = '/';
-        }
-    }
-  }, []);
 
   useEffect(() => {
     if (isSignedIn && user?.id) {

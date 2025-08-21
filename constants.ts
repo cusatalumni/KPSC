@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
@@ -162,6 +163,11 @@ export const BOOKSTORE_DATA: Book[] = [
   { id: '2', title: 'PSC ബുള്ളറ്റിൻ ചോദ്യബാങ്ക്', author: 'Talent Academy', imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=httpcodingonl-21' },
   { id: '3', title: 'ഇന്ത്യൻ ഭരണഘടന', author: 'M Laxmikanth (Malayalam)', imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=httpcodingonl-21' },
   { id: '4', title: 'കേരള ചരിത്രം', author: 'E. Sreedhara Menon', imageUrl: 'https://m.media-amazon.com/images/I/71N-T5DUaWL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/8126484351?tag=httpcodingonl-21' },
+  { id: '5', title: 'LGS റാങ്ക് ഫയൽ (Latest)', author: 'Veto Publications', imageUrl: 'https://m.media-amazon.com/images/I/71q5218FjML._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D3754271?tag=httpcodingonl-21' },
+  { id: '6', title: 'Comprehensive Guide to PSC English', author: 'V. K. Sujith Kumar', imageUrl: 'https://m.media-amazon.com/images/I/61s+iK-p5SL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B084M1942G?tag=httpcodingonl-21' },
+  { id: '7', title: 'മനോരമ ഇയർബുക്ക് 2024', author: 'Manorama Publications', imageUrl: 'https://m.media-amazon.com/images/I/71P4a+2Yv-L._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CPJ15NDR?tag=httpcodingonl-21' },
+  { id: '8', title: 'മാതൃഭൂമി ഇയർബുക്ക് പ്ലസ് 2024', author: 'Mathrubhumi', imageUrl: 'https://m.media-amazon.com/images/I/81L7-K9+j-L._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CNGB19J4?tag=httpcodingonl-21' },
+  { id: '9', title: 'Lucent\'s സാമാന്യ വിജ്ഞാനം', author: 'Lucent Publications', imageUrl: 'https://m.media-amazon.com/images/I/61YZ-NMC6rL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/939019233X?tag=httpcodingonl-21' },
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [

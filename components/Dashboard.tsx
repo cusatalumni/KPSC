@@ -1,6 +1,7 @@
 
 
 
+
 import React from 'react';
 import { EXAMS_DATA } from '../constants';
 import ExamCard from './ExamCard';
@@ -13,6 +14,7 @@ import PscLiveWidget from './PscLiveWidget';
 import PreviousPapersWidget from './PreviousPapersWidget';
 import CurrentAffairsWidget from './CurrentAffairsWidget';
 import GkWidget from './GkWidget';
+import NewsTicker from './NewsTicker';
 import type { Exam } from '../types';
 import type { Page } from '../App';
 
@@ -23,7 +25,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) => {
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       <section className="text-center bg-gradient-to-br from-slate-50 to-indigo-100 py-16 px-6 rounded-2xl shadow-sm">
         <h2 className="text-4xl font-bold text-slate-800 mb-3">AIയുടെ ശക്തി ഉപയോഗിച്ച് PSC പരീക്ഷകൾക്ക് തയ്യാറെടുക്കാം</h2>
         <p className="text-lg text-slate-600 max-w-3xl mx-auto">Master PSC exams with the power of AI. Your dream government job starts here.</p>
@@ -34,6 +36,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) =
             മോക്ക് ടെസ്റ്റുകൾ പരിശീലിക്കൂ
         </button>
       </section>
+      
+      <NewsTicker />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">

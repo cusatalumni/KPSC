@@ -13,6 +13,26 @@
       body {
         font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif;
       }
+      /* News Ticker Animation */
+      .ticker-wrap {
+        overflow: hidden;
+      }
+      .ticker-move {
+        display: inline-block;
+        white-space: nowrap;
+        animation: ticker 40s linear infinite;
+      }
+      .ticker-wrap:hover .ticker-move {
+        animation-play-state: paused;
+      }
+      @keyframes ticker {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
     </style>
   <script>
     tailwind.config = {
