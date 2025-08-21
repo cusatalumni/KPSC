@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        const prompt = `Create a professional and visually appealing book cover for a Kerala PSC exam preparation book. The title of the book is "${title}" and the author is "${author}". The style should be clean, modern, and academic, suitable for an educational publication. Do not include any text, letters, or numbers in the generated image itself. Focus on abstract concepts or symbols related to learning, success, and Kerala.`;
+        const prompt = `Create a professional and visually appealing book cover for a Kerala PSC exam preparation book. The cover should feature the book's title prominently and elegantly in Malayalam script: "${title}". The style should be clean, modern, and academic, suitable for an educational publication. Use abstract concepts or symbols related to learning, success, and Kerala for the background imagery. The text must be clear and correctly spelled.`;
 
         const response = await ai.models.generateImages({
             model: 'imagen-3.0-generate-002',
