@@ -2,7 +2,7 @@
 // Path: /api/get-questions.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { readSheetData, appendSheetData } from './_lib/sheets-service';
+import { readSheetData, appendSheetData } from './_lib/sheets-service.js';
 
 // Define a local type to avoid frontend dependency issues
 interface QuizQuestion {

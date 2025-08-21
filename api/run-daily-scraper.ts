@@ -1,8 +1,8 @@
 // Vercel Serverless Function - Admin Trigger
 // Path: /api/run-daily-scraper.ts
 
-import { verifyAdmin } from "./_lib/clerk-auth";
-import { runDailyUpdateScrapers } from "./_lib/scraper-service";
+import { verifyAdmin } from "./_lib/clerk-auth.js";
+import { runDailyUpdateScrapers } from "./_lib/scraper-service.js";
 
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') {

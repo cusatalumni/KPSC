@@ -2,7 +2,7 @@
 // Path: /api/get-study-material.ts
 
 import { GoogleGenAI } from "@google/genai";
-import { readSheetData, findAndUpsertRow } from './_lib/sheets-service';
+import { readSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
 
 const API_KEY = process.env.VITE_API_KEY;
 if (!API_KEY) {

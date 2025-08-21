@@ -1,7 +1,7 @@
 // Vercel Serverless Function
 // Path: /api/get-notifications.ts
 
-import { readSheetData } from './_lib/sheets-service';
+import { readSheetData } from './_lib/sheets-service.js';
 
 const RANGE = 'Notifications!A2:E'; // Assuming data is in columns A to E, starting from row 2
 

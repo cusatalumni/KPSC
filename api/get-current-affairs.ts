@@ -1,7 +1,7 @@
 // Vercel Serverless Function
 // Path: /api/get-current-affairs.ts
 
-import { readSheetData } from './_lib/sheets-service';
+import { readSheetData } from './_lib/sheets-service.js';
 
 const RANGE = 'CurrentAffairs!A2:D';
 

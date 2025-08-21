@@ -1,7 +1,7 @@
 // Vercel Serverless Function
 // Path: /api/get-live-updates.ts
 
-import { readSheetData } from './_lib/sheets-service';
+import { readSheetData } from './_lib/sheets-service.js';
 
 const RANGE = 'LiveUpdates!A2:D';
 

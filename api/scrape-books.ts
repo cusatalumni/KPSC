@@ -1,7 +1,7 @@
 // Vercel Serverless Function - Cron Job
 // Path: /api/scrape-books.ts
 
-import { runBookScraper } from "./_lib/scraper-service";
+import { runBookScraper } from "./_lib/scraper-service.js";
 
 export default async function handler(req: any, res: any) {
     const cronSecret = process.env.CRON_SECRET;

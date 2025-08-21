@@ -1,12 +1,23 @@
 // Path: /api/_lib/scraper-service.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { QUIZ_CATEGORIES } from '../../constants';
-import { clearAndWriteSheetData, appendSheetData } from './sheets-service';
+import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
 // Initialize Gemini AI
 const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
 const AFFILIATE_TAG = 'tag=httpcodingonl-21';
+
+// Local version of QUIZ_CATEGORIES to avoid importing React components into the backend
+const QUIZ_CATEGORY_TOPICS_ML = [
+    'പൊതുവിജ്ഞാനം',
+    'ആനുകാലിക സംഭവങ്ങൾ',
+    'മലയാള സാഹിത്യം',
+    'ജനപ്രിയ ശാസ്ത്രം',
+    'English Grammar',
+    'കേരള ചരിത്രം',
+    'ഇന്ത്യൻ ചരിത്രം',
+    'ഭൂമിശാസ്ത്രം',
+];
 
 // --- Individual Scraping Functions ---
 
@@ -93,7 +104,7 @@ async function scrapeGk() {
 }
 
 async function generateNewQuestions() {
-    const topics = QUIZ_CATEGORIES.map(c => c.title.ml);
+    const topics = QUIZ_CATEGORY_TOPICS_ML;
     const prompt = `Generate a JSON array of ${topics.length * 2} unique multiple-choice questions in Malayalam suitable for a Kerala PSC exam. 
     Distribute them among the following topics: ${topics.join(', ')}.
     Each question object must have 'id' (a unique uuid string), 'topic' (the Malayalam topic string from the list), 'question' (string), 'options' (an array of 4 strings), and 'correctAnswerIndex' (a 0-based integer). Ensure questions are relevant and distinct.`;

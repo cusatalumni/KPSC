@@ -1,7 +1,7 @@
 // Vercel Serverless Function
 // Path: /api/get-gk.ts
 
-import { readSheetData } from './_lib/sheets-service';
+import { readSheetData } from './_lib/sheets-service.js';
 
 const RANGE = 'GK!A2:C';
 

@@ -1,7 +1,7 @@
 // Vercel Serverless Function - Cron Job
 // Path: /api/scrape-updates.ts
 
-import { runDailyUpdateScrapers } from "./_lib/scraper-service";
+import { runDailyUpdateScrapers } from "./_lib/scraper-service.js";
 
 export default async function handler(req: any, res: any) {
     // Protect the endpoint with a secret

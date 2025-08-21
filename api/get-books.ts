@@ -1,7 +1,7 @@
 // Vercel Serverless Function
 // Path: /api/get-books.ts
 
-import { readSheetData } from './_lib/sheets-service';
+import { readSheetData } from './_lib/sheets-service.js';
 
 const RANGE = 'Bookstore!A2:E'; // id, title, author, imageUrl, amazonLink
 
