@@ -7,20 +7,29 @@ Follow these steps to configure your application to use Google Sheets for storin
 ### Step 1: Create a Google Sheet
 1. Go to [sheets.google.com](https://sheets.google.com) and create a new, blank spreadsheet.
 2. Name it something memorable, like "Kerala PSC Guru Data".
-3. **Crucially, create four tabs at the bottom and name them exactly as follows (case-sensitive):**
+3. **Crucially, create five tabs at the bottom and name them exactly as follows (case-sensitive):**
     - `Notifications`
     - `LiveUpdates`
     - `CurrentAffairs`
     - `GK`
-4. In the `Notifications` tab, add these headers in the first row, one in each cell from A1 to D1:
+    - `QuestionBank`
+
+4. In the `Notifications` tab, add these headers in the first row, one in each cell from A1 to E1:
     `id`, `title`, `categoryNumber`, `lastDate`, `link`
+
 5. In the `LiveUpdates` tab, add these headers:
     `title`, `url`, `section`, `published_date`
+
 6. In the `CurrentAffairs` tab, add these headers:
     `id`, `title`, `source`, `date`
+
 7. In the `GK` tab, add these headers:
     `id`, `fact`, `category`
-8. From the URL of your spreadsheet, copy the **Spreadsheet ID**. It's the long string of characters between `/d/` and `/edit`.
+
+8. In the `QuestionBank` tab, add these headers:
+    `id`, `topic`, `question`, `options`, `correctAnswerIndex`
+
+9. From the URL of your spreadsheet, copy the **Spreadsheet ID**. It's the long string of characters between `/d/` and `/edit`.
    - Example URL: `https://docs.google.com/spreadsheets/d/THIS_IS_THE_ID/edit`
    - Keep this ID handy. You will need it for your environment variables.
 

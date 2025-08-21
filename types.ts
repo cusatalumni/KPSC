@@ -14,6 +14,7 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswerIndex: number;
+  topic: string; // Added topic for categorization in question bank
 }
 
 export interface QuizCategory {

@@ -4,6 +4,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { google } from 'googleapis';
 import { GoogleGenAI, Type } from "@google/genai";
+import { QUIZ_CATEGORIES } from '../constants'; // To get topics for questions
 
 // Initialize Gemini AI
 const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
@@ -93,7 +94,7 @@ async function scrapeCurrentAffairs() {
 async function scrapeGk() {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Generate 10 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as a JSON array.`,
+        contents: `Generate 10 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -110,6 +111,34 @@ async function scrapeGk() {
     return data.map((item: any) => [item.id, item.fact, item.category]);
 }
 
+async function generateNewQuestions() {
+    const topics = QUIZ_CATEGORIES.map(c => c.title.ml);
+    // Generate 2 questions per topic to enrich the bank daily
+    const prompt = `Generate a JSON array of ${topics.length * 2} unique multiple-choice questions in Malayalam suitable for a Kerala PSC exam. 
+    Distribute them among the following topics: ${topics.join(', ')}.
+    Each question object must have 'id' (a unique uuid string), 'topic' (the Malayalam topic string from the list), 'question' (string), 'options' (an array of 4 strings), and 'correctAnswerIndex' (a 0-based integer). Ensure questions are relevant and distinct.`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, topic: { type: Type.STRING },
+                        question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        correctAnswerIndex: { type: Type.INTEGER }
+                    }, required: ["id", "topic", "question", "options", "correctAnswerIndex"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    // The options array needs to be stringified to be stored in a single cell
+    return data.map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex]);
+}
+
 
 // Main Handler
 export default async function handler(req: any, res: any) {
@@ -124,45 +153,54 @@ export default async function handler(req: any, res: any) {
         const sheets = await getSheetsClient();
         console.log('Google Sheets client initialized.');
 
-        const tasks = [
+        // Tasks that clear and rewrite data daily
+        const dailyRefreshTasks = [
             { name: 'Notifications', scraper: scrapeKpscNotifications, range: 'Notifications!A2:E' },
             { name: 'LiveUpdates', scraper: scrapePscLiveUpdates, range: 'LiveUpdates!A2:D' },
             { name: 'CurrentAffairs', scraper: scrapeCurrentAffairs, range: 'CurrentAffairs!A2:D' },
             { name: 'GK', scraper: scrapeGk, range: 'GK!A2:C' },
         ];
 
-        for (const task of tasks) {
+        for (const task of dailyRefreshTasks) {
             try {
-                console.log(`Starting task: ${task.name}`);
-                // 1. Clear existing data
-                console.log(`Clearing sheet: ${task.range}`);
-                await sheets.spreadsheets.values.clear({
-                    spreadsheetId: SPREADSHEET_ID,
-                    range: task.range,
-                });
-                console.log(`Sheet cleared: ${task.range}`);
-
-                // 2. Scrape new data
-                console.log(`Scraping new data for ${task.name}`);
+                console.log(`Starting daily refresh task: ${task.name}`);
                 const newData = await task.scraper();
-                console.log(`Scraped ${newData.length} new items for ${task.name}`);
+                
+                await sheets.spreadsheets.values.clear({
+                    spreadsheetId: SPREADSHEET_ID, range: task.range,
+                });
 
-                // 3. Write new data
                 if (newData.length > 0) {
-                    console.log(`Writing new data to sheet: ${task.name}`);
                     await sheets.spreadsheets.values.update({
                         spreadsheetId: SPREADSHEET_ID,
-                        range: task.range.split('!')[0] + '!A2', // Start writing from row 2
+                        range: task.range.split('!')[0] + '!A2',
                         valueInputOption: 'USER_ENTERED',
                         requestBody: { values: newData },
                     });
-                     console.log(`Successfully wrote data for ${task.name}`);
                 }
+                console.log(`Successfully refreshed: ${task.name}`);
             } catch (scrapeError) {
                 console.error(`Error processing task ${task.name}:`, scrapeError);
-                // Continue to the next task even if one fails
             }
         }
+
+        // Task to append new questions to the Question Bank
+        try {
+            console.log("Starting task: Enrich QuestionBank");
+            const newQuestions = await generateNewQuestions();
+            if (newQuestions.length > 0) {
+                await sheets.spreadsheets.values.append({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: 'QuestionBank!A1',
+                    valueInputOption: 'USER_ENTERED',
+                    requestBody: { values: newQuestions },
+                });
+                console.log(`Successfully appended ${newQuestions.length} new questions to QuestionBank.`);
+            }
+        } catch(e) {
+            console.error("Error enriching QuestionBank:", e);
+        }
+
 
         console.log('All scraping tasks completed.');
         res.status(200).json({ message: 'Scraping and update successful.' });

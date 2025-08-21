@@ -1,7 +1,5 @@
-
-
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
@@ -221,4 +219,10 @@ export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [
   { slNo: '72', catNo: '022/2024', postName: 'ASSISTANT GR.II - DIRECT RECRUITMENT NCA FOR : MUSLIM', department: 'KERALA STATE HOUSING BOARD', examDate: '24/09/2025', syllabusLink: '#'},
   { slNo: '75', catNo: '449/2024', postName: 'FIELD OFFICER NCA FOR : SIUC NADAR', department: 'KERALA FOREST DEVELOPMENT CORPORATION LIMITED', examDate: '25/09/2025', syllabusLink: '#'},
   { slNo: '90', catNo: '576/2024', postName: 'ASSISTANT / AUDITOR--DIRECT RECRUITMENT', department: 'GOVT SECRETARIAT/KPSC/ADVOCATE GENERALS OFFICE etc.', examDate: '27/09/2025', syllabusLink: '#'},
+];
+
+export const MOCK_QUESTION_BANK: QuizQuestion[] = [
+    { topic: "LDC ക്ലർക്ക് - ചരിത്രം", question: "കേരളത്തിലെ ഏറ്റവും വലിയ നദി ഏതാണ്?", options: ["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"], correctAnswerIndex: 0 },
+    { topic: "LDC ക്ലർക്ക് - ചരിത്രം", question: "ഇന്ത്യയുടെ ദേശീയ പതാക രൂപകൽപ്പന ചെയ്തത് ആര്?", options: ["മഹാത്മാ ഗാന്ധി", "പിംഗലി വെങ്കയ്യ", "സർദാർ പട്ടേൽ", "ജവഹർലാൽ നെഹ്‌റു"], correctAnswerIndex: 1 },
+    { topic: "പൊതുവിജ്ഞാനം", question: "ലോകത്തിലെ ഏറ്റവും ഉയരം കൂടിയ കൊടുമുടി ഏതാണ്?", options: ["കെ2", "കാഞ്ചൻജംഗ", "എവറസ്റ്റ്", "നന്ദാദേവി"], correctAnswerIndex: 2 }
 ];

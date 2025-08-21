@@ -11,7 +11,6 @@ const NewsTicker: React.FC = () => {
         const fetchNotifications = async () => {
             try {
                 const data = await getNotifications();
-                // We only need the first few for a ticker
                 setNotifications(data.slice(0, 5)); 
             } catch (err) {
                 console.error("Failed to load notifications for ticker:", err);
@@ -23,34 +22,38 @@ const NewsTicker: React.FC = () => {
         fetchNotifications();
     }, []);
 
-    if (loading || notifications.length === 0) {
-        // Render a placeholder or nothing if it's loading or empty
+    if (loading) {
         return (
-            <div className="bg-slate-100 p-3 rounded-lg text-center text-sm text-slate-500 animate-pulse">
+            <div className="bg-slate-800 p-3 rounded-lg text-center text-sm text-slate-400 animate-pulse">
                 Loading latest news...
             </div>
         );
     }
     
-    // Duplicate the content to create a seamless loop
+    if (notifications.length === 0) {
+        return null;
+    }
+
     const tickerContent = [...notifications, ...notifications];
 
     return (
-        <section className="bg-white p-3 rounded-xl shadow-md border border-slate-200 flex items-center space-x-3 ticker-wrap">
-            <div className="flex-shrink-0 bg-indigo-100 text-indigo-700 font-bold px-3 py-1.5 rounded-md flex items-center">
+        <section className="bg-slate-800 text-white p-2 rounded-xl shadow-md flex items-center space-x-2 ticker-content">
+            <div className="flex-shrink-0 bg-red-600 font-bold px-3 py-1.5 rounded-md flex items-center">
                 <MegaphoneIcon className="h-5 w-5 mr-2" />
-                <span>പുതിയ വാർത്ത</span>
+                <span>Latest News</span>
             </div>
-            <div className="flex-grow ticker-move">
-                {tickerContent.map((item, index) => (
-                    <a 
-                        href={`/go?url=${encodeURIComponent(item.link)}`} 
-                        key={`${item.id}-${index}`} 
-                        className="mx-6 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
-                    >
-                        <span className="font-semibold">{item.title}</span> (Cat No: {item.categoryNumber}) - Last Date: {item.lastDate}
-                    </a>
-                ))}
+            <div className="flex-grow ticker-wrap">
+                <div className="ticker-move">
+                    {tickerContent.map((item, index) => (
+                        <a 
+                            href={`/go?url=${encodeURIComponent(item.link)}`} 
+                            key={`${item.id}-${index}`} 
+                            className="mx-6 text-slate-200 hover:text-white font-medium transition-colors whitespace-nowrap"
+                        >
+                           <span className="font-semibold">{item.title}</span> (Cat No: {item.categoryNumber}) - Last Date: {item.lastDate}
+                        </a>
+                    ))}
+                </div>
             </div>
         </section>
     );

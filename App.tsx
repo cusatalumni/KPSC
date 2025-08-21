@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -181,14 +177,16 @@ const App: React.FC = () => {
         return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;
     }
   }
+  
+  const isTestPage = currentPage === 'test';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-      <Header onNavigate={handleNavigate} />
-      <main className="container mx-auto px-4 py-8 flex-grow">
+      {!isTestPage && <Header onNavigate={handleNavigate} />}
+      <main className={`flex-grow ${isTestPage ? '' : 'container mx-auto px-4 py-8'}`}>
         {renderContent()}
       </main>
-      <Footer onNavigate={handleNavigate}/>
+      {!isTestPage && <Footer onNavigate={handleNavigate}/>}
     </div>
   );
 };

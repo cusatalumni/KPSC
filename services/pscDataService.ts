@@ -1,5 +1,5 @@
-import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem } from '../types';
-import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK } from '../constants';
+import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion } from '../types';
+import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK } from '../constants';
 
 const isVercel = import.meta.env.PROD;
 
@@ -34,4 +34,11 @@ export const getCurrentAffairs = (): Promise<CurrentAffairsItem[]> => {
 
 export const getGk = (): Promise<GkItem[]> => {
     return fetchWithMockFallback('/api/get-gk', MOCK_GK);
+};
+
+export const getQuestionsForTest = (topic: string, count: number): Promise<QuizQuestion[]> => {
+    const apiPath = `/api/get-questions?topic=${encodeURIComponent(topic)}&count=${count}`;
+    const mockFiltered = MOCK_QUESTION_BANK.filter(q => q.topic.includes(topic.split(' - ')[1] || topic));
+    const mockResult = mockFiltered.length > 0 ? mockFiltered.slice(0, count) : MOCK_QUESTION_BANK.slice(0, count);
+    return fetchWithMockFallback(apiPath, mockResult);
 };

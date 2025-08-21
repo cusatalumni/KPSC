@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuizQuestion, QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
@@ -16,6 +14,7 @@ const MOCKED_QUESTION: QuizQuestion = {
     question: "കേരളത്തിലെ ഏറ്റവും വലിയ നദി ഏതാണ്?",
     options: ["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"],
     correctAnswerIndex: 0,
+    topic: "പൊതുവിജ്ഞാനം"
 };
 
 
@@ -58,7 +57,7 @@ export const getDailyQuestion = async (): Promise<QuizQuestion> => {
     const parsedJson = JSON.parse(jsonString);
 
     if (parsedJson.options && parsedJson.options.length === 4 && typeof parsedJson.correctAnswerIndex === 'number') {
-        return parsedJson as QuizQuestion;
+        return { ...parsedJson, topic: "Daily Question" } as QuizQuestion;
     } else {
         console.error("Received malformed JSON from Gemini API for quiz, falling back to mock.", parsedJson);
         return MOCKED_QUESTION;
@@ -118,47 +117,3 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
         return MOCK_QUESTION_PAPERS;
     }
 }
-
-
-export const getMockTestQuestions = async (topic: string, count: number): Promise<QuizQuestion[]> => {
-    if (!ai) {
-        // Return a list of mocked questions if API is not available
-        return new Promise(resolve => setTimeout(() => resolve(Array(count).fill(MOCKED_QUESTION).map((q, i) => ({...q, question: `${q.question} (${i+1})`}))), 1000));
-    }
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Generate a JSON array of ${count} unique multiple-choice questions in Malayalam suitable for a Kerala PSC exam on the topic "${topic}". Each question object must have 'question' (string), 'options' (an array of 4 strings), and 'correctAnswerIndex' (a 0-based integer). Ensure questions are relevant and distinct.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            question: { type: Type.STRING },
-                            options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            correctAnswerIndex: { type: Type.INTEGER }
-                        },
-                        required: ["question", "options", "correctAnswerIndex"]
-                    }
-                }
-            }
-        });
-
-        const jsonString = response.text.trim();
-        const parsedJson = JSON.parse(jsonString);
-
-        if (Array.isArray(parsedJson) && parsedJson.length > 0) {
-            return parsedJson as QuizQuestion[];
-        } else {
-             console.error("Received malformed JSON from Gemini API for mock test, falling back to mock.", parsedJson);
-             return Array(count).fill(MOCKED_QUESTION);
-        }
-
-    } catch (error) {
-        console.error("Error fetching mock test from Gemini API:", error);
-        return Array(count).fill(MOCKED_QUESTION);
-    }
-};
