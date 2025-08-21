@@ -19,7 +19,7 @@ import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
 import PreviousPapersPage from './components/pages/PreviousPapersPage';
 import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
 import GkPage from './components/pages/GkPage';
-import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest } from './types';
+import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, PracticeTest } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
@@ -106,6 +106,18 @@ const App: React.FC = () => {
     setCurrentPage('test');
   };
   
+  const handleStartPracticeTest = (test: PracticeTest | { title: string, questions: number }, examTitle: string) => {
+    const testTitle = `${examTitle} - ${test.title}`;
+    setActiveTest({ 
+        title: testTitle, 
+        questionsCount: test.questions,
+        topic: testTitle, // Use the generated title as the topic for fetching questions
+        isPro: false // Assuming practice tests are not pro features
+    });
+    setPreviousPage('exam_details'); // Go back to exam details page
+    setCurrentPage('test');
+  };
+
   const handleStartQuiz = (category: QuizCategory) => {
     const quizTitle = category.title[language];
     setActiveTest({ 
@@ -153,7 +165,7 @@ const App: React.FC = () => {
             exam={selectedExam} 
             content={LDC_EXAM_CONTENT} // NOTE: Using mock LDC content for now
             onBack={() => handleNavigate('dashboard')}
-            onStartTest={(test) => handleStartTest(test as MockTest)} // Simplified handler
+            onStartTest={handleStartPracticeTest}
           />;
       case 'bookstore':
         return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
