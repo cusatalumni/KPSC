@@ -30,7 +30,20 @@ export const translations = {
     previousPapers: "Previous Papers",
     pscLive: "PSC Live",
     bookstore: "Bookstore",
-    examCalendar: "Exam Calendar"
+    examCalendar: "Exam Calendar",
+    adminPanel: "Admin Panel"
+  },
+  adminPanel: {
+      title: "Admin Panel",
+      subtitle: "Manually trigger the data scrapers.",
+      runDaily: "Run Daily Scraper",
+      runDailyDesc: "Updates Notifications, Live Updates, Current Affairs, GK, and generates new questions.",
+      runBooks: "Run Book Scraper",
+      runBooksDesc: "Updates the book list in the bookstore from Amazon.",
+      running: "Running...",
+      run: "Run",
+      success: "Success! The database has been updated.",
+      error: "An error occurred: "
   },
   dashboard: {
     hero: {
@@ -45,6 +58,9 @@ export const translations = {
         catNo: "Cat No",
         lastDate: "Last Date"
     }
+  },
+  bookOfTheDay: {
+    title: "Book of the Day"
   },
   bookstore: {
     title: "Bookstore",

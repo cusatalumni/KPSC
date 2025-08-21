@@ -30,7 +30,20 @@ export const translations = {
     previousPapers: "ചോദ്യപേപ്പറുകൾ",
     pscLive: "PSC Live",
     bookstore: "പുസ്തകശാല",
-    examCalendar: "പരീക്ഷാ കലണ്ടർ"
+    examCalendar: "പരീക്ഷാ കലണ്ടർ",
+    adminPanel: "അഡ്മിൻ പാനൽ"
+  },
+  adminPanel: {
+      title: "അഡ്മിൻ പാനൽ",
+      subtitle: "ഡാറ്റാ സ്ക്രാപ്പറുകൾ നേരിട്ട് പ്രവർത്തിപ്പിക്കുക.",
+      runDaily: "പ്രതിദിന സ്ക്രാപ്പർ പ്രവർത്തിപ്പിക്കുക",
+      runDailyDesc: "അറിയിപ്പുകൾ, ലൈവ് അപ്‌ഡേറ്റുകൾ, ആനുകാലികം, GK, പുതിയ ചോദ്യങ്ങൾ എന്നിവ പുതുക്കുന്നു.",
+      runBooks: "പുസ്തക സ്ക്രാപ്പർ പ്രവർത്തിപ്പിക്കുക",
+      runBooksDesc: "പുസ്തകശാലയിലെ പുസ്തകങ്ങളുടെ ലിസ്റ്റ് Amazon-ൽ നിന്ന് പുതുക്കുന്നു.",
+      running: "പ്രവർത്തിക്കുന്നു...",
+      run: "പ്രവർത്തിപ്പിക്കുക",
+      success: "വിജയകരം! ഡാറ്റാബേസ് പുതുക്കിയിരിക്കുന്നു.",
+      error: "ഒരു പിശക് സംഭവിച്ചു: "
   },
   dashboard: {
     hero: {
@@ -45,6 +58,9 @@ export const translations = {
         catNo: "Cat No",
         lastDate: "Last Date"
     }
+  },
+  bookOfTheDay: {
+    title: "ദിവസത്തെ പുസ്തകം"
   },
   bookstore: {
     title: "പുസ്തകശാല",

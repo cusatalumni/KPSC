@@ -119,7 +119,11 @@ export const LDC_EXAM_CONTENT: ExamPageContent = {
     { id: 'pt1', title: 'ചരിത്രം', questions: 20, duration: 15 },
     { id: 'pt2', title: 'ഭൂമിശാസ്ത്രം', questions: 20, duration: 15 },
     { id: 'pt3', title: 'ഇന്ത്യൻ ഭരണഘടന', questions: 25, duration: 20 },
-    { id: 'pt4', title: 'ലഘുഗണിതം', questions: 15, duration: 25 },
+    { id: 'pt-math1', title: 'സംഖ്യകളും അടിസ്ഥാന ക്രിയകളും', questions: 15, duration: 20 },
+    { id: 'pt-math2', title: 'ശതമാനം', questions: 15, duration: 20 },
+    { id: 'pt-math3', title: 'ലാഭവും നഷ്ടവും', questions: 15, duration: 20 },
+    { id: 'pt-math4', title: 'സമയവും ജോലിയും', questions: 15, duration: 20 },
+    { id: 'pt-math5', title: 'അംശബന്ധവും അനുപാതവും', questions: 15, duration: 20 },
   ],
   studyNotes: [
     { id: 'sn1', title: 'കേരള നവോത്ഥാന നായകർ PDF', link: '#' },
@@ -156,16 +160,11 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
   }
 ];
 
-export const BOOKSTORE_DATA: Book[] = [
+export const MOCK_BOOKS_DATA: Book[] = [
   { id: '1', title: 'LDC റാങ്ക് ഫയൽ', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81g0dn6S4LL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CK13J51N?tag=httpcodingonl-21' },
   { id: '2', title: 'PSC ബുള്ളറ്റിൻ ചോദ്യബാങ്ക്', author: 'Talent Academy', imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=httpcodingonl-21' },
   { id: '3', title: 'ഇന്ത്യൻ ഭരണഘടന', author: 'M Laxmikanth (Malayalam)', imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=httpcodingonl-21' },
   { id: '4', title: 'കേരള ചരിത്രം', author: 'E. Sreedhara Menon', imageUrl: 'https://m.media-amazon.com/images/I/71N-T5DUaWL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/8126484351?tag=httpcodingonl-21' },
-  { id: '5', title: 'LGS റാങ്ക് ഫയൽ (Latest)', author: 'Veto Publications', imageUrl: 'https://m.media-amazon.com/images/I/71q5218FjML._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D3754271?tag=httpcodingonl-21' },
-  { id: '6', title: 'Comprehensive Guide to PSC English', author: 'V. K. Sujith Kumar', imageUrl: 'https://m.media-amazon.com/images/I/61s+iK-p5SL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B084M1942G?tag=httpcodingonl-21' },
-  { id: '7', title: 'മനോരമ ഇയർബുക്ക് 2024', author: 'Manorama Publications', imageUrl: 'https://m.media-amazon.com/images/I/71P4a+2Yv-L._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CPJ15NDR?tag=httpcodingonl-21' },
-  { id: '8', title: 'മാതൃഭൂമി ഇയർബുക്ക് പ്ലസ് 2024', author: 'Mathrubhumi', imageUrl: 'https://m.media-amazon.com/images/I/81L7-K9+j-L._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CNGB19J4?tag=httpcodingonl-21' },
-  { id: '9', title: 'Lucent\'s സാമാന്യ വിജ്ഞാനം', author: 'Lucent Publications', imageUrl: 'https://m.media-amazon.com/images/I/61YZ-NMC6rL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/939019233X?tag=httpcodingonl-21' },
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
@@ -256,5 +255,15 @@ export const MOCK_QUESTION_BANK: QuizQuestion[] = [
     { topic: "English Grammar", question: "A group of lions is called a ____.", options: ["herd", "flock", "pride", "pack"], correctAnswerIndex: 2 },
     { topic: "ജനപ്രിയ ശാസ്ത്രം", question: "മനുഷ്യ ശരീരത്തിലെ ഏറ്റവും വലിയ അവയവം ഏതാണ്?", options: ["ഹൃദയം", "കരൾ", "തലച്ചോറ്", "ത്വക്ക്"], correctAnswerIndex: 3 },
     { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2", question: "ഗുരുവായൂർ സത്യാഗ്രഹത്തിന് നേതൃത്വം നൽകിയത് ആരായിരുന്നു?", options: ["എ.കെ. ഗോപാലൻ", "കെ. കേളപ്പൻ", "മന്നത്ത് പത്മനാഭൻ", "ടി.കെ. മാധവൻ"], correctAnswerIndex: 1 },
-    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2", question: "ഇന്ത്യയിലെ ഏറ്റവും നീളം കൂടിയ നദി ഏതാണ്?", options: ["ഗംഗ", "യമുന", "ഗോദാവരി", "ബ്രഹ്മപുത്ര"], correctAnswerIndex: 0 }
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2", question: "ഇന്ത്യയിലെ ഏറ്റവും നീളം കൂടിയ നദി ഏതാണ്?", options: ["ഗംഗ", "യമുന", "ഗോദാവരി", "ബ്രഹ്മപുത്ര"], correctAnswerIndex: 0 },
+    
+    // New Topic-wise Maths Questions
+    { topic: "LDC ക്ലർക്ക് - സംഖ്യകളും അടിസ്ഥാന ക്രിയകളും", question: "1 മുതൽ 50 വരെയുള്ള എണ്ണൽ സംഖ്യകളുടെ തുക എത്ര?", options: ["1275", "1250", "1300", "1200"], correctAnswerIndex: 0 },
+    { topic: "LDC ക്ലർക്ക് - സംഖ്യകളും അടിസ്ഥാന ക്രിയകളും", question: "ഏറ്റവും ചെറിയ അഭാജ്യ സംഖ്യ ഏതാണ്?", options: ["0", "1", "2", "3"], correctAnswerIndex: 2 },
+    { topic: "LDC ക്ലർക്ക് - ശതമാനം", question: "500-ന്റെ 20% എത്രയാണ്?", options: ["100", "50", "20", "200"], correctAnswerIndex: 0 },
+    { topic: "LDC ക്ലർക്ക് - ശതമാനം", question: "ഒരു സംഖ്യയുടെ 40% എന്നത് 80 ആയാൽ സംഖ്യ ഏത്?", options: ["100", "150", "200", "320"], correctAnswerIndex: 2 },
+    { topic: "LDC ക്ലർക്ക് - ലാഭവും നഷ്ടവും", question: "800 രൂപയ്ക്ക് വാങ്ങിയ ഒരു സാധനം 1000 രൂപയ്ക്ക് വിറ്റാൽ ലാഭ ശതമാനം എത്ര?", options: ["20%", "25%", "30%", "15%"], correctAnswerIndex: 1 },
+    { topic: "LDC ക്ലർക്ക് - ലാഭവും നഷ്ടവും", question: "ഒരു കച്ചവടക്കാരൻ 10 രൂപയ്ക്ക് 11 ഓറഞ്ച് വാങ്ങി, 11 രൂപയ്ക്ക് 10 ഓറഞ്ച് വിറ്റാൽ ലാഭ ശതമാനം എത്ര?", options: ["10%", "11%", "21%", "1%"], correctAnswerIndex: 2 },
+    { topic: "LDC ക്ലർക്ക് - സമയവും ജോലിയും", question: "A ഒരു ജോലി 10 ദിവസം കൊണ്ടും B അതേ ജോലി 15 ദിവസം കൊണ്ടും ചെയ്യുമെങ്കിൽ, രണ്ടുപേരും ചേർന്ന് ആ ജോലി എത്ര ദിവസം കൊണ്ട് തീർക്കും?", options: ["5", "6", "8", "12.5"], correctAnswerIndex: 1 },
+    { topic: "LDC ക്ലർക്ക് - അംശബന്ധവും അനുപാതവും", question: "3:5 എന്ന അംശബന്ധത്തിന് തുല്യമായത് താഴെ പറയുന്നവയിൽ ഏതാണ്?", options: ["6:8", "9:15", "5:3", "12:18"], correctAnswerIndex: 1 }
 ];

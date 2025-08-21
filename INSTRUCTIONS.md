@@ -7,12 +7,13 @@ Follow these steps to configure your application to use Google Sheets for storin
 ### Step 1: Create a Google Sheet
 1. Go to [sheets.google.com](https://sheets.google.com) and create a new, blank spreadsheet.
 2. Name it something memorable, like "Kerala PSC Guru Data".
-3. **Crucially, create five tabs at the bottom and name them exactly as follows (case-sensitive):**
+3. **Crucially, create six tabs at the bottom and name them exactly as follows (case-sensitive):**
     - `Notifications`
     - `LiveUpdates`
     - `CurrentAffairs`
     - `GK`
     - `QuestionBank`
+    - `Bookstore`
 
 4. In the `Notifications` tab, add these headers in the first row, one in each cell from A1 to E1:
     `id`, `title`, `categoryNumber`, `lastDate`, `link`
@@ -29,7 +30,10 @@ Follow these steps to configure your application to use Google Sheets for storin
 8. In the `QuestionBank` tab, add these headers:
     `id`, `topic`, `question`, `options`, `correctAnswerIndex`
 
-9. From the URL of your spreadsheet, copy the **Spreadsheet ID**. It's the long string of characters between `/d/` and `/edit`.
+9. In the `Bookstore` tab, add these headers:
+    `id`, `title`, `author`, `imageUrl`, `amazonLink`
+
+10. From the URL of your spreadsheet, copy the **Spreadsheet ID**. It's the long string of characters between `/d/` and `/edit`.
    - Example URL: `https://docs.google.com/spreadsheets/d/THIS_IS_THE_ID/edit`
    - Keep this ID handy. You will need it for your environment variables.
 
@@ -72,7 +76,7 @@ Now, you need to add the credentials and IDs to your Vercel project so the app c
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | `SPREADSHEET_ID`             | The ID you copied from your Google Sheet URL in Step 1.                                                                                                           | Tells the app which sheet to connect to.                                          |
 | `GOOGLE_CLIENT_EMAIL`        | The `client_email` value from your downloaded `.json` file.                                                                                                       | The "username" for your service account.                                          |
-| `GOOGLE_PRIVATE_KEY`         | The `private_key` value from your `.json` file. Copy everything inside the quotes, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` parts. | The "password" for your service account. It will contain `\n` characters; this is correct. |
+| `GOOGLE_PRIVATE_KEY`         | The `private_key` value from your downloaded `.json` file. Copy everything inside the quotes, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` parts. | The "password" for your service account. It will contain `\n` characters; this is correct. |
 | `CRON_SECRET`                | Generate a strong, random string of text (e.g., using a password generator). You can create one [here](https://www.lastpass.com/features/password-generator).        | A secret key to ensure only Vercel's cron service can run your scraping function. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk key (if not already set).                                                                                                                              | Clerk frontend key.                                                               |
 | `VITE_API_KEY`               | Your Gemini API key (if not already set).                                                                                                                         | Google Gemini key for the AI scraper.                                             |

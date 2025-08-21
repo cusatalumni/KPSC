@@ -1,12 +1,36 @@
-import React from 'react';
-import { BOOKSTORE_DATA } from '../constants';
+import React, { useState, useEffect } from 'react';
+import { getBooks } from '../services/pscDataService';
+import type { Book } from '../types';
 import { BookOpenIcon } from './icons/BookOpenIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const RecommendedBooks: React.FC = () => {
   const { t } = useTranslation();
-  // Show a selection of books, e.g., the first two
-  const recommended = BOOKSTORE_DATA.slice(0, 2);
+  const [recommended, setRecommended] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const allBooks = await getBooks();
+        setRecommended(allBooks.slice(0, 2)); // Take the first 2 books
+      } catch (error) {
+        console.error("Failed to fetch recommended books:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBooks();
+  }, []);
+
+  if (loading) {
+    // Optional: add a loading skeleton here if desired
+    return null;
+  }
+  
+  if (recommended.length === 0) {
+    return null; // Don't render the section if no books are found
+  }
 
   return (
     <section>

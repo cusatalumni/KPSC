@@ -1,0 +1,220 @@
+// Path: /api/_lib/scraper-service.ts
+
+import { GoogleAuth } from 'google-auth-library';
+import { google } from 'googleapis';
+import { GoogleGenAI, Type } from "@google/genai";
+import { QUIZ_CATEGORIES } from '../../constants';
+
+// Initialize Gemini AI
+const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const AFFILIATE_TAG = 'tag=httpcodingonl-21';
+
+async function getSheetsClient() {
+    const auth = new GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        credentials: {
+            client_email: process.env.GOOGLE_CLIENT_EMAIL,
+            private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+        },
+    });
+    const client = await auth.getClient();
+    return google.sheets({ version: 'v4', auth: client as any });
+}
+
+// --- Individual Scraping Functions ---
+
+async function scrapeKpscNotifications() {
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 10 most recent notifications. For each, extract: full title, category number, last date (DD-MM-YYYY), and direct URL. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, title: { type: Type.STRING },
+                        categoryNumber: { type: Type.STRING }, lastDate: { type: Type.STRING },
+                        link: { type: Type.STRING },
+                    }, required: ["id", "title", "categoryNumber", "lastDate", "link"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    return data.map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
+}
+
+async function scrapePscLiveUpdates() {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Scrape the 15 most recent updates from keralapsc.gov.in (Ranked Lists, Latest Updates, Notifications). For each, provide title, full URL, section, and publication date (YYYY-MM-DD). Return as JSON array.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        title: { type: Type.STRING }, url: { type: Type.STRING },
+                        section: { type: Type.STRING }, published_date: { type: Type.STRING }
+                    }, required: ["title", "url", "section", "published_date"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    return data.map((item: any) => [item.title, item.url, item.section, item.published_date]);
+}
+
+async function scrapeCurrentAffairs() {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Generate 10 recent, relevant current affairs topics for Kerala PSC exams in Malayalam. For each, provide a unique ID, a concise title, the source (e.g., 'മാതൃഭൂമി'), and today's date (YYYY-MM-DD). Return as JSON array.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, title: { type: Type.STRING },
+                        source: { type: Type.STRING }, date: { type: Type.STRING }
+                    }, required: ["id", "title", "source", "date"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    return data.map((item: any) => [item.id, item.title, item.source, item.date]);
+}
+
+async function scrapeGk() {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Generate 25 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as JSON array.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, fact: { type: Type.STRING },
+                        category: { type: Type.STRING }
+                    }, required: ["id", "fact", "category"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    return data.map((item: any) => [item.id, item.fact, item.category]);
+}
+
+async function generateNewQuestions() {
+    const topics = QUIZ_CATEGORIES.map(c => c.title.ml);
+    const prompt = `Generate a JSON array of ${topics.length * 2} unique multiple-choice questions in Malayalam suitable for a Kerala PSC exam. 
+    Distribute them among the following topics: ${topics.join(', ')}.
+    Each question object must have 'id' (a unique uuid string), 'topic' (the Malayalam topic string from the list), 'question' (string), 'options' (an array of 4 strings), and 'correctAnswerIndex' (a 0-based integer). Ensure questions are relevant and distinct.`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash', contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, topic: { type: Type.STRING },
+                        question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        correctAnswerIndex: { type: Type.INTEGER }
+                    }, required: ["id", "topic", "question", "options", "correctAnswerIndex"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    return data.map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex]);
+}
+
+async function scrapeAmazonBooks() {
+    const prompt = `Search amazon.in for the top 12 best-selling and most relevant Kerala PSC exam preparation books. For each, extract a unique ID, title, author, a high-quality imageUrl, and the full product amazonLink. Crucially, for each amazonLink, you MUST append the affiliate tracking code "${AFFILIATE_TAG}". If the URL already has a '?', append with '&', otherwise append with '?'. Return as a JSON array.`;
+
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash", contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, title: { type: Type.STRING }, author: { type: Type.STRING },
+                        imageUrl: { type: Type.STRING }, amazonLink: { type: Type.STRING },
+                    }, required: ["id", "title", "author", "imageUrl", "amazonLink"]
+                }
+            }
+        }
+    });
+    const data = JSON.parse(response.text);
+    return data.map((item: any) => [item.id, item.title, item.author, item.imageUrl, item.amazonLink]);
+}
+
+
+// --- Main Orchestrator Functions ---
+
+export async function runDailyUpdateScrapers() {
+    const sheets = await getSheetsClient();
+    console.log('Google Sheets client initialized for daily scrapers.');
+
+    const dailyRefreshTasks = [
+        { name: 'Notifications', scraper: scrapeKpscNotifications, range: 'Notifications!A2:E' },
+        { name: 'LiveUpdates', scraper: scrapePscLiveUpdates, range: 'LiveUpdates!A2:D' },
+        { name: 'CurrentAffairs', scraper: scrapeCurrentAffairs, range: 'CurrentAffairs!A2:D' },
+        { name: 'GK', scraper: scrapeGk, range: 'GK!A2:C' },
+    ];
+
+    for (const task of dailyRefreshTasks) {
+        try {
+            console.log(`Starting daily refresh task: ${task.name}`);
+            const newData = await task.scraper();
+            await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: task.range });
+            if (newData.length > 0) {
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId: SPREADSHEET_ID, range: task.range.split('!')[0] + '!A2',
+                    valueInputOption: 'USER_ENTERED', requestBody: { values: newData },
+                });
+            }
+            console.log(`Successfully refreshed: ${task.name}`);
+        } catch (scrapeError) {
+            console.error(`Error processing task ${task.name}:`, scrapeError);
+        }
+    }
+
+    try {
+        console.log("Starting task: Enrich QuestionBank");
+        const newQuestions = await generateNewQuestions();
+        if (newQuestions.length > 0) {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID, range: 'QuestionBank!A1',
+                valueInputOption: 'USER_ENTERED', requestBody: { values: newQuestions },
+            });
+            console.log(`Successfully appended ${newQuestions.length} new questions.`);
+        }
+    } catch(e) {
+        console.error("Error enriching QuestionBank:", e);
+    }
+
+    console.log('All daily scraping tasks completed.');
+}
+
+
+export async function runBookScraper() {
+    const sheets = await getSheetsClient();
+    console.log('Google Sheets client initialized for book scraper.');
+    const range = 'Bookstore!A2:E';
+    
+    console.log('Starting monthly task: Scrape Books');
+    const newBookData = await scrapeAmazonBooks();
+    
+    await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range });
+    if (newBookData.length > 0) {
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID, range: 'Bookstore!A2',
+            valueInputOption: 'USER_ENTERED', requestBody: { values: newBookData },
+        });
+    }
+    console.log(`Successfully scraped and stored ${newBookData.length} books.`);
+}

@@ -1,5 +1,5 @@
-import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion } from '../types';
-import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK } from '../constants';
+import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book } from '../types';
+import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA } from '../constants';
 
 const isVercel = import.meta.env.PROD;
 
@@ -36,9 +36,43 @@ export const getGk = (): Promise<GkItem[]> => {
     return fetchWithMockFallback('/api/get-gk', MOCK_GK);
 };
 
+export const getBooks = (): Promise<Book[]> => {
+    return fetchWithMockFallback('/api/get-books', MOCK_BOOKS_DATA);
+};
+
 export const getQuestionsForTest = (topic: string, count: number): Promise<QuizQuestion[]> => {
     const apiPath = `/api/get-questions?topic=${encodeURIComponent(topic)}&count=${count}`;
     const mockFiltered = MOCK_QUESTION_BANK.filter(q => q.topic.includes(topic.split(' - ')[1] || topic));
     const mockResult = mockFiltered.length > 0 ? mockFiltered.slice(0, count) : MOCK_QUESTION_BANK.slice(0, count);
     return fetchWithMockFallback(apiPath, mockResult);
+};
+
+// --- Admin Functions ---
+
+const triggerScraper = async (apiPath: string, token: string | null): Promise<any> => {
+    if (!token) {
+        throw new Error("Authentication token not available.");
+    }
+    const response = await fetch(apiPath, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Request failed with status ${response.status}`);
+    }
+
+    return response.json();
+};
+
+export const triggerDailyScraper = (token: string | null) => {
+    return triggerScraper('/api/run-daily-scraper', token);
+};
+
+export const triggerBookScraper = (token: string | null) => {
+    return triggerScraper('/api/run-monthly-book-scraper', token);
 };

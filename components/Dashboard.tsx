@@ -11,8 +11,9 @@ import PreviousPapersWidget from './PreviousPapersWidget';
 import CurrentAffairsWidget from './CurrentAffairsWidget';
 import GkWidget from './GkWidget';
 import NewsTicker from './NewsTicker';
+import BookOfTheDayWidget from './BookOfTheDayWidget';
 import type { Exam } from '../types';
-import type { Page } from '../App';
+import type { Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
 interface DashboardProps {
@@ -51,6 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) =
           <NotificationsWidget />
         </div>
         <aside className="space-y-8">
+           <BookOfTheDayWidget />
            <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
            <GkWidget onNavigate={() => onNavigate('gk')} />
            <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />

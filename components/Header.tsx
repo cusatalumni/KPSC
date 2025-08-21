@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/clerk-react';
 import { NAV_LINKS } from '../constants';
 import { LogoIcon } from './icons/LogoIcon';
-import type { Page } from '../App';
+import type { Page } from '../types';
 import AiBadge from './AiBadge';
 import { useTranslation } from '../contexts/LanguageContext';
 import { Bars3Icon } from './icons/Bars3Icon';
 import { XMarkIcon } from './icons/XMarkIcon';
+import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 
 interface HeaderProps {
     onNavigate: (page: Page) => void;
@@ -15,6 +16,8 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { t, language, setLanguage } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
   const toggleLanguage = () => {
     setLanguage(language === 'ml' ? 'en' : 'ml');
@@ -24,6 +27,9 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     onNavigate(page);
     setIsMenuOpen(false);
   }
+
+  const adminButtonClasses = "flex items-center space-x-2 text-slate-600 bg-yellow-100 hover:bg-yellow-200 font-bold transition duration-200 px-3 py-2 rounded-md";
+  const mobileAdminButtonClasses = "flex items-center space-x-2 text-slate-700 bg-yellow-100 hover:bg-yellow-200 text-left font-bold p-3 rounded-md transition duration-200";
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -51,6 +57,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 {t(link.nameKey)}
               </button>
             ))}
+            {isAdmin && (
+                <button onClick={() => handleNavClick('admin_panel')} className={adminButtonClasses}>
+                    <ShieldCheckIcon className="h-5 w-5" />
+                    <span>{t('nav.adminPanel')}</span>
+                </button>
+            )}
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -95,6 +107,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                         {t(link.nameKey)}
                     </button>
                 ))}
+                {isAdmin && (
+                    <button onClick={() => handleNavClick('admin_panel')} className={mobileAdminButtonClasses}>
+                         <ShieldCheckIcon className="h-5 w-5" />
+                         <span>{t('nav.adminPanel')}</span>
+                    </button>
+                )}
             </nav>
             <div className="mt-4 pt-4 border-t border-slate-200">
                 <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-semibold px-3 py-3 rounded-md transition-colors mb-4">

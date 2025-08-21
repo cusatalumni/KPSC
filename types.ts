@@ -130,3 +130,23 @@ export interface ActiveTest {
   topic: string;
   isPro?: boolean;
 }
+
+export type Page = 
+  | 'dashboard' 
+  | 'exam_details' 
+  | 'test' 
+  | 'results' 
+  | 'bookstore' 
+  | 'about' 
+  | 'privacy' 
+  | 'terms' 
+  | 'disclosure'
+  | 'exam_calendar'
+  | 'quiz_home'
+  | 'mock_test_home'
+  | 'upgrade'
+  | 'psc_live_updates'
+  | 'previous_papers'
+  | 'current_affairs'
+  | 'gk'
+  | 'admin_panel';

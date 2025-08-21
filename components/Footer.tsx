@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Page } from '../App';
+import type { Page } from '../types';
 import { FacebookIcon } from './icons/FacebookIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 

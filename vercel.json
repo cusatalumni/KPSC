@@ -3,6 +3,10 @@
     {
       "path": "/api/scrape-updates",
       "schedule": "30 23 * * *"
+    },
+    {
+      "path": "/api/scrape-books",
+      "schedule": "0 0 1 * *"
     }
   ],
   "rewrites": [

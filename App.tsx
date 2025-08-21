@@ -19,29 +19,12 @@ import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
 import PreviousPapersPage from './components/pages/PreviousPapersPage';
 import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
 import GkPage from './components/pages/GkPage';
+import AdminPage from './components/pages/AdminPage';
 import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, PracticeTest } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
-
-export type Page = 
-  | 'dashboard' 
-  | 'exam_details' 
-  | 'test' 
-  | 'results' 
-  | 'bookstore' 
-  | 'about' 
-  | 'privacy' 
-  | 'terms' 
-  | 'disclosure'
-  | 'exam_calendar'
-  | 'quiz_home'
-  | 'mock_test_home'
-  | 'upgrade'
-  | 'psc_live_updates'
-  | 'previous_papers'
-  | 'current_affairs'
-  | 'gk';
+import type { Page } from './types';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -193,6 +176,8 @@ const App: React.FC = () => {
         return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
       case 'gk':
         return <GkPage onBack={() => handleNavigate('dashboard')} />;
+      case 'admin_panel':
+        return <AdminPage onBack={() => handleNavigate('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;
