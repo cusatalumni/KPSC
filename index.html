@@ -15,19 +15,19 @@
       }
       /* News Ticker Animation */
       .ticker-wrap {
-        display: flex;
+        flex-grow: 1;
         overflow: hidden;
       }
       .ticker-move {
         display: flex;
-        animation: ticker 40s linear infinite;
+        animation: ticker-scroll 40s linear infinite;
       }
       .ticker-content:hover .ticker-move {
         animation-play-state: paused;
       }
-      @keyframes ticker {
+      @keyframes ticker-scroll {
         0% {
-          transform: translateX(0%);
+          transform: translateX(0);
         }
         100% {
           transform: translateX(-50%);
@@ -61,7 +61,7 @@
   "imports": {
     "react": "https://esm.sh/react@^18.2.0",
     "react-dom/client": "https://esm.sh/react-dom@^18.2.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@^0.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@^0.19.0",
     "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@^5.0.0",
     "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
     "react/": "https://esm.sh/react@^19.1.1/",

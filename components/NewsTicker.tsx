@@ -34,6 +34,7 @@ const NewsTicker: React.FC = () => {
         return null;
     }
 
+    // Duplicate content to create a seamless loop
     const tickerContent = [...notifications, ...notifications];
 
     return (
@@ -42,7 +43,7 @@ const NewsTicker: React.FC = () => {
                 <MegaphoneIcon className="h-5 w-5 mr-2" />
                 <span>Latest News</span>
             </div>
-            <div className="flex-grow ticker-wrap">
+            <div className="ticker-wrap">
                 <div className="ticker-move">
                     {tickerContent.map((item, index) => (
                         <a 
