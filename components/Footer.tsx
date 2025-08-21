@@ -31,7 +31,9 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
              <div className="mt-4">
                 <p className="font-semibold text-sm">Powered by Annapoorna Exam App</p>
                 <a 
-                  href={`/go?url=${encodeURIComponent(annapoornaUrl)}`}
+                  href={annapoornaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-xs text-slate-400 hover:text-white transition"
                 >
                   An Annapoorna infotech venture
@@ -53,7 +55,9 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h3 className="font-bold text-lg mb-2">{t('footer.socialTitle')}</h3>
             <a 
-              href={`/go?url=${encodeURIComponent(facebookUrl)}`}
+              href={facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center space-x-2 text-slate-300 hover:text-white transition"
             >
               <FacebookIcon className="h-5 w-5" />

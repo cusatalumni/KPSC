@@ -57,7 +57,7 @@ const NotificationsWidget: React.FC = () => {
             ) : (
                 <div className="space-y-1 -mr-2 pr-2 flex-grow max-h-80 overflow-y-auto">
                     {notifications.map(item => (
-                        <a href={`/go?url=${encodeURIComponent(item.link)}`} key={item.id} className="block p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">
+                        <a href={item.link} target="_blank" rel="noopener noreferrer" key={item.id} className="block p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">
                             <h4 className="font-semibold text-slate-700 leading-snug">{item.title}</h4>
                             <div className="flex items-center justify-between text-sm text-slate-500 mt-2">
                                 <span>{t('dashboard.notifications.catNo')}: <span className="font-medium text-slate-700 font-mono">{item.categoryNumber}</span></span>

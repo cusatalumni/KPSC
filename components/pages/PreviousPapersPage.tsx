@@ -93,7 +93,7 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             ) : results.length > 0 && (
                 <div className="space-y-4">
                     {results.map((item, index) => (
-                        <a href={`/go?url=${encodeURIComponent(item.url)}`} key={index} className="block bg-white p-5 rounded-xl shadow-md border border-slate-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 group">
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" key={index} className="block bg-white p-5 rounded-xl shadow-md border border-slate-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 group">
                             <div className="flex justify-between items-start gap-4">
                                 <h3 className="text-lg font-semibold text-slate-800 group-hover:text-indigo-600 flex-1">{item.title}</h3>
                                 <p className="text-sm text-slate-500 font-medium whitespace-nowrap bg-slate-100 px-2 py-1 rounded">{t('date')}: {item.date}</p>

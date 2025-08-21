@@ -60,7 +60,7 @@ const BookOfTheDayWidget: React.FC = () => {
                     <a 
                       href={book.amazonLink} 
                       target="_blank" 
-                      rel="noopener noreferrer" 
+                      rel="noopener noreferrer sponsored" 
                       className="inline-block text-sm text-center bg-indigo-50 text-indigo-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition duration-200"
                     >
                         {t('bookstore.buyOnAmazon')}

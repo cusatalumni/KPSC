@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/clerk-react';
+import { SignInButton, UserButton, useUser } from '@clerk/clerk-react';
 import { NAV_STRUCTURE } from '../constants';
 import { LogoIcon } from './icons/LogoIcon';
 import type { Page } from '../types';
@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { t, language, setLanguage } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const { user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const isAdmin = user?.publicMetadata?.role === 'admin';
   const navRef = useRef<HTMLElement>(null);
 
@@ -50,6 +50,53 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
   const adminButtonClasses = "flex items-center space-x-2 text-slate-600 bg-yellow-100 hover:bg-yellow-200 font-bold transition duration-200 px-3 py-2 rounded-md";
   const mobileAdminButtonClasses = "flex items-center space-x-2 text-slate-700 bg-yellow-100 hover:bg-yellow-200 text-left font-bold p-3 rounded-md transition duration-200";
+
+  const renderAuthControls = () => {
+    if (!isLoaded) {
+      return <div className="h-10 w-24 bg-slate-200 rounded-full animate-pulse"></div>;
+    }
+    if (isSignedIn) {
+      return (
+        <div className="flex items-center space-x-3">
+          <span className="hidden lg:inline text-sm font-medium text-slate-700">
+            {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
+          </span>
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      );
+    }
+    return (
+      <SignInButton mode="modal">
+        <button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-5 py-2 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out">
+          {t('login')}
+        </button>
+      </SignInButton>
+    );
+  };
+
+  const renderMobileAuthControls = () => {
+    if (!isLoaded) {
+      return <div className="h-12 w-full bg-slate-200 rounded-lg animate-pulse"></div>;
+    }
+    if (isSignedIn) {
+      return (
+        <div className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50">
+          <span className="font-semibold text-slate-700">
+            {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
+          </span>
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      );
+    }
+    return (
+      <SignInButton mode="modal">
+        <button className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-5 py-3 rounded-lg shadow-lg">
+          {t('login')}
+        </button>
+      </SignInButton>
+    );
+  };
+
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -106,21 +153,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             </button>
             
             <div className="hidden md:block">
-              <SignedIn>
-                <div className="flex items-center space-x-3">
-                  <span className="hidden lg:inline text-sm font-medium text-slate-700">
-                    {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
-                  </span>
-                  <UserButton afterSignOutUrl="/" />
-                </div>
-              </SignedIn>
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-5 py-2 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out">
-                    {t('login')}
-                  </button>
-                </SignInButton>
-              </SignedOut>
+              {renderAuthControls()}
             </div>
             
              {/* Mobile Menu Button */}
@@ -176,21 +209,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-semibold px-3 py-3 rounded-md transition-colors">
                     Switch to {language === 'ml' ? 'English' : 'മലയാളം'}
                 </button>
-                <SignedIn>
-                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50">
-                        <span className="font-semibold text-slate-700">
-                            {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
-                        </span>
-                        <UserButton afterSignOutUrl="/" />
-                    </div>
-                </SignedIn>
-                <SignedOut>
-                    <SignInButton mode="modal">
-                        <button className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-5 py-3 rounded-lg shadow-lg">
-                            {t('login')}
-                        </button>
-                    </SignInButton>
-                </SignedOut>
+                {renderMobileAuthControls()}
             </div>
         </div>
       )}

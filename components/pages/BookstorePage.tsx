@@ -56,7 +56,7 @@ const BookCard: React.FC<{ book: Book }> = ({ book }) => {
                 <a 
                     href={book.amazonLink}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener noreferrer sponsored"
                     className="mt-auto w-full text-center bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200"
                 >
                     Buy on Amazon

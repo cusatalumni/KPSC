@@ -43,7 +43,7 @@ const BookItem: React.FC<{ book: Book }> = ({ book }) => {
                 <a 
                     href={book.amazonLink}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener noreferrer sponsored"
                     className="inline-block mt-2 text-sm text-center bg-indigo-600 text-white font-bold px-3 py-1 rounded-md hover:bg-indigo-700 transition duration-200"
                 >
                     {t('bookstore.buyOnAmazon')}

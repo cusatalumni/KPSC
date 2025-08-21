@@ -1,0 +1,29 @@
+This file contains the list of books and their associated links from the application's mock data for manual verification.
+
+---
+
+1. Title: LDC റാങ്ക് ഫയൽ
+   Author: Lakshya Publications
+   Image URL: https://m.media-amazon.com/images/I/81g0dn6S4LL._SY466_.jpg
+   Amazon Link: https://www.amazon.in/dp/B0CYX5W3C3?tag=httpcodingonl-21
+
+---
+
+2. Title: PSC ബുള്ളറ്റിൻ ചോദ്യബാങ്ക്
+   Author: Talent Academy
+   Image URL: https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg
+   Amazon Link: https://www.amazon.in/dp/B0D5N4G8D9?tag=httpcodingonl-21
+
+---
+
+3. Title: ഇന്ത്യൻ ഭരണഘടന
+   Author: M Laxmikanth (Malayalam)
+   Image URL: https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg
+   Amazon Link: https://www.amazon.in/dp/B09BD45BBP?tag=httpcodingonl-21
+
+---
+
+4. Title: കേരള ചരിത്രം
+   Author: E. Sreedhara Menon
+   Image URL: [EMPTY - This entry intentionally has no image URL to test the AI cover generation fallback.]
+   Amazon Link: https://www.amazon.in/dp/8126484351?tag=httpcodingonl-21
