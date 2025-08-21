@@ -18,21 +18,21 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
             descriptionKey: 'heroSlider.slide1.description',
             ctaKey: 'heroSlider.slide1.cta',
             ctaTarget: 'quiz_home' as Page,
-            bgColor: 'from-indigo-100 to-blue-100'
+            imageUrl: 'https://picsum.photos/seed/ai-learning/1200/500'
         },
         {
             titleKey: 'heroSlider.slide2.title',
             descriptionKey: 'heroSlider.slide2.description',
             ctaKey: 'heroSlider.slide2.cta',
             ctaTarget: 'mock_test_home' as Page,
-            bgColor: 'from-teal-100 to-green-100'
+            imageUrl: 'https://picsum.photos/seed/exam-hall/1200/500'
         },
         {
             titleKey: 'heroSlider.slide3.title',
             descriptionKey: 'heroSlider.slide3.description',
             ctaKey: 'heroSlider.slide3.cta',
             ctaTarget: 'psc_live_updates' as Page,
-            bgColor: 'from-slate-100 to-gray-200'
+            imageUrl: 'https://picsum.photos/seed/government-news/1200/500'
         },
     ];
 
@@ -58,14 +58,16 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
             {slides.map((slide, index) => (
                 <div
                     key={index}
-                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
+                    style={{ backgroundImage: `url(${slide.imageUrl})` }}
                 >
-                    <div className={`w-full h-full bg-gradient-to-br ${slide.bgColor} flex items-center justify-center text-center p-6`}>
+                    <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div className="relative w-full h-full flex items-center justify-center text-center p-6">
                          <div className="max-w-3xl mx-auto">
-                            <h2 className="text-4xl font-bold text-slate-800 mb-3 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.2s' : '0s'}` }}>
+                            <h2 className="text-4xl font-bold text-white mb-3 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.2s' : '0s'}` }}>
                                 {t(slide.titleKey)}
                             </h2>
-                            <p className="text-lg text-slate-600 mb-8 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.4s' : '0s'}` }}>
+                            <p className="text-lg text-slate-200 mb-8 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.4s' : '0s'}` }}>
                                 {t(slide.descriptionKey)}
                             </p>
                             <button
