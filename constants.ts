@@ -222,7 +222,39 @@ export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [
 ];
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
+    // LDC Clerk Topics
     { topic: "LDC ക്ലർക്ക് - ചരിത്രം", question: "കേരളത്തിലെ ഏറ്റവും വലിയ നദി ഏതാണ്?", options: ["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"], correctAnswerIndex: 0 },
     { topic: "LDC ക്ലർക്ക് - ചരിത്രം", question: "ഇന്ത്യയുടെ ദേശീയ പതാക രൂപകൽപ്പന ചെയ്തത് ആര്?", options: ["മഹാത്മാ ഗാന്ധി", "പിംഗലി വെങ്കയ്യ", "സർദാർ പട്ടേൽ", "ജവഹർലാൽ നെഹ്‌റു"], correctAnswerIndex: 1 },
-    { topic: "പൊതുവിജ്ഞാനം", question: "ലോകത്തിലെ ഏറ്റവും ഉയരം കൂടിയ കൊടുമുടി ഏതാണ്?", options: ["കെ2", "കാഞ്ചൻജംഗ", "എവറസ്റ്റ്", "നന്ദാദേവി"], correctAnswerIndex: 2 }
+    { topic: "LDC ക്ലർക്ക് - ഭൂമിശാസ്ത്രം", question: "സൈലന്റ് വാലി ദേശീയോദ്യാനം ഏത് ജില്ലയിലാണ്?", options: ["ഇടുക്കി", "വയനാട്", "പാലക്കാട്", "മലപ്പുറം"], correctAnswerIndex: 2 },
+    { topic: "LDC ക്ലർക്ക് - ഇന്ത്യൻ ഭരണഘടന", question: "ഇന്ത്യൻ ഭരണഘടനയുടെ ശില്പി എന്നറിയപ്പെടുന്നത് ആര്?", options: ["ജവഹർലാൽ നെഹ്‌റു", "ഡോ. ബി.ആർ. അംബേദ്കർ", "സർദാർ വല്ലഭായ് പട്ടേൽ", "രാജേന്ദ്ര പ്രസാദ്"], correctAnswerIndex: 1 },
+
+    // Quiz Category Topics
+    { topic: "പൊതുവിജ്ഞാനം", question: "ലോകത്തിലെ ഏറ്റവും ഉയരം കൂടിയ കൊടുമുടി ഏതാണ്?", options: ["കെ2", "കാഞ്ചൻജംഗ", "എവറസ്റ്റ്", "നന്ദാദേവി"], correctAnswerIndex: 2 },
+    { topic: "പൊതുവിജ്ഞാനം", question: "കേരളത്തിലെ ആദ്യത്തെ മുഖ്യമന്ത്രി ആരായിരുന്നു?", options: ["പട്ടം താണുപിള്ള", "സി. അച്യുതമേനോൻ", "ഇ.എം.എസ്. നമ്പൂതിരിപ്പാട്", "ആർ. ശങ്കർ"], correctAnswerIndex: 2 },
+    { topic: "ആനുകാലിക സംഭവങ്ങൾ", question: "2024-ലെ ഒളിമ്പിക്സ് നടന്നത് എവിടെയാണ്?", options: ["ടോക്കിയോ", "പാരിസ്", "ലോസ് ഏഞ്ചൽസ്", "ലണ്ടൻ"], correctAnswerIndex: 1 },
+    { topic: "മലയാള സാഹിത്യം", question: "'രണ്ടാമൂഴം' എന്ന പ്രശസ്ത നോവൽ രചിച്ചതാര്?", options: ["തകഴി ശിവശങ്കരപ്പിള്ള", "വൈക്കം മുഹമ്മദ് ബഷീർ", "ഒ.വി. വിജയൻ", "എം.ടി. വാസുദേവൻ നായർ"], correctAnswerIndex: 3 },
+    { topic: "ജനപ്രിയ ശാസ്ത്രം", question: "ശബ്ദത്തിന്റെ വേഗത ഏറ്റവും കൂടുതലുള്ള മാധ്യമം ഏത്?", options: ["വായു", "ജലം", "ശൂന്യത", "ഖരം"], correctAnswerIndex: 3 },
+    { topic: "English Grammar", question: "Choose the correct sentence: ", options: ["He is senior than me.", "He is senior to me.", "He is senior of me.", "He is senior with me."], correctAnswerIndex: 1 },
+    { topic: "കേരള ചരിത്രം", question: "മാമാങ്കം നടന്നിരുന്നത് ഏത് നദിയുടെ തീരത്തായിരുന്നു?", options: ["പെരിയാർ", "പമ്പ", "ഭാരതപ്പുഴ", "ചാലിയാർ"], correctAnswerIndex: 2 },
+    { topic: "ഇന്ത്യൻ ചരിത്രം", question: "ബംഗാൾ വിഭജനം നടന്ന വർഷം?", options: ["1905", "1911", "1919", "1947"], correctAnswerIndex: 0 },
+    { topic: "ഭൂമിശാസ്ത്രം", question: "സൗരയൂഥത്തിലെ ഏറ്റവും വലിയ ഗ്രഹം ഏതാണ്?", options: ["ഭൂമി", "ചൊവ്വ", "വ്യാഴം", "ശനി"], correctAnswerIndex: 2 },
+    
+    // Mock Test Topics
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #1", question: "താഴെ പറയുന്നവയിൽ ഇന്ത്യയുടെ അയൽരാജ്യമല്ലാത്തത് ഏത്?", options: ["നേപ്പാൾ", "ചൈന", "തായ്‌ലൻഡ്", "ഭൂട്ടാൻ"], correctAnswerIndex: 2 },
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #1", question: "കേരള നിയമസഭയിലെ ആകെ അംഗങ്ങളുടെ എണ്ണം?", options: ["140", "141", "100", "20"], correctAnswerIndex: 0 },
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #1", question: "ഒന്നാം സ്വാതന്ത്ര്യ സമരം നടന്ന വർഷം?", options: ["1857", "1947", "1885", "1900"], correctAnswerIndex: 0 },
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #1", question: "Who wrote 'Gitanjali'?", options: ["Rabindranath Tagore", "Mahatma Gandhi", "Jawaharlal Nehru", "Sarojini Naidu"], correctAnswerIndex: 0 },
+    { topic: "LGS ഫുൾ മോക്ക് ടെസ്റ്റ് #1", question: "കേരളത്തിലെ ഏറ്റവും തെക്കേ അറ്റത്തുള്ള ജില്ല ഏത്?", options: ["കൊല്ലം", "പത്തനംതിട്ട", "തിരുവനന്തപുരം", "ആലപ്പുഴ"], correctAnswerIndex: 2 },
+    { topic: "LGS ഫുൾ മോക്ക് ടെസ്റ്റ് #1", question: "ഇന്ത്യയുടെ ദേശീയ മൃഗം ഏതാണ്?", options: ["സിംഹം", "കടുവ", "ആന", "പുലി"], correctAnswerIndex: 1 },
+    { topic: "പോലീസ് കോൺസ്റ്റബിൾ മോക്ക് ടെസ്റ്റ്", question: "ഇന്ത്യൻ പീനൽ കോഡ് (IPC) നിലവിൽ വന്ന വർഷം?", options: ["1860", "1861", "1862", "1950"], correctAnswerIndex: 0 },
+    { topic: "പോലീസ് കോൺസ്റ്റബിൾ മോക്ക് ടെസ്റ്റ്", question: " കേരള പോലീസിന്റെ ആപ്തവാക്യം എന്താണ്?", options: ["സേവനം, സുരക്ഷ, സാഹോദര്യം", "മൃദുഭാവേ, ദൃഢകൃത്യേ", "സത്യമേവ ജയതേ", "ജനമൈത്രി സുരക്ഷ"], correctAnswerIndex: 1 },
+    
+    // More questions for variety
+    { topic: "പൊതുവിജ്ഞാനം", question: "ജപ്പാനിലെ നാണയം ഏതാണ്?", options: ["യെൻ", "യുവാൻ", "വോൺ", "രൂപ"], correctAnswerIndex: 0 },
+    { topic: "കേരള ചരിത്രം", question: "കുണ്ടറ വിളംബരം നടത്തിയത് ആരാണ്?", options: ["പഴശ്ശിരാജ", "വേലുത്തമ്പി ദളവ", "ശക്തൻ തമ്പുരാൻ", "മാർത്താണ്ഡവർമ്മ"], correctAnswerIndex: 1 },
+    { topic: "ഇന്ത്യൻ ഭരണഘടന", question: "മൗലികാവകാശങ്ങൾ ഭരണഘടനയുടെ ഏത് ഭാഗത്താണ് ഉൾപ്പെടുത്തിയിരിക്കുന്നത്?", options: ["ഭാഗം I", "ഭാഗം II", "ഭാഗം III", "ഭാഗം IV"], correctAnswerIndex: 2 },
+    { topic: "English Grammar", question: "A group of lions is called a ____.", options: ["herd", "flock", "pride", "pack"], correctAnswerIndex: 2 },
+    { topic: "ജനപ്രിയ ശാസ്ത്രം", question: "മനുഷ്യ ശരീരത്തിലെ ഏറ്റവും വലിയ അവയവം ഏതാണ്?", options: ["ഹൃദയം", "കരൾ", "തലച്ചോറ്", "ത്വക്ക്"], correctAnswerIndex: 3 },
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2", question: "ഗുരുവായൂർ സത്യാഗ്രഹത്തിന് നേതൃത്വം നൽകിയത് ആരായിരുന്നു?", options: ["എ.കെ. ഗോപാലൻ", "കെ. കേളപ്പൻ", "മന്നത്ത് പത്മനാഭൻ", "ടി.കെ. മാധവൻ"], correctAnswerIndex: 1 },
+    { topic: "LDC ഫുൾ മോക്ക് ടെസ്റ്റ് #2", question: "ഇന്ത്യയിലെ ഏറ്റവും നീളം കൂടിയ നദി ഏതാണ്?", options: ["ഗംഗ", "യമുന", "ഗോദാവരി", "ബ്രഹ്മപുത്ര"], correctAnswerIndex: 0 }
 ];
