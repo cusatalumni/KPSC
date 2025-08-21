@@ -19,7 +19,7 @@ import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
 import PreviousPapersPage from './components/pages/PreviousPapersPage';
 import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
 import GkPage from './components/pages/GkPage';
-import type { Exam, PracticeTest, MockTest, QuizCategory, SubscriptionStatus } from './types';
+import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
@@ -46,7 +46,7 @@ export type Page =
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
-  const [activeTest, setActiveTest] = useState<{ title: string; questionsCount: number; } | null>(null);
+  const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number } | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('dashboard');
   
@@ -94,24 +94,26 @@ const App: React.FC = () => {
     setCurrentPage('exam_details');
   };
 
-  const handleStartTest = (test: PracticeTest | MockTest | { title: string; questions: number }, examTitle: string) => {
-    const isProContent = 'isPro' in test && test.isPro;
-    if (isProContent && subscriptionStatus !== 'pro') {
-        handleNavigate('upgrade');
-        return;
-    }
-    const testTitle = typeof test.title === 'string' ? test.title : test.title[language];
-    setActiveTest({ title: `${examTitle} - ${testTitle}`, questionsCount: 'questions' in test ? test.questions : test.questionsCount });
+  const handleStartTest = (test: MockTest) => {
+    const testTitle = test.title[language];
+    setActiveTest({ 
+        title: testTitle, 
+        questionsCount: test.questionsCount,
+        topic: testTitle, // Use the test title as the topic for fetching questions
+        isPro: test.isPro 
+    });
     setPreviousPage(currentPage);
     setCurrentPage('test');
   };
   
   const handleStartQuiz = (category: QuizCategory) => {
-    if (category.isPro && subscriptionStatus !== 'pro') {
-      handleNavigate('upgrade');
-      return;
-    }
-    setActiveTest({ title: category.title[language], questionsCount: 10 }); // All quizzes are 10 questions
+    const quizTitle = category.title[language];
+    setActiveTest({ 
+        title: quizTitle, 
+        questionsCount: 25, // All quizzes are now 25 questions
+        topic: quizTitle,
+        isPro: category.isPro 
+    });
     setPreviousPage(currentPage);
     setCurrentPage('test');
   }
@@ -132,10 +134,11 @@ const App: React.FC = () => {
       case 'test':
         if (!activeTest) return null;
         return <TestPage 
-                  title={activeTest.title} 
-                  questionsCount={activeTest.questionsCount} 
+                  activeTest={activeTest}
+                  subscriptionStatus={subscriptionStatus}
                   onTestComplete={handleFinishTest} 
                   onBack={handleBackToPreviousPage}
+                  onNavigateToUpgrade={() => handleNavigate('upgrade')}
                 />;
       case 'results':
         if (!testResult) return null;
@@ -150,7 +153,7 @@ const App: React.FC = () => {
             exam={selectedExam} 
             content={LDC_EXAM_CONTENT} // NOTE: Using mock LDC content for now
             onBack={() => handleNavigate('dashboard')}
-            onStartTest={(test) => handleStartTest(test, selectedExam.title[language])}
+            onStartTest={(test) => handleStartTest(test as MockTest)} // Simplified handler
           />;
       case 'bookstore':
         return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
@@ -167,7 +170,7 @@ const App: React.FC = () => {
       case 'quiz_home':
         return <QuizHomePage subscriptionStatus={subscriptionStatus} onBack={() => handleNavigate('dashboard')} onStartQuiz={handleStartQuiz} />;
       case 'mock_test_home':
-        return <MockTestHomePage subscriptionStatus={subscriptionStatus} onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
+        return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={handleStartTest} />;
       case 'upgrade':
         return <UpgradePage onBack={() => handleNavigate(previousPage)} onUpgrade={handleUpgrade} />;
       case 'psc_live_updates':

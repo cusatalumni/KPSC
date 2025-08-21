@@ -5,6 +5,7 @@ export const translations = {
   },
   login: "Login",
   start: "Start",
+  startTest: "Start Test",
   refresh: "Refresh",
   search: "Search",
   date: "Date",
@@ -12,6 +13,9 @@ export const translations = {
   automatedMessage: "This information is updated automatically every day.",
   backToDashboard: "Back to Dashboard",
   loading: "Loading...",
+  questions: "Questions",
+  minutes: "Minutes",
+  mockTest: "Mock Test",
   error: {
     fetchData: "An error occurred while fetching data.",
     fetchNotifications: "An error occurred while fetching notifications."
@@ -47,6 +51,10 @@ export const translations = {
     subtitle: "Choose from the best books for your PSC preparation.",
     buyOnAmazon: "Buy on Amazon",
     disclosure: "As an affiliate, we earn from qualifying purchases."
+  },
+  mockTests: {
+    title: "Mock Tests",
+    subtitle: "The best opportunity to test your knowledge before the real exam."
   },
   currentAffairs: {
     title: "Current Affairs",
@@ -86,8 +94,15 @@ export const translations = {
     endTest: "End Test",
     modal: {
       title: "Submit Test",
-      body: "Are you sure you want to submit this test?"
+      body: "Are you sure you want to submit this test?",
+      cancel: "Cancel"
     }
+  },
+  upgradeModal: {
+    title: "Unlock PRO Feature",
+    body: "You've completed the 10 free questions. Upgrade to PRO to unlock the full test and access all premium features.",
+    confirm: "Upgrade Now",
+    cancel: "Later"
   },
   results: {
     title: "Test Result",

@@ -123,3 +123,10 @@ export interface MockTest {
 }
 
 export type SubscriptionStatus = 'free' | 'pro';
+
+export interface ActiveTest {
+  title: string;
+  questionsCount: number;
+  topic: string;
+  isPro?: boolean;
+}

@@ -1,4 +1,3 @@
-
 import React, { Fragment } from 'react';
 
 interface ModalProps {
@@ -7,9 +6,11 @@ interface ModalProps {
   onConfirm: () => void;
   title: string;
   children: React.ReactNode;
+  confirmText?: string;
+  cancelText?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm, title, children, confirmText = "സ്ഥിരീകരിക്കുക", cancelText = "റദ്ദാക്കുക" }) => {
   if (!isOpen) {
     return null;
   }
@@ -24,13 +25,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onConfirm, title, childr
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
           >
-            റദ്ദാക്കുക
+            {cancelText}
           </button>
           <button
             onClick={onConfirm}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
-            സ്ഥിരീകരിക്കുക
+            {confirmText}
           </button>
         </div>
       </div>

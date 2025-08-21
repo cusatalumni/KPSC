@@ -1,31 +1,32 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { QuizQuestion, UserAnswers } from '../types';
+import type { QuizQuestion, UserAnswers, SubscriptionStatus, ActiveTest } from '../types';
 import { getQuestionsForTest } from '../services/pscDataService';
 import Modal from './Modal';
-import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { ArrowsPointingOutIcon } from './icons/ArrowsPointingOutIcon';
 import { ArrowsPointingInIcon } from './icons/ArrowsPointingInIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 
 interface TestPageProps {
-  title: string;
-  questionsCount: number;
+  activeTest: ActiveTest;
+  subscriptionStatus: SubscriptionStatus;
   onTestComplete: (score: number, total: number) => void;
   onBack: () => void;
+  onNavigateToUpgrade: () => void;
 }
 
 const DURATION_PER_QUESTION = 90; // 1.5 minutes per question
 
-const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComplete, onBack }) => {
+const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onTestComplete, onBack, onNavigateToUpgrade }) => {
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<UserAnswers>({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(questionsCount * DURATION_PER_QUESTION);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(activeTest.questionsCount * DURATION_PER_QUESTION);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const testPageRef = useRef<HTMLDivElement>(null);
 
@@ -58,12 +59,17 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
     setLoading(true);
     setError(null);
     try {
-      const data = await getQuestionsForTest(title, questionsCount);
+      // For freemium pro tests, we only fetch 10 questions for the free user
+      const questionRequestCount = (subscriptionStatus === 'free' && activeTest.isPro) ? 10 : activeTest.questionsCount;
+      const data = await getQuestionsForTest(activeTest.topic, questionRequestCount);
+      
       if (data.length === 0) {
         setError(t('test.noQuestionsError'));
       } else {
         setQuestions(data);
-        setTimeLeft(data.length * DURATION_PER_QUESTION);
+        // Timer should be based on the full test length for pro users to show what they're getting
+        const timerDuration = activeTest.questionsCount * DURATION_PER_QUESTION;
+        setTimeLeft(timerDuration);
       }
     } catch (err) {
       setError(t('test.fetchError'));
@@ -71,17 +77,24 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
     } finally {
       setLoading(false);
     }
-  }, [title, questionsCount, t]);
+  }, [activeTest, subscriptionStatus, t]);
 
   useEffect(() => {
     fetchQuestions();
   }, [fetchQuestions]);
 
+
   const handleNext = useCallback(() => {
+    // Freemium logic: check before moving to the 11th question
+    if (subscriptionStatus === 'free' && activeTest.isPro && currentIndex === 9) {
+      setIsUpgradeModalOpen(true);
+      return;
+    }
+
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
     }
-  }, [currentIndex, questions.length]);
+  }, [currentIndex, questions.length, subscriptionStatus, activeTest.isPro]);
 
   const handleAnswerSelect = (optionIndex: number, isDoubleClick = false) => {
     setAnswers(prev => ({ ...prev, [currentIndex]: optionIndex }));
@@ -89,11 +102,11 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
       setTimeout(handleNext, 200); // Short delay to show selection
     }
   };
-
+  
   const handleKeyboardNav = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Enter') {
       if (currentIndex === questions.length - 1) {
-        setIsModalOpen(true);
+        setIsSubmitModalOpen(true);
       } else {
         handleNext();
       }
@@ -153,7 +166,9 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
   }
   
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  // Progress bar should reflect the full test length for Pro tests to entice users
+  const totalQuestionsForProgress = activeTest.questionsCount;
+  const progress = ((currentIndex + 1) / totalQuestionsForProgress) * 100;
 
   return (
     <div ref={testPageRef} className="bg-slate-50 min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 md:p-8">
@@ -161,7 +176,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
         <div className="bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-slate-200">
             <header className="mb-6 border-b border-slate-200 pb-4">
             <div className="flex justify-between items-start gap-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-800">{title}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-800">{activeTest.title}</h1>
                 <div className="flex items-center gap-4">
                     <div className={`flex items-center space-x-2 font-bold p-2 rounded-md ${timeLeft < 60 ? 'text-red-600 bg-red-100' : 'text-slate-700'}`}>
                         <ClockIcon className="h-6 w-6"/>
@@ -174,7 +189,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
             </div>
             <div className="mt-4">
                 <div className="flex justify-between text-sm text-slate-600 mb-1">
-                    <span>{t('test.question')} {currentIndex + 1} / {questions.length}</span>
+                    <span>{t('test.question')} {currentIndex + 1} / {totalQuestionsForProgress}</span>
                     <span>{Math.round(progress)}%</span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2.5">
@@ -213,7 +228,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
                 </button>
                 {currentIndex === questions.length - 1 ? (
                     <button 
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => setIsSubmitModalOpen(true)}
                         className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition"
                     >
                     {t('test.submit')}
@@ -235,15 +250,27 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
         </div>
       </div>
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isSubmitModalOpen}
+        onClose={() => setIsSubmitModalOpen(false)}
         onConfirm={() => {
-            setIsModalOpen(false);
+            setIsSubmitModalOpen(false);
             handleSubmit();
         }}
         title={t('test.modal.title')}
+        confirmText={t('test.submit')}
+        cancelText={t('test.modal.cancel')}
       >
         {t('test.modal.body')}
+      </Modal>
+      <Modal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        onConfirm={onNavigateToUpgrade}
+        title={t('upgradeModal.title')}
+        confirmText={t('upgradeModal.confirm')}
+        cancelText={t('upgradeModal.cancel')}
+      >
+        {t('upgradeModal.body')}
       </Modal>
     </div>
   );
