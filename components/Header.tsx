@@ -107,7 +107,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             
             <div className="hidden md:block">
               <SignedIn>
-                <UserButton afterSignOutUrl="/" />
+                <div className="flex items-center space-x-3">
+                  <span className="hidden lg:inline text-sm font-medium text-slate-700">
+                    {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
+                  </span>
+                  <UserButton afterSignOutUrl="/" />
+                </div>
               </SignedIn>
               <SignedOut>
                 <SignInButton mode="modal">
@@ -167,12 +172,17 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                     </button>
                 )}
             </nav>
-            <div className="mt-4 pt-4 border-t border-slate-200">
-                <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-semibold px-3 py-3 rounded-md transition-colors mb-4">
+            <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
+                <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-semibold px-3 py-3 rounded-md transition-colors">
                     Switch to {language === 'ml' ? 'English' : 'മലയാളം'}
                 </button>
                 <SignedIn>
-                    <UserButton afterSignOutUrl="/" />
+                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50">
+                        <span className="font-semibold text-slate-700">
+                            {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
+                        </span>
+                        <UserButton afterSignOutUrl="/" />
+                    </div>
                 </SignedIn>
                 <SignedOut>
                     <SignInButton mode="modal">

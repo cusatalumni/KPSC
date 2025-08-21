@@ -4,6 +4,8 @@ export const translations = {
     subtitle: "PSC Guidance Kerala"
   },
   login: "ലോഗിൻ",
+  welcome: "സ്വാഗതം",
+  myAccount: "എന്റെ അക്കൗണ്ട്",
   start: "തുടങ്ങുക",
   startTest: "ടെസ്റ്റ് തുടങ്ങുക",
   refresh: "പുതുക്കുക",
