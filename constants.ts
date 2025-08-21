@@ -181,7 +181,7 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
 ];
 
 export const MOCK_BOOKS_DATA: Book[] = [
-  { id: '1', title: 'LDC റാങ്ക് ഫയൽ', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81g0dn6S4LL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CK13J51N?tag=httpcodingonl-21' },
+  { id: '1', title: 'LDC റാങ്ക് ഫയൽ', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81g0dn6S4LL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=httpcodingonl-21' },
   { id: '2', title: 'PSC ബുള്ളറ്റിൻ ചോദ്യബാങ്ക്', author: 'Talent Academy', imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=httpcodingonl-21' },
   { id: '3', title: 'ഇന്ത്യൻ ഭരണഘടന', author: 'M Laxmikanth (Malayalam)', imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=httpcodingonl-21' },
   { id: '4', title: 'കേരള ചരിത്രം', author: 'E. Sreedhara Menon', imageUrl: '', amazonLink: 'https://www.amazon.in/dp/8126484351?tag=httpcodingonl-21' },

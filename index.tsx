@@ -5,6 +5,7 @@ import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const isClerkKeyInvalid = !PUBLISHABLE_KEY || !PUBLISHABLE_KEY.startsWith('pk_');
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,16 +14,19 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-if (!PUBLISHABLE_KEY) {
+if (isClerkKeyInvalid) {
   root.render(
     <div className="min-h-screen bg-red-50 flex items-center justify-center p-4" role="alert">
         <div className="bg-white p-8 rounded-lg shadow-md border border-red-200 text-center max-w-2xl">
             <h1 className="text-2xl font-bold text-red-700 mb-4">Configuration Error</h1>
-            <p className="text-slate-700 mb-4 text-lg">The application cannot start because the <strong className="text-red-800">Clerk Publishable Key</strong> is missing.</p>
+            <p className="text-slate-700 mb-4 text-lg">The application cannot start because the <strong className="text-red-800">Clerk Publishable Key</strong> is missing or invalid.</p>
             
             <div className="text-left bg-slate-50 p-4 rounded-md border border-slate-200">
                 <h2 className="font-semibold text-slate-800 mb-2">How to fix this:</h2>
-                <p className="text-slate-600 mb-3">You need to set an environment variable named <code className="bg-red-100 text-red-800 px-1 rounded font-mono text-sm">VITE_CLERK_PUBLISHABLE_KEY</code>.</p>
+                <ol className="list-decimal list-inside space-y-3 text-slate-600">
+                    <li>You need to set an environment variable named <code className="bg-red-100 text-red-800 px-1 rounded font-mono text-sm">VITE_CLERK_PUBLISHABLE_KEY</code>.</li>
+                    <li>Ensure the key value is correct and starts with <code className="bg-red-100 text-red-800 px-1 rounded font-mono text-sm">pk_test_</code> or <code className="bg-red-100 text-red-800 px-1 rounded font-mono text-sm">pk_live_</code>.</li>
+                </ol>
                 
                 <h3 className="font-semibold text-slate-700 mt-4">For Local Development:</h3>
                 <p className="text-slate-600 text-sm">Create a file named <code className="bg-slate-200 px-1 rounded">.env</code> in the project's root directory and add the following line:</p>

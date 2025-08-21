@@ -2,6 +2,7 @@ import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuest
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA } from '../constants';
 
 const isVercel = import.meta.env.PROD;
+const API_KEY_AVAILABLE = !!import.meta.env.VITE_API_KEY;
 
 const fetchWithMockFallback = async <T>(apiPath: string, mockData: T): Promise<T> => {
     if (!isVercel) {
@@ -48,8 +49,8 @@ export const getQuestionsForTest = (topic: string, count: number): Promise<QuizQ
 };
 
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
-    if (!isVercel) {
-        console.log(`DEV MODE: Using mock study material for ${topic}`);
+    if (!API_KEY_AVAILABLE) {
+        console.log(`DEV MODE: No API Key. Using mock study material for ${topic}`);
         const mockNotes = `## ${topic}\n\n* ഇത് ഒരു മാതൃകാ പഠന മെറ്റീരിയലാണ്.\n* തത്സമയ ഉള്ളടക്കം AI ഉപയോഗിച്ച് സൃഷ്ടിക്കും.\n\n**പ്രധാന പോയിന്റുകൾ:**\n- പോയിന്റ് 1\n- പോയിന്റ് 2`;
         return new Promise(resolve => setTimeout(() => resolve({ notes: mockNotes }), 1000));
     }
@@ -66,9 +67,9 @@ export const getStudyMaterial = async (topic: string): Promise<{ notes: string }
 };
 
 export const generateBookCover = async (title: string, author: string): Promise<{ imageBase64: string }> => {
-     if (!isVercel) {
+     if (!API_KEY_AVAILABLE) {
         // Return a placeholder to avoid breaking the UI in local dev without an API key
-        console.log(`DEV MODE: Using placeholder for book cover generation: ${title}`);
+        console.log(`DEV MODE: No API key. Using placeholder for book cover generation: ${title}`);
         return new Promise(resolve => setTimeout(() => resolve({ imageBase64: '' }), 1000));
     }
     try {
