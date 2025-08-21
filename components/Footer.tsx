@@ -15,6 +15,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     { nameKey: 'footer.privacy', target: 'privacy' },
     { nameKey: 'footer.terms', target: 'terms' },
     { nameKey: 'footer.disclosure', target: 'disclosure' },
+    { nameKey: 'nav.sitemap', target: 'sitemap' },
   ];
   
   const annapoornaUrl = 'https://annapoornainfo.com/';

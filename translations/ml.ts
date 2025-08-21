@@ -22,16 +22,24 @@ export const translations = {
   },
   nav: {
     home: "ഹോം",
-    courses: "കോഴ്സുകൾ",
     quizzes: "ക്വിസുകൾ",
     mockTests: "മോക്ക് ടെസ്റ്റുകൾ",
+    studyMaterials: "പഠന സാമഗ്രികൾ",
     currentAffairs: "ആനുകാലികം",
     gk: "പൊതുവിജ്ഞാനം",
     previousPapers: "ചോദ്യപേപ്പറുകൾ",
     pscLive: "PSC Live",
+    more: "കൂടുതൽ",
     bookstore: "പുസ്തകശാല",
     examCalendar: "പരീക്ഷാ കലണ്ടർ",
+    sitemap: "സൈറ്റ്മാപ്പ്",
     adminPanel: "അഡ്മിൻ പാനൽ"
+  },
+  sitemap: {
+    title: "സൈറ്റ്മാപ്പ്",
+    subtitle: "വെബ്സൈറ്റിലെ എല്ലാ പേജുകളും ഇവിടെ കാണാം.",
+    mainNav: "പ്രധാന നാവിഗേഷൻ",
+    legal: "നിയമപരമായ വിവരങ്ങൾ"
   },
   adminPanel: {
       title: "അഡ്മിൻ പാനൽ",
@@ -45,12 +53,25 @@ export const translations = {
       success: "വിജയകരം! ഡാറ്റാബേസ് പുതുക്കിയിരിക്കുന്നു.",
       error: "ഒരു പിശക് സംഭവിച്ചു: "
   },
-  dashboard: {
-    hero: {
-      title: "AIയുടെ ശക്തി ഉപയോഗിച്ച് PSC പരീക്ഷകൾക്ക് തയ്യാറെടുക്കാം",
-      subtitle: "Master PSC exams with the power of AI. Your dream government job starts here.",
-      cta: "മോക്ക് ടെസ്റ്റുകൾ പരിശീലിക്കൂ"
+  heroSlider: {
+    slide1: {
+      title: "AIയുടെ ശക്തിയിൽ പഠനം പുതിയ തലങ്ങളിലേക്ക്",
+      description: "ഞങ്ങളുടെ AI ഉപയോഗിച്ച് തയ്യാറാക്കിയ ചോദ്യങ്ങൾ, പഠനക്കുറിപ്പുകൾ എന്നിവ ഉപയോഗിച്ച് പരീക്ഷയ്ക്ക് തയ്യാറെടുക്കൂ.",
+      cta: "പഠിച്ചു തുടങ്ങാം"
     },
+    slide2: {
+      title: "യഥാർത്ഥ പരീക്ഷപോലെ പരിശീലിക്കാം",
+      description: "പുതിയ സിലബസ് പ്രകാരമുള്ള നൂറുകണക്കിന് മോക്ക് ടെസ്റ്റുകൾ. നിങ്ങളുടെ റാങ്ക് മെച്ചപ്പെടുത്താൻ സഹായിക്കുന്നു.",
+      cta: "മോക്ക് ടെസ്റ്റുകൾ എടുക്കൂ"
+    },
+    slide3: {
+      title: "ഒരു വിവരവും നഷ്ടപ്പെടുത്തരുത്",
+      description: "PSC-യിൽ നിന്നുള്ള ഏറ്റവും പുതിയ അറിയിപ്പുകൾ, റാങ്ക് ലിസ്റ്റുകൾ, വാർത്തകൾ എന്നിവ തത്സമയം.",
+      cta: "അപ്‌ഡേറ്റുകൾ കാണുക"
+    }
+  },
+  dashboard: {
+    topCourses: "പ്രധാന കോഴ്സുകൾ",
     notifications: {
         title: "പുതിയ അറിയിപ്പുകൾ",
         subtitle: "ദിവസവും പുതുക്കിയ ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ",

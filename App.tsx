@@ -21,6 +21,7 @@ import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
 import GkPage from './components/pages/GkPage';
 import AdminPage from './components/pages/AdminPage';
 import StudyMaterialPage from './components/pages/StudyMaterialPage';
+import SitemapPage from './components/pages/SitemapPage';
 import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, PracticeTest } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
@@ -196,6 +197,8 @@ const App: React.FC = () => {
                   topic={activeStudyTopic} 
                   onBack={handleBackToPreviousPage} 
                 />;
+      case 'sitemap':
+        return <SitemapPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate} />;
       case 'dashboard':
       default:
         return <Dashboard 

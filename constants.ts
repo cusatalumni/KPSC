@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion, Page } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
@@ -10,17 +10,37 @@ import { ChatBubbleLeftRightIcon } from './components/icons/ChatBubbleLeftRightI
 import { ScaleIcon } from './components/icons/ScaleIcon';
 import { GlobeAltIcon } from './components/icons/GlobeAltIcon';
 
-export const NAV_LINKS = [
+export type NavLink = {
+    nameKey: string;
+    target?: Page;
+    children?: Omit<NavLink, 'children'>[];
+};
+
+export const NAV_STRUCTURE: NavLink[] = [
   { nameKey: 'nav.home', target: 'dashboard' },
-  { nameKey: 'nav.courses', target: 'dashboard' },
   { nameKey: 'nav.quizzes', target: 'quiz_home' },
   { nameKey: 'nav.mockTests', target: 'mock_test_home' },
-  { nameKey: 'nav.currentAffairs', target: 'current_affairs' },
-  { nameKey: 'nav.gk', target: 'gk' },
-  { nameKey: 'nav.previousPapers', target: 'previous_papers'},
-  { nameKey: 'nav.pscLive', target: 'psc_live_updates'},
-  { nameKey: 'nav.bookstore', target: 'bookstore' },
-  { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
+  {
+    nameKey: 'nav.studyMaterials',
+    children: [
+      { nameKey: 'nav.currentAffairs', target: 'current_affairs' },
+      { nameKey: 'nav.gk', target: 'gk' },
+      { nameKey: 'nav.previousPapers', target: 'previous_papers'},
+      { nameKey: 'nav.pscLive', target: 'psc_live_updates'},
+    ]
+  },
+  {
+    nameKey: 'nav.more',
+    children: [
+      { nameKey: 'nav.bookstore', target: 'bookstore' },
+      { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
+      { nameKey: 'footer.about', target: 'about' },
+      { nameKey: 'nav.sitemap', target: 'sitemap' },
+      { nameKey: 'footer.privacy', target: 'privacy' },
+      { nameKey: 'footer.terms', target: 'terms' },
+      { nameKey: 'footer.disclosure', target: 'disclosure' },
+    ]
+  }
 ];
 
 export const EXAMS_DATA: Exam[] = [

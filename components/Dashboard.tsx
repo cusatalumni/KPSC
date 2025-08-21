@@ -16,6 +16,7 @@ import type { Exam } from '../types';
 import type { Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import AdsenseWidget from './AdsenseWidget';
+import HeroSlider from './HeroSlider';
 
 interface DashboardProps {
   onNavigateToExam: (exam: Exam) => void;
@@ -28,16 +29,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onS
 
   return (
     <div className="space-y-8">
-      <section className="text-center bg-gradient-to-br from-slate-50 to-indigo-100 py-16 px-6 rounded-2xl shadow-sm">
-        <h2 className="text-4xl font-bold text-slate-800 mb-3">{t('dashboard.hero.title')}</h2>
-        <p className="text-lg text-slate-600 max-w-3xl mx-auto">{t('dashboard.hero.subtitle')}</p>
-         <button 
-            onClick={() => onNavigate('mock_test_home')}
-            className="mt-8 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out text-lg"
-        >
-            {t('dashboard.hero.cta')}
-        </button>
-      </section>
+      <HeroSlider onNavigate={onNavigate} />
       
       <NewsTicker />
 

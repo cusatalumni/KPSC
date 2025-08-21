@@ -22,16 +22,24 @@ export const translations = {
   },
   nav: {
     home: "Home",
-    courses: "Courses",
     quizzes: "Quizzes",
     mockTests: "Mock Tests",
+    studyMaterials: "Study Materials",
     currentAffairs: "Current Affairs",
     gk: "General Knowledge",
     previousPapers: "Previous Papers",
     pscLive: "PSC Live",
+    more: "More",
     bookstore: "Bookstore",
     examCalendar: "Exam Calendar",
+    sitemap: "Sitemap",
     adminPanel: "Admin Panel"
+  },
+  sitemap: {
+    title: "Sitemap",
+    subtitle: "Find all pages on the website here.",
+    mainNav: "Main Navigation",
+    legal: "Legal Information"
   },
   adminPanel: {
       title: "Admin Panel",
@@ -45,12 +53,24 @@ export const translations = {
       success: "Success! The database has been updated.",
       error: "An error occurred: "
   },
-  dashboard: {
-    hero: {
-      title: "Prepare for PSC Exams with the Power of AI",
-      subtitle: "Master PSC exams with the power of AI. Your dream government job starts here.",
-      cta: "Practice Mock Tests"
+  heroSlider: {
+    slide1: {
+      title: "Learning Reaches New Levels with the Power of AI",
+      description: "Prepare for your exams with our AI-generated questions, personalized study notes, and smart analytics.",
+      cta: "Start Learning"
     },
+    slide2: {
+      title: "Practice Like the Real Exam",
+      description: "Access hundreds of mock tests based on the latest syllabus to improve your rank and time management.",
+      cta: "Take Mock Tests"
+    },
+    slide3: {
+      title: "Never Miss an Update",
+      description: "Get real-time updates on the latest notifications, rank lists, and news directly from the PSC.",
+      cta: "See Updates"
+    }
+  },
+  dashboard: {
     topCourses: "Top Courses",
     notifications: {
         title: "Latest Notifications",

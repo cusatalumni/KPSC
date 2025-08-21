@@ -148,4 +148,5 @@ export type Page =
   | 'current_affairs'
   | 'gk'
   | 'admin_panel'
-  | 'study_material';
+  | 'study_material'
+  | 'sitemap';

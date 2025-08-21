@@ -1,9 +1,8 @@
 // Vercel Serverless Function
 // Path: /api/get-questions.ts
 
-import { GoogleAuth } from 'google-auth-library';
-import { google } from 'googleapis';
 import { GoogleGenAI, Type } from "@google/genai";
+import { readSheetData, appendSheetData } from './_lib/sheets-service';
 
 // Define a local type to avoid frontend dependency issues
 interface QuizQuestion {
@@ -16,22 +15,6 @@ interface QuizQuestion {
 // Initialize Gemini AI
 const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
 
-const READ_SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const WRITE_SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-
-async function getSheetsClient(scopes: string[]) {
-    const auth = new GoogleAuth({
-        scopes,
-        credentials: {
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-        },
-    });
-    const client = await auth.getClient();
-    return google.sheets({ version: 'v4', auth: client as any });
-}
-
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const RANGE = 'QuestionBank!A2:E'; // id, topic, question, options, correctAnswerIndex
 
 // Function to shuffle an array
@@ -69,16 +52,8 @@ async function generateAndStoreQuestions(topic: string, count: number): Promise<
 
         const valuesToAppend = newQuestionsRaw.map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex]);
 
-        if (valuesToAppend.length > 0) {
-            const sheets = await getSheetsClient(WRITE_SCOPES);
-            await sheets.spreadsheets.values.append({
-                spreadsheetId: SPREADSHEET_ID,
-                range: 'QuestionBank!A1',
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: valuesToAppend },
-            });
-            console.log(`Successfully generated and stored ${valuesToAppend.length} new questions for topic "${topic}".`);
-        }
+        await appendSheetData('QuestionBank!A1', valuesToAppend);
+        console.log(`Successfully generated and stored ${valuesToAppend.length} new questions for topic "${topic}".`);
         
         // Return the questions in the correct format for the frontend
         return newQuestionsRaw.map((item: any): QuizQuestion => ({
@@ -105,13 +80,8 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-        const sheets = await getSheetsClient(READ_SCOPES);
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: RANGE,
-        });
-
-        const rows = response.data.values || [];
+        const rows = await readSheetData(RANGE);
+        
         const allQuestions: QuizQuestion[] = rows.map(row => {
             try {
                 return {

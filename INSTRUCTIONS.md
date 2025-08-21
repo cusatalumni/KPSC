@@ -7,13 +7,14 @@ Follow these steps to configure your application to use Google Sheets for storin
 ### Step 1: Create a Google Sheet
 1. Go to [sheets.google.com](https://sheets.google.com) and create a new, blank spreadsheet.
 2. Name it something memorable, like "Kerala PSC Guru Data".
-3. **Crucially, create six tabs at the bottom and name them exactly as follows (case-sensitive):**
+3. **Crucially, create seven tabs at the bottom and name them exactly as follows (case-sensitive):**
     - `Notifications`
     - `LiveUpdates`
     - `CurrentAffairs`
     - `GK`
     - `QuestionBank`
     - `Bookstore`
+    - `StudyMaterialsCache`
 
 4. In the `Notifications` tab, add these headers in the first row, one in each cell from A1 to E1:
     `id`, `title`, `categoryNumber`, `lastDate`, `link`
@@ -33,7 +34,10 @@ Follow these steps to configure your application to use Google Sheets for storin
 9. In the `Bookstore` tab, add these headers:
     `id`, `title`, `author`, `imageUrl`, `amazonLink`
 
-10. From the URL of your spreadsheet, copy the **Spreadsheet ID**. It's the long string of characters between `/d/` and `/edit`.
+10. In the `StudyMaterialsCache` tab, add these headers:
+    `topic`, `content`, `lastGenerated`
+
+11. From the URL of your spreadsheet, copy the **Spreadsheet ID**. It's the long string of characters between `/d/` and `/edit`.
    - Example URL: `https://docs.google.com/spreadsheets/d/THIS_IS_THE_ID/edit`
    - Keep this ID handy. You will need it for your environment variables.
 

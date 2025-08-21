@@ -1,26 +1,12 @@
 // Path: /api/_lib/scraper-service.ts
 
-import { GoogleAuth } from 'google-auth-library';
-import { google } from 'googleapis';
 import { GoogleGenAI, Type } from "@google/genai";
 import { QUIZ_CATEGORIES } from '../../constants';
+import { clearAndWriteSheetData, appendSheetData } from './sheets-service';
 
 // Initialize Gemini AI
 const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const AFFILIATE_TAG = 'tag=httpcodingonl-21';
-
-async function getSheetsClient() {
-    const auth = new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        credentials: {
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-        },
-    });
-    const client = await auth.getClient();
-    return google.sheets({ version: 'v4', auth: client as any });
-}
 
 // --- Individual Scraping Functions ---
 
@@ -156,8 +142,7 @@ async function scrapeAmazonBooks() {
 // --- Main Orchestrator Functions ---
 
 export async function runDailyUpdateScrapers() {
-    const sheets = await getSheetsClient();
-    console.log('Google Sheets client initialized for daily scrapers.');
+    console.log('Starting daily scraping tasks.');
 
     const dailyRefreshTasks = [
         { name: 'Notifications', scraper: scrapeKpscNotifications, range: 'Notifications!A2:E' },
@@ -170,13 +155,7 @@ export async function runDailyUpdateScrapers() {
         try {
             console.log(`Starting daily refresh task: ${task.name}`);
             const newData = await task.scraper();
-            await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: task.range });
-            if (newData.length > 0) {
-                await sheets.spreadsheets.values.update({
-                    spreadsheetId: SPREADSHEET_ID, range: task.range.split('!')[0] + '!A2',
-                    valueInputOption: 'USER_ENTERED', requestBody: { values: newData },
-                });
-            }
+            await clearAndWriteSheetData(task.range, newData);
             console.log(`Successfully refreshed: ${task.name}`);
         } catch (scrapeError) {
             console.error(`Error processing task ${task.name}:`, scrapeError);
@@ -186,13 +165,8 @@ export async function runDailyUpdateScrapers() {
     try {
         console.log("Starting task: Enrich QuestionBank");
         const newQuestions = await generateNewQuestions();
-        if (newQuestions.length > 0) {
-            await sheets.spreadsheets.values.append({
-                spreadsheetId: SPREADSHEET_ID, range: 'QuestionBank!A1',
-                valueInputOption: 'USER_ENTERED', requestBody: { values: newQuestions },
-            });
-            console.log(`Successfully appended ${newQuestions.length} new questions.`);
-        }
+        await appendSheetData('QuestionBank!A1', newQuestions);
+        console.log(`Successfully appended ${newQuestions.length} new questions.`);
     } catch(e) {
         console.error("Error enriching QuestionBank:", e);
     }
@@ -202,19 +176,11 @@ export async function runDailyUpdateScrapers() {
 
 
 export async function runBookScraper() {
-    const sheets = await getSheetsClient();
-    console.log('Google Sheets client initialized for book scraper.');
+    console.log('Starting monthly task: Scrape Books');
     const range = 'Bookstore!A2:E';
     
-    console.log('Starting monthly task: Scrape Books');
     const newBookData = await scrapeAmazonBooks();
+    await clearAndWriteSheetData(range, newBookData);
     
-    await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range });
-    if (newBookData.length > 0) {
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID, range: 'Bookstore!A2',
-            valueInputOption: 'USER_ENTERED', requestBody: { values: newBookData },
-        });
-    }
     console.log(`Successfully scraped and stored ${newBookData.length} books.`);
 }
