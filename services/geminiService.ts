@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { QuizQuestion, QuestionPaper } from '../types';
+import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
 const API_KEY = import.meta.env.VITE_API_KEY;
@@ -9,66 +9,6 @@ if (!API_KEY) {
 }
 
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
-
-const MOCKED_QUESTION: QuizQuestion = {
-    question: "കേരളത്തിലെ ഏറ്റവും വലിയ നദി ഏതാണ്?",
-    options: ["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"],
-    correctAnswerIndex: 0,
-    topic: "പൊതുവിജ്ഞാനം"
-};
-
-
-export const getDailyQuestion = async (): Promise<QuizQuestion> => {
-  if (!ai) {
-    return new Promise(resolve => setTimeout(() => resolve(MOCKED_QUESTION), 1000));
-  }
-  
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: "Generate a single multiple-choice question in Malayalam suitable for a Kerala PSC general knowledge paper. The topic can be Kerala history, Indian politics, general science, or geography. Provide 4 options and indicate the correct answer index (0-based).",
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            question: {
-              type: Type.STRING,
-              description: "The question text in Malayalam."
-            },
-            options: {
-              type: Type.ARRAY,
-              description: "An array of 4 possible answers in Malayalam.",
-              items: {
-                type: Type.STRING
-              }
-            },
-            correctAnswerIndex: {
-              type: Type.INTEGER,
-              description: "The 0-based index of the correct answer in the options array."
-            }
-          },
-          required: ["question", "options", "correctAnswerIndex"]
-        }
-      }
-    });
-
-    const jsonString = response.text.trim();
-    const parsedJson = JSON.parse(jsonString);
-
-    if (parsedJson.options && parsedJson.options.length === 4 && typeof parsedJson.correctAnswerIndex === 'number') {
-        return { ...parsedJson, topic: "Daily Question" } as QuizQuestion;
-    } else {
-        console.error("Received malformed JSON from Gemini API for quiz, falling back to mock.", parsedJson);
-        return MOCKED_QUESTION;
-    }
-
-  } catch (error) {
-    console.error("Error fetching question from Gemini API:", error);
-    return MOCKED_QUESTION;
-  }
-};
-
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
     if (!ai) {

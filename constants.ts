@@ -11,16 +11,16 @@ import { ScaleIcon } from './components/icons/ScaleIcon';
 import { GlobeAltIcon } from './components/icons/GlobeAltIcon';
 
 export const NAV_LINKS = [
-  { name: 'ഹോം', target: 'dashboard' },
-  { name: 'കോഴ്സുകൾ', target: 'dashboard' },
-  { name: 'ക്വിസുകൾ', target: 'quiz_home' },
-  { name: 'മോക്ക് ടെസ്റ്റുകൾ', target: 'mock_test_home' },
-  { name: 'ആനുകാലികം', target: 'current_affairs' },
-  { name: 'പൊതുവിജ്ഞാനം', target: 'gk' },
-  { name: 'ചോദ്യപേപ്പറുകൾ', target: 'previous_papers'},
-  { name: 'PSC Live', target: 'psc_live_updates'},
-  { name: 'പുസ്തകശാല', target: 'bookstore' },
-  { name: 'പരീക്ഷാ കലണ്ടർ', target: 'exam_calendar' },
+  { nameKey: 'nav.home', target: 'dashboard' },
+  { nameKey: 'nav.courses', target: 'dashboard' },
+  { nameKey: 'nav.quizzes', target: 'quiz_home' },
+  { nameKey: 'nav.mockTests', target: 'mock_test_home' },
+  { nameKey: 'nav.currentAffairs', target: 'current_affairs' },
+  { nameKey: 'nav.gk', target: 'gk' },
+  { nameKey: 'nav.previousPapers', target: 'previous_papers'},
+  { nameKey: 'nav.pscLive', target: 'psc_live_updates'},
+  { nameKey: 'nav.bookstore', target: 'bookstore' },
+  { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
 ];
 
 export const EXAMS_DATA: Exam[] = [

@@ -1,17 +1,20 @@
 import React from 'react';
 import type { Page } from '../App';
 import { FacebookIcon } from './icons/FacebookIcon';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface FooterProps {
   onNavigate: (page: Page) => void;
 }
 
 const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const footerLinks: { name: string, target: Page }[] = [
-    { name: 'ഞങ്ങളെക്കുറിച്ച്', target: 'about' },
-    { name: 'പ്രൈവസി പോളിസി', target: 'privacy' },
-    { name: 'നിബന്ധനകളും വ്യവസ്ഥകളും', target: 'terms' },
-    { name: 'അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ', target: 'disclosure' },
+  const { t } = useTranslation();
+
+  const footerLinks: { nameKey: string, target: Page }[] = [
+    { nameKey: 'footer.about', target: 'about' },
+    { nameKey: 'footer.privacy', target: 'privacy' },
+    { nameKey: 'footer.terms', target: 'terms' },
+    { nameKey: 'footer.disclosure', target: 'disclosure' },
   ];
   
   const annapoornaUrl = 'https://annapoornainfo.com/';
@@ -22,8 +25,8 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           <div>
-            <h3 className="font-bold text-lg mb-2">കേരള പി.എസ്.സി ഗുരു</h3>
-            <p className="text-slate-400 text-sm">നിങ്ങളുടെ സർക്കാർ ജോലി സ്വപ്നത്തിലേക്കുള്ള AI-പവേർഡ് വഴികാട്ടി.</p>
+            <h3 className="font-bold text-lg mb-2">{t('app.title')}</h3>
+            <p className="text-slate-400 text-sm">{t('footer.tagline')}</p>
              <div className="mt-4">
                 <p className="font-semibold text-sm">Powered by Annapoorna Exam App</p>
                 <a 
@@ -35,19 +38,19 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-2">പ്രധാന ലിങ്കുകൾ</h3>
+            <h3 className="font-bold text-lg mb-2">{t('footer.linksTitle')}</h3>
             <ul className="space-y-2">
               {footerLinks.map(link => (
-                <li key={link.name}>
+                <li key={link.nameKey}>
                   <button onClick={() => onNavigate(link.target)} className="text-slate-300 hover:text-white text-sm transition">
-                    {link.name}
+                    {t(link.nameKey)}
                   </button>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-2">സോഷ്യൽ മീഡിയ</h3>
+            <h3 className="font-bold text-lg mb-2">{t('footer.socialTitle')}</h3>
             <a 
               href={`/go?url=${encodeURIComponent(facebookUrl)}`}
               className="inline-flex items-center space-x-2 text-slate-300 hover:text-white transition"
@@ -59,7 +62,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
         <div className="mt-8 border-t border-slate-700 pt-6 text-center">
             <p className="text-xs text-slate-500">
-              &copy; {new Date().getFullYear()} കേരള പി.എസ്.സി ഗുരു | Powered by Annapoorna Examination App. All Rights Reserved.
+              &copy; {new Date().getFullYear()} {t('app.title')} | {t('footer.copyright')}
             </p>
         </div>
       </div>

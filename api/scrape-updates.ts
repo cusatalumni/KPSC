@@ -32,7 +32,7 @@ const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 async function scrapeKpscNotifications() {
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 5 most recent notifications. For each, extract: full title, category number, last date (DD-MM-YYYY), and direct URL. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
+        contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 10 most recent notifications. For each, extract: full title, category number, last date (DD-MM-YYYY), and direct URL. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -54,7 +54,7 @@ async function scrapeKpscNotifications() {
 async function scrapePscLiveUpdates() {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Scrape the 10 most recent updates from keralapsc.gov.in (Ranked Lists, Latest Updates, Notifications). For each, provide title, full URL, section, and publication date (YYYY-MM-DD). Return as JSON array.`,
+        contents: `Scrape the 15 most recent updates from keralapsc.gov.in (Ranked Lists, Latest Updates, Notifications). For each, provide title, full URL, section, and publication date (YYYY-MM-DD). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -74,7 +74,7 @@ async function scrapePscLiveUpdates() {
 async function scrapeCurrentAffairs() {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Generate 5 recent, relevant current affairs topics for Kerala PSC exams in Malayalam. For each, provide a unique ID, a concise title, the source (e.g., 'മാതൃഭൂമി'), and today's date (YYYY-MM-DD). Return as JSON array.`,
+        contents: `Generate 10 recent, relevant current affairs topics for Kerala PSC exams in Malayalam. For each, provide a unique ID, a concise title, the source (e.g., 'മാതൃഭൂമി'), and today's date (YYYY-MM-DD). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -94,7 +94,7 @@ async function scrapeCurrentAffairs() {
 async function scrapeGk() {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `Generate 10 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as JSON array.`,
+        contents: `Generate 25 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {

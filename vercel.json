@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/scrape-updates",
-      "schedule": "0 6 * * *"
+      "schedule": "30 23 * * *"
     }
   ],
   "rewrites": [

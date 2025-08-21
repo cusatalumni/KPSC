@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
@@ -22,6 +22,7 @@ import GkPage from './components/pages/GkPage';
 import type { Exam, PracticeTest, MockTest, QuizCategory, SubscriptionStatus } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
+import { useTranslation } from './contexts/LanguageContext';
 
 export type Page = 
   | 'dashboard' 
@@ -51,6 +52,11 @@ const App: React.FC = () => {
   
   const { user, isSignedIn } = useUser();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
+  const { language } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   useEffect(() => {
     if (isSignedIn && user?.id) {
@@ -94,7 +100,7 @@ const App: React.FC = () => {
         handleNavigate('upgrade');
         return;
     }
-    const testTitle = typeof test.title === 'string' ? test.title : test.title.ml;
+    const testTitle = typeof test.title === 'string' ? test.title : test.title[language];
     setActiveTest({ title: `${examTitle} - ${testTitle}`, questionsCount: 'questions' in test ? test.questions : test.questionsCount });
     setPreviousPage(currentPage);
     setCurrentPage('test');
@@ -105,7 +111,7 @@ const App: React.FC = () => {
       handleNavigate('upgrade');
       return;
     }
-    setActiveTest({ title: category.title.ml, questionsCount: 10 }); // All quizzes are 10 questions
+    setActiveTest({ title: category.title[language], questionsCount: 10 }); // All quizzes are 10 questions
     setPreviousPage(currentPage);
     setCurrentPage('test');
   }
@@ -144,7 +150,7 @@ const App: React.FC = () => {
             exam={selectedExam} 
             content={LDC_EXAM_CONTENT} // NOTE: Using mock LDC content for now
             onBack={() => handleNavigate('dashboard')}
-            onStartTest={(test) => handleStartTest(test, selectedExam.title.ml)}
+            onStartTest={(test) => handleStartTest(test, selectedExam.title[language])}
           />;
       case 'bookstore':
         return <BookstorePage onBack={() => handleNavigate('dashboard')} />;

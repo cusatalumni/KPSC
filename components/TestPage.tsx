@@ -6,6 +6,7 @@ import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { ArrowsPointingOutIcon } from './icons/ArrowsPointingOutIcon';
 import { ArrowsPointingInIcon } from './icons/ArrowsPointingInIcon';
+import { useTranslation } from '../contexts/LanguageContext';
 
 interface TestPageProps {
   title: string;
@@ -17,6 +18,7 @@ interface TestPageProps {
 const DURATION_PER_QUESTION = 90; // 1.5 minutes per question
 
 const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComplete, onBack }) => {
+  const { t } = useTranslation();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,18 +60,18 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
     try {
       const data = await getQuestionsForTest(title, questionsCount);
       if (data.length === 0) {
-        setError("ഈ വിഷയത്തിൽ ചോദ്യങ്ങളൊന്നും ലഭ്യമല്ല.");
+        setError(t('test.noQuestionsError'));
       } else {
         setQuestions(data);
         setTimeLeft(data.length * DURATION_PER_QUESTION);
       }
     } catch (err) {
-      setError("ചോദ്യങ്ങൾ ലഭ്യമാക്കുന്നതിൽ പിഴവുണ്ടായി.");
+      setError(t('test.fetchError'));
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [title, questionsCount]);
+  }, [title, questionsCount, t]);
 
   useEffect(() => {
     fetchQuestions();
@@ -133,8 +135,8 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-        <p className="mt-4 text-lg text-slate-600">AI നിങ്ങൾക്കായി പുതിയ ചോദ്യങ്ങൾ തയ്യാറാക്കുന്നു...</p>
-        <p className="text-sm text-slate-500">AI is generating fresh questions for you...</p>
+        <p className="mt-4 text-lg text-slate-600">{t('test.loading.ml')}</p>
+        <p className="text-sm text-slate-500">{t('test.loading.en')}</p>
       </div>
     );
   }
@@ -142,9 +144,9 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
   if (error || questions.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center h-screen text-center p-4">
-            <p className="text-xl font-semibold text-red-600">{error || 'ചോദ്യങ്ങളൊന്നും കണ്ടെത്തിയില്ല.'}</p>
+            <p className="text-xl font-semibold text-red-600">{error || t('test.noQuestionsError')}</p>
             <button onClick={onBack} className="mt-4 flex items-center space-x-2 bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg hover:bg-slate-300 transition">
-                <span>മുമ്പത്തെ പേജിലേക്ക് മടങ്ങുക</span>
+                <span>{t('test.backToPrevious')}</span>
             </button>
         </div>
     );
@@ -172,7 +174,7 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
             </div>
             <div className="mt-4">
                 <div className="flex justify-between text-sm text-slate-600 mb-1">
-                    <span>ചോദ്യം {currentIndex + 1} / {questions.length}</span>
+                    <span>{t('test.question')} {currentIndex + 1} / {questions.length}</span>
                     <span>{Math.round(progress)}%</span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2.5">
@@ -207,28 +209,28 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
                     disabled={currentIndex === 0}
                     className="bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
-                    മുമ്പത്തേത്
+                    {t('test.previous')}
                 </button>
                 {currentIndex === questions.length - 1 ? (
                     <button 
                         onClick={() => setIsModalOpen(true)}
                         className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition"
                     >
-                    സമർപ്പിക്കുക
+                    {t('test.submit')}
                     </button>
                 ) : (
                     <button 
                         onClick={handleNext} 
                         className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition"
                     >
-                        അടുത്തത്
+                        {t('test.next')}
                     </button>
                 )}
             </footer>
         </div>
         <div className="text-center mt-4">
             <button onClick={onBack} className="text-sm text-slate-500 hover:text-indigo-600 hover:underline">
-                പരീക്ഷ അവസാനിപ്പിക്കുക
+                {t('test.endTest')}
             </button>
         </div>
       </div>
@@ -239,9 +241,9 @@ const TestPage: React.FC<TestPageProps> = ({ title, questionsCount, onTestComple
             setIsModalOpen(false);
             handleSubmit();
         }}
-        title="പരീക്ഷ സമർപ്പിക്കുക"
+        title={t('test.modal.title')}
       >
-        ഈ പരീക്ഷ സമർപ്പിക്കാൻ നിങ്ങൾ തയ്യാറാണോ?
+        {t('test.modal.body')}
       </Modal>
     </div>
   );

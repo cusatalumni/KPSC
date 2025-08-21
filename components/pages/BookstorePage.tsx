@@ -1,25 +1,26 @@
-
 import React from 'react';
 import { BOOKSTORE_DATA } from '../../constants';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 interface PageProps {
   onBack: () => void;
 }
 
 const BookstorePage: React.FC<PageProps> = ({ onBack }) => {
+  const { t } = useTranslation();
   return (
     <div className="animate-fade-in">
       <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
         <ChevronLeftIcon className="h-5 w-5" />
-        <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
+        <span>{t('backToDashboard')}</span>
       </button>
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-bold text-slate-800">
-          പുസ്തകശാല
+          {t('bookstore.title')}
           <span className="block text-2xl text-slate-500 mt-1 font-normal">Bookstore</span>
         </h1>
-        <p className="text-lg text-slate-600 mt-2">പി.എസ്.സി പഠനത്തിനായുള്ള മികച്ച പുസ്തകങ്ങൾ ഇവിടെനിന്നും തിരഞ്ഞെടുക്കാം.</p>
+        <p className="text-lg text-slate-600 mt-2">{t('bookstore.subtitle')}</p>
       </header>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {BOOKSTORE_DATA.map((book) => (
@@ -31,17 +32,19 @@ const BookstorePage: React.FC<PageProps> = ({ onBack }) => {
               <h3 className="text-lg font-bold text-slate-800">{book.title}</h3>
               <p className="text-sm text-slate-500 mb-4">{book.author}</p>
               <a 
-                href={`/go?url=${encodeURIComponent(book.amazonLink)}`}
+                href={book.amazonLink}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-auto w-full text-center bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200"
               >
-                Amazon-ൽ വാങ്ങുക
+                {t('bookstore.buyOnAmazon')}
               </a>
             </div>
           </div>
         ))}
       </div>
        <p className="text-center text-sm text-slate-500 mt-12 italic">
-          ഒരു അഫിലിയേറ്റ് എന്ന നിലയിൽ, യോഗ്യതയുള്ള വാങ്ങലുകളിൽ നിന്ന് ഞങ്ങൾ വരുമാനം നേടുന്നു.
+          {t('bookstore.disclosure')}
         </p>
     </div>
   );

@@ -1,0 +1,116 @@
+export const translations = {
+  app: {
+    title: "Kerala PSC Guru",
+    subtitle: "PSC Guidance Kerala"
+  },
+  login: "Login",
+  start: "Start",
+  refresh: "Refresh",
+  search: "Search",
+  date: "Date",
+  automated: "Automated",
+  automatedMessage: "This information is updated automatically every day.",
+  backToDashboard: "Back to Dashboard",
+  loading: "Loading...",
+  error: {
+    fetchData: "An error occurred while fetching data.",
+    fetchNotifications: "An error occurred while fetching notifications."
+  },
+  nav: {
+    home: "Home",
+    courses: "Courses",
+    quizzes: "Quizzes",
+    mockTests: "Mock Tests",
+    currentAffairs: "Current Affairs",
+    gk: "General Knowledge",
+    previousPapers: "Previous Papers",
+    pscLive: "PSC Live",
+    bookstore: "Bookstore",
+    examCalendar: "Exam Calendar"
+  },
+  dashboard: {
+    hero: {
+      title: "Prepare for PSC Exams with the Power of AI",
+      subtitle: "Master PSC exams with the power of AI. Your dream government job starts here.",
+      cta: "Practice Mock Tests"
+    },
+    topCourses: "Top Courses",
+    notifications: {
+        title: "Latest Notifications",
+        subtitle: "The latest updates, refreshed daily.",
+        catNo: "Cat No",
+        lastDate: "Last Date"
+    }
+  },
+  bookstore: {
+    title: "Bookstore",
+    subtitle: "Choose from the best books for your PSC preparation.",
+    buyOnAmazon: "Buy on Amazon",
+    disclosure: "As an affiliate, we earn from qualifying purchases."
+  },
+  currentAffairs: {
+    title: "Current Affairs",
+    subtitle: "The latest news required for PSC exams.",
+    source: "Source"
+  },
+  gk: {
+    title: "General Knowledge",
+    subtitle: "Important facts that are likely to be asked in exams."
+  },
+  pscLive: {
+    title: "PSC Live Updates",
+    subtitle: "The latest rank lists, notifications, and more from keralapsc.gov.in, updated daily."
+  },
+  previousPapers: {
+    title: "Previous Question Papers",
+    subtitle: "Find old question papers from the official PSC website using AI.",
+    searchPlaceholder: "e.g., LDC 2020, Police Constable...",
+    aiSearching: "AI is finding question papers for you...",
+    noResults: {
+      title: "No Results Found",
+      message: "Could not find question papers related to your search. Please try something else."
+    }
+  },
+  test: {
+    noQuestionsError: "No questions are available for this topic.",
+    fetchError: "There was an error fetching questions.",
+    backToPrevious: "Back to Previous Page",
+    loading: {
+      ml: "AI നിങ്ങൾക്കായി പുതിയ ചോദ്യങ്ങൾ തയ്യാറാക്കുന്നു...",
+      en: "AI is generating fresh questions for you..."
+    },
+    question: "Question",
+    previous: "Previous",
+    next: "Next",
+    submit: "Submit",
+    endTest: "End Test",
+    modal: {
+      title: "Submit Test",
+      body: "Are you sure you want to submit this test?"
+    }
+  },
+  results: {
+    title: "Test Result",
+    yourScore: "Your Score",
+    summary: "You answered {{score}} out of {{total}} questions correctly.",
+    feedback: {
+      excellent: "Excellent!",
+      good: "Good effort!",
+      average: "Can improve further",
+      poor: "Work harder"
+    }
+  },
+  footer: {
+    tagline: "Your AI-powered guide to your dream government job.",
+    linksTitle: "Quick Links",
+    socialTitle: "Social Media",
+    copyright: "Powered by Annapoorna Examination App. All Rights Reserved.",
+    about: "About Us",
+    privacy: "Privacy Policy",
+    terms: "Terms & Conditions",
+    disclosure: "Affiliate Disclosure"
+  },
+  examPage: {
+    recommendedBooks: "Recommended Books"
+  }
+};

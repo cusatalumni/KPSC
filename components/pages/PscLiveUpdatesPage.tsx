@@ -1,10 +1,9 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { getLiveUpdates } from '../../services/pscDataService';
 import type { PscUpdateItem } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { RssIcon } from '../icons/RssIcon';
+import { useTranslation } from '../../contexts/LanguageContext';
 
 const getSectionChipClass = (section: string) => {
     if (section.toLowerCase().includes('rank')) return 'bg-green-100 text-green-800';
@@ -14,6 +13,7 @@ const getSectionChipClass = (section: string) => {
 }
 
 const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { t } = useTranslation();
     const [updates, setUpdates] = useState<PscUpdateItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -25,12 +25,12 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const data = await getLiveUpdates();
             setUpdates(data);
         } catch (err) {
-            setError('വിവരങ്ങൾ ലഭിക്കുന്നതിൽ പിഴവ് സംഭവിച്ചു.');
+            setError(t('error.fetchData'));
             console.error(err);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchUpdates();
@@ -40,16 +40,16 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <div className="animate-fade-in">
             <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
                 <ChevronLeftIcon className="h-5 w-5" />
-                <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക</span>
+                <span>{t('backToDashboard')}</span>
             </button>
 
             <header className="mb-8 text-center border-b border-slate-200 pb-6">
                 <RssIcon className="h-16 w-16 mx-auto text-indigo-400" />
                 <h1 className="text-4xl font-bold text-slate-800 mt-4">
-                PSC Live അപ്‌ഡേറ്റുകൾ
+                {t('pscLive.title')}
                 <span className="block text-2xl text-slate-500 mt-1 font-normal">Live PSC Updates</span>
                 </h1>
-                <p className="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">keralapsc.gov.in-ൽ നിന്നുള്ള ഏറ്റവും പുതിയ റാങ്ക് ലിസ്റ്റുകൾ, അറിയിപ്പുകൾ, എന്നിവ ദിവസവും പുതുക്കിയത്.</p>
+                <p className="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">{t('pscLive.subtitle')}</p>
             </header>
 
             <div className="flex justify-center mb-6">
@@ -57,14 +57,14 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120 10M20 20l-1.5-1.5A9 9 0 004 14" />
                     </svg>
-                    <span>{loading ? 'ലോഡ് ചെയ്യുന്നു...' : 'പുതുക്കുക'}</span>
+                    <span>{loading ? t('loading') : t('refresh')}</span>
                 </button>
             </div>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <p className="mt-4 text-lg text-slate-600">പുതിയ വിവരങ്ങൾ ശേഖരിക്കുന്നു...</p>
+                    <p className="mt-4 text-lg text-slate-600">{t('loading')}</p>
                 </div>
             ) : error ? (
                 <div className="text-center text-red-500 bg-red-50 p-6 rounded-lg">{error}</div>
@@ -76,7 +76,7 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${getSectionChipClass(item.section)}`}>
                                     {item.section}
                                 </span>
-                                <p className="text-sm text-slate-500 font-medium whitespace-nowrap">Date: {item.published_date}</p>
+                                <p className="text-sm text-slate-500 font-medium whitespace-nowrap">{t('date')}: {item.published_date}</p>
                             </div>
                             <h3 className="text-lg font-semibold text-slate-800 group-hover:text-indigo-600">{item.title}</h3>
                         </a>

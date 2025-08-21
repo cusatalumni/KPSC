@@ -1,9 +1,10 @@
-
 import React from 'react';
 import { BOOKSTORE_DATA } from '../constants';
 import { BookOpenIcon } from './icons/BookOpenIcon';
+import { useTranslation } from '../contexts/LanguageContext';
 
 const RecommendedBooks: React.FC = () => {
+  const { t } = useTranslation();
   // Show a selection of books, e.g., the first two
   const recommended = BOOKSTORE_DATA.slice(0, 2);
 
@@ -11,7 +12,7 @@ const RecommendedBooks: React.FC = () => {
     <section>
       <h2 className="text-2xl font-semibold text-slate-700 mb-4 flex items-center">
         <BookOpenIcon className="h-7 w-7 text-indigo-500 mr-3" />
-        ശുപാർശ ചെയ്യുന്ന പുസ്തകങ്ങൾ
+        {t('examPage.recommendedBooks')}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {recommended.map(book => (
@@ -21,10 +22,12 @@ const RecommendedBooks: React.FC = () => {
               <h3 className="font-bold text-slate-800">{book.title}</h3>
               <p className="text-sm text-slate-500">{book.author}</p>
               <a 
-                href={`/go?url=${encodeURIComponent(book.amazonLink)}`}
+                href={book.amazonLink}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block mt-2 text-sm text-center bg-indigo-600 text-white font-bold px-3 py-1 rounded-md hover:bg-indigo-700 transition duration-200"
               >
-                Amazon-ൽ വാങ്ങുക
+                {t('bookstore.buyOnAmazon')}
               </a>
             </div>
           </div>
