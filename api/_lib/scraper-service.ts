@@ -132,7 +132,7 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Search amazon.in for the top 12 best-selling and most relevant Kerala PSC exam preparation books. For each, extract a unique ID, title, author, a high-quality imageUrl, and the full product amazonLink. Crucially, for each amazonLink, you MUST append the affiliate tracking code "${AFFILIATE_TAG}". If the URL already has a '?', append with '&', otherwise append with '?'. Return as a JSON array.`;
+    const prompt = `Act as a web scraper. Start by searching on amazon.in for "Kerala PSC exam preparation books". From the search results page, identify the top 12 most relevant, individual book listings. For each book, you must find its direct product detail page URL (it should look like 'https://www.amazon.in/dp/...' or contain '/dp/'). From the listing, extract: a unique ID, the book's title, the author's name, and a high-quality image URL. Finally, take the clean product URL and append the affiliate tracking code "${AFFILIATE_TAG}". Use '&' if the product URL already has a '?', otherwise use '?'. Return the final data as a JSON array.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash", contents: prompt,
