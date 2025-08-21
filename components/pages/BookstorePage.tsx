@@ -31,9 +31,7 @@ const BookstorePage: React.FC<PageProps> = ({ onBack }) => {
               <h3 className="text-lg font-bold text-slate-800">{book.title}</h3>
               <p className="text-sm text-slate-500 mb-4">{book.author}</p>
               <a 
-                href={book.amazonLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
+                href={`/go?url=${encodeURIComponent(book.amazonLink)}`}
                 className="mt-auto w-full text-center bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200"
               >
                 Amazon-ൽ വാങ്ങുക

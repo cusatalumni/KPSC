@@ -13,9 +13,7 @@ const StudyMaterialWidget: React.FC = () => {
                 {STUDY_MATERIALS_DATA.map((material) => (
                     <a
                         key={material.id}
-                        href={material.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={material.link !== '#' ? `/go?url=${encodeURIComponent(material.link)}` : '#'}
                         className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

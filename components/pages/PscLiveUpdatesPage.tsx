@@ -70,7 +70,7 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             ) : (
                 <div className="space-y-4">
                     {updates.map((item, index) => (
-                        <a href={item.url} key={index} target="_blank" rel="noopener noreferrer" className="block bg-white p-5 rounded-xl shadow-md border border-slate-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-300">
+                        <a href={`/go?url=${encodeURIComponent(item.url)}`} key={index} className="block bg-white p-5 rounded-xl shadow-md border border-slate-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-300">
                             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
                                 <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${getSectionChipClass(item.section)}`}>
                                     {item.section}

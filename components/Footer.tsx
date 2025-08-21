@@ -13,6 +13,9 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     { name: 'നിബന്ധനകളും വ്യവസ്ഥകളും', target: 'terms' },
     { name: 'അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ', target: 'disclosure' },
   ];
+  
+  const annapoornaUrl = 'https://annapoornainfo.com/';
+  const facebookUrl = 'https://www.facebook.com/people/Kerala-PSC-Daily-Quiz-Guidance/61577831024012/';
 
   return (
     <footer className="bg-slate-800 text-white">
@@ -24,9 +27,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
              <div className="mt-4">
                 <p className="font-semibold text-sm">Powered by Annapoorna Exam App</p>
                 <a 
-                  href="https://annapoornainfo.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/go?url=${encodeURIComponent(annapoornaUrl)}`}
                   className="text-xs text-slate-400 hover:text-white transition"
                 >
                   An Annapoorna infotech venture
@@ -48,9 +49,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h3 className="font-bold text-lg mb-2">സോഷ്യൽ മീഡിയ</h3>
             <a 
-              href="https://www.facebook.com/people/Kerala-PSC-Daily-Quiz-Guidance/61577831024012/" 
-              target="_blank" 
-              rel="noopener noreferrer"
+              href={`/go?url=${encodeURIComponent(facebookUrl)}`}
               className="inline-flex items-center space-x-2 text-slate-300 hover:text-white transition"
             >
               <FacebookIcon className="h-5 w-5" />

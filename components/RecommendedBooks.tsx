@@ -21,9 +21,7 @@ const RecommendedBooks: React.FC = () => {
               <h3 className="font-bold text-slate-800">{book.title}</h3>
               <p className="text-sm text-slate-500">{book.author}</p>
               <a 
-                href={book.amazonLink} 
-                target="_blank" 
-                rel="noopener noreferrer"
+                href={`/go?url=${encodeURIComponent(book.amazonLink)}`}
                 className="inline-block mt-2 text-sm text-center bg-indigo-600 text-white font-bold px-3 py-1 rounded-md hover:bg-indigo-700 transition duration-200"
               >
                 Amazon-ൽ വാങ്ങുക

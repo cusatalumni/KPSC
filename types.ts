@@ -1,17 +1,3 @@
-
-export {};
-
-declare global {
-  interface ImportMetaEnv {
-    readonly VITE_CLERK_PUBLISHABLE_KEY: string;
-    readonly VITE_API_KEY: string;
-  }
-
-  interface ImportMeta {
-    readonly env: ImportMetaEnv;
-  }
-}
-
 export interface BilingualText {
   ml: string;
   en: string;
@@ -41,8 +27,8 @@ export interface QuizCategory {
 export interface Notification {
   id: string;
   title: string;
-  date: string;
-  category: string;
+  lastDate: string;
+  categoryNumber: string;
   link: string;
 }
 

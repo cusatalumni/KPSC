@@ -30,7 +30,7 @@ const ExamCalendarTable: React.FC<{ data: ExamCalendarEntry[] }> = ({ data }) =>
                         <td className="px-4 py-4 text-sm text-slate-700">{item.department}</td>
                         <td className="px-4 py-4 text-sm text-slate-700 whitespace-nowrap">{item.examDate}</td>
                         <td className="px-4 py-4 text-sm">
-                            <a href={item.syllabusLink} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-semibold">
+                            <a href={item.syllabusLink !== '#' ? `/go?url=${encodeURIComponent(item.syllabusLink)}` : '#'} className="text-indigo-600 hover:underline font-semibold">
                                 കാണുക
                             </a>
                         </td>

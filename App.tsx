@@ -51,6 +51,21 @@ const App: React.FC = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
 
   useEffect(() => {
+    // Client-side redirect handler for masked external links
+    if (window.location.pathname === '/go') {
+        const params = new URLSearchParams(window.location.search);
+        const targetUrl = params.get('url');
+        if (targetUrl) {
+            // Use replace to avoid adding the redirector to browser history
+            window.location.replace(decodeURIComponent(targetUrl));
+        } else {
+            // If no URL is provided, go back to the homepage
+            window.location.href = '/';
+        }
+    }
+  }, []);
+
+  useEffect(() => {
     if (isSignedIn && user?.id) {
       const status = subscriptionService.getSubscriptionStatus(user.id);
       setSubscriptionStatus(status);

@@ -77,7 +77,7 @@ export const getLatestNotifications = async (): Promise<Notification[]> => {
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Generate a JSON array of 5 recent, realistic-looking notifications from the official Kerala PSC website (keralapsc.gov.in). Use today's date and recent past dates. Each object in the array should have an 'id' (a unique string), 'title' in Malayalam, 'date' (in DD-MM-YYYY format), 'category' (one of 'പുതിയ വിജ്ഞാപനം', 'ഷോർട്ട് ലിസ്റ്റ്', 'റാങ്ക് ലിസ്റ്റ്', 'പരീക്ഷാ കലണ്ടർ'), and 'link' (use '#'). The titles and dates should be varied and plausible for a government exam portal.`,
+            contents: `Act as a web scraper. Go to the URL "https://keralapsc.gov.in/index.php/notifications". Scrape the 5 most recent notifications listed on that page. For each notification, extract the following details: the full notification title, the category number (e.g., "265/2025"), the last date for application (in "DD-MM-YYYY" format), and the direct URL link to the notification details or PDF. Return the result as a JSON array of objects. Each object needs an 'id' (unique string), 'title', 'categoryNumber', 'lastDate', and 'link'.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -87,11 +87,11 @@ export const getLatestNotifications = async (): Promise<Notification[]> => {
                         properties: {
                             id: { type: Type.STRING },
                             title: { type: Type.STRING },
-                            date: { type: Type.STRING },
-                            category: { type: Type.STRING },
+                            categoryNumber: { type: Type.STRING },
+                            lastDate: { type: Type.STRING },
                             link: { type: Type.STRING },
                         },
-                        required: ["id", "title", "date", "category", "link"]
+                        required: ["id", "title", "categoryNumber", "lastDate", "link"]
                     }
                 }
             }

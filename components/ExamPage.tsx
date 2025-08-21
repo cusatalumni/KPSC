@@ -76,7 +76,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
               </h2>
                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
                  {content.studyNotes.map(note => (
-                   <a key={note.id} href={note.link} className="flex items-center p-2 rounded hover:bg-slate-50 group">
+                   <a key={note.id} href={note.link !== '#' ? `/go?url=${encodeURIComponent(note.link)}` : '#'} className="flex items-center p-2 rounded hover:bg-slate-50 group">
                       <span className="text-slate-700 font-medium group-hover:text-indigo-600">{note.title}</span>
                       <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
                    </a>
@@ -92,7 +92,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
               </h2>
                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
                  {content.previousPapers.map(paper => (
-                   <a key={paper.id} href={paper.link} className="flex items-center p-2 rounded hover:bg-slate-50 group">
+                   <a key={paper.id} href={paper.link !== '#' ? `/go?url=${encodeURIComponent(paper.link)}` : '#'} className="flex items-center p-2 rounded hover:bg-slate-50 group">
                       <span className="text-slate-700 font-medium group-hover:text-indigo-600">{paper.title}</span>
                       <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
                    </a>

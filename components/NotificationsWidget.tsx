@@ -3,21 +3,6 @@ import { getLatestNotifications } from '../services/geminiService';
 import type { Notification } from '../types';
 import { BellIcon } from './icons/BellIcon';
 
-const getCategoryChipClass = (category: string) => {
-    switch (category) {
-        case 'പുതിയ വിജ്ഞാപനം':
-            return 'bg-indigo-100 text-indigo-800';
-        case 'ഷോർട്ട് ലിസ്റ്റ്':
-            return 'bg-yellow-100 text-yellow-800';
-        case 'റാങ്ക് ലിസ്റ്റ്':
-            return 'bg-green-100 text-green-800';
-        case 'പരീക്ഷാ കലണ്ടർ':
-            return 'bg-purple-100 text-purple-800';
-        default:
-            return 'bg-slate-100 text-slate-800';
-    }
-}
-
 const NotificationsWidget: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
@@ -70,14 +55,12 @@ const NotificationsWidget: React.FC = () => {
             ) : (
                 <div className="space-y-1 -mr-2 pr-2 flex-grow max-h-80 overflow-y-auto">
                     {notifications.map(item => (
-                        <a href={item.link} key={item.id} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">
-                            <div className="flex items-center justify-between gap-2">
-                                <p className="font-semibold text-slate-700 flex-1">{item.title}</p>
-                                <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${getCategoryChipClass(item.category)}`}>
-                                    {item.category}
-                                </span>
+                        <a href={`/go?url=${encodeURIComponent(item.link)}`} key={item.id} className="block p-3 rounded-lg hover:bg-slate-50 transition-colors duration-200">
+                            <h4 className="font-semibold text-slate-700 leading-snug">{item.title}</h4>
+                            <div className="flex items-center justify-between text-sm text-slate-500 mt-2">
+                                <span>Cat No: <span className="font-medium text-slate-700 font-mono">{item.categoryNumber}</span></span>
+                                <span>Last Date: <span className="font-medium text-slate-700">{item.lastDate}</span></span>
                             </div>
-                            <p className="text-sm text-slate-500 mt-1">{item.date}</p>
                         </a>
                     ))}
                 </div>
