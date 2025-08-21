@@ -39,6 +39,19 @@ export interface PscUpdateItem {
     published_date: string;
 }
 
+export interface CurrentAffairsItem {
+  id: string;
+  title: string;
+  source: string;
+  date: string;
+}
+
+export interface GkItem {
+  id: string;
+  fact: string;
+  category: string;
+}
+
 export interface QuestionPaper {
     title: string;
     url: string;

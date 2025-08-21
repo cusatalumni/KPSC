@@ -1,12 +1,13 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { QuizQuestion, Notification, PscUpdateItem, QuestionPaper } from '../types';
-import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_QUESTION_PAPERS } from "../constants";
+import type { QuizQuestion, QuestionPaper } from '../types';
+import { MOCK_QUESTION_PAPERS } from "../constants";
 
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
-  console.warn("VITE_API_KEY environment variable not set. Using mocked data for all API calls.");
+  console.warn("VITE_API_KEY environment variable not set. Using mocked data for some API calls.");
 }
 
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
@@ -69,88 +70,6 @@ export const getDailyQuestion = async (): Promise<QuizQuestion> => {
   }
 };
 
-export const getLatestNotifications = async (): Promise<Notification[]> => {
-    if (!ai) {
-        return new Promise(resolve => setTimeout(() => resolve(MOCK_NOTIFICATIONS), 1000));
-    }
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `Act as a web scraper. Go to the URL "https://keralapsc.gov.in/index.php/notifications". Scrape the 5 most recent notifications listed on that page. For each notification, extract the following details: the full notification title, the category number (e.g., "265/2025"), the last date for application (in "DD-MM-YYYY" format), and the direct URL link to the notification details or PDF. Return the result as a JSON array of objects. Each object needs an 'id' (unique string), 'title', 'categoryNumber', 'lastDate', and 'link'.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            title: { type: Type.STRING },
-                            categoryNumber: { type: Type.STRING },
-                            lastDate: { type: Type.STRING },
-                            link: { type: Type.STRING },
-                        },
-                        required: ["id", "title", "categoryNumber", "lastDate", "link"]
-                    }
-                }
-            }
-        });
-
-        const jsonString = response.text.trim();
-        const parsedJson = JSON.parse(jsonString);
-
-        if (Array.isArray(parsedJson) && parsedJson.length > 0) {
-            return parsedJson as Notification[];
-        } else {
-            console.error("Received empty or malformed JSON from Gemini API for notifications, falling back to mock.", parsedJson);
-            return MOCK_NOTIFICATIONS;
-        }
-
-    } catch (error) {
-        console.error("Error fetching notifications from Gemini API:", error);
-        return MOCK_NOTIFICATIONS;
-    }
-};
-
-export const getPscUpdates = async (): Promise<PscUpdateItem[]> => {
-    if (!ai) {
-        return new Promise(resolve => setTimeout(() => resolve(MOCK_PSC_UPDATES), 1000));
-    }
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Act as a web scraper. Fetch the 10 most recent updates from keralapsc.gov.in. Check the "Ranked Lists", "Latest Updates", and "Notifications" sections. For each item, provide its title, the full direct URL, the section it was found in (e.g., 'Ranked Lists'), and the publication date in 'YYYY-MM-DD' format. Return the result as a JSON array.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: { type: Type.STRING },
-                            url: { type: Type.STRING },
-                            section: { type: Type.STRING },
-                            published_date: { type: Type.STRING }
-                        },
-                        required: ["title", "url", "section", "published_date"]
-                    }
-                }
-            }
-        });
-        const jsonString = response.text.trim();
-        const parsedJson = JSON.parse(jsonString);
-        if (Array.isArray(parsedJson) && parsedJson.length > 0) {
-            return parsedJson as PscUpdateItem[];
-        } else {
-            console.error("Received empty/malformed JSON from Gemini for PSC updates, falling back to mock.", parsedJson);
-            return MOCK_PSC_UPDATES;
-        }
-    } catch (error) {
-        console.error("Error fetching PSC updates from Gemini API:", error);
-        return MOCK_PSC_UPDATES;
-    }
-};
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
     if (!ai) {

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -19,6 +20,8 @@ import MockTestHomePage from './components/pages/MockTestHomePage';
 import UpgradePage from './components/pages/UpgradePage';
 import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
 import PreviousPapersPage from './components/pages/PreviousPapersPage';
+import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
+import GkPage from './components/pages/GkPage';
 import type { Exam, PracticeTest, MockTest, QuizCategory, SubscriptionStatus } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
@@ -38,7 +41,9 @@ export type Page =
   | 'mock_test_home'
   | 'upgrade'
   | 'psc_live_updates'
-  | 'previous_papers';
+  | 'previous_papers'
+  | 'current_affairs'
+  | 'gk';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -181,6 +186,10 @@ const App: React.FC = () => {
         return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
       case 'previous_papers':
         return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
+      case 'current_affairs':
+        return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
+      case 'gk':
+        return <GkPage onBack={() => handleNavigate('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;

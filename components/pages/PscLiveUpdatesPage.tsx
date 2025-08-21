@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { getPscUpdates } from '../../services/geminiService';
+import { getLiveUpdates } from '../../services/pscDataService';
 import type { PscUpdateItem } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { RssIcon } from '../icons/RssIcon';
@@ -21,7 +22,7 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setLoading(true);
         setError(null);
         try {
-            const data = await getPscUpdates();
+            const data = await getLiveUpdates();
             setUpdates(data);
         } catch (err) {
             setError('വിവരങ്ങൾ ലഭിക്കുന്നതിൽ പിഴവ് സംഭവിച്ചു.');
@@ -48,7 +49,7 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 PSC Live അപ്‌ഡേറ്റുകൾ
                 <span className="block text-2xl text-slate-500 mt-1 font-normal">Live PSC Updates</span>
                 </h1>
-                <p className="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">keralapsc.gov.in-ൽ നിന്നുള്ള ഏറ്റവും പുതിയ റാങ്ക് ലിസ്റ്റുകൾ, അറിയിപ്പുകൾ, അപ്‌ഡേറ്റുകൾ എന്നിവ AI ഉപയോഗിച്ച് തത്സമയം നേടൂ.</p>
+                <p className="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">keralapsc.gov.in-ൽ നിന്നുള്ള ഏറ്റവും പുതിയ റാങ്ക് ലിസ്റ്റുകൾ, അറിയിപ്പുകൾ, എന്നിവ ദിവസവും പുതുക്കിയത്.</p>
             </header>
 
             <div className="flex justify-center mb-6">
@@ -63,7 +64,7 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <p className="mt-4 text-lg text-slate-600">AI ഏറ്റവും പുതിയ വിവരങ്ങൾ ശേഖരിക്കുന്നു...</p>
+                    <p className="mt-4 text-lg text-slate-600">പുതിയ വിവരങ്ങൾ ശേഖരിക്കുന്നു...</p>
                 </div>
             ) : error ? (
                 <div className="text-center text-red-500 bg-red-50 p-6 rounded-lg">{error}</div>

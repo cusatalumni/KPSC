@@ -1,0 +1,14 @@
+{
+  "crons": [
+    {
+      "path": "/api/scrape-updates",
+      "schedule": "0 6 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api/|assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

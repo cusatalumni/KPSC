@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getLatestNotifications } from '../services/geminiService';
+import { getNotifications } from '../services/pscDataService';
 import type { Notification } from '../types';
 import { BellIcon } from './icons/BellIcon';
 
@@ -12,7 +12,7 @@ const NotificationsWidget: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const data = await getLatestNotifications();
+            const data = await getNotifications();
             setNotifications(data);
         } catch (err) {
             setError('അറിയിപ്പുകൾ ലഭിക്കുന്നതിൽ പിഴവ് സംഭവിച്ചു.');
@@ -39,7 +39,7 @@ const NotificationsWidget: React.FC = () => {
                     </svg>
                 </button>
             </div>
-             <p className="text-sm text-slate-500 mb-4 -mt-2">keralapsc.gov.in-ൽ നിന്നുള്ള ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ</p>
+             <p className="text-sm text-slate-500 mb-4 -mt-2">ദിവസവും പുതുക്കിയ ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ</p>
 
             {loading ? (
                 <div className="flex-grow flex items-center justify-center py-10">
@@ -66,7 +66,7 @@ const NotificationsWidget: React.FC = () => {
                 </div>
             )}
              <div className="text-xs text-slate-500 mt-4 text-center bg-slate-100 p-2 rounded-md border border-slate-200">
-                <span className="font-semibold text-teal-700">AI Powered:</span> ഈ അറിയിപ്പുകൾ ഏറ്റവും പുതിയ വിവരങ്ങൾ നൽകാൻ AI ഉപയോഗിച്ച് തയ്യാറാക്കിയതാണ്.
+                <span className="font-semibold">Automated:</span> ഈ വിവരങ്ങൾ ദിവസവും സ്വയം പുതുക്കുന്നു.
             </div>
         </section>
     );

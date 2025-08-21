@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { SparklesIcon } from './components/icons/SparklesIcon';
@@ -16,6 +16,8 @@ export const NAV_LINKS = [
   { name: 'കോഴ്സുകൾ', target: 'dashboard' },
   { name: 'ക്വിസുകൾ', target: 'quiz_home' },
   { name: 'മോക്ക് ടെസ്റ്റുകൾ', target: 'mock_test_home' },
+  { name: 'ആനുകാലികം', target: 'current_affairs' },
+  { name: 'പൊതുവിജ്ഞാനം', target: 'gk' },
   { name: 'ചോദ്യപേപ്പറുകൾ', target: 'previous_papers'},
   { name: 'PSC Live', target: 'psc_live_updates'},
   { name: 'പുസ്തകശാല', target: 'bookstore' },
@@ -64,52 +66,42 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     lastDate: '05-09-2025',
     link: '#',
   },
-  {
-    id: '3',
-    title: 'High School Teacher (Mathematics) - Education Department',
-    categoryNumber: '321/2025',
-    lastDate: '01-09-2025',
-    link: '#',
-  },
-   {
-    id: '4',
-    title: 'Police Constable - Examination Date Announced',
-    categoryNumber: '456/2024',
-    lastDate: 'N/A',
-    link: '#',
-  },
 ];
 
 export const MOCK_PSC_UPDATES: PscUpdateItem[] = [
     {
-        title: 'RANKED LIST - STATISTICAL ASSISTANT GR II - STATISTICAL ASSISTANT GR II/STATISTICAL INVESTIGATOR GR II/COMPUTER OPERATOR GR II - ECONOMICS AND STATISTICS - ERNAKULAM',
-        url: 'https://www.keralapsc.gov.in/ranked-list/ranked-list-statistical-assistant-gr-ii-statistical-assistant-gr-iistatistical',
+        title: 'RANKED LIST - STATISTICAL ASSISTANT GR II - ERNAKULAM',
+        url: '#',
         section: 'Ranked Lists',
         published_date: '2024-07-29',
     },
     {
-        title: 'SHORT LIST - JUNIOR INSTRUCTOR (INTERIOR DECORATION AND DESIGNING) - INDUSTRIAL TRAINING DEPARTMENT',
-        url: 'https://www.keralapsc.gov.in/short-list/short-list-junior-instructor-interior-decoration-and-designing-industrial-training',
+        title: 'SHORT LIST - JUNIOR INSTRUCTOR - INDUSTRIAL TRAINING',
+        url: '#',
         section: 'Short Lists',
         published_date: '2024-07-29',
     },
-    {
-        title: 'ADDENDUM NOTIFICATION - I GRADE DRAFTSMAN/ I GRADE OVERSEER (CIVIL) (SR FOR ST ONLY) IN LOCAL SELF GOVERNMENT DEPARTMENT',
-        url: 'https://www.keralapsc.gov.in/addendum-notification/addendum-notification-i-grade-draftsman-i-grade-overseer-civil-sr-st-only',
-        section: 'Notifications',
-        published_date: '2024-07-26',
-    },
+];
+
+export const MOCK_CURRENT_AFFAIRS: CurrentAffairsItem[] = [
+    { id: '1', title: 'സംസ്ഥാന ബജറ്റ് 2025: പ്രധാന പ്രഖ്യാപനങ്ങൾ', source: 'മാതൃഭൂമി', date: '2025-08-01'},
+    { id: '2', title: 'പുതിയ ദേശീയ വിദ്യാഭ്യാസ നയം: കേരളത്തിലെ സ്വാധീനം', source: 'മനോരമ', date: '2025-08-01'},
+];
+
+export const MOCK_GK: GkItem[] = [
+    { id: '1', fact: 'കേരളത്തിലെ ഏറ്റവും വലിയ ശുദ്ധജല തടാകം ശാസ്താംകോട്ട കായലാണ്.', category: 'കേരളം'},
+    { id: '2', fact: 'ഇന്ത്യയുടെ ദേശീയ പതാക രൂപകൽപ്പന ചെയ്തത് പിംഗലി വെങ്കയ്യയാണ്.', category: 'ഇന്ത്യ'},
 ];
 
 export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
     {
         title: "LOWER DIVISION CLERK (SR FROM ST ONLY) - VARIOUS",
-        url: "https://www.keralapsc.gov.in/question-paper-and-answer-key/lower-division-clerk-sr-st-only-various-0",
+        url: "#",
         date: "2024"
     },
     {
-        title: "BEAT FOREST OFFICER (PART I - DIRECT) (CATEGORY NO. 207/2023) - FOREST",
-        url: "https://www.keralapsc.gov.in/question-paper-and-answer-key/beat-forest-officer-part-i-direct-category-no-2072023-forest-0",
+        title: "BEAT FOREST OFFICER (PART I - DIRECT) - FOREST",
+        url: "#",
         date: "2024"
     }
 ];

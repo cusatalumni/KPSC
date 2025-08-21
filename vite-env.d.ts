@@ -12,6 +12,12 @@ interface ImportMetaEnv {
    * The API key for the Gemini service.
    */
   readonly VITE_API_KEY: string;
+
+  /**
+   * A boolean indicating if the app is running in production.
+   * Set automatically by Vite.
+   */
+  readonly PROD: boolean;
 }
 
 interface ImportMeta {

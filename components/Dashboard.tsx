@@ -1,5 +1,6 @@
 
 
+
 import React from 'react';
 import { EXAMS_DATA } from '../constants';
 import ExamCard from './ExamCard';
@@ -10,6 +11,8 @@ import CalendarWidget from './CalendarWidget';
 import QuizHomeWidget from './QuizHomeWidget';
 import PscLiveWidget from './PscLiveWidget';
 import PreviousPapersWidget from './PreviousPapersWidget';
+import CurrentAffairsWidget from './CurrentAffairsWidget';
+import GkWidget from './GkWidget';
 import type { Exam } from '../types';
 import type { Page } from '../App';
 
@@ -45,6 +48,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) =
           <NotificationsWidget />
         </div>
         <aside className="space-y-8">
+           <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
+           <GkWidget onNavigate={() => onNavigate('gk')} />
            <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
            <PreviousPapersWidget onNavigate={() => onNavigate('previous_papers')} />
            <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
