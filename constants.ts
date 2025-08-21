@@ -107,10 +107,10 @@ export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
 
 
 export const STUDY_MATERIALS_DATA: StudyMaterial[] = [
-    { id: '1', title: 'പ്രധാനപ്പെട്ട GK ചോദ്യങ്ങൾ PDF', link: '#' },
-    { id: '2', title: 'കറന്റ് അഫയേഴ്സ് - ജൂലൈ 2024', link: '#' },
-    { id: '3', title: 'കേരള നവോത്ഥാനം - പ്രധാന നോട്ടുകൾ', link: '#' },
-    { id: '4', title: 'ഇന്ത്യൻ ഭരണഘടന - ചോദ്യങ്ങൾ', link: '#' },
+    { id: '1', title: 'പ്രധാനപ്പെട്ട GK ചോദ്യങ്ങൾ' },
+    { id: '2', title: 'കറന്റ് അഫയേഴ്സ്' },
+    { id: '3', title: 'കേരള നവോത്ഥാനം' },
+    { id: '4', title: 'ഇന്ത്യൻ ഭരണഘടന' },
 ];
 
 
@@ -126,13 +126,13 @@ export const LDC_EXAM_CONTENT: ExamPageContent = {
     { id: 'pt-math5', title: 'അംശബന്ധവും അനുപാതവും', questions: 15, duration: 20 },
   ],
   studyNotes: [
-    { id: 'sn1', title: 'കേരള നവോത്ഥാന നായകർ PDF', link: '#' },
-    { id: 'sn2', title: 'പ്രധാനപ്പെട്ട ആർട്ടിക്കിളുകൾ', link: '#' },
-    { id: 'sn3', title: 'മലയാളം ഒറ്റപ്പദങ്ങൾ', link: '#' },
+    { id: 'sn1', title: 'കേരള നവോത്ഥാന നായകർ' },
+    { id: 'sn2', title: 'പ്രധാനപ്പെട്ട ആർട്ടിക്കിളുകൾ' },
+    { id: 'sn3', title: 'മലയാളം ഒറ്റപ്പദങ്ങൾ' },
   ],
   previousPapers: [
-    { id: 'pp1', title: 'LDC 2020 ചോദ്യപേപ്പർ', link: '#' },
-    { id: 'pp2', title: 'LDC 2017 ചോദ്യപേപ്പർ', link: '#' },
+    { id: 'pp1', title: 'LDC 2020 ചോദ്യപേപ്പർ' },
+    { id: 'pp2', title: 'LDC 2017 ചോദ്യപേപ്പർ' },
   ]
 };
 
@@ -164,7 +164,7 @@ export const MOCK_BOOKS_DATA: Book[] = [
   { id: '1', title: 'LDC റാങ്ക് ഫയൽ', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81g0dn6S4LL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CK13J51N?tag=httpcodingonl-21' },
   { id: '2', title: 'PSC ബുള്ളറ്റിൻ ചോദ്യബാങ്ക്', author: 'Talent Academy', imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=httpcodingonl-21' },
   { id: '3', title: 'ഇന്ത്യൻ ഭരണഘടന', author: 'M Laxmikanth (Malayalam)', imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=httpcodingonl-21' },
-  { id: '4', title: 'കേരള ചരിത്രം', author: 'E. Sreedhara Menon', imageUrl: 'https://m.media-amazon.com/images/I/71N-T5DUaWL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/8126484351?tag=httpcodingonl-21' },
+  { id: '4', title: 'കേരള ചരിത്രം', author: 'E. Sreedhara Menon', imageUrl: '', amazonLink: 'https://www.amazon.in/dp/8126484351?tag=httpcodingonl-21' },
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [

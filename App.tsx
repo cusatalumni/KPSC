@@ -20,6 +20,7 @@ import PreviousPapersPage from './components/pages/PreviousPapersPage';
 import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
 import GkPage from './components/pages/GkPage';
 import AdminPage from './components/pages/AdminPage';
+import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, PracticeTest } from './types';
 import { LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number } | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('dashboard');
+  const [activeStudyTopic, setActiveStudyTopic] = useState<string | null>(null);
   
   const { user, isSignedIn } = useUser();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
@@ -62,6 +64,7 @@ const App: React.FC = () => {
     setSelectedExam(null);
     setActiveTest(null);
     setTestResult(null);
+    setActiveStudyTopic(null);
   }
 
   const handleNavigate = (page: Page) => {
@@ -118,9 +121,16 @@ const App: React.FC = () => {
     setCurrentPage('results');
   };
   
+  const handleStartStudyMaterial = (topic: string) => {
+    setActiveStudyTopic(topic);
+    setPreviousPage(currentPage);
+    setCurrentPage('study_material');
+  };
+
   const handleBackToPreviousPage = () => {
     setActiveTest(null);
     setTestResult(null);
+    setActiveStudyTopic(null);
     setCurrentPage(previousPage);
   }
 
@@ -149,6 +159,8 @@ const App: React.FC = () => {
             content={LDC_EXAM_CONTENT} // NOTE: Using mock LDC content for now
             onBack={() => handleNavigate('dashboard')}
             onStartTest={handleStartPracticeTest}
+            onStartStudy={handleStartStudyMaterial}
+            onNavigate={handleNavigate}
           />;
       case 'bookstore':
         return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
@@ -178,9 +190,19 @@ const App: React.FC = () => {
         return <GkPage onBack={() => handleNavigate('dashboard')} />;
       case 'admin_panel':
         return <AdminPage onBack={() => handleNavigate('dashboard')} />;
+      case 'study_material':
+        if (!activeStudyTopic) return null;
+        return <StudyMaterialPage 
+                  topic={activeStudyTopic} 
+                  onBack={handleBackToPreviousPage} 
+                />;
       case 'dashboard':
       default:
-        return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} />;
+        return <Dashboard 
+                  onNavigateToExam={handleNavigateToExam} 
+                  onNavigate={handleNavigate}
+                  onStartStudy={handleStartStudyMaterial}
+                />;
     }
   }
   

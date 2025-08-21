@@ -62,7 +62,6 @@ export interface QuestionPaper {
 export interface StudyMaterial {
     id: string;
     title: string;
-    link: string;
 }
 
 // New types for Exam Page Content
@@ -76,7 +75,6 @@ export interface PracticeTest {
 export interface StudyNote {
   id: string;
   title: string;
-  link: string;
 }
 
 export interface ExamPageContent {
@@ -149,4 +147,5 @@ export type Page =
   | 'previous_papers'
   | 'current_affairs'
   | 'gk'
-  | 'admin_panel';
+  | 'admin_panel'
+  | 'study_material';

@@ -95,6 +95,10 @@ export const translations = {
       message: "Could not find question papers related to your search. Please try something else."
     }
   },
+  studyMaterial: {
+    subtitle: "AI-generated study notes",
+    loading: "AI is writing your study notes..."
+  },
   test: {
     noQuestionsError: "No questions are available for this topic.",
     fetchError: "There was an error fetching questions.",

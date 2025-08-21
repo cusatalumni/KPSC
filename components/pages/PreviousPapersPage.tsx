@@ -4,6 +4,7 @@ import type { QuestionPaper } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ArchiveBoxIcon } from '../icons/ArchiveBoxIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
+import AdsenseWidget from '../AdsenseWidget';
 
 const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
@@ -99,6 +100,11 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                         </a>
                     ))}
+                </div>
+            )}
+            {searched && (
+                <div className="mt-8">
+                    <AdsenseWidget />
                 </div>
             )}
         </div>

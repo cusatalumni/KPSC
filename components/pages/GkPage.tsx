@@ -4,6 +4,7 @@ import type { GkItem } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
+import AdsenseWidget from '../AdsenseWidget';
 
 const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
@@ -62,6 +63,9 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     ))}
                 </div>
             )}
+             <div className="mt-8">
+                <AdsenseWidget />
+            </div>
         </div>
     );
 };

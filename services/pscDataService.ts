@@ -47,6 +47,43 @@ export const getQuestionsForTest = (topic: string, count: number): Promise<QuizQ
     return fetchWithMockFallback(apiPath, mockResult);
 };
 
+export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
+    if (!isVercel) {
+        console.log(`DEV MODE: Using mock study material for ${topic}`);
+        const mockNotes = `## ${topic}\n\n* ഇത് ഒരു മാതൃകാ പഠന മെറ്റീരിയലാണ്.\n* തത്സമയ ഉള്ളടക്കം AI ഉപയോഗിച്ച് സൃഷ്ടിക്കും.\n\n**പ്രധാന പോയിന്റുകൾ:**\n- പോയിന്റ് 1\n- പോയിന്റ് 2`;
+        return new Promise(resolve => setTimeout(() => resolve({ notes: mockNotes }), 1000));
+    }
+    try {
+        const response = await fetch(`/api/get-study-material?topic=${encodeURIComponent(topic)}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch study material: ${response.statusText}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error(`Error fetching study material for ${topic}.`, error);
+        throw error;
+    }
+};
+
+export const generateBookCover = async (title: string, author: string): Promise<{ imageBase64: string }> => {
+     if (!isVercel) {
+        // Return a placeholder to avoid breaking the UI in local dev without an API key
+        console.log(`DEV MODE: Using placeholder for book cover generation: ${title}`);
+        return new Promise(resolve => setTimeout(() => resolve({ imageBase64: '' }), 1000));
+    }
+    try {
+        const response = await fetch(`/api/generate-cover?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}`);
+        if (!response.ok) {
+            throw new Error(`Failed to generate cover: ${response.statusText}`);
+        }
+        return await response.json();
+    } catch(error) {
+        console.error(`Error generating book cover for "${title}"`, error);
+        throw error;
+    }
+};
+
+
 // --- Admin Functions ---
 
 const triggerScraper = async (apiPath: string, token: string | null): Promise<any> => {

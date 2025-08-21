@@ -2,6 +2,7 @@ import React from 'react';
 import { TrophyIcon } from './icons/TrophyIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { useTranslation } from '../contexts/LanguageContext';
+import AdsenseWidget from './AdsenseWidget';
 
 interface TestResultPageProps {
   score: number;
@@ -38,6 +39,10 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, onBackToP
             <p className="text-lg text-slate-700">
               {t('results.summary', { total: total, score: score })}
             </p>
+        </div>
+        
+        <div className="my-8">
+            <AdsenseWidget />
         </div>
 
         <button 

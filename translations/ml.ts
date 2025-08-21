@@ -51,7 +51,6 @@ export const translations = {
       subtitle: "Master PSC exams with the power of AI. Your dream government job starts here.",
       cta: "മോക്ക് ടെസ്റ്റുകൾ പരിശീലിക്കൂ"
     },
-    topCourses: "പ്രധാന കോഴ്സുകൾ (Top Courses)",
     notifications: {
         title: "പുതിയ അറിയിപ്പുകൾ",
         subtitle: "ദിവസവും പുതുക്കിയ ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ",
@@ -60,7 +59,7 @@ export const translations = {
     }
   },
   bookOfTheDay: {
-    title: "ദിവസത്തെ പുസ്തകം"
+    title: "ഇന്നത്തെ പുസ്തകം"
   },
   bookstore: {
     title: "പുസ്തകശാല",
@@ -94,6 +93,10 @@ export const translations = {
       title: "ഫലങ്ങളൊന്നും കണ്ടെത്തിയില്ല",
       message: "നിങ്ങളുടെ തിരയലുമായി ബന്ധപ്പെട്ട ചോദ്യപേപ്പറുകൾ കണ്ടെത്താനായില്ല. ദയവായി മറ്റൊന്ന് പരീക്ഷിക്കുക."
     }
+  },
+  studyMaterial: {
+    subtitle: "AI-ജനറേറ്റഡ് പഠന കുറിപ്പുകൾ",
+    loading: "AI നിങ്ങൾക്കായി പഠന കുറിപ്പുകൾ തയ്യാറാക്കുന്നു..."
   },
   test: {
     noQuestionsError: "ഈ വിഷയത്തിൽ ചോദ്യങ്ങളൊന്നും ലഭ്യമല്ല.",

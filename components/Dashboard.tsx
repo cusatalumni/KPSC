@@ -15,13 +15,15 @@ import BookOfTheDayWidget from './BookOfTheDayWidget';
 import type { Exam } from '../types';
 import type { Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
+import AdsenseWidget from './AdsenseWidget';
 
 interface DashboardProps {
   onNavigateToExam: (exam: Exam) => void;
   onNavigate: (page: Page) => void;
+  onStartStudy: (topic: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
   const { t, language } = useTranslation();
 
   return (
@@ -59,8 +61,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate }) =
            <PreviousPapersWidget onNavigate={() => onNavigate('previous_papers')} />
            <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
            <CalendarWidget onNavigate={() => onNavigate('exam_calendar')} />
-           <StudyMaterialWidget />
+           <StudyMaterialWidget onStartStudy={onStartStudy} />
         </aside>
+      </div>
+      <div className="my-8">
+        <AdsenseWidget />
       </div>
       <Testimonials />
     </div>

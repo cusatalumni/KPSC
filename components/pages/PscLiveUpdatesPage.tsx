@@ -4,6 +4,7 @@ import type { PscUpdateItem } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { RssIcon } from '../icons/RssIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
+import AdsenseWidget from '../AdsenseWidget';
 
 const getSectionChipClass = (section: string) => {
     if (section.toLowerCase().includes('rank')) return 'bg-green-100 text-green-800';
@@ -83,6 +84,9 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     ))}
                 </div>
             )}
+             <div className="mt-8">
+                <AdsenseWidget />
+            </div>
         </div>
     );
 };

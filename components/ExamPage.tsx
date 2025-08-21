@@ -1,23 +1,26 @@
 
+
 import React from 'react';
-import type { Exam, ExamPageContent, PracticeTest } from '../types';
+import type { Exam, ExamPageContent, PracticeTest, Page } from '../types';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { DocumentDuplicateIcon } from './icons/DocumentDuplicateIcon';
 import { DocumentTextIcon } from './icons/DocumentTextIcon';
 import RecommendedBooks from './RecommendedBooks';
+import AdsenseWidget from './AdsenseWidget';
 
 interface ExamPageProps {
   exam: Exam;
   content: ExamPageContent;
   onBack: () => void;
   onStartTest: (test: PracticeTest | { title: string; questions: number }, examTitle: string) => void;
+  onStartStudy: (topic: string) => void;
+  onNavigate: (page: Page) => void;
 }
 
-const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest }) => {
+const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest, onStartStudy, onNavigate }) => {
   
   const handleStartFullMockTest = () => {
-    // Let's assume a full mock test has 50 questions
     onStartTest({ title: 'പൂർണ്ണമായ മോക്ക് ടെസ്റ്റ്', questions: 50 }, exam.title.ml);
   };
   
@@ -76,10 +79,10 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
               </h2>
                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
                  {content.studyNotes.map(note => (
-                   <a key={note.id} href={note.link !== '#' ? `/go?url=${encodeURIComponent(note.link)}` : '#'} className="flex items-center p-2 rounded hover:bg-slate-50 group">
+                   <button key={note.id} onClick={() => onStartStudy(note.title)} className="w-full flex items-center p-2 rounded hover:bg-slate-50 group text-left">
                       <span className="text-slate-700 font-medium group-hover:text-indigo-600">{note.title}</span>
                       <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
-                   </a>
+                   </button>
                  ))}
                </div>
             </section>
@@ -92,13 +95,17 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest 
               </h2>
                <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
                  {content.previousPapers.map(paper => (
-                   <a key={paper.id} href={paper.link !== '#' ? `/go?url=${encodeURIComponent(paper.link)}` : '#'} className="flex items-center p-2 rounded hover:bg-slate-50 group">
+                   <button key={paper.id} onClick={() => onNavigate('previous_papers')} className="w-full flex items-center p-2 rounded hover:bg-slate-50 group text-left">
                       <span className="text-slate-700 font-medium group-hover:text-indigo-600">{paper.title}</span>
                       <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition">→</span>
-                   </a>
+                   </button>
                  ))}
                </div>
             </section>
+        </div>
+        
+        <div className="my-8">
+            <AdsenseWidget />
         </div>
         
         <RecommendedBooks />

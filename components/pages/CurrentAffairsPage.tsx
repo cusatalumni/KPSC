@@ -4,6 +4,7 @@ import type { CurrentAffairsItem } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
+import AdsenseWidget from '../AdsenseWidget';
 
 const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
@@ -65,6 +66,9 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     ))}
                 </div>
             )}
+             <div className="mt-8">
+                <AdsenseWidget />
+            </div>
         </div>
     );
 };

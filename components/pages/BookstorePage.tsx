@@ -1,28 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getBooks } from '../../services/pscDataService';
+import { getBooks, generateBookCover } from '../../services/pscDataService';
 import type { Book } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
-
-const BookCard: React.FC<{ book: Book }> = ({ book }) => (
-  <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col group transform hover:-translate-y-2 transition-all duration-300">
-    <div className="h-64 overflow-hidden">
-      <img src={book.imageUrl} alt={book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" referrerPolicy="no-referrer" />
-    </div>
-    <div className="p-4 flex flex-col flex-grow">
-      <h3 className="text-lg font-bold text-slate-800">{book.title}</h3>
-      <p className="text-sm text-slate-500 mb-4">{book.author}</p>
-      <a 
-        href={book.amazonLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-auto w-full text-center bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200"
-      >
-        Buy on Amazon
-      </a>
-    </div>
-  </div>
-);
 
 const BookCardSkeleton: React.FC = () => (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
@@ -34,6 +14,57 @@ const BookCardSkeleton: React.FC = () => (
         </div>
     </div>
 );
+
+const BookCard: React.FC<{ book: Book }> = ({ book }) => {
+    const [currentImageUrl, setCurrentImageUrl] = useState(book.imageUrl);
+    const [isLoadingImage, setIsLoadingImage] = useState(!book.imageUrl);
+
+    useEffect(() => {
+        if (!book.imageUrl) {
+            setIsLoadingImage(true);
+            generateBookCover(book.title, book.author)
+                .then(data => {
+                    if (data.imageBase64) {
+                        setCurrentImageUrl(`data:image/jpeg;base64,${data.imageBase64}`);
+                    } else {
+                         // Fallback for dev mode or if generation returns empty
+                        setCurrentImageUrl('https://via.placeholder.com/300x400.png?text=No+Cover');
+                    }
+                })
+                .catch(err => {
+                    console.error(`Failed to generate cover for ${book.title}`, err);
+                    setCurrentImageUrl('https://via.placeholder.com/300x400.png?text=Error');
+                })
+                .finally(() => {
+                    setIsLoadingImage(false);
+                });
+        }
+    }, [book.imageUrl, book.title, book.author]);
+
+    return (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col group transform hover:-translate-y-2 transition-all duration-300">
+            {isLoadingImage ? (
+                <div className="h-64 bg-slate-200 animate-pulse"></div>
+            ) : (
+                <div className="h-64 overflow-hidden">
+                    <img src={currentImageUrl} alt={book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" referrerPolicy="no-referrer" />
+                </div>
+            )}
+            <div className="p-4 flex flex-col flex-grow">
+                <h3 className="text-lg font-bold text-slate-800">{book.title}</h3>
+                <p className="text-sm text-slate-500 mb-4">{book.author}</p>
+                <a 
+                    href={book.amazonLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-auto w-full text-center bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-200"
+                >
+                    Buy on Amazon
+                </a>
+            </div>
+        </div>
+    );
+};
 
 const BookstorePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { t } = useTranslation();
