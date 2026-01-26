@@ -1,12 +1,9 @@
+
 {
   "crons": [
     {
-      "path": "/api/scrape-updates",
+      "path": "/api/admin",
       "schedule": "30 23 * * *"
-    },
-    {
-      "path": "/api/scrape-books",
-      "schedule": "0 0 1 * *"
     }
   ],
   "rewrites": [
