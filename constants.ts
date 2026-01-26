@@ -12,14 +12,14 @@ export const EXAMS_DATA: Exam[] = [
   {
     id: 'ldc_lgs',
     title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
-    description: { ml: 'കേരളത്തിലെ ഏറ്റവും വലിയ പരീക്ഷാ വിഭാഗം.', en: 'The largest exam category in Kerala.' },
+    description: { ml: 'പത്താം ക്ലാസ്സ് യോഗ്യതയുള്ള പ്രധാന പരീക്ഷകൾ.', en: 'Major exams for 10th level qualification.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
     category: 'General',
     level: 'Preliminary'
   },
   {
     id: 'degree_prelims',
-    title: { ml: 'Degree Level Prelims (ഡിഗ്രി ലെവൽ പ്രിലിംസ്)', en: 'Degree Level Prelims' },
+    title: { ml: 'Degree Prelims (ഡിഗ്രി പ്രിലിംസ്)', en: 'Degree Level Prelims' },
     description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-600" }),
     category: 'General',
@@ -27,9 +27,9 @@ export const EXAMS_DATA: Exam[] = [
   },
   {
     id: 'plus_two_prelims',
-    title: { ml: 'Plus Two Prelims (+2 ലെവൽ പ്രിലിംസ്)', en: 'Plus Two Prelims' },
+    title: { ml: '+2 Prelims (+2 പ്രിലിംസ്)', en: 'Plus Two Prelims' },
     description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Higher Secondary level examinations.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-teal-500" }),
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-400" }),
     category: 'General',
     level: 'Preliminary'
   },
@@ -37,7 +37,7 @@ export const EXAMS_DATA: Exam[] = [
   {
     id: 'overseer_civil',
     title: { ml: 'Overseer Civil (ഓവർസിയർ സിവിൽ)', en: 'Overseer Civil' },
-    description: { ml: 'സാങ്കേതിക തസ്തികകൾക്കായുള്ള പ്രത്യേക പരീക്ഷകൾ.', en: 'Special exams for technical posts.' },
+    description: { ml: 'എഞ്ചിനീയറിംഗ് വിഭാഗം സാങ്കേതിക പരീക്ഷകൾ.', en: 'Technical exams for Engineering wing.' },
     icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-orange-500" }),
     category: 'Technical',
     level: 'Special'
@@ -45,8 +45,8 @@ export const EXAMS_DATA: Exam[] = [
   {
     id: 'staff_nurse',
     title: { ml: 'Staff Nurse (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse' },
-    description: { ml: 'ഹെൽത്ത് സർവീസ് പരീക്ഷകൾ.', en: 'Health Service examinations.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-red-500" }),
+    description: { ml: 'ഹെൽത്ത് സർവീസ് വിഭാഗം പരീക്ഷകൾ.', en: 'Health Service department exams.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-orange-600" }),
     category: 'Technical',
     level: 'Main'
   },
@@ -55,7 +55,15 @@ export const EXAMS_DATA: Exam[] = [
     id: 'police_constable',
     title: { ml: 'Police Constable (പോലീസ് കോൺസ്റ്റബിൾ)', en: 'Police Constable' },
     description: { ml: 'യൂണിഫോം തസ്തികകളിലേക്കുള്ള പരീക്ഷകൾ.', en: 'Exams for uniform category posts.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-blue-600" }),
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-red-600" }),
+    category: 'Special',
+    level: 'Preliminary'
+  },
+  {
+    id: 'fireman',
+    title: { ml: 'Fireman (ഫയർമാൻ)', en: 'Fireman' },
+    description: { ml: 'ഫയർ ആൻഡ് റെസ്ക്യൂ സർവീസ് പരീക്ഷകൾ.', en: 'Fire and Rescue service exams.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-red-500" }),
     category: 'Special',
     level: 'Preliminary'
   }
@@ -65,57 +73,37 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   {
     id: 'mt_ldc_01',
     examId: 'ldc_lgs',
-    title: { ml: 'LDC Mock Test 01', en: 'LDC Mock Test 01' },
-    description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മോക്ക് ടെസ്റ്റ്.', en: 'Full mock test with 100 questions.' },
+    title: { ml: 'LDC മോക്ക് ടെസ്റ്റ് 01', en: 'LDC Mock Test 01' },
+    description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മാതൃകാ പരീക്ഷ.', en: 'Full mock test with 100 questions.' },
     questionsCount: 100,
     duration: 75,
     negativeMarking: 0.33,
     isPro: false
-  },
-  {
-    id: 'mt_degree_01',
-    examId: 'degree_prelims',
-    title: { ml: 'Degree Prelims Model 01', en: 'Degree Prelims Model 01' },
-    description: { ml: 'ഡിഗ്രി തല പ്രിലിമിനറി പരീക്ഷാ മാതൃക.', en: 'Degree level preliminary model exam.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: true
   }
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
   {
     id: 'gk',
-    title: { ml: 'GK & Current Affairs', en: 'GK & Current Affairs' },
-    description: { ml: 'ചരിത്രം, ഭരണഘടന, ഭൂമിശാസ്ത്രം.', en: 'History, Constitution, Geography.' },
+    title: { ml: 'പൊതുവിജ്ഞാനം', en: 'General Knowledge' },
+    description: { ml: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
   },
   {
     id: 'maths',
-    title: { ml: 'Quantitative Aptitude', en: 'Quantitative Aptitude' },
-    description: { ml: 'ഗണിതം, റീസണിംഗ് പരിശീലനം.', en: 'Maths and Reasoning practice.' },
+    title: { ml: 'ഗണിതം', en: 'Mathematics' },
+    description: { ml: 'അടിസ്ഥാന ഗണിതം, റീസണിംഗ്.', en: 'Basic Arithmetic, Reasoning.' },
     icon: React.createElement(StarIcon, { className: "h-6 w-6 text-orange-500" })
   }
 ];
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'pt_gk', title: 'GK Section', questions: 20, duration: 15 },
-    { id: 'pt_maths', title: 'Quantitative Aptitude', questions: 20, duration: 25 },
-    { id: 'pt_reasoning', title: 'Logical Reasoning', questions: 20, duration: 20 },
-    { id: 'pt_english', title: 'English Language', questions: 20, duration: 15 },
-    { id: 'pt_malayalam', title: 'Malayalam Language', questions: 20, duration: 15 }
+    { id: 'pt1', title: 'ചരിത്രം (History)', questions: 20, duration: 15 },
+    { id: 'pt2', title: 'ഭൂമിശാസ്ത്രം (Geography)', questions: 20, duration: 15 }
   ],
-  studyNotes: [
-    { id: 'sn1', title: 'Kerala Renaissance' },
-    { id: 'sn2', title: 'Indian Constitution - Articles' },
-    { id: 'sn3', title: 'Modern Indian History' }
-  ],
-  previousPapers: [
-    { id: 'pp1', title: 'LDC 2021 Previous Question Paper' },
-    { id: 'pp2', title: 'LDC 2017 Previous Question Paper' }
-  ]
+  studyNotes: [{ id: 'sn1', title: 'Kerala Renaissance' }],
+  previousPapers: [{ id: 'pp1', title: 'LDC 2021 Question Paper' }]
 };
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
@@ -127,7 +115,7 @@ export const MOCK_PSC_UPDATES: PscUpdateItem[] = [
 ];
 
 export const MOCK_CURRENT_AFFAIRS: CurrentAffairsItem[] = [
-    { id: '1', title: 'Kerala Budget 2025 Highlights', source: 'Official', date: '2025-08-15'},
+    { id: '1', title: 'Kerala Budget 2025', source: 'Official', date: '2025-08-15'},
 ];
 
 export const MOCK_GK: GkItem[] = [
@@ -135,7 +123,7 @@ export const MOCK_GK: GkItem[] = [
 ];
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
-    { id: '1', question: 'Who is known as the father of Kerala Renaissance?', options: ['Sree Narayana Guru', 'Ayyankali', 'Chattampi Swamikal', 'Kumaran Asan'], correctAnswerIndex: 0, topic: 'History', subject: 'GK', difficulty: 'PSC Level' },
+    { id: '1', question: 'Father of Kerala Renaissance?', options: ['Sree Narayana Guru', 'Ayyankali', 'Chattampi Swamikal', 'Kumaran Asan'], correctAnswerIndex: 0, topic: 'History', subject: 'GK', difficulty: 'PSC Level' },
 ];
 
 export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [

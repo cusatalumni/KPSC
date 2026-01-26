@@ -24,6 +24,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
     const { t } = useTranslation();
     const { getToken } = useAuth();
     const [csvData, setCsvData] = useState('');
+    const [targetSheet, setTargetSheet] = useState('Notifications');
     const [status, setStatus] = useState<ScraperStatus>({
         daily: { loading: false, result: null },
         books: { loading: false, result: null },
@@ -36,59 +37,38 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
             const token = await getToken();
             const action = scraperKey === 'daily' ? triggerDailyScraper : triggerBookScraper;
             await action(token);
-            setStatus(prev => ({ ...prev, [scraperKey]: { loading: false, result: { type: 'success', message: t('adminPanel.success') }}}));
+            setStatus(prev => ({ ...prev, [scraperKey]: { loading: false, result: { type: 'success', message: 'Scraper triggered successfully.' }}}));
         } catch (error: any) {
-            setStatus(prev => ({ ...prev, [scraperKey]: { loading: false, result: { type: 'error', message: `${t('adminPanel.error')}${error.message}` }}}));
+            setStatus(prev => ({ ...prev, [scraperKey]: { loading: false, result: { type: 'error', message: `Error: ${error.message}` }}}));
         }
     };
 
-    const handleCsvUpload = async () => {
+    const handleCsvSync = async () => {
         if (!csvData.trim()) return;
         setStatus(prev => ({ ...prev, csv: { loading: true, result: null }}));
         
-        // Simulating the CSV processing for now
-        setTimeout(() => {
-            setStatus(prev => ({ ...prev, csv: { loading: false, result: { type: 'success', message: 'CSV data processed and sent to Google Sheets!' }}}));
-            setCsvData('');
-        }, 2000);
-    };
+        try {
+            const token = await getToken();
+            const response = await fetch('/api/update-from-csv', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sheet: targetSheet, data: csvData })
+            });
 
-    const ScraperCard: React.FC<{
-        scraperKey: string;
-        title: string;
-        description: string;
-    }> = ({ scraperKey, title, description }) => {
-        const { loading, result } = status[scraperKey];
-        return (
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-                <p className="text-slate-600 my-2">{description}</p>
-                {scraperKey !== 'csv' && (
-                    <button
-                        onClick={() => handleRunScraper(scraperKey as 'daily' | 'books')}
-                        disabled={loading}
-                        className="w-full sm:w-auto mt-4 bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:bg-slate-400"
-                    >
-                        {loading ? t('adminPanel.running') : t('adminPanel.run')}
-                    </button>
-                )}
-                {result && (
-                    <div className={`mt-4 p-3 rounded-md flex items-start space-x-3 text-sm ${
-                        result.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                    }`}>
-                        {result.type === 'success' 
-                            ? <CheckCircleIcon className="h-5 w-5 flex-shrink-0" /> 
-                            : <XCircleIcon className="h-5 w-5 flex-shrink-0" />
-                        }
-                        <p>{result.message}</p>
-                    </div>
-                )}
-            </div>
-        );
+            if (!response.ok) throw new Error('Failed to sync CSV data');
+            
+            setStatus(prev => ({ ...prev, csv: { loading: false, result: { type: 'success', message: `Successfully updated ${targetSheet} from CSV!` }}}));
+            setCsvData('');
+        } catch (error: any) {
+            setStatus(prev => ({ ...prev, csv: { loading: false, result: { type: 'error', message: error.message }}}));
+        }
     };
 
     return (
-        <div className="max-w-4xl mx-auto animate-fade-in space-y-8">
+        <div className="max-w-4xl mx-auto animate-fade-in space-y-8 pb-20">
             <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline group">
                 <ChevronLeftIcon className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
                 <span>{t('backToDashboard')}</span>
@@ -100,53 +80,91 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                         <ShieldCheckIcon className="h-10 w-10 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-slate-800 tracking-tight">{t('adminPanel.title')}</h1>
-                        <p className="text-lg text-slate-500">{t('adminPanel.subtitle')}</p>
+                        <h1 className="text-4xl font-black text-slate-800 tracking-tight">Admin Control Panel</h1>
+                        <p className="text-lg text-slate-500">Manage portal data and automation.</p>
                     </div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ScraperCard 
-                    scraperKey="daily"
-                    title={t('adminPanel.runDaily')}
-                    description={t('adminPanel.runDailyDesc')}
-                />
-                 <ScraperCard 
-                    scraperKey="books"
-                    title={t('adminPanel.runBooks')}
-                    description={t('adminPanel.runBooksDesc')}
-                />
-            </div>
-
-            {/* CSV Question Bank Update */}
+            {/* CSV Update Section */}
             <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
                 <div className="flex items-center space-x-3 mb-6">
                     <ClipboardListIcon className="h-7 w-7 text-indigo-500" />
-                    <h3 className="text-2xl font-bold text-slate-800">Bulk Update Questions (CSV/Text)</h3>
+                    <h3 className="text-2xl font-bold text-slate-800">Easy CSV News/Data Update</h3>
                 </div>
-                <p className="text-slate-600 mb-6">Paste comma-separated data here to bulk update the <strong>QuestionBank</strong> sheet. Format: <code>id, topic, question, ["option1", "option2", "option3", "option4"], correctIndex, subject, difficulty</code></p>
-                <textarea 
-                    value={csvData}
-                    onChange={(e) => setCsvData(e.target.value)}
-                    placeholder="q1, History, Who is the father of..., [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;], 0, GK, PSC Level"
-                    className="w-full h-48 p-4 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all mb-6"
-                />
-                <button
-                    onClick={handleCsvUpload}
-                    disabled={status.csv.loading || !csvData.trim()}
-                    className="bg-indigo-600 text-white font-bold py-3 px-10 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 shadow-lg shadow-indigo-100"
-                >
-                    {status.csv.loading ? 'Uploading...' : 'Bulk Upload to Sheets'}
-                </button>
-                {status.csv.result && (
-                     <div className={`mt-6 p-4 rounded-xl flex items-start space-x-3 text-sm ${
-                        status.csv.result.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-                    }`}>
-                        <CheckCircleIcon className="h-5 w-5 flex-shrink-0" />
-                        <p className="font-bold">{status.csv.result.message}</p>
+                
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Target Data Table</label>
+                        <select 
+                            value={targetSheet}
+                            onChange={(e) => setTargetSheet(e.target.value)}
+                            className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                            <option value="Notifications">Latest News (Notifications)</option>
+                            <option value="QuestionBank">Question Bank</option>
+                            <option value="GK">General Knowledge (GK)</option>
+                        </select>
                     </div>
-                )}
+
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Paste CSV Data</label>
+                        <p className="text-xs text-slate-500 mb-2">
+                            {targetSheet === 'Notifications' 
+                              ? 'Format: id, title, categoryNumber, lastDate, link' 
+                              : 'Format: id, topic, question, ["opt1","opt2","opt3","opt4"], correctIndex'}
+                        </p>
+                        <textarea 
+                            value={csvData}
+                            onChange={(e) => setCsvData(e.target.value)}
+                            placeholder="Paste your CSV rows here..."
+                            className="w-full h-48 p-4 border border-slate-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                        />
+                    </div>
+
+                    <button
+                        onClick={handleCsvSync}
+                        disabled={status.csv.loading || !csvData.trim()}
+                        className="bg-indigo-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 shadow-lg shadow-indigo-100 w-full md:w-auto"
+                    >
+                        {status.csv.loading ? 'Updating Sheets...' : 'Sync CSV to Database'}
+                    </button>
+
+                    {status.csv.result && (
+                         <div className={`mt-6 p-4 rounded-xl flex items-start space-x-3 text-sm ${
+                            status.csv.result.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                        }`}>
+                            <CheckCircleIcon className="h-5 w-5 flex-shrink-0" />
+                            <p className="font-bold">{status.csv.result.message}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Automation Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 className="text-xl font-bold text-slate-800">Trigger AI Scraper</h3>
+                    <p className="text-slate-600 my-2">Manually start the daily news scraping process.</p>
+                    <button
+                        onClick={() => handleRunScraper('daily')}
+                        disabled={status.daily.loading}
+                        className="mt-4 bg-slate-800 text-white font-bold py-2 px-6 rounded-lg hover:bg-black transition disabled:opacity-50"
+                    >
+                        {status.daily.loading ? 'Running...' : 'Run Scraper Now'}
+                    </button>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 className="text-xl font-bold text-slate-800">Refresh Bookstore</h3>
+                    <p className="text-slate-600 my-2">Scrape Amazon for latest PSC preparation books.</p>
+                    <button
+                        onClick={() => handleRunScraper('books')}
+                        disabled={status.books.loading}
+                        className="mt-4 bg-slate-800 text-white font-bold py-2 px-6 rounded-lg hover:bg-black transition disabled:opacity-50"
+                    >
+                        {status.books.loading ? 'Running...' : 'Refresh Books'}
+                    </button>
+                </div>
             </div>
         </div>
     );

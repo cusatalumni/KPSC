@@ -29,9 +29,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onS
   const { language } = useTranslation();
 
   const categories = [
-    { id: 'General', title: { ml: 'ജനറൽ പരീക്ഷകൾ', en: 'General Examinations' }, color: 'indigo' },
-    { id: 'Technical', title: { ml: 'സാങ്കേതിക പരീക്ഷകൾ', en: 'Technical & Departmental' }, color: 'orange' },
-    { id: 'Special', title: { ml: 'പ്രത്യേക മത്സര പരീക്ഷകൾ', en: 'Special Competitive' }, color: 'red' }
+    { id: 'General', title: { ml: 'ജനറൽ പരീക്ഷകൾ (General)', en: 'General Examinations' }, color: 'indigo' },
+    { id: 'Technical', title: { ml: 'സാങ്കേതിക പരീക്ഷകൾ (Technical)', en: 'Technical & Departmental' }, color: 'orange' },
+    { id: 'Special', title: { ml: 'പ്രത്യേക മത്സര പരീക്ഷകൾ (Special)', en: 'Special Competitive' }, color: 'red' }
   ];
 
   return (
