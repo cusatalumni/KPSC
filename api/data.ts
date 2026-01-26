@@ -1,43 +1,77 @@
 
-// Vercel Serverless Function: Data Hub
-// Path: /api/data.ts
+import { GoogleGenAI, Type } from "@google/genai";
+import { readSheetData, appendSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
 
-import { readSheetData } from './_lib/sheets-service.js';
+declare var process: any;
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const RANGES: Record<string, string> = {
-    notifications: 'Notifications!A2:E',
-    updates: 'LiveUpdates!A2:D',
-    affairs: 'CurrentAffairs!A2:D',
-    gk: 'GK!A2:C',
-    books: 'Bookstore!A2:E'
-};
+const CACHE_DURATION_DAYS = 7;
 
 export default async function handler(req: any, res: any) {
-    const { type } = req.query;
-
-    if (!type || !RANGES[type as string]) {
-        return res.status(400).json({ error: 'Invalid data type requested.' });
-    }
+    const { type, topic, count, title, author } = req.query;
 
     try {
-        const rows = await readSheetData(RANGES[type as string]);
-        
-        switch(type) {
+        switch (type) {
             case 'notifications':
-                return res.status(200).json(rows.map(r => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] || '#' })));
+                const nRows = await readSheetData('Notifications!A2:E');
+                return res.status(200).json(nRows.map(r => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] || '#' })));
+            
             case 'updates':
-                return res.status(200).json(rows.map(r => ({ title: r[0], url: r[1] || '#', section: r[2] || 'Update', published_date: r[3] })));
+                const uRows = await readSheetData('LiveUpdates!A2:D');
+                return res.status(200).json(uRows.map(r => ({ title: r[0], url: r[1] || '#', section: r[2] || 'Update', published_date: r[3] })));
+
             case 'affairs':
-                return res.status(200).json(rows.map(r => ({ id: r[0], title: r[1], source: r[2], date: r[3] })));
+                const aRows = await readSheetData('CurrentAffairs!A2:D');
+                return res.status(200).json(aRows.map(r => ({ id: r[0], title: r[1], source: r[2], date: r[3] })));
+
             case 'gk':
-                return res.status(200).json(rows.map(r => ({ id: r[0], fact: r[1], category: r[2] || 'General' })));
+                const gRows = await readSheetData('GK!A2:C');
+                return res.status(200).json(gRows.map(r => ({ id: r[0], fact: r[1], category: r[2] || 'General' })));
+
             case 'books':
-                return res.status(200).json(rows.map(r => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] || '#' })));
+                const bRows = await readSheetData('Bookstore!A2:E');
+                return res.status(200).json(bRows.map(r => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] || '#' })));
+
+            case 'questions':
+                if (!topic) return res.status(400).json({ error: 'Topic required' });
+                const qLimit = parseInt(count as string) || 10;
+                const allQs = await readSheetData('QuestionBank!A2:G');
+                const filtered = allQs.filter(r => r[1]?.toLowerCase() === (topic as string).toLowerCase());
+                
+                if (filtered.length >= qLimit) {
+                    return res.status(200).json(filtered.slice(0, qLimit).map(r => ({
+                        id: r[0], topic: r[1], question: r[2], options: JSON.parse(r[3]), correctAnswerIndex: parseInt(r[4]), subject: r[5], difficulty: r[6]
+                    })));
+                }
+                // AI fallback generation would go here or handled in service
+                return res.status(200).json([]);
+
+            case 'study-material':
+                if (!topic) return res.status(400).json({ error: 'Topic required' });
+                const cache = await readSheetData('StudyMaterialsCache!A2:C');
+                const cached = cache.find(r => r[0] === topic);
+                if (cached) return res.status(200).json({ notes: cached[1] });
+                
+                const prompt = `Write Kerala PSC study notes in Malayalam for: "${topic}". Use Markdown.`;
+                const aiRes = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
+                const notes = aiRes.text || "";
+                await findAndUpsertRow('StudyMaterialsCache', 0, topic as string, [topic, notes, new Date().toISOString()]);
+                return res.status(200).json({ notes });
+
+            case 'generate-cover':
+                if (!title || !author) return res.status(400).json({ error: 'Meta required' });
+                const imgRes = await ai.models.generateImages({
+                    model: 'imagen-4.0-generate-001',
+                    prompt: `Professional Malayalam book cover: "${title}" by ${author}. Academic style.`,
+                    config: { numberOfImages: 1, aspectRatio: '3:4' }
+                });
+                return res.status(200).json({ imageBase64: imgRes.generatedImages[0].image.imageBytes });
+
             default:
-                return res.status(404).json({ error: 'Not found' });
+                return res.status(400).json({ error: 'Invalid type' });
         }
-    } catch (error) {
-        console.error(`API Data Error (${type}):`, error);
-        res.status(500).json({ error: 'Failed to fetch data from bank.' });
+    } catch (error: any) {
+        console.error("Data Hub Error:", error);
+        res.status(500).json({ error: error.message });
     }
 }

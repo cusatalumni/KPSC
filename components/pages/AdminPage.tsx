@@ -25,7 +25,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
             const token = await getToken();
             const action = type === 'daily' ? triggerDailyScraper : triggerBookScraper;
             await action(token);
-            setStatus({ loading: false, result: { type: 'success', message: 'Task triggered!' }});
+            setStatus({ loading: false, result: { type: 'success', message: 'Task triggered successfully!' }});
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
         }
@@ -37,7 +37,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
         try {
             const token = await getToken();
             await syncCsvData(targetSheet, csvData, token);
-            setStatus({ loading: false, result: { type: 'success', message: `Database Updated: ${targetSheet}` }});
+            setStatus({ loading: false, result: { type: 'success', message: `Successfully updated ${targetSheet}!` }});
             setCsvData('');
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
@@ -57,21 +57,20 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                         <ShieldCheckIcon className="h-10 w-10 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black">Portal Command Center</h1>
-                        <p className="text-indigo-300 font-medium">Manage latest news, question banks, and automation.</p>
+                        <h1 className="text-3xl font-black tracking-tight">Portal Command Center</h1>
+                        <p className="text-indigo-300 font-medium opacity-80">Oversee latest news, question banks, and portal automation.</p>
                     </div>
                 </div>
                 <div className="hidden md:block">
-                    <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">System Active</span>
+                    <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">Live: Connected</span>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Manual Data Entry Card */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
                     <div className="flex items-center space-x-3 mb-6">
                         <MegaphoneIcon className="h-7 w-7 text-indigo-500" />
-                        <h3 className="text-2xl font-bold text-slate-800">Easy CSV Data Editor</h3>
+                        <h3 className="text-2xl font-bold text-slate-800">CSV Bulk Update Tool</h3>
                     </div>
                     
                     <div className="space-y-6">
@@ -88,9 +87,9 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                                     <option value="GK">Static GK Facts</option>
                                 </select>
                             </div>
-                             <div className="bg-indigo-50 p-4 rounded-2xl">
+                             <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
                                 <p className="text-xs font-bold text-indigo-700 uppercase mb-1">Expected Format</p>
-                                <code className="text-[10px] text-indigo-900 break-all leading-relaxed">
+                                <code className="text-[10px] text-indigo-900 break-all leading-relaxed font-mono">
                                     {targetSheet === 'Notifications' 
                                       ? 'id, title, catNo, lastDate, link' 
                                       : 'id, topic, question, ["A","B","C","D"], correctIdx'}
@@ -101,22 +100,22 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                         <textarea 
                             value={csvData}
                             onChange={(e) => setCsvData(e.target.value)}
-                            placeholder="Paste CSV rows here (exclude header row)..."
-                            className="w-full h-64 p-6 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none"
+                            placeholder="Paste CSV rows here (exclude headers)..."
+                            className="w-full h-72 p-6 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none shadow-inner"
                         />
 
                         <button
                             onClick={handleCsvSync}
                             disabled={status.loading || !csvData.trim()}
-                            className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-xl shadow-indigo-100 flex items-center justify-center space-x-3"
+                            className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-xl shadow-indigo-100 flex items-center justify-center space-x-3 active:scale-[0.98]"
                         >
                             {status.loading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ClipboardListIcon className="h-6 w-6" />}
-                            <span>SYNC CSV TO LIVE DATABASE</span>
+                            <span>SYNC DATA TO SHEETS</span>
                         </button>
 
                         {status.result && (
-                             <div className={`p-4 rounded-2xl flex items-center space-x-3 animate-fade-in ${
-                                status.result.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+                             <div className={`p-5 rounded-2xl flex items-center space-x-4 animate-fade-in border ${
+                                status.result.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                             }`}>
                                 {status.result.type === 'success' ? <CheckCircleIcon className="h-6 w-6" /> : <XCircleIcon className="h-6 w-6" />}
                                 <p className="font-bold">{status.result.message}</p>
@@ -125,32 +124,36 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                     </div>
                 </div>
 
-                {/* Automation Sidebar */}
                 <div className="space-y-6">
                     <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-                        <h4 className="font-black text-slate-800 mb-4">Automation Tools</h4>
+                        <h4 className="font-black text-slate-800 mb-6 flex items-center uppercase tracking-wider text-sm">
+                            <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></span>
+                            Automation Hub
+                        </h4>
                         <div className="space-y-4">
                             <button 
                                 onClick={() => handleRunScraper('daily')}
-                                className="w-full p-4 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-100"
+                                className="w-full p-5 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-200 group"
                             >
-                                <p>Refresh News & GK</p>
-                                <span className="text-[10px] text-slate-400">Triggers AI web scrapers</span>
+                                <p className="text-base">Refresh All Portal Data</p>
+                                <span className="text-[10px] text-slate-400 group-hover:text-indigo-400">Updates Notifications, Updates & GK</span>
                             </button>
                             <button 
                                 onClick={() => handleRunScraper('books')}
-                                className="w-full p-4 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-100"
+                                className="w-full p-5 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-200 group"
                             >
-                                <p>Sync Bookstore</p>
-                                <span className="text-[10px] text-slate-400">Amazon Affiliate Scraper</span>
+                                <p className="text-base">Sync Bookstore Items</p>
+                                <span className="text-[10px] text-slate-400 group-hover:text-indigo-400">Scrapes Amazon Affiliate products</span>
                             </button>
                         </div>
                     </div>
                     
-                    <div className="bg-indigo-600 p-8 rounded-3xl text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
-                        <h4 className="font-black mb-2 relative z-10">Quick Tip</h4>
-                        <p className="text-sm text-indigo-100 relative z-10">CSV updates bypass the scraper. Use them for historical data or manual news corrections.</p>
-                        <MegaphoneIcon className="absolute -bottom-4 -right-4 h-24 w-24 text-white/10 rotate-12" />
+                    <div className="bg-indigo-600 p-8 rounded-3xl text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                        <h4 className="font-black mb-3 relative z-10 text-xl">Quick Tip</h4>
+                        <p className="text-sm text-indigo-100 relative z-10 font-medium leading-relaxed">
+                            Manual CSV updates immediately overwrite spreadsheet data. Use this for breaking news or historical corrections.
+                        </p>
+                        <MegaphoneIcon className="absolute -bottom-6 -right-6 h-32 w-32 text-white/10 rotate-12 transition-transform group-hover:scale-110" />
                     </div>
                 </div>
             </div>
