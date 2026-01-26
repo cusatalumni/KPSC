@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -32,7 +33,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
-  const [testResult, setTestResult] = useState<{ score: number; total: number } | null>(null);
+  const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any } | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('dashboard');
   const [activeStudyTopic, setActiveStudyTopic] = useState<string | null>(null);
   
@@ -57,7 +58,7 @@ const App: React.FC = () => {
     if (user?.id) {
       subscriptionService.upgradeToPro(user.id);
       setSubscriptionStatus('pro');
-      handleNavigate('dashboard'); // Or a "thank you" page
+      handleNavigate('dashboard');
     }
   };
 
@@ -86,8 +87,9 @@ const App: React.FC = () => {
     setActiveTest({ 
         title: testTitle, 
         questionsCount: test.questionsCount,
-        topic: testTitle, // Use the test title as the topic for fetching questions
-        isPro: test.isPro 
+        topic: testTitle,
+        isPro: test.isPro,
+        negativeMarking: test.negativeMarking
     });
     setPreviousPage(currentPage);
     setCurrentPage('test');
@@ -98,10 +100,10 @@ const App: React.FC = () => {
     setActiveTest({ 
         title: testTitle, 
         questionsCount: test.questions,
-        topic: testTitle, // Use the generated title as the topic for fetching questions
-        isPro: false // Assuming practice tests are not pro features
+        topic: testTitle,
+        isPro: false
     });
-    setPreviousPage('exam_details'); // Go back to exam details page
+    setPreviousPage('exam_details');
     setCurrentPage('test');
   };
 
@@ -109,7 +111,7 @@ const App: React.FC = () => {
     const quizTitle = category.title[language];
     setActiveTest({ 
         title: quizTitle, 
-        questionsCount: 25, // All quizzes are now 25 questions
+        questionsCount: 25,
         topic: quizTitle,
         isPro: category.isPro 
     });
@@ -117,8 +119,8 @@ const App: React.FC = () => {
     setCurrentPage('test');
   }
 
-  const handleFinishTest = (score: number, total: number) => {
-    setTestResult({ score, total });
+  const handleFinishTest = (score: number, total: number, stats?: any) => {
+    setTestResult({ score, total, stats });
     setCurrentPage('results');
   };
   
@@ -151,13 +153,14 @@ const App: React.FC = () => {
         return <TestResultPage 
                   score={testResult.score} 
                   total={testResult.total} 
+                  stats={testResult.stats}
                   onBackToPrevious={handleBackToPreviousPage} 
                 />;
       case 'exam_details':
         if (!selectedExam) return null;
          return <ExamPage 
             exam={selectedExam} 
-            content={LDC_EXAM_CONTENT} // NOTE: Using mock LDC content for now
+            content={LDC_EXAM_CONTENT}
             onBack={() => handleNavigate('dashboard')}
             onStartTest={handleStartPracticeTest}
             onStartStudy={handleStartStudyMaterial}

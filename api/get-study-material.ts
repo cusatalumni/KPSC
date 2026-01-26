@@ -1,15 +1,11 @@
-
 // Vercel Serverless Function
 // Path: /api/get-study-material.ts
 
 import { GoogleGenAI } from "@google/genai";
 import { readSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
 
-const API_KEY = process.env.API_KEY || process.env.VITE_API_KEY;
-if (!API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
-}
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Fix: Strictly use process.env.API_KEY and named parameter for initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const CACHE_SHEET_NAME = 'StudyMaterialsCache';
 const CACHE_RANGE = 'StudyMaterialsCache!A2:C'; // topic, content, lastGenerated

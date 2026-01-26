@@ -1,22 +1,11 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
-const API_KEY = process.env.API_KEY || import.meta.env.VITE_API_KEY;
-
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Using mocked data for some API calls.");
-}
-
-// Correct initialization using named parameter
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+// Fix: Strictly use process.env.API_KEY and named parameter for initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
-    if (!ai) {
-        return new Promise(resolve => setTimeout(() => resolve(MOCK_QUESTION_PAPERS), 1000));
-    }
-
     try {
         // Use gemini-3-flash-preview for basic text tasks like extraction
         const response = await ai.models.generateContent({

@@ -11,24 +11,24 @@ export const EXAMS_DATA: Exam[] = [
   // A. General PSC Examinations
   {
     id: 'ldc_lgs',
-    title: { ml: 'LDC / LGS', en: 'LDC / LGS' },
-    description: { ml: 'എൽ.ഡി.സി, എൽ.ജി.എസ് പരീക്ഷകൾക്കായുള്ള സമഗ്രമായ കോഴ്സ്.', en: 'Comprehensive course for LDC and LGS exams.' },
+    title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
+    description: { ml: 'കേരളത്തിലെ ഏറ്റവും വലിയ പരീക്ഷാ വിഭാഗം.', en: 'The largest exam category in Kerala.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
     category: 'General',
     level: 'Preliminary'
   },
   {
     id: 'degree_prelims',
-    title: { ml: 'ഡിഗ്രി ലെവൽ പ്രിലിംസ്', en: 'Degree Level Prelims' },
-    description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള ഡിഗ്രി തല പരീക്ഷകൾ.', en: 'Degree level exams including Secretariat Assistant.' },
+    title: { ml: 'Degree Level Prelims (ഡിഗ്രി ലെവൽ പ്രിലിംസ്)', en: 'Degree Level Prelims' },
+    description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-600" }),
     category: 'General',
     level: 'Preliminary'
   },
   {
     id: 'plus_two_prelims',
-    title: { ml: '+2 ലെവൽ പ്രിലിംസ്', en: '+2 Level Prelims' },
-    description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പ്രിലിമിനറി പരീക്ഷകൾ.', en: 'Preliminary examinations at Higher Secondary level.' },
+    title: { ml: 'Plus Two Prelims (+2 ലെവൽ പ്രിലിംസ്)', en: 'Plus Two Prelims' },
+    description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Higher Secondary level examinations.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-teal-500" }),
     category: 'General',
     level: 'Preliminary'
@@ -36,17 +36,25 @@ export const EXAMS_DATA: Exam[] = [
   // B. Technical
   {
     id: 'overseer_civil',
-    title: { ml: 'ഓവർസിയർ (സിവിൽ)', en: 'Overseer (Civil)' },
-    description: { ml: 'സിവിൽ എൻജിനീയറിങ് വിഭാഗം സാങ്കേതിക പരീക്ഷകൾ.', en: 'Technical exams for Civil Engineering wing.' },
+    title: { ml: 'Overseer Civil (ഓവർസിയർ സിവിൽ)', en: 'Overseer Civil' },
+    description: { ml: 'സാങ്കേതിക തസ്തികകൾക്കായുള്ള പ്രത്യേക പരീക്ഷകൾ.', en: 'Special exams for technical posts.' },
     icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-orange-500" }),
     category: 'Technical',
     level: 'Special'
   },
+  {
+    id: 'staff_nurse',
+    title: { ml: 'Staff Nurse (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse' },
+    description: { ml: 'ഹെൽത്ത് സർവീസ് പരീക്ഷകൾ.', en: 'Health Service examinations.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-red-500" }),
+    category: 'Technical',
+    level: 'Main'
+  },
   // C. Special Competitive
   {
     id: 'police_constable',
-    title: { ml: 'പോലീസ് കോൺസ്റ്റബിൾ', en: 'Police Constable' },
-    description: { ml: 'സായുധ പോലീസ് ബറ്റാലിയൻ കോൺസ്റ്റബിൾ പരിശീലനം.', en: 'Training for Armed Police Battalion Constable.' },
+    title: { ml: 'Police Constable (പോലീസ് കോൺസ്റ്റബിൾ)', en: 'Police Constable' },
+    description: { ml: 'യൂണിഫോം തസ്തികകളിലേക്കുള്ള പരീക്ഷകൾ.', en: 'Exams for uniform category posts.' },
     icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-blue-600" }),
     category: 'Special',
     level: 'Preliminary'
@@ -57,8 +65,8 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   {
     id: 'mt_ldc_01',
     examId: 'ldc_lgs',
-    title: { ml: 'LDC മോക്ക് ടെസ്റ്റ് 01', en: 'LDC Mock Test 01' },
-    description: { ml: 'പൂർണ്ണ സിലബസ് അടിസ്ഥാനമാക്കിയുള്ള മാതൃകാ പരീക്ഷ.', en: 'Full syllabus based model examination.' },
+    title: { ml: 'LDC Mock Test 01', en: 'LDC Mock Test 01' },
+    description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മോക്ക് ടെസ്റ്റ്.', en: 'Full mock test with 100 questions.' },
     questionsCount: 100,
     duration: 75,
     negativeMarking: 0.33,
@@ -67,8 +75,8 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   {
     id: 'mt_degree_01',
     examId: 'degree_prelims',
-    title: { ml: 'ഡിഗ്രി പ്രിലിംസ് മാതൃക 01', en: 'Degree Prelims Model 01' },
-    description: { ml: 'ഡിഗ്രി ലെവൽ പുതിയ സിലബസ് പ്രകാരമുള്ള പരീക്ഷ.', en: 'Exam based on new Degree Level syllabus.' },
+    title: { ml: 'Degree Prelims Model 01', en: 'Degree Prelims Model 01' },
+    description: { ml: 'ഡിഗ്രി തല പ്രിലിമിനറി പരീക്ഷാ മാതൃക.', en: 'Degree level preliminary model exam.' },
     questionsCount: 100,
     duration: 75,
     negativeMarking: 0.33,
@@ -79,39 +87,39 @@ export const MOCK_TESTS_DATA: MockTest[] = [
 export const QUIZ_CATEGORIES: QuizCategory[] = [
   {
     id: 'gk',
-    title: { ml: 'പൊതുവിജ്ഞാനം', en: 'General Knowledge' },
-    description: { ml: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
+    title: { ml: 'GK & Current Affairs', en: 'GK & Current Affairs' },
+    description: { ml: 'ചരിത്രം, ഭരണഘടന, ഭൂമിശാസ്ത്രം.', en: 'History, Constitution, Geography.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
   },
   {
     id: 'maths',
-    title: { ml: 'ഗണിതം', en: 'Mathematics' },
-    description: { ml: 'അടിസ്ഥാന ഗണിതം, റീസണിംഗ്.', en: 'Basic Arithmetic, Reasoning.' },
+    title: { ml: 'Quantitative Aptitude', en: 'Quantitative Aptitude' },
+    description: { ml: 'ഗണിതം, റീസണിംഗ് പരിശീലനം.', en: 'Maths and Reasoning practice.' },
     icon: React.createElement(StarIcon, { className: "h-6 w-6 text-orange-500" })
   }
 ];
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'pt1', title: 'ചരിത്രം (History)', questions: 20, duration: 15 },
-    { id: 'pt2', title: 'ഭൂമിശാസ്ത്രം (Geography)', questions: 20, duration: 15 },
-    { id: 'pt3', title: 'ഭരണഘടന (Constitution)', questions: 25, duration: 20 },
-    { id: 'pt4', title: 'ഗണിതം (Maths)', questions: 20, duration: 25 }
+    { id: 'pt_gk', title: 'GK Section', questions: 20, duration: 15 },
+    { id: 'pt_maths', title: 'Quantitative Aptitude', questions: 20, duration: 25 },
+    { id: 'pt_reasoning', title: 'Logical Reasoning', questions: 20, duration: 20 },
+    { id: 'pt_english', title: 'English Language', questions: 20, duration: 15 },
+    { id: 'pt_malayalam', title: 'Malayalam Language', questions: 20, duration: 15 }
   ],
   studyNotes: [
-    { id: 'sn1', title: 'കേരള നവോത്ഥാനം' },
-    { id: 'sn2', title: 'ഇന്ത്യൻ സ്വാതന്ത്ര്യ സമരം' }
+    { id: 'sn1', title: 'Kerala Renaissance' },
+    { id: 'sn2', title: 'Indian Constitution - Articles' },
+    { id: 'sn3', title: 'Modern Indian History' }
   ],
   previousPapers: [
-    { id: 'pp1', title: 'LDC 2021 Question Paper' },
-    { id: 'pp2', title: 'VFA 2022 Question Paper' }
+    { id: 'pp1', title: 'LDC 2021 Previous Question Paper' },
+    { id: 'pp2', title: 'LDC 2017 Previous Question Paper' }
   ]
 };
 
-// Existing mock data fallbacks
 export const MOCK_NOTIFICATIONS: Notification[] = [
   { id: '1', title: 'LDC - Various Departments', categoryNumber: '207/2025', lastDate: '25-09-2025', link: '#' },
-  { id: '2', title: 'Police Constable', categoryNumber: '312/2025', lastDate: '30-09-2025', link: '#' },
 ];
 
 export const MOCK_PSC_UPDATES: PscUpdateItem[] = [
@@ -127,8 +135,7 @@ export const MOCK_GK: GkItem[] = [
 ];
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
-    { id: '1', question: 'Who is the father of Kerala Renaissance?', options: ['Sree Narayana Guru', 'Ayyankali', 'Chattampi Swamikal', 'Vakkom Moulavi'], correctAnswerIndex: 0, topic: 'History', subject: 'History', difficulty: 'PSC Level' },
-    { id: '2', question: 'Length of the Kerala coastline?', options: ['580 km', '590 km', '610 km', '560 km'], correctAnswerIndex: 0, topic: 'Geography', subject: 'Geography', difficulty: 'Moderate' }
+    { id: '1', question: 'Who is known as the father of Kerala Renaissance?', options: ['Sree Narayana Guru', 'Ayyankali', 'Chattampi Swamikal', 'Kumaran Asan'], correctAnswerIndex: 0, topic: 'History', subject: 'GK', difficulty: 'PSC Level' },
 ];
 
 export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
@@ -151,9 +158,6 @@ export const MOCK_BOOKS_DATA: Book[] = [
 export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
 export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [];
 
-/**
- * Main navigation structure for the header and sitemap
- */
 export const NAV_STRUCTURE: NavLink[] = [
   { nameKey: 'nav.home', target: 'dashboard' },
   { nameKey: 'nav.quizzes', target: 'quiz_home' },

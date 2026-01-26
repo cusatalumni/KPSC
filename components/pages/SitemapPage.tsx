@@ -1,8 +1,10 @@
 import React from 'react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
-import type { Page } from '../../types';
-import { NAV_STRUCTURE, NavLink } from '../../constants';
+// Fix: Import NavLink from types instead of constants
+import type { Page, NavLink } from '../../types';
+// Fix: Removed NavLink from constants import
+import { NAV_STRUCTURE } from '../../constants';
 
 interface PageProps {
   onNavigate: (page: Page) => void;

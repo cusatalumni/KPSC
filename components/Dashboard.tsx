@@ -26,16 +26,16 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
 
   const categories = [
-    { id: 'General', title: 'പൊതു പരീക്ഷകൾ (General Exams)' },
-    { id: 'Technical', title: 'സാങ്കേതിക പരീക്ഷകൾ (Technical)' },
-    { id: 'Special', title: 'പ്രത്യേക പരീക്ഷകൾ (Special Competitive)' }
+    { id: 'General', title: { ml: 'ജനറൽ പരീക്ഷകൾ', en: 'General Examinations' }, color: 'indigo' },
+    { id: 'Technical', title: { ml: 'സാങ്കേതിക പരീക്ഷകൾ', en: 'Technical & Departmental' }, color: 'orange' },
+    { id: 'Special', title: { ml: 'പ്രത്യേക മത്സര പരീക്ഷകൾ', en: 'Special Competitive' }, color: 'red' }
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <HeroSlider onNavigate={onNavigate} />
       
       <NewsTicker />
@@ -47,10 +47,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onS
             if (examsInCat.length === 0) return null;
             
             return (
-              <section key={cat.id}>
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="h-8 w-1 bg-indigo-600 rounded-full"></div>
-                  <h3 className="text-2xl font-bold text-slate-800">{cat.title}</h3>
+              <section key={cat.id} className="animate-fade-in-up">
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className={`h-10 w-2 bg-${cat.color}-500 rounded-full shadow-lg`}></div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-800">{cat.title[language]}</h3>
+                    <p className="text-sm text-slate-500">{cat.title[language === 'ml' ? 'en' : 'ml']}</p>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {examsInCat.map((exam) => (
@@ -76,7 +79,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onS
         </aside>
       </div>
       
-      <div className="my-8">
+      <div className="my-10">
         <AdsenseWidget />
       </div>
       

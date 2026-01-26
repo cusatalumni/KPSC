@@ -1,15 +1,10 @@
-
 // Vercel Serverless Function
 // Path: /api/generate-cover.ts
 
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.API_KEY || process.env.VITE_API_KEY;
-
-if (!API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
-}
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Fix: Strictly use process.env.API_KEY and named parameter for initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export default async function handler(req: any, res: any) {
     const { title, author } = req.query;

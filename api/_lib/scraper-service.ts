@@ -1,11 +1,10 @@
-
 // Path: /api/_lib/scraper-service.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
-// Initialize Gemini AI correctly using named parameter and environment variable
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || process.env.VITE_API_KEY as string });
+// Fix: Strictly use process.env.API_KEY and named parameter for initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const AFFILIATE_TAG = 'tag=httpcodingonl-21';
 
 // Local version of QUIZ_CATEGORY_TOPICS_ML

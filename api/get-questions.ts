@@ -1,12 +1,10 @@
-
 // Vercel Serverless Function
 // Path: /api/get-questions.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { readSheetData, appendSheetData } from './_lib/sheets-service.js';
 
-// Define the structure of a question in the sheet
-// Columns: id, topic, question, options (JSON), correctAnswerIndex, subject, difficulty
+// Range: id, topic, question, options (JSON), correctAnswerIndex, subject, difficulty
 const RANGE = 'QuestionBank!A2:G'; 
 
 interface QuizQuestion {
@@ -19,21 +17,24 @@ interface QuizQuestion {
   difficulty: string;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
+// Fix: Strictly use process.env.API_KEY and named parameter for initialization
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-function shuffleArray(array: any[]) {
-    for (let i = array.length - 1; i > 0; i--) {
+function shuffleArray<T>(array: T[]): T[] {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
     }
-    return array;
+    return newArr;
 }
 
 async function generateAndStoreQuestions(topic: string, count: number): Promise<QuizQuestion[]> {
-    console.log(`[DB MISS] Generating ${count} new questions for: ${topic}`);
+    console.log(`[REDUCING AI USE] Generating only deficit: ${count} for ${topic}`);
     try {
-        const prompt = `Generate a JSON array of exactly ${count} high-quality Kerala PSC multiple-choice questions in Malayalam for the topic "${topic}".
-        Include metadata: subject (History/Geography/Maths/English/Malayalam/Constitution), and difficulty (Easy/Moderate/PSC Level).
+        const prompt = `Generate a JSON array of exactly ${count} high-quality Kerala PSC multiple-choice questions in Malayalam for the specific topic: "${topic}".
+        Use official PSC pattern.
+        Include metadata: subject (choose from: History, Geography, Indian Constitution, Quantitative Aptitude, Logical Reasoning, English, Malayalam), and difficulty (Easy, Moderate, PSC Level).
         Format: {id, topic, question, options, correctAnswerIndex, subject, difficulty}.`;
 
         const response = await ai.models.generateContent({
@@ -55,12 +56,12 @@ async function generateAndStoreQuestions(topic: string, count: number): Promise<
             }
         });
         
-        const generated = JSON.parse(response.text);
+        const generated = JSON.parse(response.text || "[]");
         
-        // Prepare for Google Sheets insertion
+        // Save to Database (Google Sheets) for future users
         const valuesToAppend = generated.map((q: any) => [
-            q.id || `gen_${Date.now()}_${Math.random()}`,
-            q.topic,
+            q.id || `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            topic,
             q.question,
             JSON.stringify(q.options),
             q.correctAnswerIndex,
@@ -72,7 +73,7 @@ async function generateAndStoreQuestions(topic: string, count: number): Promise<
         return generated;
 
     } catch (error) {
-        console.error(`Generation failure:`, error);
+        console.error(`Gemini Generation failure:`, error);
         return [];
     }
 }
@@ -80,16 +81,17 @@ async function generateAndStoreQuestions(topic: string, count: number): Promise<
 export default async function handler(req: any, res: any) {
     const { topic, count } = req.query;
     const requestedCount = parseInt(count as string, 10) || 10;
-    const requestedTopic = topic as string || '';
+    const requestedTopic = (topic as string || '').trim();
 
     if (!requestedTopic) {
         return res.status(400).json({ error: 'Topic is required' });
     }
 
     try {
-        // 1. Fetch from Database (Google Sheets)
+        // 1. Fetch ALL questions from database
         const rows = await readSheetData(RANGE);
         
+        // 2. Filter for matching topic
         const dbQuestions: QuizQuestion[] = rows.map(row => {
             try {
                 return {
@@ -102,16 +104,15 @@ export default async function handler(req: any, res: any) {
                     difficulty: row[6] || 'Moderate'
                 }
             } catch(e) { return null; }
-        }).filter((q): q is QuizQuestion => q !== null && q.topic === requestedTopic);
+        }).filter((q): q is QuizQuestion => q !== null && q.topic.toLowerCase() === requestedTopic.toLowerCase());
 
-        // 2. Check if we have enough questions
+        // 3. Check if we have enough
         if (dbQuestions.length >= requestedCount) {
-            console.log(`[DB HIT] Serving ${requestedCount} questions from QuestionBank for: ${requestedTopic}`);
+            console.log(`[DATABASE HIT] Found ${dbQuestions.length} questions in bank for ${requestedTopic}.`);
             return res.status(200).json(shuffleArray(dbQuestions).slice(0, requestedCount));
         }
 
-        // 3. Fallback: Generate only the deficit if allowed, or just the whole batch
-        // Since we want to REDUCE AI use, we only fill the gap.
+        // 4. Fallback: Generate only the missing number of questions
         const deficit = requestedCount - dbQuestions.length;
         const newOnes = await generateAndStoreQuestions(requestedTopic, deficit);
         
@@ -119,7 +120,7 @@ export default async function handler(req: any, res: any) {
         res.status(200).json(finalResults);
 
     } catch (error) {
-        console.error('API Error: ' + error);
-        res.status(500).json({ error: 'Failed to fetch questions' });
+        console.error('Question Retrieval API Error: ' + error);
+        res.status(500).json({ error: 'Failed to retrieve questions from bank.' });
     }
 }

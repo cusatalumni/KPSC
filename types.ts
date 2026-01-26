@@ -8,13 +8,14 @@ export interface BilingualText {
 
 export type ExamLevel = 'Preliminary' | 'Main' | 'Departmental' | 'Special';
 export type Difficulty = 'Easy' | 'Moderate' | 'PSC Level';
+export type ExamCategory = 'General' | 'Technical' | 'Special';
 
 export interface Exam {
   id: string;
   title: BilingualText;
   description: BilingualText;
   icon: React.ReactNode;
-  category: 'General' | 'Technical' | 'Special';
+  category: ExamCategory;
   level: ExamLevel;
 }
 
@@ -24,7 +25,7 @@ export interface QuizQuestion {
   options: string[];
   correctAnswerIndex: number;
   topic: string;
-  subject: string; // e.g., 'History', 'Maths', 'English'
+  subject: 'GK' | 'Quantitative Aptitude' | 'Reasoning' | 'English' | 'Malayalam' | 'Technical';
   difficulty: Difficulty;
   explanation?: string;
 }
@@ -36,8 +37,13 @@ export interface MockTest {
   description: BilingualText;
   questionsCount: number;
   duration: number; // in minutes
-  negativeMarking: number; // e.g., 0.33
+  negativeMarking: number;
   isPro?: boolean;
+}
+
+export interface SubjectStats {
+  correct: number;
+  total: number;
 }
 
 export interface TestResult {
@@ -46,8 +52,8 @@ export interface TestResult {
   correct: number;
   wrong: number;
   skipped: number;
-  timeSpent: number; // seconds
-  subjectBreakdown: Record<string, { correct: number; total: number }>;
+  timeSpent: number;
+  subjectBreakdown: Record<string, SubjectStats>;
 }
 
 export interface ActiveTest {
@@ -83,9 +89,6 @@ export type Page =
   | 'study_material'
   | 'sitemap';
 
-/**
- * Interface representing a PSC notification
- */
 export interface Notification {
   id: string;
   title: string;
@@ -94,17 +97,11 @@ export interface Notification {
   link: string;
 }
 
-/**
- * Interface representing a study material topic
- */
 export interface StudyMaterial {
   id: string;
   title: string;
 }
 
-/**
- * Interface representing a practice test in an exam page
- */
 export interface PracticeTest {
   id: string;
   title: string;
@@ -112,18 +109,12 @@ export interface PracticeTest {
   duration: number;
 }
 
-/**
- * Interface representing content for a specific exam page
- */
 export interface ExamPageContent {
   practiceTests: PracticeTest[];
   studyNotes: StudyMaterial[];
   previousPapers: { id: string; title: string }[];
 }
 
-/**
- * Interface representing a user testimonial
- */
 export interface Testimonial {
   id: string;
   name: string;
@@ -132,9 +123,6 @@ export interface Testimonial {
   quote: string;
 }
 
-/**
- * Interface representing a book in the bookstore
- */
 export interface Book {
   id: string;
   title: string;
@@ -143,9 +131,6 @@ export interface Book {
   amazonLink: string;
 }
 
-/**
- * Interface representing an entry in the PSC exam calendar
- */
 export interface ExamCalendarEntry {
   slNo: number;
   catNo: string;
@@ -155,9 +140,6 @@ export interface ExamCalendarEntry {
   syllabusLink: string;
 }
 
-/**
- * Interface representing a quiz category
- */
 export interface QuizCategory {
   id: string;
   title: BilingualText;
@@ -166,9 +148,6 @@ export interface QuizCategory {
   isPro?: boolean;
 }
 
-/**
- * Interface representing a PSC live update item
- */
 export interface PscUpdateItem {
   title: string;
   url: string;
@@ -176,18 +155,12 @@ export interface PscUpdateItem {
   published_date: string;
 }
 
-/**
- * Interface representing a previous question paper
- */
 export interface QuestionPaper {
   title: string;
   url: string;
   date: string;
 }
 
-/**
- * Interface representing a current affairs item
- */
 export interface CurrentAffairsItem {
   id: string;
   title: string;
@@ -195,25 +168,16 @@ export interface CurrentAffairsItem {
   date: string;
 }
 
-/**
- * Interface representing a GK item
- */
 export interface GkItem {
   id: string;
   fact: string;
   category: string;
 }
 
-/**
- * Type representing user answers in a test (questionIndex -> optionIndex)
- */
 export interface UserAnswers {
   [questionIndex: number]: number;
 }
 
-/**
- * Interface representing a navigation link structure
- */
 export interface NavLink {
   nameKey: string;
   target?: Page;

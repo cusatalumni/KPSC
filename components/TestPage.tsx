@@ -36,13 +36,21 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     let correct = 0;
     let wrong = 0;
     const negativeValue = activeTest.negativeMarking || 0.33;
+    const subjectBreakdown: Record<string, { correct: number, total: number }> = {};
 
     questions.forEach((q, index) => {
+      const sub = q.subject || 'General Knowledge';
+      if (!subjectBreakdown[sub]) {
+        subjectBreakdown[sub] = { correct: 0, total: 0 };
+      }
+      subjectBreakdown[sub].total++;
+
       const selected = answers[index];
       if (selected !== undefined) {
         if (selected === q.correctAnswerIndex) {
           correct++;
           score += 1;
+          subjectBreakdown[sub].correct++;
         } else {
           wrong++;
           score -= negativeValue;
@@ -50,9 +58,13 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
       }
     });
 
-    // Format score to 2 decimal places
-    const finalScore = Math.max(0, parseFloat(score.toFixed(2)));
-    onTestComplete(finalScore, questions.length, { correct, wrong, skipped: questions.length - (correct + wrong) });
+    const finalScore = parseFloat(score.toFixed(2));
+    onTestComplete(finalScore, questions.length, { 
+      correct, 
+      wrong, 
+      skipped: questions.length - (correct + wrong),
+      subjectBreakdown 
+    });
   }, [questions, answers, onTestComplete, activeTest.negativeMarking]);
 
   useEffect(() => {
@@ -177,7 +189,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   }
   
   const currentQuestion = questions[currentIndex];
-  const totalQuestions = activeTest.questionsCount;
+  const totalQuestions = questions.length;
   const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
   return (
@@ -197,6 +209,12 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
                         <span>Negative: -{activeTest.negativeMarking || 0.33}</span>
                         <span>•</span>
                         <span>{currentQuestion.subject || 'General'}</span>
+                        {currentQuestion.difficulty && (
+                          <>
+                            <span>•</span>
+                            <span className="text-indigo-600 font-bold">{currentQuestion.difficulty}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
