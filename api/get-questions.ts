@@ -1,23 +1,26 @@
+
 // Vercel Serverless Function
 // Path: /api/get-questions.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { readSheetData, appendSheetData } from './_lib/sheets-service.js';
 
-// Define a local type to avoid frontend dependency issues
+// Define the structure of a question in the sheet
+// Columns: id, topic, question, options (JSON), correctAnswerIndex, subject, difficulty
+const RANGE = 'QuestionBank!A2:G'; 
+
 interface QuizQuestion {
+  id?: string;
+  topic: string;
   question: string;
   options: string[];
   correctAnswerIndex: number;
-  topic: string;
+  subject: string;
+  difficulty: string;
 }
 
-// Initialize Gemini AI
 const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
 
-const RANGE = 'QuestionBank!A2:E'; // id, topic, question, options, correctAnswerIndex
-
-// Function to shuffle an array
 function shuffleArray(array: any[]) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -27,13 +30,14 @@ function shuffleArray(array: any[]) {
 }
 
 async function generateAndStoreQuestions(topic: string, count: number): Promise<QuizQuestion[]> {
-    console.log(`Generating ${count} new questions for topic: ${topic}`);
+    console.log(`[DB MISS] Generating ${count} new questions for: ${topic}`);
     try {
-        const prompt = `Generate a JSON array of exactly ${count} unique, high-quality multiple-choice questions in Malayalam suitable for a Kerala PSC exam on the specific topic "${topic}".
-        Each question object must have 'id' (a unique uuid string), 'topic' (must be exactly "${topic}"), 'question' (string), 'options' (an array of 4 strings), and 'correctAnswerIndex' (a 0-based integer). Ensure questions are relevant, distinct, and challenging.`;
+        const prompt = `Generate a JSON array of exactly ${count} high-quality Kerala PSC multiple-choice questions in Malayalam for the topic "${topic}".
+        Include metadata: subject (History/Geography/Maths/English/Malayalam/Constitution), and difficulty (Easy/Moderate/PSC Level).
+        Format: {id, topic, question, options, correctAnswerIndex, subject, difficulty}.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -42,33 +46,36 @@ async function generateAndStoreQuestions(topic: string, count: number): Promise<
                         type: Type.OBJECT, properties: {
                             id: { type: Type.STRING }, topic: { type: Type.STRING },
                             question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            correctAnswerIndex: { type: Type.INTEGER }
-                        }, required: ["id", "topic", "question", "options", "correctAnswerIndex"]
+                            correctAnswerIndex: { type: Type.INTEGER },
+                            subject: { type: Type.STRING },
+                            difficulty: { type: Type.STRING }
+                        }, required: ["id", "topic", "question", "options", "correctAnswerIndex", "subject", "difficulty"]
                     }
                 }
             }
         });
-        const newQuestionsRaw = JSON.parse(response.text);
-
-        const valuesToAppend = newQuestionsRaw.map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex]);
+        
+        const generated = JSON.parse(response.text);
+        
+        // Prepare for Google Sheets insertion
+        const valuesToAppend = generated.map((q: any) => [
+            q.id || `gen_${Date.now()}_${Math.random()}`,
+            q.topic,
+            q.question,
+            JSON.stringify(q.options),
+            q.correctAnswerIndex,
+            q.subject,
+            q.difficulty
+        ]);
 
         await appendSheetData('QuestionBank!A1', valuesToAppend);
-        console.log(`Successfully generated and stored ${valuesToAppend.length} new questions for topic "${topic}".`);
-        
-        // Return the questions in the correct format for the frontend
-        return newQuestionsRaw.map((item: any): QuizQuestion => ({
-            topic: item.topic,
-            question: item.question,
-            options: item.options,
-            correctAnswerIndex: parseInt(item.correctAnswerIndex, 10),
-        }));
+        return generated;
 
     } catch (error) {
-        console.error(`Failed to generate and store questions for topic "${topic}":`, error);
-        return []; // Return empty array on failure
+        console.error(`Generation failure:`, error);
+        return [];
     }
 }
-
 
 export default async function handler(req: any, res: any) {
     const { topic, count } = req.query;
@@ -80,35 +87,39 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
+        // 1. Fetch from Database (Google Sheets)
         const rows = await readSheetData(RANGE);
         
-        const allQuestions: QuizQuestion[] = rows.map(row => {
+        const dbQuestions: QuizQuestion[] = rows.map(row => {
             try {
                 return {
-                    topic: row[1] || '', 
-                    question: row[2] || '',
-                    options: JSON.parse(row[3] || '[]'),
+                    id: row[0],
+                    topic: row[1],
+                    question: row[2],
+                    options: JSON.parse(row[3]),
                     correctAnswerIndex: parseInt(row[4], 10),
+                    subject: row[5] || 'General',
+                    difficulty: row[6] || 'Moderate'
                 }
             } catch(e) { return null; }
-        }).filter((q): q is QuizQuestion => q !== null && typeof q.correctAnswerIndex === 'number');
+        }).filter((q): q is QuizQuestion => q !== null && q.topic === requestedTopic);
 
-        let filteredQuestions = allQuestions.filter(q => q && q.topic === requestedTopic);
-        
-        const questionsFound = filteredQuestions.length;
-        if (questionsFound < requestedCount) {
-            const questionsToGenerate = requestedCount - questionsFound;
-            const newlyGeneratedQuestions = await generateAndStoreQuestions(requestedTopic, questionsToGenerate);
-            filteredQuestions = [...filteredQuestions, ...newlyGeneratedQuestions];
+        // 2. Check if we have enough questions
+        if (dbQuestions.length >= requestedCount) {
+            console.log(`[DB HIT] Serving ${requestedCount} questions from QuestionBank for: ${requestedTopic}`);
+            return res.status(200).json(shuffleArray(dbQuestions).slice(0, requestedCount));
         }
 
-        const shuffled = shuffleArray(filteredQuestions);
-        const result = shuffled.slice(0, requestedCount);
+        // 3. Fallback: Generate only the deficit if allowed, or just the whole batch
+        // Since we want to REDUCE AI use, we only fill the gap.
+        const deficit = requestedCount - dbQuestions.length;
+        const newOnes = await generateAndStoreQuestions(requestedTopic, deficit);
         
-        res.status(200).json(result);
+        const finalResults = shuffleArray([...dbQuestions, ...newOnes]).slice(0, requestedCount);
+        res.status(200).json(finalResults);
 
     } catch (error) {
-        console.error('The API returned an error: ' + error);
+        console.error('API Error: ' + error);
         res.status(500).json({ error: 'Failed to fetch questions' });
     }
 }

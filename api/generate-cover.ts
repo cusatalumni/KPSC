@@ -1,12 +1,13 @@
+
 // Vercel Serverless Function
 // Path: /api/generate-cover.ts
 
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEY = process.env.VITE_API_KEY;
+const API_KEY = process.env.API_KEY || process.env.VITE_API_KEY;
 
 if (!API_KEY) {
-    throw new Error("VITE_API_KEY environment variable not set.");
+    throw new Error("API_KEY environment variable not set.");
 }
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
@@ -20,8 +21,9 @@ export default async function handler(req: any, res: any) {
     try {
         const prompt = `Create a professional and visually appealing book cover for a Kerala PSC exam preparation book. The cover should feature the book's title prominently and elegantly in Malayalam script: "${title}". The style should be clean, modern, and academic, suitable for an educational publication. Use abstract concepts or symbols related to learning, success, and Kerala for the background imagery. The text must be clear and correctly spelled.`;
 
+        // Use Imagen 4.0 for high quality image generation as per guidelines
         const response = await ai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
+            model: 'imagen-4.0-generate-001',
             prompt: prompt,
             config: {
               numberOfImages: 1,
@@ -34,6 +36,7 @@ export default async function handler(req: any, res: any) {
             throw new Error("Image generation failed, no images returned.");
         }
 
+        // Correctly accessing image bytes from Imagen models output
         const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
         res.status(200).json({ imageBase64: base64ImageBytes });
 

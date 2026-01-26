@@ -1,12 +1,13 @@
+
 // Vercel Serverless Function
 // Path: /api/get-study-material.ts
 
 import { GoogleGenAI } from "@google/genai";
 import { readSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
 
-const API_KEY = process.env.VITE_API_KEY;
+const API_KEY = process.env.API_KEY || process.env.VITE_API_KEY;
 if (!API_KEY) {
-    throw new Error("VITE_API_KEY environment variable not set.");
+    throw new Error("API_KEY environment variable not set.");
 }
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
@@ -21,12 +22,13 @@ async function generateNewMaterial(topic: string): Promise<string> {
     The notes must be suitable for exam preparation.
     Use Markdown for formatting. This includes using headings (#, ##), lists (* or -), and bold text (**text**).`;
 
+    // Use gemini-3-flash-preview for high quality text generation
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
     });
 
-    return response.text;
+    return response.text || "";
 }
 
 export default async function handler(req: any, res: any) {

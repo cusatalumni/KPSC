@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { EXAMS_DATA } from '../constants';
 import ExamCard from './ExamCard';
@@ -27,6 +28,12 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
   const { t, language } = useTranslation();
 
+  const categories = [
+    { id: 'General', title: 'പൊതു പരീക്ഷകൾ (General Exams)' },
+    { id: 'Technical', title: 'സാങ്കേതിക പരീക്ഷകൾ (Technical)' },
+    { id: 'Special', title: 'പ്രത്യേക പരീക്ഷകൾ (Special Competitive)' }
+  ];
+
   return (
     <div className="space-y-8">
       <HeroSlider onNavigate={onNavigate} />
@@ -34,17 +41,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onS
       <NewsTicker />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <section>
-            <h3 className="text-2xl font-bold text-slate-700 mb-6">{t('dashboard.topCourses')}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {EXAMS_DATA.map((exam) => (
-                <ExamCard key={exam.id} exam={exam} onNavigate={onNavigateToExam} language={language} />
-              ))}
-            </div>
-          </section>
+        <div className="lg:col-span-2 space-y-12">
+          {categories.map(cat => {
+            const examsInCat = EXAMS_DATA.filter(e => e.category === cat.id);
+            if (examsInCat.length === 0) return null;
+            
+            return (
+              <section key={cat.id}>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                  <h3 className="text-2xl font-bold text-slate-800">{cat.title}</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {examsInCat.map((exam) => (
+                    <ExamCard key={exam.id} exam={exam} onNavigate={onNavigateToExam} language={language} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+          
           <NotificationsWidget />
         </div>
+        
         <aside className="space-y-8">
            <BookOfTheDayWidget />
            <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
@@ -56,9 +75,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onS
            <StudyMaterialWidget onStartStudy={onStartStudy} />
         </aside>
       </div>
+      
       <div className="my-8">
         <AdsenseWidget />
       </div>
+      
       <Testimonials />
     </div>
   );

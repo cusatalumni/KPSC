@@ -1,13 +1,15 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
-const API_KEY = import.meta.env.VITE_API_KEY;
+const API_KEY = process.env.API_KEY || import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
-  console.warn("VITE_API_KEY environment variable not set. Using mocked data for some API calls.");
+  console.warn("API_KEY environment variable not set. Using mocked data for some API calls.");
 }
 
+// Correct initialization using named parameter
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
@@ -16,8 +18,9 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
     }
 
     try {
+        // Use gemini-3-flash-preview for basic text tasks like extraction
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: `Act as a web scraper. Search for Kerala PSC previous question papers matching the query "${query}". Scrape the following official URLs: 
             1. https://keralapsc.gov.in/index.php/previous-question-papers
             2. https://keralapsc.gov.in/index.php/answerkey_onlineexams
@@ -42,7 +45,8 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
             }
         });
         
-        const jsonString = response.text.trim();
+        // Correctly accessing text property from GenerateContentResponse
+        const jsonString = response.text?.trim() || "[]";
         const parsedJson = JSON.parse(jsonString);
 
         if (Array.isArray(parsedJson)) {

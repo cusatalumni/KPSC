@@ -21,6 +21,20 @@ if (isClerkKeyInvalid) {
             <h1 className="text-2xl font-bold text-red-700 mb-4">Configuration Error</h1>
             <p className="text-slate-700 mb-4 text-lg">The application cannot start because the <strong className="text-red-800">Clerk Publishable Key</strong> is missing or invalid.</p>
             
+            <div className="text-left bg-red-50 p-4 rounded-md border border-red-200 my-4">
+                <h3 className="font-semibold text-red-800 mb-2">Debugging Information:</h3>
+                {!PUBLISHABLE_KEY ? (
+                    <p className="text-red-700 text-sm">
+                        The <code className="font-mono bg-red-200 px-1 rounded">VITE_CLERK_PUBLISHABLE_KEY</code> environment variable was not found.
+                    </p>
+                ) : (
+                    <p className="text-red-700 text-sm">
+                        Found a key: <code className="font-mono bg-red-200 px-1 rounded">{`${PUBLISHABLE_KEY.substring(0, 10)}...`}</code><br />
+                        This key is considered invalid because it does not start with "pk_test_" or "pk_live_". Please verify it's correct and has no extra characters or spaces.
+                    </p>
+                )}
+            </div>
+
             <div className="text-left bg-slate-50 p-4 rounded-md border border-slate-200">
                 <h2 className="font-semibold text-slate-800 mb-2">How to fix this:</h2>
                 <ol className="list-decimal list-inside space-y-3 text-slate-600">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { QuizQuestion, UserAnswers, SubscriptionStatus, ActiveTest } from '../types';
 import { getQuestionsForTest } from '../services/pscDataService';
@@ -10,12 +11,12 @@ import { useTranslation } from '../contexts/LanguageContext';
 interface TestPageProps {
   activeTest: ActiveTest;
   subscriptionStatus: SubscriptionStatus;
-  onTestComplete: (score: number, total: number) => void;
+  onTestComplete: (score: number, total: number, stats?: any) => void;
   onBack: () => void;
   onNavigateToUpgrade: () => void;
 }
 
-const DURATION_PER_QUESTION = 90; // 1.5 minutes per question
+const DURATION_PER_QUESTION = 60; // 1 minute per question as per PSC standard
 
 const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onTestComplete, onBack, onNavigateToUpgrade }) => {
   const { t } = useTranslation();
@@ -32,13 +33,27 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
 
   const handleSubmit = useCallback(() => {
     let score = 0;
+    let correct = 0;
+    let wrong = 0;
+    const negativeValue = activeTest.negativeMarking || 0.33;
+
     questions.forEach((q, index) => {
-      if (answers[index] === q.correctAnswerIndex) {
-        score++;
+      const selected = answers[index];
+      if (selected !== undefined) {
+        if (selected === q.correctAnswerIndex) {
+          correct++;
+          score += 1;
+        } else {
+          wrong++;
+          score -= negativeValue;
+        }
       }
     });
-    onTestComplete(score, questions.length);
-  }, [questions, answers, onTestComplete]);
+
+    // Format score to 2 decimal places
+    const finalScore = Math.max(0, parseFloat(score.toFixed(2)));
+    onTestComplete(finalScore, questions.length, { correct, wrong, skipped: questions.length - (correct + wrong) });
+  }, [questions, answers, onTestComplete, activeTest.negativeMarking]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -59,7 +74,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     setLoading(true);
     setError(null);
     try {
-      // For freemium pro tests, we only fetch 10 questions for the free user
       const questionRequestCount = (subscriptionStatus === 'free' && activeTest.isPro) ? 10 : activeTest.questionsCount;
       const data = await getQuestionsForTest(activeTest.topic, questionRequestCount);
       
@@ -67,7 +81,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
         setError(t('test.noQuestionsError'));
       } else {
         setQuestions(data);
-        // Timer should be based on the full test length for pro users to show what they're getting
         const timerDuration = activeTest.questionsCount * DURATION_PER_QUESTION;
         setTimeLeft(timerDuration);
       }
@@ -83,9 +96,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     fetchQuestions();
   }, [fetchQuestions]);
 
-
   const handleNext = useCallback(() => {
-    // Freemium logic: check before moving to the 11th question
     if (subscriptionStatus === 'free' && activeTest.isPro && currentIndex === 9) {
       setIsUpgradeModalOpen(true);
       return;
@@ -99,7 +110,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const handleAnswerSelect = (optionIndex: number, isDoubleClick = false) => {
     setAnswers(prev => ({ ...prev, [currentIndex]: optionIndex }));
     if (isDoubleClick) {
-      setTimeout(handleNext, 200); // Short delay to show selection
+      setTimeout(handleNext, 200);
     }
   };
   
@@ -123,7 +134,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
         testPageRef.current?.requestFullscreen().catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            alert(`Fullscreen error: ${err.message}`);
         });
     } else {
         document.exitFullscreen();
@@ -146,10 +157,10 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-        <p className="mt-4 text-lg text-slate-600">{t('test.loading.ml')}</p>
-        <p className="text-sm text-slate-500">{t('test.loading.en')}</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-white">
+        <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p className="mt-6 text-xl font-bold text-slate-800">{t('test.loading.ml')}</p>
+        <p className="text-slate-500">{t('test.loading.en')}</p>
       </div>
     );
   }
@@ -158,97 +169,136 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     return (
         <div className="flex flex-col items-center justify-center h-screen text-center p-4">
             <p className="text-xl font-semibold text-red-600">{error || t('test.noQuestionsError')}</p>
-            <button onClick={onBack} className="mt-4 flex items-center space-x-2 bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg hover:bg-slate-300 transition">
-                <span>{t('test.backToPrevious')}</span>
+            <button onClick={onBack} className="mt-4 bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg hover:bg-slate-300">
+                {t('test.backToPrevious')}
             </button>
         </div>
     );
   }
   
   const currentQuestion = questions[currentIndex];
-  // Progress bar should reflect the full test length for Pro tests to entice users
-  const totalQuestionsForProgress = activeTest.questionsCount;
-  const progress = ((currentIndex + 1) / totalQuestionsForProgress) * 100;
+  const totalQuestions = activeTest.questionsCount;
+  const progress = ((currentIndex + 1) / totalQuestions) * 100;
 
   return (
-    <div ref={testPageRef} className="bg-slate-50 min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 md:p-8">
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-slate-200">
-            <header className="mb-6 border-b border-slate-200 pb-4">
-            <div className="flex justify-between items-start gap-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-800">{activeTest.title}</h1>
-                <div className="flex items-center gap-4">
-                    <div className={`flex items-center space-x-2 font-bold p-2 rounded-md ${timeLeft < 60 ? 'text-red-600 bg-red-100' : 'text-slate-700'}`}>
-                        <ClockIcon className="h-6 w-6"/>
-                        <span className="text-lg">{formatTime(timeLeft)}</span>
+    <div ref={testPageRef} className="bg-slate-50 min-h-screen flex flex-col items-center py-6 px-4">
+      <div className="w-full max-w-4xl">
+        <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-slate-200 relative overflow-hidden">
+            {/* Header */}
+            <header className="mb-8 border-b border-slate-100 pb-6">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-indigo-600 text-white w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl">
+                        {currentIndex + 1}
                     </div>
-                    <button onClick={toggleFullscreen} className="p-2 text-slate-500 hover:bg-slate-100 rounded-md">
-                        {isFullscreen ? <ArrowsPointingInIcon className="h-6 w-6" /> : <ArrowsPointingOutIcon className="h-6 w-6" />}
-                    </button>
-                </div>
-            </div>
-            <div className="mt-4">
-                <div className="flex justify-between text-sm text-slate-600 mb-1">
-                    <span>{t('test.question')} {currentIndex + 1} / {totalQuestionsForProgress}</span>
-                    <span>{Math.round(progress)}%</span>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5">
-                <div className="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
-                </div>
-            </div>
+                    <div>
+                      <h1 className="text-lg font-bold text-slate-800 line-clamp-1">{activeTest.title}</h1>
+                      <div className="flex items-center text-xs text-slate-500 space-x-2">
+                        <span>Negative: -{activeTest.negativeMarking || 0.33}</span>
+                        <span>•</span>
+                        <span>{currentQuestion.subject || 'General'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                      <div className={`flex items-center space-x-2 font-mono font-bold px-4 py-2 rounded-lg ${timeLeft < 300 ? 'text-red-600 bg-red-50 animate-pulse' : 'text-slate-700 bg-slate-100'}`}>
+                          <ClockIcon className="h-5 w-5"/>
+                          <span className="text-xl">{formatTime(timeLeft)}</span>
+                      </div>
+                      <button onClick={toggleFullscreen} className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors">
+                          {isFullscreen ? <ArrowsPointingInIcon className="h-6 w-6" /> : <ArrowsPointingOutIcon className="h-6 w-6" />}
+                      </button>
+                  </div>
+              </div>
+              
+              <div className="mt-6">
+                  <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      <span>Progress</span>
+                      <span>{currentIndex + 1} / {totalQuestions}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
+                  </div>
+              </div>
             </header>
 
-            <div className="mb-8 min-h-[6rem]">
-                <h2 className="text-xl sm:text-2xl font-semibold text-slate-700 leading-relaxed">{currentQuestion.question}</h2>
+            {/* Question Section */}
+            <div className="mb-10 min-h-[140px]">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 leading-snug">
+                  {currentQuestion.question}
+                </h2>
             </div>
 
-            <div className="space-y-3">
+            {/* Options */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {currentQuestion.options.map((option, index) => (
-                <label key={index} onDoubleClick={() => handleAnswerSelect(index, true)} className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${answers[currentIndex] === index ? 'bg-indigo-50 border-indigo-500 shadow-inner' : 'bg-white hover:bg-slate-50 border-slate-200'}`}>
+                <label 
+                  key={index} 
+                  onDoubleClick={() => handleAnswerSelect(index, true)} 
+                  className={`flex items-center p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${
+                    answers[currentIndex] === index 
+                      ? 'bg-indigo-50 border-indigo-600 shadow-md scale-[1.02]' 
+                      : 'bg-white border-slate-100 hover:border-indigo-200 hover:bg-slate-50'
+                  }`}
+                >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 border-2 font-bold transition-colors ${
+                       answers[currentIndex] === index ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-400 border-slate-200 group-hover:border-indigo-300'
+                    }`}>
+                      {String.fromCharCode(65 + index)}
+                    </div>
                     <input 
                         type="radio" 
                         name="option" 
                         value={index} 
                         checked={answers[currentIndex] === index}
                         onChange={() => handleAnswerSelect(index)}
-                        className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                        className="hidden"
                     />
-                    <span className="ml-4 text-lg text-slate-800">{option}</span>
+                    <span className={`text-lg font-medium ${answers[currentIndex] === index ? 'text-indigo-900' : 'text-slate-700'}`}>
+                      {option}
+                    </span>
                 </label>
             ))}
             </div>
 
-            <footer className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-center">
+            {/* Controls */}
+            <footer className="mt-12 pt-8 border-t border-slate-100 flex flex-wrap justify-between items-center gap-4">
                 <button 
                     onClick={() => setCurrentIndex(prev => prev - 1)} 
                     disabled={currentIndex === 0}
-                    className="bg-slate-200 text-slate-800 font-bold py-2 px-6 rounded-lg hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="flex-1 sm:flex-none order-2 sm:order-1 bg-slate-100 text-slate-600 font-bold py-3 px-8 rounded-xl hover:bg-slate-200 disabled:opacity-30 transition-all"
                 >
                     {t('test.previous')}
                 </button>
-                {currentIndex === questions.length - 1 ? (
-                    <button 
-                        onClick={() => setIsSubmitModalOpen(true)}
-                        className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition"
-                    >
-                    {t('test.submit')}
-                    </button>
-                ) : (
-                    <button 
-                        onClick={handleNext} 
-                        className="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition"
-                    >
-                        {t('test.next')}
-                    </button>
-                )}
+                
+                <div className="flex-1 sm:flex-none order-1 sm:order-2 flex gap-4 w-full sm:w-auto">
+                  {currentIndex === questions.length - 1 ? (
+                      <button 
+                          onClick={() => setIsSubmitModalOpen(true)}
+                          className="w-full bg-green-600 text-white font-bold py-3 px-10 rounded-xl hover:bg-green-700 shadow-lg shadow-green-100 transition-all transform active:scale-95"
+                      >
+                      {t('test.submit')}
+                      </button>
+                  ) : (
+                      <button 
+                          onClick={handleNext} 
+                          className="w-full bg-indigo-600 text-white font-bold py-3 px-10 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all transform active:scale-95"
+                      >
+                          {t('test.next')}
+                      </button>
+                  )}
+                </div>
             </footer>
         </div>
-        <div className="text-center mt-4">
-            <button onClick={onBack} className="text-sm text-slate-500 hover:text-indigo-600 hover:underline">
-                {t('test.endTest')}
+        
+        <div className="flex justify-center mt-8">
+            <button onClick={onBack} className="text-slate-400 font-semibold hover:text-red-500 transition-colors flex items-center space-x-2">
+                <span>Quit Examination</span>
             </button>
         </div>
       </div>
+
       <Modal
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
@@ -260,8 +310,11 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
         confirmText={t('test.submit')}
         cancelText={t('test.modal.cancel')}
       >
-        {t('test.modal.body')}
+        <p className="text-slate-600 leading-relaxed">
+          {t('test.modal.body')} You have answered {Object.keys(answers).length} out of {questions.length} questions.
+        </p>
       </Modal>
+
       <Modal
         isOpen={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}

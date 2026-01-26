@@ -1,13 +1,14 @@
+
 // Path: /api/_lib/scraper-service.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
-// Initialize Gemini AI
-const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY as string });
+// Initialize Gemini AI correctly using named parameter and environment variable
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || process.env.VITE_API_KEY as string });
 const AFFILIATE_TAG = 'tag=httpcodingonl-21';
 
-// Local version of QUIZ_CATEGORIES to avoid importing React components into the backend
+// Local version of QUIZ_CATEGORY_TOPICS_ML
 const QUIZ_CATEGORY_TOPICS_ML = [
     'പൊതുവിജ്ഞാനം',
     'ആനുകാലിക സംഭവങ്ങൾ',
@@ -22,8 +23,9 @@ const QUIZ_CATEGORY_TOPICS_ML = [
 // --- Individual Scraping Functions ---
 
 async function scrapeKpscNotifications() {
+    // Use gemini-3-flash-preview for scraping tasks
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3-flash-preview",
         contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 10 most recent notifications. For each, extract: full title, category number, last date (DD-MM-YYYY), and direct URL. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
         config: {
             responseMimeType: "application/json",
@@ -39,13 +41,13 @@ async function scrapeKpscNotifications() {
             }
         }
     });
-    const data = JSON.parse(response.text);
+    const data = JSON.parse(response.text || "[]");
     return data.map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
 }
 
 async function scrapePscLiveUpdates() {
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `Scrape the 15 most recent updates from keralapsc.gov.in (Ranked Lists, Latest Updates, Notifications). For each, provide title, full URL, section, and publication date (YYYY-MM-DD). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
@@ -59,13 +61,13 @@ async function scrapePscLiveUpdates() {
             }
         }
     });
-    const data = JSON.parse(response.text);
+    const data = JSON.parse(response.text || "[]");
     return data.map((item: any) => [item.title, item.url, item.section, item.published_date]);
 }
 
 async function scrapeCurrentAffairs() {
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `Generate 10 recent, relevant current affairs topics for Kerala PSC exams in Malayalam. For each, provide a unique ID, a concise title, the source (e.g., 'മാതൃഭൂമി'), and today's date (YYYY-MM-DD). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
@@ -79,13 +81,13 @@ async function scrapeCurrentAffairs() {
             }
         }
     });
-    const data = JSON.parse(response.text);
+    const data = JSON.parse(response.text || "[]");
     return data.map((item: any) => [item.id, item.title, item.source, item.date]);
 }
 
 async function scrapeGk() {
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: `Generate 25 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
@@ -99,7 +101,7 @@ async function scrapeGk() {
             }
         }
     });
-    const data = JSON.parse(response.text);
+    const data = JSON.parse(response.text || "[]");
     return data.map((item: any) => [item.id, item.fact, item.category]);
 }
 
@@ -110,7 +112,7 @@ async function generateNewQuestions() {
     Each question object must have 'id' (a unique uuid string), 'topic' (the Malayalam topic string from the list), 'question' (string), 'options' (an array of 4 strings), and 'correctAnswerIndex' (a 0-based integer). Ensure questions are relevant and distinct.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash', contents: prompt,
+        model: 'gemini-3-flash-preview', contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -124,7 +126,7 @@ async function generateNewQuestions() {
             }
         }
     });
-    const data = JSON.parse(response.text);
+    const data = JSON.parse(response.text || "[]");
     return data.map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex]);
 }
 
@@ -132,7 +134,7 @@ async function scrapeAmazonBooks() {
     const prompt = `Act as a web scraper. Start by searching on amazon.in for "Kerala PSC exam preparation books". From the search results page, identify the top 12 most relevant, individual book listings. For each book, you must find its direct product detail page URL (it should look like 'https://www.amazon.in/dp/...' or contain '/dp/'). From the listing, extract: a unique ID, the book's title, the author's name, and a high-quality image URL. Finally, take the clean product URL and append the affiliate tracking code "${AFFILIATE_TAG}". Use '&' if the product URL already has a '?', otherwise use '?'. Return the final data as a JSON array.`;
 
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", contents: prompt,
+        model: "gemini-3-flash-preview", contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -145,7 +147,7 @@ async function scrapeAmazonBooks() {
             }
         }
     });
-    const data = JSON.parse(response.text);
+    const data = JSON.parse(response.text || "[]");
     return data.map((item: any) => [item.id, item.title, item.author, item.imageUrl, item.amazonLink]);
 }
 
