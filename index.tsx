@@ -5,9 +5,8 @@ import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-// Safe polyfill for browser environment
-if (typeof window !== 'undefined') {
-    (window as any).process = (window as any).process || { env: {} };
+// Populate the global process polyfill defined in index.html
+if (typeof window !== 'undefined' && (window as any).process) {
     (window as any).process.env.API_KEY = import.meta.env.VITE_API_KEY;
 }
 
@@ -27,7 +26,7 @@ if (isClerkKeyInvalid) {
         <div className="bg-white p-8 rounded-lg shadow-md border border-red-200 text-center max-w-2xl">
             <h1 className="text-2xl font-bold text-red-700 mb-4">Configuration Error</h1>
             <p className="text-slate-700 mb-4 text-lg">The application cannot start because the <strong className="text-red-800">Clerk Publishable Key</strong> is missing or invalid.</p>
-            <p className="text-sm text-slate-500">Please check your environment variables.</p>
+            <p className="text-sm text-slate-500">Please check your environment variables in Vercel settings.</p>
         </div>
     </div>
   );

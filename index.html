@@ -56,6 +56,13 @@
       }
     </style>
   <script>
+    // Global polyfill for process.env before any modules load
+    window.process = {
+      env: {
+        API_KEY: "" // Will be populated in index.tsx but exists now to prevent crashes
+      }
+    };
+    
     tailwind.config = {
       theme: {
         extend: {
