@@ -11,14 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manjari:wght@400;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      // 1. PROVIDE GLOBAL PROCESS POLYFILL IMMEDIATELY
-      window.process = { 
-        env: { 
-          // This will be replaced by the actual key from import.meta.env in index.tsx
-          // but needs to exist now as an object to prevent crashes.
-          API_KEY: "" 
-        } 
-      };
+      // CRITICAL: Polyfill process.env for browser environment before modules load
+      window.process = window.process || { env: {} };
     </script>
     <style>
       body { font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif; }
