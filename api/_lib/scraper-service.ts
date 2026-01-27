@@ -4,7 +4,8 @@ import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
 declare var process: any;
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const AFFILIATE_TAG = 'tag=httpcodingonl-21';
+// Updated tracking ID as requested
+const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
 const QUIZ_CATEGORY_TOPICS_ML = [
     'പൊതുവിജ്ഞാനം',
@@ -125,7 +126,11 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Act as a web scraper. Search on amazon.in for "Kerala PSC exam preparation books". Extract top 10 relevant books. Return a JSON array with 'id', 'title', 'author', 'imageUrl', 'amazonLink' (append ${AFFILIATE_TAG}).`;
+    const prompt = `Act as a web scraper. Search on amazon.in for best-selling "Kerala PSC exam preparation books". 
+    Focus on popular publishers like Talent Academy, Lakshya, and DC Books. 
+    Include books for LDC, Degree Level, and GK.
+    For each book, return a JSON array with 'id', 'title', 'author', 'imageUrl', and 'amazonLink'. 
+    CRITICAL: For 'amazonLink', ensure it is a valid amazon.in product URL and append exactly "&${AFFILIATE_TAG}" to the end.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", contents: prompt,
