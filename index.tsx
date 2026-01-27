@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -6,35 +7,38 @@ import { LanguageProvider } from './contexts/LanguageContext';
 
 /**
  * Aggressive key discovery function
- * Checks all possible locations where the platform might inject the key
+ * Prioritizes NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY as requested.
  */
 const findPublishableKey = (): string | null => {
     const env = (import.meta as any).env || {};
     const procEnv = (window as any).process?.env || {};
     const win = window as any;
 
-    // 1. Try known variations (including the user's specific typo)
+    // Ordered list of keys to check. Prioritizing the one requested by the user.
     const knownKeys = [
-        'VITE_CLERK_PUBLISHABLE_KEY',
-        'NEXT_PUBLIC_CLERK_PUBLISHBLE_KEY', // The specific typo mentioned by user
         'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+        'NEXT_PUBLIC_CLERK_PUBLISHBLE_KEY', 
+        'VITE_CLERK_PUBLISHABLE_KEY',
         'CLERK_PUBLISHABLE_KEY'
     ];
 
+    // Check all environments for each known key
     for (const key of knownKeys) {
         if (env[key]) return env[key];
         if (procEnv[key]) return procEnv[key];
         if (win[key]) return win[key];
     }
 
-    // 2. Fuzzy search: Look for any key that contains both "CLERK" and "PUBLISH"
+    // Fuzzy search: Look for any key that looks like a Clerk PK
     const allSources = { ...win, ...procEnv, ...env };
     const fuzzyMatch = Object.keys(allSources).find(k => 
         k.toUpperCase().includes('CLERK') && 
-        (k.toUpperCase().includes('PUBLISH') || k.toUpperCase().includes('PUB'))
+        k.toUpperCase().includes('PUBLISH') &&
+        typeof allSources[k] === 'string' && 
+        allSources[k].startsWith('pk_')
     );
 
-    if (fuzzyMatch && typeof allSources[fuzzyMatch] === 'string' && allSources[fuzzyMatch].startsWith('pk_')) {
+    if (fuzzyMatch) {
         console.log(`Found Clerk key using fuzzy match: ${fuzzyMatch}`);
         return allSources[fuzzyMatch];
     }
@@ -50,7 +54,6 @@ if (!rootElement) throw new Error("Root element not found");
 const root = createRoot(rootElement);
 
 if (!PUBLISHABLE_KEY) {
-    // Get all keys containing "CLERK" for diagnostic purposes
     const procEnv = (window as any).process?.env || {};
     const env = (import.meta as any).env || {};
     const foundKeys = Array.from(new Set([
@@ -69,22 +72,15 @@ if (!PUBLISHABLE_KEY) {
                 </div>
                 <h1 className="text-2xl font-bold text-slate-800 mb-2">ക്ലർക്ക് കീ കണ്ടെത്താനായില്ല</h1>
                 <p className="text-slate-600 mb-6 text-sm">
-                    നിങ്ങളുടെ സിസ്റ്റത്തിൽ <strong>Clerk Publishable Key</strong> ക്രമീകരിച്ചിട്ടില്ല അല്ലെങ്കിൽ പേര് തെറ്റാണ്.
+                    നിങ്ങളുടെ സിസ്റ്റത്തിൽ <strong>NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</strong> ക്രമീകരിച്ചിട്ടില്ല അല്ലെങ്കിൽ പേര് തെറ്റാണ്.
                 </p>
                 
                 <div className="text-left bg-slate-50 p-4 rounded-xl text-[10px] font-mono text-slate-500 mb-6 border border-slate-200">
                     <p className="font-bold text-slate-700 mb-1 uppercase tracking-wider text-[9px]">ഡയഗ്നോസ്റ്റിക്സ് (Diagnostics):</p>
                     <div className="space-y-1">
-                        <div><span className="text-indigo-600">Expected:</span> VITE_CLERK_PUBLISHABLE_KEY</div>
+                        <div><span className="text-indigo-600">Expected:</span> NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</div>
                         <div><span className="text-indigo-600">Detected Keys:</span> {foundKeys.length > 0 ? foundKeys.join(', ') : 'None'}</div>
                     </div>
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-left mb-6">
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                        <strong>ശ്രദ്ധിക്കുക:</strong> പേരിൽ അക്ഷരത്തെറ്റുകൾ ഉണ്ടോ എന്ന് പരിശോധിക്കുക. <br/>
-                        ഉദാഹരണത്തിന്: <code>PUBLISHBLE</code> എന്നത് <code>PUBLISHABLE</code> എന്നായിരിക്കണം.
-                    </p>
                 </div>
 
                 <button 
