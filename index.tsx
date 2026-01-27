@@ -5,10 +5,14 @@ import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-// Ensure process.env.API_KEY is available to satisfy strict GenAI SDK rules in browser
+// Basic polyfill and global error handling to debug blank screen issues
 if (typeof window !== 'undefined') {
     (window as any).process = (window as any).process || { env: {} };
     (window as any).process.env.API_KEY = import.meta.env.VITE_API_KEY;
+    
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Global Error Caught: ", message, " at ", source, ":", lineno);
+    };
 }
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -27,7 +31,9 @@ if (isClerkKeyInvalid) {
         <div className="bg-white p-8 rounded-lg shadow-md border border-red-200 text-center max-w-2xl">
             <h1 className="text-2xl font-bold text-red-700 mb-4">Configuration Error</h1>
             <p className="text-slate-700 mb-4 text-lg">The application cannot start because the <strong className="text-red-800">Clerk Publishable Key</strong> is missing or invalid.</p>
-            <p className="text-sm text-slate-500">Please check your Vercel Environment Variables.</p>
+            <div className="text-left bg-slate-50 p-4 rounded-md border border-slate-200 mt-4">
+               <p className="text-sm text-slate-600">Please ensure <code className="bg-slate-200 px-1 rounded">VITE_CLERK_PUBLISHABLE_KEY</code> is correctly set in your Vercel Environment Variables.</p>
+            </div>
         </div>
     </div>
   );
