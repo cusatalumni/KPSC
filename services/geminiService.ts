@@ -3,11 +3,23 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
-// Correct initialization as per instructions
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Do NOT initialize at top level to avoid "API Key not set" error on load
+let aiInstance: GoogleGenAI | null = null;
+
+const getAi = () => {
+    if (!aiInstance) {
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            console.error("Gemini API Key is missing in process.env.API_KEY");
+        }
+        aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
+    }
+    return aiInstance;
+};
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
     try {
+        const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `Search for Kerala PSC previous question papers matching the query "${query}". 
