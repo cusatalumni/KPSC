@@ -2,13 +2,14 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
-import App from './App';
-import { LanguageProvider } from './contexts/LanguageContext';
 
-// Populate the global process polyfill defined in index.html
+// Initialize the environment variable polyfill before importing App or Services
 if (typeof window !== 'undefined' && (window as any).process) {
     (window as any).process.env.API_KEY = import.meta.env.VITE_API_KEY;
 }
+
+import App from './App';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isClerkKeyInvalid = !PUBLISHABLE_KEY || !PUBLISHABLE_KEY.startsWith('pk_');

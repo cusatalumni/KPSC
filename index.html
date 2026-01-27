@@ -56,10 +56,10 @@
       }
     </style>
   <script>
-    // Global polyfill for process.env before any modules load
+    // CRITICAL: Initialize global process object for the browser
     window.process = {
       env: {
-        API_KEY: "" // Will be populated in index.tsx but exists now to prevent crashes
+        API_KEY: "" 
       }
     };
     
