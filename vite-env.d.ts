@@ -4,7 +4,7 @@
 // so the types are defined manually here as a workaround.
 
 interface ImportMetaEnv {
-  readonly NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
+  readonly NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_cmVsYXhlZC1saWdlci03LmNsZXJrLmFjY291bnRzLmRldiQ;
   readonly NEXT_PUBLIC_CLERK_PUBLISHBLE_KEY: string;
   readonly VITE_CLERK_PUBLISHABLE_KEY: string;
   readonly VITE_API_KEY: string;
