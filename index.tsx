@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -6,48 +5,44 @@ import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 /**
- * Aggressive key discovery function with a hardcoded fallback.
- * Since environment variables are not being detected in this environment,
- * we use the key provided by the user as a primary constant.
+ * Direct and resilient key retrieval.
+ * Prioritizes the requested NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.
  */
-const findPublishableKey = (): string | null => {
-    // 1. Hardcoded primary key from user provided value
-    const HARDCODED_KEY = 'pk_test_cmVsYXhlZC1saWdlci03LmNsZXJrLmFjY291bnRzLmRldiQ';
+const getClerkKey = (): string => {
+    const HARDCODED_FALLBACK = 'pk_test_cmVsYXhlZC1saWdlci03LmNsZXJrLmFjY291bnRzLmRldiQ';
     
-    // Check environment sources as well
-    const env = (import.meta as any).env || {};
-    const procEnv = (window as any).process?.env || {};
-    const win = window as any;
+    try {
+        // 1. Check import.meta.env (Vite standard)
+        const viteEnv = (import.meta as any).env;
+        if (viteEnv?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return viteEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+        if (viteEnv?.VITE_CLERK_PUBLISHABLE_KEY) return viteEnv.VITE_CLERK_PUBLISHABLE_KEY;
 
-    const knownKeys = [
-        'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
-        'NEXT_PUBLIC_CLERK_PUBLISHBLE_KEY', 
-        'VITE_CLERK_PUBLISHABLE_KEY',
-        'CLERK_PUBLISHABLE_KEY'
-    ];
+        // 2. Check window.process.env (Common polyfill)
+        const procEnv = (window as any).process?.env;
+        if (procEnv?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return procEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+        if (procEnv?.VITE_CLERK_PUBLISHABLE_KEY) return procEnv.VITE_CLERK_PUBLISHABLE_KEY;
 
-    // Check if any environment source has a key starting with 'pk_'
-    for (const key of knownKeys) {
-        if (env[key] && typeof env[key] === 'string' && env[key].startsWith('pk_')) return env[key];
-        if (procEnv[key] && typeof procEnv[key] === 'string' && procEnv[key].startsWith('pk_')) return procEnv[key];
-        if (win[key] && typeof win[key] === 'string' && win[key].startsWith('pk_')) return win[key];
+        // 3. Check window directly
+        const win = window as any;
+        if (win.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return win.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    } catch (e) {
+        console.error("Error accessing environment variables:", e);
     }
 
-    // If nothing found in env, return the hardcoded key
-    return HARDCODED_KEY;
+    // Default to the hardcoded key provided by you
+    return HARDCODED_FALLBACK;
 };
 
-const PUBLISHABLE_KEY = findPublishableKey();
+const PUBLISHABLE_KEY = getClerkKey();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error("Root element not found");
 
 const root = createRoot(rootElement);
 
-// We now always have a key due to the hardcoded fallback
 root.render(
     <React.StrictMode>
-        <ClerkProvider publishableKey={PUBLISHABLE_KEY || ''}>
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
             <LanguageProvider>
                 <App />
             </LanguageProvider>
