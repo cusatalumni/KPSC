@@ -1,8 +1,14 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
+
+// Simple polyfill for process.env to prevent ReferenceErrors in the browser
+if (typeof window !== 'undefined' && !(window as any).process) {
+    (window as any).process = { env: {} };
+}
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const isClerkKeyInvalid = !PUBLISHABLE_KEY || !PUBLISHABLE_KEY.startsWith('pk_');
@@ -30,7 +36,7 @@ if (isClerkKeyInvalid) {
                 ) : (
                     <p className="text-red-700 text-sm">
                         Found a key: <code className="font-mono bg-red-200 px-1 rounded">{`${PUBLISHABLE_KEY.substring(0, 10)}...`}</code><br />
-                        This key is considered invalid because it does not start with "pk_test_" or "pk_live_". Please verify it's correct and has no extra characters or spaces.
+                        This key is considered invalid because it does not start with "pk_". Please verify it's correct and has no extra characters or spaces.
                     </p>
                 )}
             </div>

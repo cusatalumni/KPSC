@@ -1,13 +1,14 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
-// Fix: Strictly use process.env.API_KEY and named parameter for initialization
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// In the browser (frontend), we must use import.meta.env.VITE_API_KEY.
+// process.env is only available in the backend (Vercel Functions).
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
     try {
-        // Use gemini-3-flash-preview for basic text tasks like extraction
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Act as a web scraper. Search for Kerala PSC previous question papers matching the query "${query}". Scrape the following official URLs: 
@@ -34,7 +35,6 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
             }
         });
         
-        // Correctly accessing text property from GenerateContentResponse
         const jsonString = response.text?.trim() || "[]";
         const parsedJson = JSON.parse(jsonString);
 
