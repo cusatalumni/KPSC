@@ -3,11 +3,21 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
-// The SDK expects process.env.API_KEY to be available
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// Function to safely get or create the AI instance
+const getAiInstance = () => {
+    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
+    if (!apiKey) {
+        console.warn("Gemini API Key missing. Using mock data.");
+        return null;
+    }
+    return new GoogleGenAI({ apiKey });
+};
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
     try {
+        const ai = getAiInstance();
+        if (!ai) return MOCK_QUESTION_PAPERS;
+
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `Search for Kerala PSC previous question papers matching the query "${query}". 

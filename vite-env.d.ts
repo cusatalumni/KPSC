@@ -4,6 +4,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_CLERK_PUBLISHABLE_KEY: string;
+  /* Added to resolve TypeScript error in index.tsx */
+  readonly NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
   readonly VITE_API_KEY: string;
   readonly PROD: boolean;
   // Add any other environment variables you use here. For example:
