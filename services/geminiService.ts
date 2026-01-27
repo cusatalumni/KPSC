@@ -3,21 +3,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { QuestionPaper } from '../types';
 import { MOCK_QUESTION_PAPERS } from "../constants";
 
-// In the browser (frontend), we must use import.meta.env.VITE_API_KEY.
-// process.env is only available in the backend (Vercel Functions).
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+// This is polyfilled in index.tsx for browser environments.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: 'gemini-3-flash-preview',
             contents: `Act as a web scraper. Search for Kerala PSC previous question papers matching the query "${query}". Scrape the following official URLs: 
             1. https://keralapsc.gov.in/index.php/previous-question-papers
             2. https://keralapsc.gov.in/index.php/answerkey_onlineexams
             3. https://keralapsc.gov.in/index.php/answerkey_omrexams
-            4. https://keralapsc.gov.in/question-paper-descriptive-exam
             
-            Return a JSON array of the top 5 most relevant results. Each object in the array must have a 'title' (the name of the paper), 'url' (the direct link), and 'date' (the year or full date if available).`,
+            Return a JSON array of the top 5 most relevant results. Each object must have 'title', 'url', and 'date'.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -41,7 +40,6 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
         if (Array.isArray(parsedJson)) {
             return parsedJson as QuestionPaper[];
         } else {
-             console.error("Received non-array JSON from Gemini API for papers search, falling back to mock.", parsedJson);
              return MOCK_QUESTION_PAPERS;
         }
 
