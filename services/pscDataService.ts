@@ -1,16 +1,28 @@
-
 import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA } from '../constants';
 
-const isVercel = import.meta.env.PROD;
+// Safely determine if we are in production/Vercel environment
+const isProd = (() => {
+    try {
+        return (import.meta as any).env?.PROD || 
+               (window as any).process?.env?.NODE_ENV === 'production' || 
+               (window as any).process?.env?.VITE_USER_NODE_ENV === 'production' ||
+               false;
+    } catch (e) {
+        return false;
+    }
+})();
 
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
-    if (!isVercel) return new Promise(r => setTimeout(() => r(mockData), 300));
+    // If not in production, use mock data for faster development
+    if (!isProd) return new Promise(r => setTimeout(() => r(mockData), 300));
+    
     try {
         const res = await fetch(`/api/data?${params}`);
         if (!res.ok) throw new Error("Fetch failed");
         return await res.json();
     } catch (e) {
+        console.warn(`Fetch to /api/data?${params} failed, falling back to mock data.`, e);
         return mockData;
     }
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -10,14 +9,14 @@ import { LanguageProvider } from './contexts/LanguageContext';
  * Checks all possible locations where the platform might inject the key
  */
 const findPublishableKey = (): string | null => {
-    const env = import.meta.env || {};
+    const env = (import.meta as any).env || {};
     const procEnv = (window as any).process?.env || {};
     const win = window as any;
 
     // 1. Try known variations (including the user's specific typo)
     const knownKeys = [
         'VITE_CLERK_PUBLISHABLE_KEY',
-        'NEXT_PUBLIC_CLERK_PUBLISHBLE_KEY', // The specific typo mentioned
+        'NEXT_PUBLIC_CLERK_PUBLISHBLE_KEY', // The specific typo mentioned by user
         'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
         'CLERK_PUBLISHABLE_KEY'
     ];
@@ -35,7 +34,7 @@ const findPublishableKey = (): string | null => {
         (k.toUpperCase().includes('PUBLISH') || k.toUpperCase().includes('PUB'))
     );
 
-    if (fuzzyMatch && typeof allSources[fuzzyMatch] === 'string') {
+    if (fuzzyMatch && typeof allSources[fuzzyMatch] === 'string' && allSources[fuzzyMatch].startsWith('pk_')) {
         console.log(`Found Clerk key using fuzzy match: ${fuzzyMatch}`);
         return allSources[fuzzyMatch];
     }
@@ -53,11 +52,12 @@ const root = createRoot(rootElement);
 if (!PUBLISHABLE_KEY) {
     // Get all keys containing "CLERK" for diagnostic purposes
     const procEnv = (window as any).process?.env || {};
-    const foundKeys = [
-        ...Object.keys(import.meta.env || {}),
+    const env = (import.meta as any).env || {};
+    const foundKeys = Array.from(new Set([
+        ...Object.keys(env),
         ...Object.keys(procEnv),
         ...Object.keys(window).filter(k => k.startsWith('NEXT_PUBLIC') || k.startsWith('VITE'))
-    ].filter(k => k.toUpperCase().includes('CLERK'));
+    ])).filter(k => k.toUpperCase().includes('CLERK'));
 
     root.render(
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
