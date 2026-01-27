@@ -1,10 +1,8 @@
-// Path: /api/_lib/clerk-auth.ts
 
-import clerk from '@clerk/backend';
+import { createClerkClient } from '@clerk/backend';
 
-// Initialize Clerk backend. It will automatically use the CLERK_SECRET_KEY
-// environment variable.
-const clerkClient = clerk;
+// Use environment variable for initialization
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 class AuthError extends Error {
     constructor(message: string) {
@@ -47,7 +45,6 @@ export async function verifyAdmin(req: any) {
 
     } catch (error: any) {
         console.error("Admin verification failed:", error.message);
-        // Re-throw a generic error to not expose internal details
         throw new AuthError('Admin verification failed.');
     }
 }

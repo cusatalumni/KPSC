@@ -1,13 +1,11 @@
-// Path: /api/_lib/scraper-service.ts
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
-// Fix: Strictly use process.env.API_KEY and named parameter for initialization
+declare var process: any;
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const AFFILIATE_TAG = 'tag=httpcodingonl-21';
 
-// Local version of QUIZ_CATEGORY_TOPICS_ML
 const QUIZ_CATEGORY_TOPICS_ML = [
     'പൊതുവിജ്ഞാനം',
     'ആനുകാലിക സംഭവങ്ങൾ',
@@ -19,10 +17,7 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
-// --- Individual Scraping Functions ---
-
 async function scrapeKpscNotifications() {
-    // Use gemini-3-flash-preview for scraping tasks
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 10 most recent notifications. For each, extract: full title, category number, last date (DD-MM-YYYY), and direct URL. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
@@ -130,7 +125,7 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Act as a web scraper. Start by searching on amazon.in for "Kerala PSC exam preparation books". From the search results page, identify the top 12 most relevant, individual book listings. For each book, you must find its direct product detail page URL (it should look like 'https://www.amazon.in/dp/...' or contain '/dp/'). From the listing, extract: a unique ID, the book's title, the author's name, and a high-quality image URL. Finally, take the clean product URL and append the affiliate tracking code "${AFFILIATE_TAG}". Use '&' if the product URL already has a '?', otherwise use '?'. Return the final data as a JSON array.`;
+    const prompt = `Act as a web scraper. Search on amazon.in for "Kerala PSC exam preparation books". Extract top 10 relevant books. Return a JSON array with 'id', 'title', 'author', 'imageUrl', 'amazonLink' (append ${AFFILIATE_TAG}).`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", contents: prompt,
@@ -150,49 +145,28 @@ async function scrapeAmazonBooks() {
     return data.map((item: any) => [item.id, item.title, item.author, item.imageUrl, item.amazonLink]);
 }
 
-
-// --- Main Orchestrator Functions ---
-
 export async function runDailyUpdateScrapers() {
-    console.log('Starting daily scraping tasks.');
-
-    const dailyRefreshTasks = [
+    const tasks = [
         { name: 'Notifications', scraper: scrapeKpscNotifications, range: 'Notifications!A2:E' },
         { name: 'LiveUpdates', scraper: scrapePscLiveUpdates, range: 'LiveUpdates!A2:D' },
         { name: 'CurrentAffairs', scraper: scrapeCurrentAffairs, range: 'CurrentAffairs!A2:D' },
         { name: 'GK', scraper: scrapeGk, range: 'GK!A2:C' },
     ];
 
-    for (const task of dailyRefreshTasks) {
+    for (const task of tasks) {
         try {
-            console.log(`Starting daily refresh task: ${task.name}`);
             const newData = await task.scraper();
             await clearAndWriteSheetData(task.range, newData);
-            console.log(`Successfully refreshed: ${task.name}`);
-        } catch (scrapeError) {
-            console.error(`Error processing task ${task.name}:`, scrapeError);
-        }
+        } catch (e) { console.error(`Task ${task.name} failed:`, e); }
     }
 
     try {
-        console.log("Starting task: Enrich QuestionBank");
         const newQuestions = await generateNewQuestions();
         await appendSheetData('QuestionBank!A1', newQuestions);
-        console.log(`Successfully appended ${newQuestions.length} new questions.`);
-    } catch(e) {
-        console.error("Error enriching QuestionBank:", e);
-    }
-
-    console.log('All daily scraping tasks completed.');
+    } catch(e) { console.error("Question enrichment failed:", e); }
 }
 
-
 export async function runBookScraper() {
-    console.log('Starting monthly task: Scrape Books');
-    const range = 'Bookstore!A2:E';
-    
     const newBookData = await scrapeAmazonBooks();
-    await clearAndWriteSheetData(range, newBookData);
-    
-    console.log(`Successfully scraped and stored ${newBookData.length} books.`);
+    await clearAndWriteSheetData('Bookstore!A2:E', newBookData);
 }
