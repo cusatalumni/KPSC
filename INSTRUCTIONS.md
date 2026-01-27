@@ -1,3 +1,4 @@
+
 # Setup Guide: Google Sheets as a Database for Kerala PSC Guru
 
 Follow these steps to configure your application to use Google Sheets for storing and retrieving scraped data. This setup is required for the daily cron job to function correctly.
@@ -81,9 +82,10 @@ Now, you need to add the credentials and IDs to your Vercel project so the app c
 | `SPREADSHEET_ID`             | The ID you copied from your Google Sheet URL in Step 1.                                                                                                           | Tells the app which sheet to connect to.                                          |
 | `GOOGLE_CLIENT_EMAIL`        | The `client_email` value from your downloaded `.json` file.                                                                                                       | The "username" for your service account.                                          |
 | `GOOGLE_PRIVATE_KEY`         | The `private_key` value from your downloaded `.json` file. Copy everything inside the quotes, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` parts. | The "password" for your service account. It will contain `\n` characters; this is correct. |
-| `CRON_SECRET`                | Generate a strong, random string of text (e.g., using a password generator). You can create one [here](https://www.lastpass.com/features/password-generator).        | A secret key to ensure only Vercel's cron service can run your scraping function. |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk key (if not already set).                                                                                                                              | Clerk frontend key.                                                               |
-| `VITE_API_KEY`               | Your Gemini API key (if not already set).                                                                                                                         | Google Gemini key for the AI scraper.                                             |
+| `CRON_SECRET`                | **You generate this!** Type a long, random string of text (e.g., `my_very_secret_key_12345`). This acts as a password for your automated tasks.                   | A secret key to ensure only Vercel's cron service can run your scraping function. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk key (found in Clerk Dashboard -> API Keys). Starts with `pk_...`                                                                                       | Clerk frontend key for authentication.                                            |
+| `CLERK_SECRET_KEY`           | Your Clerk Secret key (found in Clerk Dashboard -> API Keys). Starts with `sk_...`                                                                                | Clerk backend key for verifying Admin users.                                      |
+| `API_KEY`                    | Your Gemini API key (from Google AI Studio).                                                                                                                      | Google Gemini key for the AI scraper.                                             |
 
 
 4. After adding all the variables, you may need to redeploy your project for the changes to take effect.
