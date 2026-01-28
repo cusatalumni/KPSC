@@ -278,6 +278,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                             </div>
                         </div>
 
+                        {/* Existing Books Editable Table */}
                         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-3xl font-black text-slate-800">Manage Existing Books</h3>
@@ -291,9 +292,9 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                     <table className="w-full text-left">
                                         <thead>
                                             <tr className="bg-slate-50 border-b border-slate-100">
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Book Info</th>
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Author</th>
-                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Actions</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Book Details</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Author</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
@@ -301,10 +302,12 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                 <tr key={book.id} className="hover:bg-slate-50/50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center space-x-4">
-                                                            <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-12 w-10 object-cover rounded bg-slate-100" />
+                                                            <div className="h-14 w-11 bg-slate-100 rounded-md overflow-hidden flex-shrink-0 shadow-sm">
+                                                                <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-full w-full object-cover" />
+                                                            </div>
                                                             <div>
-                                                                <p className="font-bold text-slate-800 leading-tight">{book.title}</p>
-                                                                <p className="text-[10px] font-mono text-slate-400">{book.id}</p>
+                                                                <p className="font-bold text-slate-800 leading-tight line-clamp-1">{book.title}</p>
+                                                                <p className="text-[10px] font-mono text-slate-400 mt-1">{book.id}</p>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -313,10 +316,18 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center justify-center space-x-2">
-                                                            <button onClick={() => handleEditClick(book)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all" title="Edit Book">
+                                                            <button 
+                                                                onClick={() => handleEditClick(book)}
+                                                                className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                                title="Edit"
+                                                            >
                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                             </button>
-                                                            <button onClick={() => handleDeleteBook(book.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all" title="Delete Book">
+                                                            <button 
+                                                                onClick={() => handleDeleteBook(book.id)}
+                                                                className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                                                title="Delete"
+                                                            >
                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                             </button>
                                                         </div>
@@ -324,7 +335,11 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                 </tr>
                                             ))}
                                             {existingBooks.length === 0 && (
-                                                <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-400 font-medium">No books found in the database.</td></tr>
+                                                <tr>
+                                                    <td colSpan={3} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                                                        No books found. Sync from Amazon or add manually.
+                                                    </td>
+                                                </tr>
                                             )}
                                         </tbody>
                                     </table>

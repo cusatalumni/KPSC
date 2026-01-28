@@ -3,30 +3,18 @@ import { google } from 'googleapis';
 
 declare var process: any;
 
-/**
- * Clean environment variables and handle private key formatting.
- * Specifically targets Node.js crypto decoder errors (1E08010C).
- */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
-    
     let cleaned = key.trim();
-    
-    // Remove wrapping quotes
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
     }
-
-    // Replace literal escaped newlines with actual newline characters
-    // This is the primary fix for "DECODER routines::unsupported"
+    // Critical fix: replace literal \n with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
-
-    // Ensure headers are present
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
-
     return cleaned;
 };
 
@@ -41,20 +29,22 @@ async function getSheetsClient(scopes: string[]) {
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error(`Auth Config Error: Service Account credentials (email or key) missing.`);
+        throw new Error(`Auth Config Error: Service Account credentials missing.`);
     }
 
     try {
-        const auth = new google.auth.JWT(
-            clientEmail,
-            undefined,
-            privateKey,
-            scopes
-        );
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: clientEmail,
+                private_key: privateKey,
+            },
+            scopes: scopes,
+        });
 
-        return google.sheets({ version: 'v4', auth });
+        const authClient = await auth.getClient();
+        return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) {
-        console.error("Critical Google Sheets Initialization Failure:", e.message);
+        console.error("Critical Google Sheets Auth Failure:", e.message);
         throw new Error(`Google API Authentication Failed: ${e.message}`);
     }
 }
