@@ -4,19 +4,24 @@ import { google } from 'googleapis';
 declare var process: any;
 
 /**
- * Helper to clean environment variable strings.
- * Removes leading/trailing quotes, backslashes and whitespace.
+ * Environment വാല്യൂകളിൽ നിന്ന് അനാവശ്യ കൊട്ടേഷനുകളും സ്പേസുകളും നീക്കം ചെയ്യുന്നു.
+ * Vercel-ൽ നിന്ന് ലഭിക്കുന്ന ഡാറ്റാ ഫോർമാറ്റിലെ പ്രശ്നങ്ങൾ ഇത് പരിഹരിക്കും.
  */
 const cleanEnvVar = (val: string | undefined): string | undefined => {
     if (!val) return undefined;
-    // Remove quotes and trim
-    let cleaned = val.trim().replace(/^["'](.*)["']$/, '$1');
+    let cleaned = val.trim();
+    
+    // തുടക്കത്തിലും അവസാനത്തിലും ഉള്ള ", ' എന്നിവ നീക്കം ചെയ്യുന്നു
+    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
+        (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+        cleaned = cleaned.slice(1, -1);
+    }
+    
     return cleaned === "" ? undefined : cleaned;
 };
 
 /**
- * Retrieves the spreadsheet ID from environment variables.
- * Checks multiple common names for better compatibility.
+ * Spreadsheet ID കണ്ടെത്തുന്നു.
  */
 const getSpreadsheetId = (): string => {
     const id = cleanEnvVar(
@@ -26,17 +31,13 @@ const getSpreadsheetId = (): string => {
     );
 
     if (!id) {
-        throw new Error(
-            'Backend Config Error: SPREADSHEET_ID is missing. ' +
-            'Please ensure you have added "SPREADSHEET_ID" in Vercel Settings -> Environment Variables.'
-        );
+        throw new Error('വിവരങ്ങൾ ശേഖരിക്കാൻ ആവശ്യമായ SPREADSHEET_ID കണ്ടെത്തിയില്ല. Vercel സെറ്റിങ്സ് പരിശോധിക്കുക.');
     }
     return id;
 };
 
 /**
- * Creates an authorized Sheets client using JWT.
- * Now checks for both GOOGLE_ prefix and standard names.
+ * ഗൂഗിൾ ഷീറ്റ്സ് ക്ലയന്റ് തയ്യാറാക്കുന്നു.
  */
 async function getSheetsClient(scopes: string[]) {
     const clientEmail = cleanEnvVar(
@@ -45,33 +46,39 @@ async function getSheetsClient(scopes: string[]) {
         process.env.VITE_GOOGLE_CLIENT_EMAIL
     );
 
-    const privateKey = cleanEnvVar(
+    let privateKey = cleanEnvVar(
         process.env.GOOGLE_PRIVATE_KEY || 
         process.env.PRIVATE_KEY ||
         process.env.VITE_GOOGLE_PRIVATE_KEY
     );
 
-    if (!clientEmail) {
-        throw new Error('Backend Config Error: GOOGLE_CLIENT_EMAIL (or CLIENT_EMAIL) is missing.');
-    }
-    if (!privateKey) {
-        throw new Error('Backend Config Error: GOOGLE_PRIVATE_KEY (or PRIVATE_KEY) is missing.');
+    if (!clientEmail || !privateKey) {
+        throw new Error(`ഓതന്റിക്കേഷൻ വിവരങ്ങൾ അപൂർണ്ണമാണ്. Email: ${!!clientEmail}, Key: ${!!privateKey}`);
     }
 
-    // Standardize key format (handling escaped newlines)
-    const formattedKey = privateKey.replace(/\\n/g, '\n');
+    // പ്രൈവറ്റ് കീ ഫോർമാറ്റ് ശരിയാക്കുന്നു
+    // \n കമാൻഡുകളെ യഥാർത്ഥ ന്യൂലൈനുകളാക്കി മാറ്റുന്നു.
+    const formattedKey = privateKey
+        .replace(/\\n/g, '\n')
+        .replace(/\"/g, '') // അറിയാതെ വരുന്ന കൊട്ടേഷനുകൾ കളയുന്നു
+        .trim();
 
     try {
+        // JWT (JSON Web Token) ഉപയോഗിച്ചുള്ള ഓതന്റിക്കേഷൻ
         const auth = new google.auth.JWT(
             clientEmail,
             undefined,
             formattedKey,
             scopes
         );
+
+        // കണക്ഷൻ ടെസ്റ്റ് ചെയ്യാൻ ആധികാരികത ഉറപ്പാക്കുന്നു
+        await auth.authorize();
+        
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Auth Init Error:", e.message);
-        throw new Error(`Google Auth Failed: ${e.message}`);
+        console.error("Google Auth Error Detail:", e.message);
+        throw new Error(`ഗൂഗിൾ ഷീറ്റ്സുമായി ബന്ധപ്പെടാൻ സാധിക്കുന്നില്ല: ${e.message}`);
     }
 }
 
