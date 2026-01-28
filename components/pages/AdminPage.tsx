@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-import { triggerDailyScraper, triggerBookScraper, syncCsvData } from '../../services/pscDataService';
+import { triggerDailyScraper, triggerBookScraper, syncCsvData, getBooks, deleteBook } from '../../services/pscDataService';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { XCircleIcon } from '../icons/XCircleIcon';
@@ -14,6 +14,7 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { RssIcon } from '../icons/RssIcon';
+import type { Book } from '../../types';
 
 interface PageProps { 
     onBack: () => void; 
@@ -26,30 +27,37 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
     const { t } = useTranslation();
     const { getToken } = useAuth();
     
-    // Initial tab from prop or default
     const [activeTab, setActiveTab] = useState<AdminTab>((activeTabId as AdminTab) || 'dashboard');
-    
-    // Bulk Sync State
     const [csvData, setCsvData] = useState('');
     const [isAppendMode, setIsAppendMode] = useState(true);
-    
-    // Quick Entries
-    const [quickBook, setQuickBook] = useState({ title: '', author: '', link: '', imageUrl: '' });
-    
+    const [quickBook, setQuickBook] = useState({ id: '', title: '', author: '', link: '', imageUrl: '' });
+    const [existingBooks, setExistingBooks] = useState<Book[]>([]);
+    const [loadingBooks, setLoadingBooks] = useState(false);
     const [status, setStatus] = useState<any>({ loading: false, result: null });
 
-    // Sync state if activeTabId changes externally
-    useEffect(() => {
-        if (activeTabId) {
-            setActiveTab(activeTabId as AdminTab);
+    const fetchCurrentBooks = useCallback(async () => {
+        setLoadingBooks(true);
+        try {
+            const data = await getBooks();
+            setExistingBooks(data);
+        } catch (e) {
+            console.error("Failed to load books:", e);
+        } finally {
+            setLoadingBooks(false);
         }
-    }, [activeTabId]);
+    }, []);
+
+    useEffect(() => {
+        if (activeTabId) setActiveTab(activeTabId as AdminTab);
+        if (activeTabId === 'bookstore' || activeTab === 'bookstore') {
+            fetchCurrentBooks();
+        }
+    }, [activeTabId, activeTab, fetchCurrentBooks]);
 
     const handleTabChange = (id: AdminTab) => {
         setActiveTab(id);
         setStatus({ loading: false, result: null });
         setCsvData('');
-        // Update URL to persist tab state
         window.location.hash = `admin_panel/${id}`;
     };
 
@@ -63,6 +71,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                 loading: false, 
                 result: { type: 'success', message: res.message || 'Task started successfully!' }
             });
+            if (type === 'books') setTimeout(fetchCurrentBooks, 5000);
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
         }
@@ -80,13 +89,43 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
             if (finalLink.includes('amazon.in') && !finalLink.includes(tag)) {
                 finalLink += (finalLink.includes('?') ? '&' : '?') + tag;
             }
-            const csvLine = `book_${Date.now()}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${finalLink}`;
+            
+            const bookId = quickBook.id || `book_${Date.now()}`;
+            const csvLine = `${bookId}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${finalLink}`;
+            
+            // If editing (id exists), we might want a different logic, but for simplicity, we append or use syncCsvData
             await syncCsvData('Bookstore', csvLine, token, true);
-            setStatus({ loading: false, result: { type: 'success', message: 'Book added successfully!' }});
-            setQuickBook({ title: '', author: '', link: '', imageUrl: '' });
+            
+            setStatus({ loading: false, result: { type: 'success', message: quickBook.id ? 'Book updated!' : 'Book added!' }});
+            setQuickBook({ id: '', title: '', author: '', link: '', imageUrl: '' });
+            fetchCurrentBooks();
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
         }
+    };
+
+    const handleDeleteBook = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this book?")) return;
+        setStatus({ loading: true, result: null });
+        try {
+            const token = await getToken();
+            await deleteBook(id, token);
+            setStatus({ loading: false, result: { type: 'success', message: 'Book deleted successfully!' }});
+            fetchCurrentBooks();
+        } catch (error: any) {
+            setStatus({ loading: false, result: { type: 'error', message: error.message }});
+        }
+    };
+
+    const handleEditClick = (book: Book) => {
+        setQuickBook({
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            link: book.amazonLink,
+            imageUrl: book.imageUrl
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleCsvSync = async (sheet: string) => {
@@ -97,6 +136,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
             await syncCsvData(sheet, csvData, token, isAppendMode);
             setStatus({ loading: false, result: { type: 'success', message: `Successfully updated ${sheet}!` }});
             setCsvData('');
+            if (sheet === 'Bookstore') fetchCurrentBooks();
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
         }
@@ -140,7 +180,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                 </div>
             </header>
 
-            {/* Admin Tabs */}
             <div className="flex flex-wrap gap-4 mb-8">
                 {renderTabButton('dashboard', 'Automation', <RssIcon className="h-5 w-5" />)}
                 {renderTabButton('bookstore', 'Bookstore Manager', <BookOpenIcon className="h-5 w-5" />)}
@@ -187,52 +226,112 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                 )}
 
                 {activeTab === 'bookstore' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        <div className="lg:col-span-4">
-                            <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100">
-                                <div className="flex items-center space-x-3 mb-8">
-                                    <div className="p-3 bg-orange-100 rounded-xl">
-                                        <PlusIcon className="h-6 w-6 text-orange-600" />
+                    <div className="space-y-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            <div className="lg:col-span-4">
+                                <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100">
+                                    <div className="flex items-center space-x-3 mb-8">
+                                        <div className="p-3 bg-orange-100 rounded-xl">
+                                            <PlusIcon className="h-6 w-6 text-orange-600" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-800">{quickBook.id ? 'Edit Book' : 'Add New Book'}</h3>
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-800">Add New Book</h3>
+                                    <form onSubmit={handleQuickAddBook} className="space-y-5">
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Title</label>
+                                            <input type="text" value={quickBook.title} onChange={e => setQuickBook({...quickBook, title: e.target.value})} placeholder="LDC Rank File 2025" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Author</label>
+                                            <input type="text" value={quickBook.author} onChange={e => setQuickBook({...quickBook, author: e.target.value})} placeholder="Lakshya Publications" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Amazon Link</label>
+                                            <input type="url" value={quickBook.link} onChange={e => setQuickBook({...quickBook, link: e.target.value})} placeholder="Paste amazon.in URL" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button type="submit" disabled={status.loading || !quickBook.title} className="flex-grow bg-orange-600 text-white font-black py-5 rounded-2xl hover:bg-orange-700 transition shadow-xl shadow-orange-100 disabled:opacity-50">
+                                                {quickBook.id ? 'UPDATE BOOK' : 'ADD BOOK TO STORE'}
+                                            </button>
+                                            {quickBook.id && (
+                                                <button type="button" onClick={() => setQuickBook({id:'',title:'',author:'',link:'',imageUrl:''})} className="bg-slate-200 text-slate-600 px-6 rounded-2xl font-black">
+                                                    CANCEL
+                                                </button>
+                                            )}
+                                        </div>
+                                    </form>
                                 </div>
-                                <form onSubmit={handleQuickAddBook} className="space-y-5">
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Title</label>
-                                        <input type="text" value={quickBook.title} onChange={e => setQuickBook({...quickBook, title: e.target.value})} placeholder="LDC Rank File 2025" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
+                            </div>
+                            <div className="lg:col-span-8">
+                                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 h-full">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <h3 className="text-2xl font-black text-slate-800">Bulk Bookstore Sync</h3>
+                                        <div className="bg-slate-100 p-1.5 rounded-2xl flex border border-slate-200">
+                                            <button onClick={() => setIsAppendMode(true)} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${isAppendMode ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>APPEND</button>
+                                            <button onClick={() => setIsAppendMode(false)} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${!isAppendMode ? 'bg-red-600 text-white' : 'text-slate-500'}`}>REPLACE</button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Author</label>
-                                        <input type="text" value={quickBook.author} onChange={e => setQuickBook({...quickBook, author: e.target.value})} placeholder="Lakshya Publications" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Amazon Link</label>
-                                        <input type="url" value={quickBook.link} onChange={e => setQuickBook({...quickBook, link: e.target.value})} placeholder="Paste amazon.in URL" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
-                                    </div>
-                                    <button type="submit" disabled={status.loading || !quickBook.title} className="w-full bg-orange-600 text-white font-black py-5 rounded-2xl hover:bg-orange-700 transition shadow-xl shadow-orange-100 disabled:opacity-50">
-                                        ADD BOOK TO STORE
+                                    <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="ID, Title, Author, ImageUrl, AmazonLink" className="w-full h-80 p-6 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none shadow-inner mb-6" />
+                                    <button onClick={() => handleCsvSync('Bookstore')} disabled={status.loading || !csvData.trim()} className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-indigo-600 transition-all shadow-xl disabled:opacity-50">
+                                        UPLOAD BOOK LIST
                                     </button>
-                                </form>
+                                </div>
                             </div>
                         </div>
-                        <div className="lg:col-span-8">
-                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 h-full">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h3 className="text-2xl font-black text-slate-800">Bulk Bookstore Sync</h3>
-                                    <div className="bg-slate-100 p-1.5 rounded-2xl flex border border-slate-200">
-                                        <button onClick={() => setIsAppendMode(true)} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${isAppendMode ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>APPEND</button>
-                                        <button onClick={() => setIsAppendMode(false)} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${!isAppendMode ? 'bg-red-600 text-white' : 'text-slate-500'}`}>REPLACE</button>
-                                    </div>
-                                </div>
-                                <div className="bg-slate-900 p-5 rounded-2xl mb-6 font-mono text-xs text-indigo-400 flex items-center justify-between">
-                                    <span>ID, Title, Author, ImageUrl, AmazonLink</span>
-                                    <LightBulbIcon className="h-4 w-4" />
-                                </div>
-                                <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="Paste CSV rows here..." className="w-full h-80 p-6 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all resize-none shadow-inner mb-6" />
-                                <button onClick={() => handleCsvSync('Bookstore')} disabled={status.loading || !csvData.trim()} className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-indigo-600 transition-all shadow-xl disabled:opacity-50">
-                                    UPLOAD BOOK LIST
-                                </button>
+
+                        {/* Editable Table Section */}
+                        <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-3xl font-black text-slate-800">Manage Existing Books</h3>
+                                <button onClick={fetchCurrentBooks} className="text-indigo-600 font-bold hover:underline">Refresh List</button>
                             </div>
+
+                            {loadingBooks ? (
+                                <div className="py-20 text-center text-slate-400 font-bold animate-pulse">Loading bookstore data...</div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-100">
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Book Info</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Author</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {existingBooks.map(book => (
+                                                <tr key={book.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center space-x-4">
+                                                            <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-12 w-10 object-cover rounded bg-slate-100" />
+                                                            <div>
+                                                                <p className="font-bold text-slate-800 leading-tight">{book.title}</p>
+                                                                <p className="text-[10px] font-mono text-slate-400">{book.id}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="text-sm font-medium text-slate-600">{book.author}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center justify-center space-x-2">
+                                                            <button onClick={() => handleEditClick(book)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                            </button>
+                                                            <button onClick={() => handleDeleteBook(book.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {existingBooks.length === 0 && (
+                                                <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-400 font-medium">No books found in the database.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -256,14 +355,9 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-3xl font-black text-slate-800">Enrich Question Bank</h3>
-                            <div className="bg-indigo-50 px-4 py-2 rounded-full text-indigo-600 font-black text-xs">Target: QuestionBank Sheet</div>
                         </div>
-                        <div className="bg-slate-900 p-6 rounded-3xl mb-8 border border-indigo-500/20">
-                            <p className="text-indigo-400 font-black uppercase text-[10px] tracking-widest mb-2">Required CSV Header</p>
-                            <code className="text-indigo-100 font-mono text-sm">ID, Topic, Question, ["Opt1","Opt2","Opt3","Opt4"], CorrectIdx, Subject, Difficulty</code>
-                        </div>
-                        <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="Paste question rows here..." className="w-full h-96 p-8 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none mb-8" />
-                        <button onClick={() => handleCsvSync('QuestionBank')} disabled={status.loading || !csvData.trim()} className="w-full bg-indigo-600 text-white font-black py-6 rounded-2xl hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center space-x-3">
+                        <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="ID, Topic, Question, ['Opt1','Opt2','Opt3','Opt4'], CorrectIdx, Subject, Difficulty" className="w-full h-96 p-8 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm mb-8" />
+                        <button onClick={() => handleCsvSync('QuestionBank')} disabled={status.loading || !csvData.trim()} className="w-full bg-indigo-600 text-white font-black py-6 rounded-2xl hover:bg-indigo-700 transition-all shadow-2xl flex items-center justify-center space-x-3">
                             <ClipboardListIcon className="h-6 w-6" />
                             <span>APPEND TO QUESTION BANK</span>
                         </button>

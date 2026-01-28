@@ -2,7 +2,6 @@
 import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA } from '../constants';
 
-// Safely determine if we are in production/Vercel environment
 const isProd = (() => {
     try {
         return (import.meta as any).env?.PROD || 
@@ -15,9 +14,7 @@ const isProd = (() => {
 })();
 
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
-    // If not in production, use mock data for faster development
     if (!isProd) return new Promise(r => setTimeout(() => r(mockData), 300));
-    
     try {
         const res = await fetch(`/api/data?${params}`);
         if (!res.ok) throw new Error("Fetch failed");
@@ -43,10 +40,8 @@ export const getStudyMaterial = (topic: string) =>
 export const generateBookCover = (title: string, author: string) => 
     fetchHub(`type=generate-cover&title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}`, { imageBase64: "" });
 
-// --- Admin ---
 const adminReq = async (body: any, token: string | null) => {
     if (!token) throw new Error("Authentication token missing. Please sign in again.");
-    
     const res = await fetch('/api/admin', {
         method: 'POST',
         headers: { 
@@ -55,17 +50,13 @@ const adminReq = async (body: any, token: string | null) => {
         },
         body: JSON.stringify(body)
     });
-
     const data = await res.json().catch(() => ({}));
-    
-    if (!res.ok) {
-        throw new Error(data.message || `Admin action failed with status ${res.status}`);
-    }
-    
+    if (!res.ok) throw new Error(data.message || `Admin action failed with status ${res.status}`);
     return data;
 };
 
 export const triggerDailyScraper = (t: string | null) => adminReq({ action: 'run-daily' }, t);
 export const triggerBookScraper = (t: string | null) => adminReq({ action: 'run-books' }, t);
+export const deleteBook = (id: string, t: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, t);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => 
     adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);

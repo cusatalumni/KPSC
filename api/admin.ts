@@ -1,7 +1,7 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
-import { clearAndWriteSheetData, appendSheetData } from './_lib/sheets-service.js';
+import { clearAndWriteSheetData, appendSheetData, deleteRowById } from './_lib/sheets-service.js';
 
 declare var process: any;
 
@@ -38,7 +38,7 @@ export default async function handler(req: any, res: any) {
             return res.status(401).json({ message: error.message || 'Unauthorized' });
         }
 
-        const { action, sheet, data, mode } = req.body;
+        const { action, sheet, data, mode, id } = req.body;
 
         try {
             switch (action) {
@@ -48,6 +48,10 @@ export default async function handler(req: any, res: any) {
                 case 'run-books':
                     runBookScraper().catch(console.error);
                     return res.status(202).json({ message: 'Book sync started in background.' });
+                case 'delete-row':
+                    if (!sheet || !id) return res.status(400).json({ message: 'Missing sheet or id' });
+                    await deleteRowById(sheet, id);
+                    return res.status(200).json({ message: 'Row deleted successfully.' });
                 case 'csv-update':
                     if (!sheet || !data) return res.status(400).json({ message: 'Missing params' });
                     const rows = parseCsv(data);
