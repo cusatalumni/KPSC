@@ -1,5 +1,4 @@
-
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 
 /**
  * Returns a fresh Clerk client instance.
@@ -9,7 +8,7 @@ import { createClerkClient } from '@clerk/backend';
 function getClerkClient() {
     const secretKey = process.env.CLERK_SECRET_KEY;
     if (!secretKey) {
-        throw new Error('CLERK_SECRET_KEY is not defined in environment variables.');
+        throw new Error('Backend Error: CLERK_SECRET_KEY is missing in environment variables.');
     }
     return createClerkClient({ secretKey });
 }
@@ -26,54 +25,70 @@ class AuthError extends Error {
  * @param {Request} req - The incoming request object.
  */
 export async function verifyAdmin(req: any) {
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers.authorization || req.headers.Authorization;
 
     if (!authHeader) {
-        throw new AuthError('No authorization header found.');
+        throw new AuthError('No authorization header found. Please log in again.');
     }
 
     const token = authHeader.replace('Bearer ', '').trim();
     if (!token) {
-        throw new AuthError('Bearer token is empty.');
+        throw new AuthError('Authentication token is empty.');
+    }
+
+    // Fix: verifyToken requires the secretKey, and getClerkClient also uses it.
+    const secretKey = process.env.CLERK_SECRET_KEY;
+    if (!secretKey) {
+        throw new AuthError('Backend Error: CLERK_SECRET_KEY is missing.');
     }
 
     try {
         const clerkClient = getClerkClient();
         
-        // 1. Verify the JWT token sent from the frontend
-        const claims = await clerkClient.verifyToken(token);
+        let claims: any;
+        
+        try {
+            // Fix: verifyToken is an exported function from @clerk/backend, not a method on the ClerkClient instance.
+            // This resolved the 'Property verifyToken does not exist on type ClerkClient' error.
+            claims = await verifyToken(token, { secretKey });
+        } catch (e: any) {
+            console.error("Token verification failed:", e.message);
+            throw new AuthError('Token verification failed. Please check your CLERK_SECRET_KEY.');
+        }
         
         if (!claims || !claims.sub) {
-            throw new AuthError('Token verification failed: No subject found.');
+            throw new AuthError('Invalid Token: No subject found in claims.');
         }
 
         // 2. Fetch the full user object to check metadata
         const user = await clerkClient.users.getUser(claims.sub);
         
         if (!user) {
-            throw new AuthError('User not found in Clerk database.');
+            throw new AuthError('Access Denied: User account not found.');
         }
 
         // 3. Check for the admin role in Public Metadata
-        // Expected format in Clerk: { "role": "admin" }
         const userRole = (user.publicMetadata as any)?.role;
         
         if (userRole !== 'admin') {
-            console.error(`User ${user.id} attempted admin action without "admin" role. Role found: ${userRole}`);
-            throw new AuthError('Forbidden: You do not have the "admin" role assigned in Clerk.');
+            console.error(`Security Alert: User ${user.id} (${user.emailAddresses[0]?.emailAddress}) attempted admin access with role: ${userRole}`);
+            throw new AuthError('Forbidden: Your account does not have Admin privileges.');
         }
 
         return { success: true, userId: user.id };
 
     } catch (error: any) {
-        console.error("Clerk Verification Error:", error.message);
+        console.error("Auth System Error:", error.message);
         
-        // If it's already an AuthError, rethrow it with its specific message
         if (error instanceof AuthError) {
             throw error;
         }
         
-        // Otherwise throw a general failure message with the specific reason wrapped
+        // Handle Clerk specific errors
+        if (error.status === 401 || error.status === 403) {
+            throw new AuthError(`Authentication failed: ${error.message}`);
+        }
+        
         throw new AuthError(`Admin verification failed: ${error.message}`);
     }
 }
