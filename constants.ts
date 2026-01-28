@@ -17,7 +17,7 @@ export const EXAMS_DATA: Exam[] = [
   },
   {
     id: 'degree_prelims',
-    title: { ml: 'Degree Prelims (ഡിഗ്രി പ്രിലിംസ്)', en: 'Degree Level Prelims' },
+    title: { ml: 'Degree Level Prelims (ഡിഗ്രി ലെവൽ പ്രിലിംസ്)', en: 'Degree Level Prelims' },
     description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-600" }),
     category: 'General',
@@ -25,7 +25,7 @@ export const EXAMS_DATA: Exam[] = [
   },
   {
     id: 'plus_two_prelims',
-    title: { ml: '+2 Prelims (+2 പ്രിലിംസ്)', en: 'Plus Two Prelims' },
+    title: { ml: 'Plus Two Prelims (പ്ലസ് ടു പ്രിലിംസ്)', en: 'Plus Two Prelims' },
     description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Higher Secondary level examinations.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-400" }),
     category: 'General',
@@ -69,7 +69,7 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   {
     id: 'mt_ldc_01',
     examId: 'ldc_lgs',
-    title: { ml: 'LDC മോക്ക് ടെസ്റ്റ് 01', en: 'LDC Mock Test 01' },
+    title: { ml: 'LDC Mock Test 01 (എൽ.ഡി.സി മോക്ക് ടെസ്റ്റ് 01)', en: 'LDC Mock Test 01' },
     description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മാതൃകാ പരീക്ഷ.', en: 'Full mock test with 100 questions.' },
     questionsCount: 100,
     duration: 75,
@@ -81,13 +81,13 @@ export const MOCK_TESTS_DATA: MockTest[] = [
 export const QUIZ_CATEGORIES: QuizCategory[] = [
   {
     id: 'gk',
-    title: { ml: 'പൊതുവിജ്ഞാനം', en: 'General Knowledge' },
-    description: { ml: 'ചриത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
+    title: { ml: 'General Knowledge (പൊതുവിജ്ഞാനം)', en: 'General Knowledge' },
+    description: { ml: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
   },
   {
     id: 'maths',
-    title: { ml: 'ഗണിതം', en: 'Mathematics' },
+    title: { ml: 'Mathematics (ഗണിതം)', en: 'Mathematics' },
     description: { ml: 'അടിസ്ഥാന ഗണിതം, റീസണിംഗ്.', en: 'Basic Arithmetic, Reasoning.' },
     icon: React.createElement(StarIcon, { className: "h-6 w-6 text-orange-500" })
   }
