@@ -60,7 +60,7 @@ export default async function handler(req: any, res: any) {
                 const imgResponse = await ai.models.generateContent({
                     model: 'gemini-2.5-flash-image',
                     contents: {
-                        parts: [{ text: `A clean, professional academic book cover for a Kerala PSC guide titled "${title}" by ${author}. Deep indigo and gold theme, high quality typography, no realistic human faces, educational style.` }]
+                        parts: [{ text: `A clean, professional, minimalistic academic book cover for a Kerala PSC guide titled "${title}" by author "${author}". Bold typography, deep indigo and gold professional colors, high resolution graphic design style, no realistic human faces, educational theme.` }]
                     },
                     config: {
                         imageConfig: {
@@ -77,7 +77,10 @@ export default async function handler(req: any, res: any) {
                     }
                 }
 
-                if (!base64Image) throw new Error("No image generated");
+                if (!base64Image) {
+                    throw new Error("No image was returned from the generative model.");
+                }
+                
                 return res.status(200).json({ imageBase64: base64Image });
 
             default:

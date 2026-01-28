@@ -47,7 +47,7 @@ async function scrapePscLiveUpdates() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY, items: {
+                type: Type.ARRAY items: {
                     type: Type.OBJECT, properties: {
                         title: { type: Type.STRING }, url: { type: Type.STRING },
                         section: { type: Type.STRING }, published_date: { type: Type.STRING }
@@ -126,38 +126,47 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Act as an expert book curator for Kerala PSC preparation. 
-    Find at least 40 current best-selling "Kerala PSC" exam preparation books from reputable publishers like Talent Academy, Lakshya, DC Books, and Brilliance College.
-    
-    You MUST provide valid Amazon.in product links. Use the structure: "https://www.amazon.in/dp/[ASIN]?${AFFILIATE_TAG}". 
-    CRITICAL: Ensure the [ASIN] is a real 10-character Amazon Standard Identification Number. 
-    Do NOT use "?&", use "?tag=malayalambooks-21".
-    
-    Categories to cover:
-    1. LDC & LGS Guides
-    2. Degree Level Prelims & Mains
-    3. Kerala History & Indian Constitution
-    4. Current Affairs Yearbooks
-    5. Subject-wise (Maths, English, Malayalam)
-    
-    Return a JSON array of objects with 'id', 'title', 'author', 'imageUrl' (leave empty if not 100% sure, AI will generate it), and 'amazonLink'.`;
+    // Crucially using Google Search to find REAL products on Amazon India
+    const prompt = `Search for the top 40 best-selling Kerala PSC preparation books currently available on Amazon.in (India). 
+    Use Google Search to find actual product ASINs and titles.
+    Return a JSON array of books. 
+    For each book, you MUST construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
+    ONLY use real, existing ASINs found via search. 
+    Format each book's title as "Title (Malayalam Title)" if possible.
+    Fields: id, title, author, imageUrl (leave empty), amazonLink.`;
 
     const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", contents: prompt,
+        model: "gemini-3-flash-preview", 
+        contents: prompt,
         config: {
+            tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY, items: {
-                    type: Type.OBJECT, properties: {
-                        id: { type: Type.STRING }, title: { type: Type.STRING }, author: { type: Type.STRING },
-                        imageUrl: { type: Type.STRING }, amazonLink: { type: Type.STRING },
-                    }, required: ["id", "title", "author", "imageUrl", "amazonLink"]
+                type: Type.ARRAY, 
+                items: {
+                    type: Type.OBJECT, 
+                    properties: {
+                        id: { type: Type.STRING }, 
+                        title: { type: Type.STRING }, 
+                        author: { type: Type.STRING },
+                        imageUrl: { type: Type.STRING }, 
+                        amazonLink: { type: Type.STRING },
+                    }, 
+                    required: ["id", "title", "author", "imageUrl", "amazonLink"]
                 }
             }
         }
     });
+    
     const data = JSON.parse(response.text || "[]");
-    return data.map((item: any) => [item.id, item.title, item.author, item.imageUrl, item.amazonLink]);
+    // Extra validation to ensure no broken tags
+    return data.map((item: any) => {
+        let link = item.amazonLink;
+        if (!link.includes('tag=')) {
+            link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
+        }
+        return [item.id, item.title, item.author, item.imageUrl, link];
+    });
 }
 
 export async function runDailyUpdateScrapers() {
