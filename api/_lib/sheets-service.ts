@@ -13,6 +13,22 @@ const cleanEnvVar = (val: string | undefined): string | undefined => {
 };
 
 /**
+ * Retrieves the spreadsheet ID from environment variables.
+ * Checks multiple common prefixes to ensure compatibility across environments.
+ */
+const getSpreadsheetId = (): string => {
+    const id = cleanEnvVar(
+        process.env.SPREADSHEET_ID || 
+        process.env.VITE_SPREADSHEET_ID || 
+        process.env.NEXT_PUBLIC_SPREADSHEET_ID
+    );
+    if (!id) {
+        throw new Error('Backend Config Error: SPREADSHEET_ID is missing. Please ensure it is added to your Vercel Environment Variables (Settings -> Environment Variables).');
+    }
+    return id;
+};
+
+/**
  * Creates an authorized Sheets client using JWT directly.
  */
 async function getSheetsClient(scopes: string[]) {
@@ -24,10 +40,10 @@ async function getSheetsClient(scopes: string[]) {
     const privateKey = cleanEnvVar(rawKey);
 
     if (!clientEmail) {
-        throw new Error('Backend Config Error: GOOGLE_CLIENT_EMAIL is missing or empty.');
+        throw new Error('Backend Config Error: GOOGLE_CLIENT_EMAIL is missing. Please add it to your environment variables.');
     }
     if (!privateKey) {
-        throw new Error('Backend Config Error: GOOGLE_PRIVATE_KEY is missing or empty.');
+        throw new Error('Backend Config Error: GOOGLE_PRIVATE_KEY is missing. Please add it to your environment variables.');
     }
 
     // Ensure the private key is properly formatted (handling escaped newlines)
@@ -48,33 +64,29 @@ async function getSheetsClient(scopes: string[]) {
 }
 
 export const readSheetData = async (range: string) => {
-    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
-    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
-    
+    const spreadsheetId = getSpreadsheetId();
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
     const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId,
         range,
     });
     return response.data.values || [];
 };
 
 export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
-    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
-    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
-
+    const spreadsheetId = getSpreadsheetId();
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     const sheetName = range.split('!')[0];
     
     await sheets.spreadsheets.values.clear({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId,
         range,
     });
 
     if (values.length === 0) return;
 
     await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId,
         range: `${sheetName}!A2`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values },
@@ -83,12 +95,10 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
 
 export const appendSheetData = async (range: string, values: any[][]) => {
     if (values.length === 0) return;
-    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
-    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
-
+    const spreadsheetId = getSpreadsheetId();
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values },
@@ -101,12 +111,10 @@ export const findAndUpsertRow = async (
     findValue: string,
     newRowData: any[]
 ) => {
-    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
-    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
-
+    const spreadsheetId = getSpreadsheetId();
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
+        spreadsheetId,
         range: `${sheetName}!A:A`,
     });
     
@@ -115,14 +123,14 @@ export const findAndUpsertRow = async (
 
     if (rowIndex !== -1) {
         await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
+            spreadsheetId,
             range: `${sheetName}!A${rowIndex + 1}`,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [newRowData] },
         });
     } else {
         await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
+            spreadsheetId,
             range: `${sheetName}!A1`,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [newRowData] },
