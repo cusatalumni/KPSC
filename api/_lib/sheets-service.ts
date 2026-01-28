@@ -4,25 +4,24 @@ import { google } from 'googleapis';
 declare var process: any;
 
 /**
- * Clean environment variables and handle private key formatting.
- * Specifically targets Node.js crypto decoder errors (1E08010C).
+ * Robust private key formatting.
+ * Handles literal \n strings and ensures proper headers for Node.js decoder.
  */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     
     let cleaned = key.trim();
     
-    // Remove wrapping quotes if they exist (common in some environment setups)
+    // Remove wrapping quotes if present
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
     }
 
-    // Replace literal escaped newlines with actual newline characters
-    // This is the primary fix for "DECODER routines::unsupported"
+    // Replace literal '\n' characters with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
 
-    // Ensure headers are present
+    // Add headers if missing
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
@@ -32,7 +31,10 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID;
-    if (!id) throw new Error('Backend Error: SPREADSHEET_ID missing.');
+    if (!id) {
+        console.error("SPREADSHEET_ID is missing from environment.");
+        throw new Error('Backend Error: SPREADSHEET_ID missing.');
+    }
     return id.trim().replace(/['"]/g, '');
 };
 
@@ -40,23 +42,29 @@ async function getSheetsClient(scopes: string[]) {
     const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL)?.trim().replace(/['"]/g, '');
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
 
-    if (!clientEmail || !privateKey) {
-        throw new Error(`Auth Config Error: Service Account credentials (email or key) missing.`);
+    if (!clientEmail) {
+        throw new Error(`Auth Config Error: GOOGLE_CLIENT_EMAIL is missing.`);
+    }
+    if (!privateKey) {
+        throw new Error(`Auth Config Error: GOOGLE_PRIVATE_KEY is missing.`);
     }
 
     try {
-        // Use the direct JWT constructor which is more reliable for manual key string injection
+        // Using explicit JWT constructor for better control over auth headers
         const auth = new google.auth.JWT(
             clientEmail,
-            undefined, // No path to key file
+            undefined,
             privateKey,
             scopes
         );
 
+        // Explicitly authorize to catch errors early
+        await auth.authorize();
+        
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Critical Google Sheets Initialization Failure:", e.message);
-        throw new Error(`Google API Authentication Failed: ${e.message}`);
+        console.error("Google Auth Scopes/Credentials Failure:", e.message);
+        throw new Error(`Google API Authentication Failed: ${e.message}. Please check your environment variables and ensure the Sheet is shared with ${clientEmail}`);
     }
 }
 
