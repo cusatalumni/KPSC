@@ -44,14 +44,24 @@ export const generateBookCover = (title: string, author: string) =>
 
 // --- Admin ---
 const adminReq = async (body: any, token: string | null) => {
-    if (!token) throw new Error("No token");
+    if (!token) throw new Error("Authentication token missing. Please sign in again.");
+    
     const res = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json' 
+        },
         body: JSON.stringify(body)
     });
-    if (!res.ok) throw new Error("Admin action failed");
-    return res.json();
+
+    const data = await res.json().catch(() => ({}));
+    
+    if (!res.ok) {
+        throw new Error(data.message || `Admin action failed with status ${res.status}`);
+    }
+    
+    return data;
 };
 
 export const triggerDailyScraper = (t: string | null) => adminReq({ action: 'run-daily' }, t);

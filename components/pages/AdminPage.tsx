@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
@@ -24,10 +23,17 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
         try {
             const token = await getToken();
             const action = type === 'daily' ? triggerDailyScraper : triggerBookScraper;
-            await action(token);
-            setStatus({ loading: false, result: { type: 'success', message: 'Task triggered successfully!' }});
+            const res = await action(token);
+            setStatus({ 
+                loading: false, 
+                result: { type: 'success', message: res.message || 'Task started successfully!' }
+            });
         } catch (error: any) {
-            setStatus({ loading: false, result: { type: 'error', message: error.message }});
+            let errorMsg = error.message;
+            if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
+                errorMsg = "Authorization Failed: Please ensure your email (manoj.balakrishan@gmail.com) has 'role: admin' in Clerk Public Metadata and try signing out and back in.";
+            }
+            setStatus({ loading: false, result: { type: 'error', message: errorMsg }});
         }
     };
 
@@ -36,8 +42,11 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
         setStatus({ loading: true, result: null });
         try {
             const token = await getToken();
-            await syncCsvData(targetSheet, csvData, token);
-            setStatus({ loading: false, result: { type: 'success', message: `Successfully updated ${targetSheet}!` }});
+            const res = await syncCsvData(targetSheet, csvData, token);
+            setStatus({ 
+                loading: false, 
+                result: { type: 'success', message: res.message || `Successfully updated ${targetSheet}!` }
+            });
             setCsvData('');
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
@@ -65,6 +74,18 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                     <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">Live: Connected</span>
                 </div>
             </div>
+
+            {status.result && (
+                <div className={`p-6 rounded-3xl flex items-start space-x-4 animate-fade-in border-2 ${
+                    status.result.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'
+                }`}>
+                    {status.result.type === 'success' ? <CheckCircleIcon className="h-6 w-6 mt-1 flex-shrink-0" /> : <XCircleIcon className="h-6 w-6 mt-1 flex-shrink-0" />}
+                    <div>
+                        <p className="font-black text-lg">{status.result.type === 'success' ? 'Success' : 'Error Occurred'}</p>
+                        <p className="font-medium opacity-90">{status.result.message}</p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
@@ -112,15 +133,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                             {status.loading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ClipboardListIcon className="h-6 w-6" />}
                             <span>SYNC DATA TO SHEETS</span>
                         </button>
-
-                        {status.result && (
-                             <div className={`p-5 rounded-2xl flex items-center space-x-4 animate-fade-in border ${
-                                status.result.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                            }`}>
-                                {status.result.type === 'success' ? <CheckCircleIcon className="h-6 w-6" /> : <XCircleIcon className="h-6 w-6" />}
-                                <p className="font-bold">{status.result.message}</p>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -133,16 +145,18 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                         <div className="space-y-4">
                             <button 
                                 onClick={() => handleRunScraper('daily')}
-                                className="w-full p-5 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-200 group"
+                                disabled={status.loading}
+                                className="w-full p-5 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-200 group disabled:opacity-50"
                             >
-                                <p className="text-base">Refresh All Portal Data</p>
+                                <p className="text-base">{status.loading ? 'Processing...' : 'Refresh All Portal Data'}</p>
                                 <span className="text-[10px] text-slate-400 group-hover:text-indigo-400">Updates Notifications, Updates & GK</span>
                             </button>
                             <button 
                                 onClick={() => handleRunScraper('books')}
-                                className="w-full p-5 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-200 group"
+                                disabled={status.loading}
+                                className="w-full p-5 bg-slate-50 text-slate-700 font-bold rounded-2xl hover:bg-indigo-50 hover:text-indigo-700 transition-all text-left border border-slate-200 group disabled:opacity-50"
                             >
-                                <p className="text-base">Sync Bookstore Items</p>
+                                <p className="text-base">{status.loading ? 'Syncing...' : 'Sync Bookstore Items'}</p>
                                 <span className="text-[10px] text-slate-400 group-hover:text-indigo-400">Scrapes Amazon Affiliate products</span>
                             </button>
                         </div>
@@ -151,7 +165,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
                     <div className="bg-indigo-600 p-8 rounded-3xl text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
                         <h4 className="font-black mb-3 relative z-10 text-xl">Quick Tip</h4>
                         <p className="text-sm text-indigo-100 relative z-10 font-medium leading-relaxed">
-                            Manual CSV updates immediately overwrite spreadsheet data. Use this for breaking news or historical corrections.
+                            If Automation Hub fails, check if you have set the API_KEY and SPREADSHEET_ID in Vercel Environment Variables.
                         </p>
                         <MegaphoneIcon className="absolute -bottom-6 -right-6 h-32 w-32 text-white/10 rotate-12 transition-transform group-hover:scale-110" />
                     </div>
