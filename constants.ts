@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion, Page, NavLink } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
@@ -8,7 +7,6 @@ import { ShieldCheckIcon } from './components/icons/ShieldCheckIcon';
 import { BeakerIcon } from './components/icons/BeakerIcon';
 
 export const EXAMS_DATA: Exam[] = [
-  // A. General PSC Examinations
   {
     id: 'ldc_lgs',
     title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
@@ -33,7 +31,6 @@ export const EXAMS_DATA: Exam[] = [
     category: 'General',
     level: 'Preliminary'
   },
-  // B. Technical
   {
     id: 'overseer_civil',
     title: { ml: 'Overseer Civil (ഓവർസിയർ സിവിൽ)', en: 'Overseer Civil' },
@@ -50,7 +47,6 @@ export const EXAMS_DATA: Exam[] = [
     category: 'Technical',
     level: 'Main'
   },
-  // C. Special Competitive
   {
     id: 'police_constable',
     title: { ml: 'Police Constable (പോലീസ് കോൺസ്റ്റബിൾ)', en: 'Police Constable' },
@@ -86,7 +82,7 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
   {
     id: 'gk',
     title: { ml: 'പൊതുവിജ്ഞാനം', en: 'General Knowledge' },
-    description: { ml: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
+    description: { ml: 'ചриത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
   },
   {
@@ -139,62 +135,151 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
   { id: '1', name: 'Rahul', role: 'LDC 2021 Batch', avatarUrl: 'https://picsum.photos/seed/1/200', quote: 'Great platform for practice!' }
 ];
 
+// Comprehensive Bookstore Data
 export const MOCK_BOOKS_DATA: Book[] = [
+  // LDC & General
   { 
-    id: '1', 
+    id: 'b1', 
     title: 'Kerala PSC LDC Rank File (Malayalam Edition)', 
     author: 'Lakshya Publications', 
     imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', 
     amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' 
   },
   { 
-    id: '2', 
-    title: 'PSC Bulletin Question Bank - 10,000+ Questions', 
+    id: 'b2', 
+    title: 'PSC Bulletin Question Bank - 10,000 Questions', 
     author: 'Talent Academy', 
     imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', 
     amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
   },
   { 
-    id: '3', 
-    title: 'Indian Constitution & Politics for PSC Exams', 
-    author: 'M Laxmikanth (Malayalam Translation)', 
-    imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' 
+    id: 'b3', 
+    title: 'LDC Last 20 Years Previous Papers Solution', 
+    author: 'Brilliance College', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
   },
   { 
-    id: '4', 
-    title: 'Keralolsavam: Comprehensive Guide to Kerala History', 
+    id: 'b20', 
+    title: 'LDC Mega Rank File 2025', 
+    author: 'DC Books', 
+    imageUrl: 'https://m.media-amazon.com/images/I/71u9Y0xLpXL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
+  },
+
+  // Degree Level
+  { 
+    id: 'b4', 
+    title: 'Degree Level Preliminary Exam Master Guide', 
+    author: 'Brilliance College', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
+  },
+  { 
+    id: 'b11', 
+    title: 'University Assistant Degree Level Main Guide', 
+    author: 'Talent Academy', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
+  },
+  { 
+    id: 'b12', 
+    title: 'Secretariat Assistant Degree Level Rank File', 
+    author: 'Lakshya Publications', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
+  },
+
+  // GK & History
+  { 
+    id: 'b5', 
+    title: 'Comprehensive Kerala GK & Renaissance', 
+    author: 'Talent Publications', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
+  },
+  { 
+    id: 'b7', 
+    title: 'Keralolsavam: Guide to Kerala History', 
     author: 'A. Sreedhara Menon', 
     imageUrl: 'https://m.media-amazon.com/images/I/51wY-XmYV1L._SX331_BO1,204,203,200_.jpg', 
     amazonLink: 'https://www.amazon.in/dp/8126484351?tag=malayalambooks-21' 
   },
   { 
-    id: '5', 
-    title: 'Degrees Level Preliminary Exam Master Guide', 
-    author: 'Brilliance College', 
-    imageUrl: 'https://m.media-amazon.com/images/I/61mI-vH8YHL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
+    id: 'b13', 
+    title: 'PSC GK 1000 - Quick Reference Guide', 
+    author: 'DC Books', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
   },
   { 
-    id: '6', 
-    title: 'English Grammar & Vocabulary for Kerala PSC', 
+    id: 'b14', 
+    title: 'Indian Constitution for Kerala PSC Exams', 
+    author: 'Lakshya Publishers', 
+    imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' 
+  },
+
+  // LGS
+  { 
+    id: 'b9', 
+    title: 'LGS Master Guide - Latest Edition', 
+    author: 'DC Books', 
+    imageUrl: 'https://m.media-amazon.com/images/I/71u9Y0xLpXL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
+  },
+  { 
+    id: 'b15', 
+    title: 'Last Grade Servants Rank File 2025', 
     author: 'Talent Academy', 
-    imageUrl: 'https://m.media-amazon.com/images/I/51mR+5kUqBL._SY466_.jpg', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' 
+  },
+
+  // English & Languages
+  { 
+    id: 'b6', 
+    title: 'English Grammar & Vocabulary for PSC', 
+    author: 'Talent Academy', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
+  },
+  { 
+    id: 'b16', 
+    title: 'Malayalam Sahithyam for Degree Level', 
+    author: 'DC Books', 
+    imageUrl: '', 
     amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
   },
   { 
-    id: '7', 
-    title: '2025 Current Affairs Year Book - Kerala & India', 
+    id: 'b17', 
+    title: 'Oxford Dictionary (English to Malayalam)', 
+    author: 'Oxford', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' 
+  },
+
+  // Current Affairs & Others
+  { 
+    id: 'b8', 
+    title: 'Current Affairs 2025 Year Book', 
     author: 'Manorama Publications', 
     imageUrl: 'https://m.media-amazon.com/images/I/91pL8uG8TML._SY466_.jpg', 
     amazonLink: 'https://www.amazon.in/dp/B0D9W1X2Y2?tag=malayalambooks-21' 
   },
   { 
-    id: '8', 
-    title: 'LGS Rank File - Latest Syllabus Edition', 
-    author: 'DC Books', 
-    imageUrl: 'https://m.media-amazon.com/images/I/71u9Y0xLpXL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
+    id: 'b18', 
+    title: 'Quantitative Aptitude and Maths for PSC', 
+    author: 'Lakshya Publications', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
+  },
+  { 
+    id: 'b19', 
+    title: 'Intelligence & Reasoning for All Exams', 
+    author: 'Talent Academy', 
+    imageUrl: '', 
+    amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
   }
 ];
 

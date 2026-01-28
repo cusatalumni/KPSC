@@ -1,10 +1,9 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
 declare var process: any;
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-// Updated tracking ID as requested
+// Correct Tracking ID
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
 const QUIZ_CATEGORY_TOPICS_ML = [
@@ -126,17 +125,19 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Act as a web scraper specializing in book discovery. Search amazon.in for at least 20 of the current best-selling "Kerala PSC exam preparation books". 
-    Ensure you include a diverse mix of:
-    1. LDC Rank Files (Talent, Lakshya, DC Books)
-    2. LGS Rank Files
-    3. Degree Level Preliminary & Mains guides
-    4. KAS (Kerala Administrative Service) preparation books
-    5. Subject-specific books (GK, English Grammar, Malayalam, Maths)
-    6. Previous Year Question Papers compilations
+    const prompt = `Act as an expert book curator and amazon.in web scraper. 
+    Find at least 40 current best-selling "Kerala PSC" exam preparation books. 
+    You MUST provide a comprehensive list spanning these specific categories:
+    1. LDC & LGS (Talent Academy, Lakshya, Brilliance)
+    2. Degree Level (Secretariat Assistant, University Assistant)
+    3. Plus Two & 10th Prelims Guides
+    4. Subject-Specific: Kerala History (A. Sreedhara Menon), Indian Constitution (Laxmikanth), PSC Maths, PSC English, PSC Malayalam.
+    5. Current Affairs Yearbooks (Manorama, Mathrubhumi)
+    6. Previous Year Question Paper sets.
     
-    For each book, return a JSON array with 'id' (unique string), 'title' (full book title), 'author' (publisher or author name), 'imageUrl' (valid product image URL), and 'amazonLink'. 
-    CRITICAL: For 'amazonLink', ensure it is a valid amazon.in product URL and append exactly "&${AFFILIATE_TAG}" to the end.`;
+    For each book, return a JSON array of objects with 'id', 'title', 'author' (or publisher), 'imageUrl' (valid Amazon URL), and 'amazonLink'. 
+    CRITICAL: For every 'amazonLink', you MUST append "&${AFFILIATE_TAG}" to ensure the user gets commission. 
+    Example: https://www.amazon.in/dp/B0B9X1Z3Y3?&${AFFILIATE_TAG}`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", contents: prompt,
