@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion, Page, NavLink } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
@@ -69,12 +70,52 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   {
     id: 'mt_ldc_01',
     examId: 'ldc_lgs',
-    title: { ml: 'LDC Mock Test 01 (എൽ.ഡി.സി മോക്ക് ടെസ്റ്റ് 01)', en: 'LDC Mock Test 01' },
-    description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മാതൃകാ പരീക്ഷ.', en: 'Full mock test with 100 questions.' },
+    title: { ml: 'LDC Full Mock Test 01', en: 'LDC Full Mock Test 01' },
+    description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ എൽ.ഡി.സി മാതൃകാ പരീക്ഷ.', en: 'Full mock test with 100 questions for LDC.' },
     questionsCount: 100,
     duration: 75,
     negativeMarking: 0.33,
     isPro: false
+  },
+  {
+    id: 'mt_degree_01',
+    examId: 'degree_prelims',
+    title: { ml: 'Degree Prelims Mock 01', en: 'Degree Prelims Mock 01' },
+    description: { ml: 'ഡിഗ്രി ലെവൽ പ്രിലിംസ് മാതൃകാ പരീക്ഷ.', en: 'Complete mock test for Degree Level Prelims.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: true
+  },
+  {
+    id: 'mt_police_01',
+    examId: 'police_constable',
+    title: { ml: 'Police Constable Mock 01', en: 'Police Constable Mock 01' },
+    description: { ml: 'പോലീസ് കോൺസ്റ്റബിൾ മാതൃകാ പരീക്ഷ.', en: 'Targeted mock test for Police Constable aspirants.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
+    id: 'mt_plus_two_01',
+    examId: 'plus_two_prelims',
+    title: { ml: 'Plus Two Prelims Mock 01', en: 'Plus Two Prelims Mock 01' },
+    description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പരീക്ഷാ പരിശീലനം.', en: 'Mock test for 12th level preliminary exams.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
+    id: 'mt_nurse_01',
+    examId: 'staff_nurse',
+    title: { ml: 'Staff Nurse Technical Mock 01', en: 'Staff Nurse Technical Mock 01' },
+    description: { ml: 'സ്റ്റാഫ് നഴ്സ് പരീക്ഷയ്ക്കുള്ള സ്പെഷ്യൽ മോക്ക് ടെസ്റ്റ്.', en: 'Technical subject focused mock test for Staff Nurse.' },
+    questionsCount: 100,
+    duration: 90,
+    negativeMarking: 0.33,
+    isPro: true
   }
 ];
 
@@ -96,7 +137,9 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
     { id: 'pt1', title: 'ചരിത്രം (History)', questions: 20, duration: 15 },
-    { id: 'pt2', title: 'ഭൂമിശാസ്ത്രം (Geography)', questions: 20, duration: 15 }
+    { id: 'pt2', title: 'ഭൂമിശാസ്ത്രം (Geography)', questions: 20, duration: 15 },
+    { id: 'pt3', title: 'മലയാളം (Malayalam)', questions: 10, duration: 10 },
+    { id: 'pt4', title: 'ഇംഗ്ലീഷ് (English)', questions: 10, duration: 10 }
   ],
   studyNotes: [{ id: 'sn1', title: 'Kerala Renaissance' }],
   previousPapers: [{ id: 'pp1', title: 'LDC 2021 Question Paper' }]
@@ -135,9 +178,7 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
   { id: '1', name: 'Rahul', role: 'LDC 2021 Batch', avatarUrl: 'https://picsum.photos/seed/1/200', quote: 'Great platform for practice!' }
 ];
 
-// Comprehensive Bookstore Data
 export const MOCK_BOOKS_DATA: Book[] = [
-  // LDC & General
   { 
     id: 'b1', 
     title: 'Kerala PSC LDC Rank File (Malayalam Edition)', 
@@ -150,135 +191,6 @@ export const MOCK_BOOKS_DATA: Book[] = [
     title: 'PSC Bulletin Question Bank - 10,000 Questions', 
     author: 'Talent Academy', 
     imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b3', 
-    title: 'LDC Last 20 Years Previous Papers Solution', 
-    author: 'Brilliance College', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b20', 
-    title: 'LDC Mega Rank File 2025', 
-    author: 'DC Books', 
-    imageUrl: 'https://m.media-amazon.com/images/I/71u9Y0xLpXL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
-  },
-
-  // Degree Level
-  { 
-    id: 'b4', 
-    title: 'Degree Level Preliminary Exam Master Guide', 
-    author: 'Brilliance College', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b11', 
-    title: 'University Assistant Degree Level Main Guide', 
-    author: 'Talent Academy', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b12', 
-    title: 'Secretariat Assistant Degree Level Rank File', 
-    author: 'Lakshya Publications', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
-  },
-
-  // GK & History
-  { 
-    id: 'b5', 
-    title: 'Comprehensive Kerala GK & Renaissance', 
-    author: 'Talent Publications', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b7', 
-    title: 'Keralolsavam: Guide to Kerala History', 
-    author: 'A. Sreedhara Menon', 
-    imageUrl: 'https://m.media-amazon.com/images/I/51wY-XmYV1L._SX331_BO1,204,203,200_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/8126484351?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b13', 
-    title: 'PSC GK 1000 - Quick Reference Guide', 
-    author: 'DC Books', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b14', 
-    title: 'Indian Constitution for Kerala PSC Exams', 
-    author: 'Lakshya Publishers', 
-    imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' 
-  },
-
-  // LGS
-  { 
-    id: 'b9', 
-    title: 'LGS Master Guide - Latest Edition', 
-    author: 'DC Books', 
-    imageUrl: 'https://m.media-amazon.com/images/I/71u9Y0xLpXL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b15', 
-    title: 'Last Grade Servants Rank File 2025', 
-    author: 'Talent Academy', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' 
-  },
-
-  // English & Languages
-  { 
-    id: 'b6', 
-    title: 'English Grammar & Vocabulary for PSC', 
-    author: 'Talent Academy', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b16', 
-    title: 'Malayalam Sahithyam for Degree Level', 
-    author: 'DC Books', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b17', 
-    title: 'Oxford Dictionary (English to Malayalam)', 
-    author: 'Oxford', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' 
-  },
-
-  // Current Affairs & Others
-  { 
-    id: 'b8', 
-    title: 'Current Affairs 2025 Year Book', 
-    author: 'Manorama Publications', 
-    imageUrl: 'https://m.media-amazon.com/images/I/91pL8uG8TML._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0D9W1X2Y2?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b18', 
-    title: 'Quantitative Aptitude and Maths for PSC', 
-    author: 'Lakshya Publications', 
-    imageUrl: '', 
-    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b19', 
-    title: 'Intelligence & Reasoning for All Exams', 
-    author: 'Talent Academy', 
-    imageUrl: '', 
     amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
   }
 ];
