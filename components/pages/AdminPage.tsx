@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
@@ -15,25 +15,43 @@ import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { RssIcon } from '../icons/RssIcon';
 
-interface PageProps { onBack: () => void; }
+interface PageProps { 
+    onBack: () => void; 
+    activeTabId?: string | null;
+}
 
 type AdminTab = 'dashboard' | 'bookstore' | 'news_gk' | 'questions';
 
-const AdminPage: React.FC<PageProps> = ({ onBack }) => {
+const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
     const { t } = useTranslation();
     const { getToken } = useAuth();
     
-    const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+    // Initial tab from prop or default
+    const [activeTab, setActiveTab] = useState<AdminTab>((activeTabId as AdminTab) || 'dashboard');
     
     // Bulk Sync State
     const [csvData, setCsvData] = useState('');
     const [isAppendMode, setIsAppendMode] = useState(true);
     
     // Quick Entries
-    const [quickAffair, setQuickAffair] = useState({ title: '', source: '', date: new Date().toISOString().split('T')[0] });
     const [quickBook, setQuickBook] = useState({ title: '', author: '', link: '', imageUrl: '' });
     
     const [status, setStatus] = useState<any>({ loading: false, result: null });
+
+    // Sync state if activeTabId changes externally
+    useEffect(() => {
+        if (activeTabId) {
+            setActiveTab(activeTabId as AdminTab);
+        }
+    }, [activeTabId]);
+
+    const handleTabChange = (id: AdminTab) => {
+        setActiveTab(id);
+        setStatus({ loading: false, result: null });
+        setCsvData('');
+        // Update URL to persist tab state
+        window.location.hash = `admin_panel/${id}`;
+    };
 
     const handleRunScraper = async (type: 'daily' | 'books') => {
         setStatus({ loading: true, result: null });
@@ -86,7 +104,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack }) => {
 
     const renderTabButton = (id: AdminTab, label: string, icon: React.ReactNode) => (
         <button
-            onClick={() => { setActiveTab(id); setStatus({ loading: false, result: null }); setCsvData(''); }}
+            onClick={() => handleTabChange(id)}
             className={`flex items-center space-x-3 px-6 py-4 rounded-2xl font-black transition-all ${
                 activeTab === id 
                 ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 -translate-y-1' 

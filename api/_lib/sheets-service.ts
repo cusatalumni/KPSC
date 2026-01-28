@@ -5,13 +5,12 @@ declare var process: any;
 
 /**
  * Environment വാല്യൂകളിൽ നിന്ന് അനാവശ്യ കൊട്ടേഷനുകളും സ്പേസുകളും നീക്കം ചെയ്യുന്നു.
- * Vercel-ൽ നിന്ന് ലഭിക്കുന്ന ഡാറ്റാ ഫോർമാറ്റിലെ പ്രശ്നങ്ങൾ ഇത് പരിഹരിക്കും.
  */
 const cleanEnvVar = (val: string | undefined): string | undefined => {
     if (!val) return undefined;
     let cleaned = val.trim();
     
-    // തുടക്കത്തിലും അവസാനത്തിലും ഉള്ള ", ' എന്നിവ നീക്കം ചെയ്യുന്നു
+    // Remove wrapping quotes if they exist
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
@@ -31,13 +30,14 @@ const getSpreadsheetId = (): string => {
     );
 
     if (!id) {
-        throw new Error('വിവരങ്ങൾ ശേഖരിക്കാൻ ആവശ്യമായ SPREADSHEET_ID കണ്ടെത്തിയില്ല. Vercel സെറ്റിങ്സ് പരിശോധിക്കുക.');
+        throw new Error('Backend Error: SPREADSHEET_ID missing. Please configure it in Vercel settings.');
     }
     return id;
 };
 
 /**
  * ഗൂഗിൾ ഷീറ്റ്സ് ക്ലയന്റ് തയ്യാറാക്കുന്നു.
+ * Uses JWT for explicit credential passing which is more reliable.
  */
 async function getSheetsClient(scopes: string[]) {
     const clientEmail = cleanEnvVar(
@@ -46,25 +46,24 @@ async function getSheetsClient(scopes: string[]) {
         process.env.VITE_GOOGLE_CLIENT_EMAIL
     );
 
-    let privateKey = cleanEnvVar(
+    const privateKey = cleanEnvVar(
         process.env.GOOGLE_PRIVATE_KEY || 
         process.env.PRIVATE_KEY ||
         process.env.VITE_GOOGLE_PRIVATE_KEY
     );
 
     if (!clientEmail || !privateKey) {
-        throw new Error(`ഓതന്റിക്കേഷൻ വിവരങ്ങൾ അപൂർണ്ണമാണ്. Email: ${!!clientEmail}, Key: ${!!privateKey}`);
+        throw new Error(`Authentication Error: Missing Google Service Account credentials (Email or Key).`);
     }
 
-    // പ്രൈവറ്റ് കീ ഫോർമാറ്റ് ശരിയാക്കുന്നു
-    // \n കമാൻഡുകളെ യഥാർത്ഥ ന്യൂലൈനുകളാക്കി മാറ്റുന്നു.
+    // Standardize the private key format for Node.js
     const formattedKey = privateKey
-        .replace(/\\n/g, '\n')
-        .replace(/\"/g, '') // അറിയാതെ വരുന്ന കൊട്ടേഷനുകൾ കളയുന്നു
+        .replace(/\\n/g, '\n') // Replace literal \n with real newlines
+        .replace(/"/g, '')     // Remove any accidental double quotes
         .trim();
 
     try {
-        // JWT (JSON Web Token) ഉപയോഗിച്ചുള്ള ഓതന്റിക്കേഷൻ
+        // Using JWT directly is more robust in serverless environments
         const auth = new google.auth.JWT(
             clientEmail,
             undefined,
@@ -72,13 +71,10 @@ async function getSheetsClient(scopes: string[]) {
             scopes
         );
 
-        // കണക്ഷൻ ടെസ്റ്റ് ചെയ്യാൻ ആധികാരികത ഉറപ്പാക്കുന്നു
-        await auth.authorize();
-        
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Google Auth Error Detail:", e.message);
-        throw new Error(`ഗൂഗിൾ ഷീറ്റ്സുമായി ബന്ധപ്പെടാൻ സാധിക്കുന്നില്ല: ${e.message}`);
+        console.error("Critical Google API Initialization Failure:", e.message);
+        throw new Error(`Google API Authentication Failed: ${e.message}`);
     }
 }
 

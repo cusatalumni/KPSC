@@ -32,6 +32,7 @@ import type { Page } from './types';
 const App: React.FC = () => {
   // Routing State derived from Hash
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [adminTab, setAdminTab] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any } | null>(null);
@@ -45,7 +46,14 @@ const App: React.FC = () => {
   // Sync state with URL Hash
   const syncStateFromHash = useCallback(() => {
     const hash = window.location.hash.replace('#', '');
-    const [page, id] = hash.split('/');
+    if (!hash) {
+        setCurrentPage('dashboard');
+        return;
+    }
+
+    const parts = hash.split('/');
+    const page = parts[0] as Page;
+    const id = parts[1];
     
     const validPages: Page[] = [
       'dashboard', 'exam_details', 'test', 'results', 'bookstore', 
@@ -55,24 +63,32 @@ const App: React.FC = () => {
       'study_material', 'sitemap'
     ];
 
-    const targetPage = validPages.includes(page as Page) ? (page as Page) : 'dashboard';
+    const targetPage = validPages.includes(page) ? page : 'dashboard';
     
-    // Reset specific states if moving away from their contexts
-    if (targetPage !== 'exam_details') setSelectedExam(null);
-    if (targetPage !== 'study_material') setActiveStudyTopic(null);
-    if (targetPage !== 'test' && targetPage !== 'results') {
-        setActiveTest(null);
-        setTestResult(null);
-    }
-
-    // Restore context if ID is present
+    // Reset or Set selective states based on URL
     if (targetPage === 'exam_details' && id) {
         const exam = EXAMS_DATA.find(e => e.id === id);
         if (exam) setSelectedExam(exam);
+    } else if (targetPage !== 'exam_details') {
+        setSelectedExam(null);
     }
     
     if (targetPage === 'study_material' && id) {
         setActiveStudyTopic(decodeURIComponent(id));
+    } else if (targetPage !== 'study_material') {
+        setActiveStudyTopic(null);
+    }
+
+    if (targetPage === 'admin_panel') {
+        // id here refers to the tab name, e.g., admin_panel/bookstore
+        setAdminTab(id || 'dashboard');
+    } else {
+        setAdminTab(null);
+    }
+
+    if (targetPage !== 'test' && targetPage !== 'results') {
+        setActiveTest(null);
+        setTestResult(null);
     }
 
     setCurrentPage(targetPage);
@@ -124,7 +140,7 @@ const App: React.FC = () => {
         negativeMarking: test.negativeMarking
     });
     setPreviousPage(currentPage);
-    setCurrentPage('test'); // Tests usually aren't bookmarked for safety
+    setCurrentPage('test');
   };
   
   const handleStartPracticeTest = (test: PracticeTest | { title: string, questions: number }, examTitle: string) => {
@@ -224,7 +240,7 @@ const App: React.FC = () => {
       case 'gk':
         return <GkPage onBack={() => handleNavigate('dashboard')} />;
       case 'admin_panel':
-        return <AdminPage onBack={() => handleNavigate('dashboard')} />;
+        return <AdminPage onBack={() => handleNavigate('dashboard')} activeTabId={adminTab} />;
       case 'study_material':
         if (!activeStudyTopic) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
         return <StudyMaterialPage 
