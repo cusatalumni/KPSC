@@ -25,13 +25,16 @@ export const translations = {
   },
   nav: {
     home: "ഹോം",
+    practice: "പരിശീലനം",
+    examHub: "പരീക്ഷാ കേന്ദ്രം",
+    resources: "വിഭവങ്ങൾ",
     quizzes: "ക്വിസുകൾ",
     mockTests: "മോക്ക് ടെസ്റ്റുകൾ",
     studyMaterials: "പഠന സാമഗ്രികൾ",
     currentAffairs: "ആനുകാലികം",
     gk: "പൊതുവിജ്ഞാനം",
     previousPapers: "ചോദ്യപേപ്പറുകൾ",
-    pscLive: "PSC Live",
+    pscLive: "PSC Live Updates",
     more: "കൂടുതൽ",
     bookstore: "പുസ്തകശാല",
     examCalendar: "പരീക്ഷാ കലണ്ടർ",
@@ -75,7 +78,7 @@ export const translations = {
     }
   },
   dashboard: {
-    topCourses: "പ്രധാന കോഴ്സുകൾ",
+    topCourses: "പ്രധാന കോഴ്സകളും",
     notifications: {
         title: "പുതിയ അറിയിപ്പുകൾ",
         subtitle: "ദിവസവും പുതുക്കിയ ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ",

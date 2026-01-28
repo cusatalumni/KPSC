@@ -1,3 +1,4 @@
+
 export const translations = {
   app: {
     title: "Kerala PSC Guru",
@@ -24,13 +25,16 @@ export const translations = {
   },
   nav: {
     home: "Home",
+    practice: "Practice",
+    examHub: "Exam Hub",
+    resources: "Resources",
     quizzes: "Quizzes",
     mockTests: "Mock Tests",
     studyMaterials: "Study Materials",
     currentAffairs: "Current Affairs",
     gk: "General Knowledge",
     previousPapers: "Previous Papers",
-    pscLive: "PSC Live",
+    pscLive: "PSC Live Updates",
     more: "More",
     bookstore: "Bookstore",
     examCalendar: "Exam Calendar",

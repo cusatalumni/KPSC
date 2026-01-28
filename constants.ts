@@ -200,18 +200,30 @@ export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [];
 
 export const NAV_STRUCTURE: NavLink[] = [
   { nameKey: 'nav.home', target: 'dashboard' },
-  { nameKey: 'nav.quizzes', target: 'quiz_home' },
-  { nameKey: 'nav.mockTests', target: 'mock_test_home' },
   {
-    nameKey: 'nav.more',
+    nameKey: 'nav.practice',
+    children: [
+      { nameKey: 'nav.mockTests', target: 'mock_test_home' },
+      { nameKey: 'nav.quizzes', target: 'quiz_home' },
+    ]
+  },
+  {
+    nameKey: 'nav.examHub',
+    children: [
+      { nameKey: 'nav.pscLive', target: 'psc_live_updates' },
+      { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
+      { nameKey: 'nav.previousPapers', target: 'previous_papers' },
+      { nameKey: 'dashboard.notifications.title', target: 'psc_live_updates' },
+    ]
+  },
+  {
+    nameKey: 'nav.resources',
     children: [
       { nameKey: 'nav.currentAffairs', target: 'current_affairs' },
       { nameKey: 'nav.gk', target: 'gk' },
-      { nameKey: 'nav.previousPapers', target: 'previous_papers' },
-      { nameKey: 'nav.pscLive', target: 'psc_live_updates' },
-      { nameKey: 'nav.bookstore', target: 'bookstore' },
-      { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
+      { nameKey: 'nav.studyMaterials', target: 'study_material' },
       { nameKey: 'nav.sitemap', target: 'sitemap' },
     ]
-  }
+  },
+  { nameKey: 'nav.bookstore', target: 'bookstore' }
 ];
