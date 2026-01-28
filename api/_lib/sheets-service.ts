@@ -5,7 +5,7 @@ declare var process: any;
 
 /**
  * Robust private key formatting.
- * Handles literal \n strings and ensures proper headers for Node.js decoder.
+ * Handles literal \n strings and ensures proper headers for Node.js crypto decoder.
  */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
@@ -21,7 +21,7 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
     // Replace literal '\n' characters with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
 
-    // Add headers if missing
+    // Ensure BEGIN/END headers are present
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
@@ -32,39 +32,38 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID;
     if (!id) {
-        console.error("SPREADSHEET_ID is missing from environment.");
-        throw new Error('Backend Error: SPREADSHEET_ID missing.');
+        throw new Error('Backend Error: SPREADSHEET_ID missing from environment variables.');
     }
     return id.trim().replace(/['"]/g, '');
 };
 
 async function getSheetsClient(scopes: string[]) {
     const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL)?.trim().replace(/['"]/g, '');
-    const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
+    const rawKey = process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY;
+    const privateKey = formatPrivateKey(rawKey);
 
     if (!clientEmail) {
         throw new Error(`Auth Config Error: GOOGLE_CLIENT_EMAIL is missing.`);
     }
-    if (!privateKey) {
-        throw new Error(`Auth Config Error: GOOGLE_PRIVATE_KEY is missing.`);
+    if (!privateKey || privateKey.length < 50) {
+        throw new Error(`Auth Config Error: GOOGLE_PRIVATE_KEY is missing or too short.`);
     }
 
     try {
-        // Using explicit JWT constructor for better control over auth headers
-        const auth = new google.auth.JWT(
-            clientEmail,
-            undefined,
-            privateKey,
-            scopes
-        );
+        // Use GoogleAuth with explicit credentials object - standard for modern googleapis versions
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: clientEmail,
+                private_key: privateKey,
+            },
+            scopes: scopes,
+        });
 
-        // Explicitly authorize to catch errors early
-        await auth.authorize();
-        
-        return google.sheets({ version: 'v4', auth });
+        const authClient = await auth.getClient();
+        return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) {
         console.error("Google Auth Scopes/Credentials Failure:", e.message);
-        throw new Error(`Google API Authentication Failed: ${e.message}. Please check your environment variables and ensure the Sheet is shared with ${clientEmail}`);
+        throw new Error(`Google API Authentication Failed: ${e.message}. Ensure the key is valid and the Sheet is shared with ${clientEmail}`);
     }
 }
 
