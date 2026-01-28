@@ -126,10 +126,16 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Act as a web scraper. Search on amazon.in for best-selling "Kerala PSC exam preparation books". 
-    Focus on popular publishers like Talent Academy, Lakshya, and DC Books. 
-    Include books for LDC, Degree Level, and GK.
-    For each book, return a JSON array with 'id', 'title', 'author', 'imageUrl', and 'amazonLink'. 
+    const prompt = `Act as a web scraper specializing in book discovery. Search amazon.in for at least 20 of the current best-selling "Kerala PSC exam preparation books". 
+    Ensure you include a diverse mix of:
+    1. LDC Rank Files (Talent, Lakshya, DC Books)
+    2. LGS Rank Files
+    3. Degree Level Preliminary & Mains guides
+    4. KAS (Kerala Administrative Service) preparation books
+    5. Subject-specific books (GK, English Grammar, Malayalam, Maths)
+    6. Previous Year Question Papers compilations
+    
+    For each book, return a JSON array with 'id' (unique string), 'title' (full book title), 'author' (publisher or author name), 'imageUrl' (valid product image URL), and 'amazonLink'. 
     CRITICAL: For 'amazonLink', ensure it is a valid amazon.in product URL and append exactly "&${AFFILIATE_TAG}" to the end.`;
 
     const response = await ai.models.generateContent({

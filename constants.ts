@@ -140,7 +140,62 @@ export const TESTIMONIALS_DATA: Testimonial[] = [
 ];
 
 export const MOCK_BOOKS_DATA: Book[] = [
-  { id: '1', title: 'LDC Rank File', author: 'Talent Academy', imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', amazonLink: '#' }
+  { 
+    id: '1', 
+    title: 'Kerala PSC LDC Rank File (Malayalam Edition)', 
+    author: 'Lakshya Publications', 
+    imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' 
+  },
+  { 
+    id: '2', 
+    title: 'PSC Bulletin Question Bank - 10,000+ Questions', 
+    author: 'Talent Academy', 
+    imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
+  },
+  { 
+    id: '3', 
+    title: 'Indian Constitution & Politics for PSC Exams', 
+    author: 'M Laxmikanth (Malayalam Translation)', 
+    imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' 
+  },
+  { 
+    id: '4', 
+    title: 'Keralolsavam: Comprehensive Guide to Kerala History', 
+    author: 'A. Sreedhara Menon', 
+    imageUrl: 'https://m.media-amazon.com/images/I/51wY-XmYV1L._SX331_BO1,204,203,200_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/8126484351?tag=malayalambooks-21' 
+  },
+  { 
+    id: '5', 
+    title: 'Degrees Level Preliminary Exam Master Guide', 
+    author: 'Brilliance College', 
+    imageUrl: 'https://m.media-amazon.com/images/I/61mI-vH8YHL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0C9X2W3C3?tag=malayalambooks-21' 
+  },
+  { 
+    id: '6', 
+    title: 'English Grammar & Vocabulary for Kerala PSC', 
+    author: 'Talent Academy', 
+    imageUrl: 'https://m.media-amazon.com/images/I/51mR+5kUqBL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0CDY5W4C4?tag=malayalambooks-21' 
+  },
+  { 
+    id: '7', 
+    title: '2025 Current Affairs Year Book - Kerala & India', 
+    author: 'Manorama Publications', 
+    imageUrl: 'https://m.media-amazon.com/images/I/91pL8uG8TML._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0D9W1X2Y2?tag=malayalambooks-21' 
+  },
+  { 
+    id: '8', 
+    title: 'LGS Rank File - Latest Syllabus Edition', 
+    author: 'DC Books', 
+    imageUrl: 'https://m.media-amazon.com/images/I/71u9Y0xLpXL._SY466_.jpg', 
+    amazonLink: 'https://www.amazon.in/dp/B0B9X1Z3Y3?tag=malayalambooks-21' 
+  }
 ];
 
 export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
