@@ -1,11 +1,9 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { readSheetData, appendSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
+import { readSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
 
 declare var process: any;
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const CACHE_DURATION_DAYS = 7;
 
 export default async function handler(req: any, res: any) {
     const { type, topic, count, title, author } = req.query;
@@ -43,7 +41,6 @@ export default async function handler(req: any, res: any) {
                         id: r[0], topic: r[1], question: r[2], options: JSON.parse(r[3]), correctAnswerIndex: parseInt(r[4]), subject: r[5], difficulty: r[6]
                     })));
                 }
-                // AI fallback generation would go here or handled in service
                 return res.status(200).json([]);
 
             case 'study-material':
@@ -60,12 +57,28 @@ export default async function handler(req: any, res: any) {
 
             case 'generate-cover':
                 if (!title || !author) return res.status(400).json({ error: 'Meta required' });
-                const imgRes = await ai.models.generateImages({
-                    model: 'imagen-4.0-generate-001',
-                    prompt: `Professional Malayalam book cover: "${title}" by ${author}. Academic style.`,
-                    config: { numberOfImages: 1, aspectRatio: '3:4' }
+                const imgResponse = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash-image',
+                    contents: {
+                        parts: [{ text: `A clean, professional academic book cover for a Kerala PSC guide titled "${title}" by ${author}. Deep indigo and gold theme, high quality typography, no realistic human faces, educational style.` }]
+                    },
+                    config: {
+                        imageConfig: {
+                            aspectRatio: "3:4"
+                        }
+                    }
                 });
-                return res.status(200).json({ imageBase64: imgRes.generatedImages[0].image.imageBytes });
+
+                let base64Image = "";
+                for (const part of imgResponse.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        base64Image = part.inlineData.data;
+                        break;
+                    }
+                }
+
+                if (!base64Image) throw new Error("No image generated");
+                return res.status(200).json({ imageBase64: base64Image });
 
             default:
                 return res.status(400).json({ error: 'Invalid type' });

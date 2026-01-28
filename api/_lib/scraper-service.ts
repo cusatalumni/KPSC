@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
@@ -125,19 +126,21 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Act as an expert book curator and amazon.in web scraper. 
-    Find at least 40 current best-selling "Kerala PSC" exam preparation books. 
-    You MUST provide a comprehensive list spanning these specific categories:
-    1. LDC & LGS (Talent Academy, Lakshya, Brilliance)
-    2. Degree Level (Secretariat Assistant, University Assistant)
-    3. Plus Two & 10th Prelims Guides
-    4. Subject-Specific: Kerala History (A. Sreedhara Menon), Indian Constitution (Laxmikanth), PSC Maths, PSC English, PSC Malayalam.
-    5. Current Affairs Yearbooks (Manorama, Mathrubhumi)
-    6. Previous Year Question Paper sets.
+    const prompt = `Act as an expert book curator for Kerala PSC preparation. 
+    Find at least 40 current best-selling "Kerala PSC" exam preparation books from reputable publishers like Talent Academy, Lakshya, DC Books, and Brilliance College.
     
-    For each book, return a JSON array of objects with 'id', 'title', 'author' (or publisher), 'imageUrl' (valid Amazon URL), and 'amazonLink'. 
-    CRITICAL: For every 'amazonLink', you MUST append "&${AFFILIATE_TAG}" to ensure the user gets commission. 
-    Example: https://www.amazon.in/dp/B0B9X1Z3Y3?&${AFFILIATE_TAG}`;
+    You MUST provide valid Amazon.in product links. Use the structure: "https://www.amazon.in/dp/[ASIN]?${AFFILIATE_TAG}". 
+    CRITICAL: Ensure the [ASIN] is a real 10-character Amazon Standard Identification Number. 
+    Do NOT use "?&", use "?tag=malayalambooks-21".
+    
+    Categories to cover:
+    1. LDC & LGS Guides
+    2. Degree Level Prelims & Mains
+    3. Kerala History & Indian Constitution
+    4. Current Affairs Yearbooks
+    5. Subject-wise (Maths, English, Malayalam)
+    
+    Return a JSON array of objects with 'id', 'title', 'author', 'imageUrl' (leave empty if not 100% sure, AI will generate it), and 'amazonLink'.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", contents: prompt,
