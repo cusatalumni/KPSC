@@ -17,9 +17,6 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
-/**
- * Helper to generate a book cover using Gemini 2.5 Flash Image
- */
 async function generateCoverForBook(title: string, author: string): Promise<string> {
     try {
         const imgResponse = await ai.models.generateContent({
@@ -34,7 +31,6 @@ async function generateCoverForBook(title: string, author: string): Promise<stri
 
         for (const part of imgResponse.candidates[0].content.parts) {
             if (part.inlineData) {
-                // Return as a full data URI to store in the sheet
                 return `data:image/png;base64,${part.inlineData.data}`;
             }
         }
@@ -152,10 +148,8 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Search for the top 30 best-selling Kerala PSC preparation books currently available on Amazon.in. 
-    Use Google Search to find actual products. Construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
-    Return a JSON array of books.
-    Fields: id, title, author, amazonLink.`;
+    const prompt = `Search for the top 30 best-selling Kerala PSC preparation books currently available on Amazon.in. construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
+    Return a JSON array of books. Fields: id, title, author, amazonLink.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", 
@@ -182,17 +176,12 @@ async function scrapeAmazonBooks() {
     const items = JSON.parse(response.text || "[]");
     const processedData = [];
 
-    // Process each book and generate cover ONCE
     for (const item of items) {
-        console.log(`Generating AI cover for: ${item.title}`);
         const aiCover = await generateCoverForBook(item.title, item.author);
-
         let link = item.amazonLink;
         if (!link.includes('tag=')) {
             link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
         }
-
-        // Store [ID, Title, Author, ImageUrl (Base64), AmazonLink]
         processedData.push([item.id, item.title, item.author, aiCover, link]);
     }
 
@@ -208,16 +197,13 @@ export async function runDailyUpdateScrapers() {
     ];
 
     for (const task of tasks) {
-        try {
-            const newData = await task.scraper();
-            await clearAndWriteSheetData(task.range, newData);
-        } catch (e) { console.error(`Task ${task.name} failed:`, e); }
+        // We no longer catch silently; errors will propagate to show in the UI
+        const newData = await task.scraper();
+        await clearAndWriteSheetData(task.range, newData);
     }
 
-    try {
-        const newQuestions = await generateNewQuestions();
-        await appendSheetData('QuestionBank!A1', newQuestions);
-    } catch(e) { console.error("Question enrichment failed:", e); }
+    const newQuestions = await generateNewQuestions();
+    await appendSheetData('QuestionBank!A1', newQuestions);
 }
 
 export async function runBookScraper() {
