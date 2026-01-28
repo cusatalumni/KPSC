@@ -5,30 +5,30 @@ declare var process: any;
 
 /**
  * Helper to clean environment variable strings.
- * Removes leading/trailing quotes and whitespace.
+ * Removes leading/trailing quotes, backslashes and whitespace.
  */
 const cleanEnvVar = (val: string | undefined): string | undefined => {
     if (!val) return undefined;
-    const cleaned = val.trim().replace(/^["'](.*)["']$/, '$1');
+    // Remove quotes and trim
+    let cleaned = val.trim().replace(/^["'](.*)["']$/, '$1');
     return cleaned === "" ? undefined : cleaned;
 };
 
 /**
  * Retrieves the spreadsheet ID from environment variables.
- * Checks multiple naming conventions for maximum compatibility.
+ * Checks multiple common names for better compatibility.
  */
 const getSpreadsheetId = (): string => {
-    // Priority: SPREADSHEET_ID (Standard) -> VITE_SPREADSHEET_ID (Vite fallback)
     const id = cleanEnvVar(
         process.env.SPREADSHEET_ID || 
-        process.env.VITE_SPREADSHEET_ID ||
-        (process as any).env?.SPREADSHEET_ID
+        process.env.GOOGLE_SPREADSHEET_ID ||
+        process.env.VITE_SPREADSHEET_ID
     );
 
     if (!id) {
         throw new Error(
             'Backend Config Error: SPREADSHEET_ID is missing. ' +
-            'Please go to Vercel Dashboard -> Settings -> Environment Variables and add "SPREADSHEET_ID" with your Google Sheet ID.'
+            'Please ensure you have added "SPREADSHEET_ID" in Vercel Settings -> Environment Variables.'
         );
     }
     return id;
@@ -36,22 +36,29 @@ const getSpreadsheetId = (): string => {
 
 /**
  * Creates an authorized Sheets client using JWT.
+ * Now checks for both GOOGLE_ prefix and standard names.
  */
 async function getSheetsClient(scopes: string[]) {
-    const rawEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.VITE_GOOGLE_CLIENT_EMAIL;
-    const rawKey = process.env.GOOGLE_PRIVATE_KEY || process.env.VITE_GOOGLE_PRIVATE_KEY;
+    const clientEmail = cleanEnvVar(
+        process.env.GOOGLE_CLIENT_EMAIL || 
+        process.env.CLIENT_EMAIL ||
+        process.env.VITE_GOOGLE_CLIENT_EMAIL
+    );
 
-    const clientEmail = cleanEnvVar(rawEmail);
-    const privateKey = cleanEnvVar(rawKey);
+    const privateKey = cleanEnvVar(
+        process.env.GOOGLE_PRIVATE_KEY || 
+        process.env.PRIVATE_KEY ||
+        process.env.VITE_GOOGLE_PRIVATE_KEY
+    );
 
     if (!clientEmail) {
-        throw new Error('Backend Config Error: GOOGLE_CLIENT_EMAIL is missing. Check Vercel Environment Variables.');
+        throw new Error('Backend Config Error: GOOGLE_CLIENT_EMAIL (or CLIENT_EMAIL) is missing.');
     }
     if (!privateKey) {
-        throw new Error('Backend Config Error: GOOGLE_PRIVATE_KEY is missing. Check Vercel Environment Variables.');
+        throw new Error('Backend Config Error: GOOGLE_PRIVATE_KEY (or PRIVATE_KEY) is missing.');
     }
 
-    // Standardize key format (handling escaped newlines from environment strings)
+    // Standardize key format (handling escaped newlines)
     const formattedKey = privateKey.replace(/\\n/g, '\n');
 
     try {
