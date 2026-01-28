@@ -18,6 +18,32 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
+/**
+ * Helper to generate a book cover using Gemini 2.5 Flash Image
+ */
+async function generateCoverForBook(title: string, author: string): Promise<string> {
+    try {
+        const imgResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [{ text: `A professional academic book cover for a Kerala PSC guide. Title: "${title}", Author: "${author}". Deep blue and gold theme, high quality typography, educational style, no realistic faces.` }]
+            },
+            config: {
+                imageConfig: { aspectRatio: "3:4" }
+            }
+        });
+
+        for (const part of imgResponse.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return `data:image/png;base64,${part.inlineData.data}`;
+            }
+        }
+    } catch (e) {
+        console.error("Cover generation failed in scraper:", e);
+    }
+    return '';
+}
+
 async function scrapeKpscNotifications() {
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -47,7 +73,7 @@ async function scrapePscLiveUpdates() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY items: {
+                type: Type.ARRAY, items: {
                     type: Type.OBJECT, properties: {
                         title: { type: Type.STRING }, url: { type: Type.STRING },
                         section: { type: Type.STRING }, published_date: { type: Type.STRING }
@@ -126,14 +152,10 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    // Crucially using Google Search to find REAL products on Amazon India
-    const prompt = `Search for the top 40 best-selling Kerala PSC preparation books currently available on Amazon.in (India). 
-    Use Google Search to find actual product ASINs and titles.
-    Return a JSON array of books. 
-    For each book, you MUST construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
-    ONLY use real, existing ASINs found via search. 
-    Format each book's title as "Title (Malayalam Title)" if possible.
-    Fields: id, title, author, imageUrl (leave empty), amazonLink.`;
+    const prompt = `Search for the top 40 best-selling Kerala PSC preparation books currently available on Amazon.in. 
+    Use Google Search to find actual products. Construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
+    Return a JSON array of books. Format each title as "English Title (Malayalam Title)".
+    Fields: id, title, author, imageUrl (leave empty if not found), amazonLink.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", 
@@ -158,15 +180,26 @@ async function scrapeAmazonBooks() {
         }
     });
     
-    const data = JSON.parse(response.text || "[]");
-    // Extra validation to ensure no broken tags
-    return data.map((item: any) => {
+    const items = JSON.parse(response.text || "[]");
+    const processedData = [];
+
+    // Process each book and pre-generate covers if missing
+    for (const item of items) {
+        let finalImage = item.imageUrl;
+        if (!finalImage || finalImage.trim() === "" || finalImage.length < 10) {
+            console.log(`Generating cover for: ${item.title}`);
+            finalImage = await generateCoverForBook(item.title, item.author);
+        }
+
         let link = item.amazonLink;
         if (!link.includes('tag=')) {
             link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
         }
-        return [item.id, item.title, item.author, item.imageUrl, link];
-    });
+
+        processedData.push([item.id, item.title, item.author, finalImage, link]);
+    }
+
+    return processedData;
 }
 
 export async function runDailyUpdateScrapers() {

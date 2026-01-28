@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { getBooks, generateBookCover } from '../../services/pscDataService';
+import { getBooks } from '../../services/pscDataService';
 import type { Book } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -19,48 +20,20 @@ const BookCardSkeleton: React.FC = () => (
 
 const BookCard: React.FC<{ book: Book }> = ({ book }) => {
     const { t } = useTranslation();
-    const [currentImageUrl, setCurrentImageUrl] = useState(book.imageUrl);
-    const [isLoadingImage, setIsLoadingImage] = useState(false);
-
-    useEffect(() => {
-        // If image URL is missing, generate one using AI
-        if (!book.imageUrl || book.imageUrl === "") {
-            setIsLoadingImage(true);
-            generateBookCover(book.title, book.author)
-                .then(data => {
-                    if (data.imageBase64) {
-                        setCurrentImageUrl(`data:image/jpeg;base64,${data.imageBase64}`);
-                    } else {
-                        setCurrentImageUrl('https://via.placeholder.com/300x400.png?text=PSC+Guide');
-                    }
-                })
-                .catch(err => {
-                    console.error("Cover generation failed", err);
-                    setCurrentImageUrl('https://via.placeholder.com/300x400.png?text=Cover+Error');
-                })
-                .finally(() => setIsLoadingImage(false));
-        }
-    }, [book.imageUrl, book.title, book.author]);
+    const fallbackImage = 'https://via.placeholder.com/300x400.png?text=PSC+Guide';
 
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
             <div className="relative h-72 overflow-hidden bg-slate-50">
-                {isLoadingImage ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-indigo-50">
-                        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mb-2"></div>
-                        <p className="text-xs text-indigo-400 font-bold uppercase tracking-widest">Designing Cover...</p>
-                    </div>
-                ) : (
-                    <img 
-                        src={currentImageUrl} 
-                        alt={book.title} 
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x400.png?text=Designed+by+AI';
-                        }}
-                    />
-                )}
+                <img 
+                    src={book.imageUrl || fallbackImage} 
+                    alt={book.title} 
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                         (e.target as HTMLImageElement).src = fallbackImage;
+                    }}
+                />
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
                     <StarIcon className="h-4 w-4 text-orange-400" />
                 </div>
@@ -114,7 +87,6 @@ const BookstorePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     fetchBooks();
   }, [t]);
 
-  // Expanded categories for better organization
   const categories = ['All', 'LDC', 'Degree Level', 'LGS', 'GK', 'History', 'Maths', 'English', 'Malayalam'];
 
   const filteredBooks = useMemo(() => {
@@ -123,12 +95,11 @@ const BookstorePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         const title = b.title.toLowerCase();
         const tab = activeTab.toLowerCase();
         
-        // Special mapping logic for complex categories
         if (tab === 'ldc') return title.includes('ldc') || title.includes('lower division clerk');
         if (tab === 'degree level') return title.includes('degree') || title.includes('university assistant') || title.includes('secretariat');
         if (tab === 'lgs') return title.includes('lgs') || title.includes('last grade');
         if (tab === 'gk') return title.includes('gk') || title.includes('വിജ്ഞാനം') || title.includes('renaissance');
-        if (tab === 'history') return title.includes('history') || title.includes('ചരിത്രം');
+        if (tab === 'history') return title.includes('history') || title.includes('ചриത്രം');
         if (tab === 'maths') return title.includes('maths') || title.includes('quantitative') || title.includes('reasoning') || title.includes('ഗണിതം');
         if (tab === 'english') return title.includes('english') || title.includes('grammar') || title.includes('oxford');
         if (tab === 'malayalam') return title.includes('malayalam') || title.includes('മലയാളം') || title.includes('sahithyam');
