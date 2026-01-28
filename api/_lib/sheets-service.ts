@@ -3,48 +3,58 @@ import { google } from 'googleapis';
 
 declare var process: any;
 
-const cleanEnvVar = (val: string | undefined): string | undefined => {
-    if (!val) return undefined;
-    let cleaned = val.trim();
+/**
+ * Clean environment variables and handle private key formatting.
+ * Specifically targets Node.js crypto decoder errors (1E08010C).
+ */
+const formatPrivateKey = (key: string | undefined): string | undefined => {
+    if (!key) return undefined;
+    
+    let cleaned = key.trim();
+    
+    // Remove wrapping quotes
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
     }
-    return cleaned === "" ? undefined : cleaned;
+
+    // Replace literal escaped newlines with actual newline characters
+    // This is the primary fix for "DECODER routines::unsupported"
+    cleaned = cleaned.replace(/\\n/g, '\n');
+
+    // Ensure headers are present
+    if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
+        cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
+    }
+
+    return cleaned;
 };
 
 const getSpreadsheetId = (): string => {
-    const id = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
+    const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID;
     if (!id) throw new Error('Backend Error: SPREADSHEET_ID missing.');
-    return id;
+    return id.trim().replace(/['"]/g, '');
 };
 
 async function getSheetsClient(scopes: string[]) {
-    const clientEmail = cleanEnvVar(process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL);
-    const privateKey = cleanEnvVar(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
+    const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL)?.trim().replace(/['"]/g, '');
+    const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error(`Auth Config Error: Service Account credentials missing.`);
+        throw new Error(`Auth Config Error: Service Account credentials (email or key) missing.`);
     }
 
-    const formattedKey = privateKey.replace(/\\n/g, '\n').replace(/"/g, '').trim();
-
     try {
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: clientEmail,
-                private_key: formattedKey,
-            },
-            scopes: scopes,
-        });
+        const auth = new google.auth.JWT(
+            clientEmail,
+            undefined,
+            privateKey,
+            scopes
+        );
 
-        const authClient = await auth.getClient();
-        // Crucial: Explicitly calling authorize to ensure tokens are generated
-        await authClient.authorize();
-        
-        return google.sheets({ version: 'v4', auth: authClient as any });
+        return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Critical Google Sheets Auth Failure:", e.message);
+        console.error("Critical Google Sheets Initialization Failure:", e.message);
         throw new Error(`Google API Authentication Failed: ${e.message}`);
     }
 }
@@ -86,14 +96,12 @@ export const deleteRowById = async (sheetName: string, id: string) => {
     const spreadsheetId = getSpreadsheetId();
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     
-    // 1. Get the sheet metadata to find the sheetId
     const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
     const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
     const sheetId = sheet?.properties?.sheetId;
 
     if (sheetId === undefined) throw new Error(`Sheet ${sheetName} not found.`);
 
-    // 2. Find the row index
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: `${sheetName}!A:A`,
@@ -103,7 +111,6 @@ export const deleteRowById = async (sheetName: string, id: string) => {
 
     if (rowIndex === -1) throw new Error(`Row with ID ${id} not found.`);
 
-    // 3. Send batchUpdate to delete the specific row
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
         requestBody: {

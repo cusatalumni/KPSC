@@ -93,7 +93,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
             const bookId = quickBook.id || `book_${Date.now()}`;
             const csvLine = `${bookId}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${finalLink}`;
             
-            // If editing (id exists), we might want a different logic, but for simplicity, we append or use syncCsvData
             await syncCsvData('Bookstore', csvLine, token, true);
             
             setStatus({ loading: false, result: { type: 'success', message: quickBook.id ? 'Book updated!' : 'Book added!' }});
@@ -279,7 +278,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                             </div>
                         </div>
 
-                        {/* Editable Table Section */}
                         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-3xl font-black text-slate-800">Manage Existing Books</h3>
@@ -315,10 +313,10 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center justify-center space-x-2">
-                                                            <button onClick={() => handleEditClick(book)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all">
+                                                            <button onClick={() => handleEditClick(book)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all" title="Edit Book">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                             </button>
-                                                            <button onClick={() => handleDeleteBook(book.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                                                            <button onClick={() => handleDeleteBook(book.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all" title="Delete Book">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                             </button>
                                                         </div>
