@@ -175,7 +175,41 @@ export const STUDY_MATERIALS_DATA: StudyMaterial[] = [
 ];
 
 export const TESTIMONIALS_DATA: Testimonial[] = [
-  { id: '1', name: 'Rahul', role: 'LDC 2021 Batch', avatarUrl: 'https://picsum.photos/seed/1/200', quote: 'Great platform for practice!' }
+  { 
+    id: '1', 
+    name: 'രാഹുൽ ആർ.', 
+    role: 'LDC 2021 ബാച്ച്', 
+    avatarUrl: 'https://picsum.photos/seed/rahul/200', 
+    quote: 'ഈ പ്ലാറ്റ്‌ഫോം എന്റെ പഠനത്തെ വളരെ ലളിതമാക്കി. പ്രത്യേകിച്ച് ഡെയ്‌ലി അപ്‌ഡേറ്റുകൾ എന്നെ ഒരുപാട് സഹായിച്ചു.' 
+  },
+  { 
+    id: '2', 
+    name: 'അഞ്ജലി കൃഷ്ണ', 
+    role: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് വിജയി', 
+    avatarUrl: 'https://picsum.photos/seed/anjali/200', 
+    quote: 'മോക്ക് ടെസ്റ്റുകൾ പരീക്ഷാ പേടി മാറ്റാൻ സഹായിച്ചു. സമയക്രമീകരണം പഠിക്കാൻ ഇത് വളരെ നല്ലതാണ്.' 
+  },
+  { 
+    id: '3', 
+    name: 'ശ്രീജിത്ത് കെ.എസ്.', 
+    role: 'പോലീസ് കോൺസ്റ്റബിൾ റാങ്ക് ഹോൾഡർ', 
+    avatarUrl: 'https://picsum.photos/seed/sreejith/200', 
+    quote: 'പി.എസ്.സി ഗുരു നൽകുന്ന സ്റ്റഡി മെറ്റീരിയലുകൾ വളരെ കൃത്യവും ഉപകാരപ്രദവുമാണ്. എളുപ്പത്തിൽ പഠിക്കാൻ സാധിച്ചു.' 
+  },
+  { 
+    id: '4', 
+    name: 'മീര നായർ', 
+    role: 'LDC എറണാകുളം (വിജയി)', 
+    avatarUrl: 'https://picsum.photos/seed/meera/200', 
+    quote: 'കറന്റ് അഫയേഴ്സ് ദിവസവും നോട്ടിഫിക്കേഷൻ ആയി ലഭിക്കുന്നത് വലിയൊരു സഹായമാണ്. ഒന്നിനും പുറകെ പോകേണ്ടി വന്നില്ല.' 
+  },
+  { 
+    id: '5', 
+    name: 'വിവേക് വി.എസ്.', 
+    role: 'യൂണിവേഴ്സിറ്റി അസിസ്റ്റന്റ് ബാച്ച്', 
+    avatarUrl: 'https://picsum.photos/seed/vivek/200', 
+    quote: 'സൗജന്യമായി ഇത്രയും നല്ലൊരു പ്ലാറ്റ്‌ഫോം ലഭിക്കുന്നത് ഉദ്യോഗാർത്ഥികൾക്ക് വലിയൊരു അനുഗ്രഹമാണ്. നന്ദി PSC ഗുരു!' 
+  }
 ];
 
 export const MOCK_BOOKS_DATA: Book[] = [
