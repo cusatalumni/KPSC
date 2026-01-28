@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getBooks } from '../services/pscDataService';
 import type { Book } from '../types';
@@ -14,7 +15,6 @@ const BookOfTheDayWidget: React.FC = () => {
             try {
                 const allBooks = await getBooks();
                 if (allBooks.length > 0) {
-                    // Simple logic: pick the first one as "Book of the Day"
                     setBook(allBooks[0]);
                 }
             } catch (error) {
@@ -28,23 +28,20 @@ const BookOfTheDayWidget: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-slate-100">
-                <div className="h-6 bg-slate-200 rounded w-3/4 mb-4 animate-pulse"></div>
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-slate-100 animate-pulse">
+                <div className="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
                 <div className="flex space-x-4">
-                    <div className="w-24 h-32 bg-slate-200 rounded-md animate-pulse"></div>
+                    <div className="w-24 h-32 bg-slate-200 rounded-md"></div>
                     <div className="flex-1 space-y-2">
-                        <div className="h-5 bg-slate-200 rounded w-full animate-pulse"></div>
-                        <div className="h-4 bg-slate-200 rounded w-1/2 animate-pulse"></div>
-                        <div className="h-8 bg-slate-200 rounded w-3/4 animate-pulse mt-2"></div>
+                        <div className="h-5 bg-slate-200 rounded w-full"></div>
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
                     </div>
                 </div>
             </div>
         );
     }
 
-    if (!book) {
-        return null; // Don't render if no book is found or on error
-    }
+    if (!book) return null;
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-lg border border-slate-100">
@@ -53,9 +50,9 @@ const BookOfTheDayWidget: React.FC = () => {
                 <h4 className="text-xl font-bold text-slate-800">{t('bookOfTheDay.title')}</h4>
             </div>
             <div className="flex space-x-4 items-center">
-                <img src={book.imageUrl} alt={book.title} className="w-24 h-32 object-cover rounded-md shadow-sm flex-shrink-0" referrerPolicy="no-referrer" />
+                <img src={book.imageUrl || 'https://via.placeholder.com/96x128'} alt={book.title} className="w-24 h-32 object-cover rounded-md shadow-sm flex-shrink-0" referrerPolicy="no-referrer" />
                 <div className="flex-1">
-                    <h5 className="font-bold text-slate-800 leading-tight">{book.title}</h5>
+                    <h5 className="font-bold text-slate-800 leading-tight line-clamp-2">{book.title}</h5>
                     <p className="text-sm text-slate-500 mb-3">{book.author}</p>
                     <a 
                       href={book.amazonLink} 

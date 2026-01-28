@@ -1,36 +1,56 @@
 
-import { GoogleAuth } from 'google-auth-library';
 import { google } from 'googleapis';
 
 declare var process: any;
 
 /**
- * Creates an authorized Sheets client.
- * Fixes: "incoming JSON object does not contain a client_email field" 
- * by checking variables explicitly.
+ * Helper to clean environment variable strings.
+ * Removes leading/trailing quotes that often appear during copy-pasting in Vercel/Dashboards.
+ */
+const cleanEnvVar = (val: string | undefined): string | undefined => {
+    if (!val) return undefined;
+    return val.trim().replace(/^["'](.*)["']$/, '$1');
+};
+
+/**
+ * Creates an authorized Sheets client using JWT directly.
  */
 async function getSheetsClient(scopes: string[]) {
-    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    // Attempt to get variables from both standard and VITE_ prefixed names as a fallback
+    const rawEmail = process.env.GOOGLE_CLIENT_EMAIL || process.env.VITE_GOOGLE_CLIENT_EMAIL;
+    const rawKey = process.env.GOOGLE_PRIVATE_KEY || process.env.VITE_GOOGLE_PRIVATE_KEY;
 
-    if (!clientEmail || !privateKey) {
-        throw new Error('Backend Error: Google Service Account credentials (EMAIL or PRIVATE_KEY) are missing.');
+    const clientEmail = cleanEnvVar(rawEmail);
+    const privateKey = cleanEnvVar(rawKey);
+
+    if (!clientEmail) {
+        throw new Error('Backend Config Error: GOOGLE_CLIENT_EMAIL is missing or empty.');
+    }
+    if (!privateKey) {
+        throw new Error('Backend Config Error: GOOGLE_PRIVATE_KEY is missing or empty.');
     }
 
-    const auth = new GoogleAuth({
-        scopes,
-        credentials: {
-            client_email: clientEmail,
-            private_key: privateKey.replace(/\\n/g, '\n'),
-        },
-    });
-    
-    const authClient = await auth.getClient();
-    return google.sheets({ version: 'v4', auth: authClient as any });
+    // Ensure the private key is properly formatted (handling escaped newlines)
+    const formattedKey = privateKey.replace(/\\n/g, '\n');
+
+    try {
+        const auth = new google.auth.JWT(
+            clientEmail,
+            undefined,
+            formattedKey,
+            scopes
+        );
+        return google.sheets({ version: 'v4', auth });
+    } catch (e: any) {
+        console.error("Failed to initialize Google Auth JWT:", e.message);
+        throw new Error(`Google Auth Initialization Failed: ${e.message}`);
+    }
 }
 
 export const readSheetData = async (range: string) => {
-    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
+    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
+    
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -40,7 +60,9 @@ export const readSheetData = async (range: string) => {
 };
 
 export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
-    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
+    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
+
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     const sheetName = range.split('!')[0];
     
@@ -61,7 +83,9 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
 
 export const appendSheetData = async (range: string, values: any[][]) => {
     if (values.length === 0) return;
-    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
+    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
+
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
@@ -77,7 +101,9 @@ export const findAndUpsertRow = async (
     findValue: string,
     newRowData: any[]
 ) => {
-    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+    const SPREADSHEET_ID = cleanEnvVar(process.env.SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID);
+    if (!SPREADSHEET_ID) throw new Error("Backend Config Error: SPREADSHEET_ID is missing.");
+
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
