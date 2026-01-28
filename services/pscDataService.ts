@@ -1,3 +1,4 @@
+
 import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA } from '../constants';
 
@@ -66,4 +67,5 @@ const adminReq = async (body: any, token: string | null) => {
 
 export const triggerDailyScraper = (t: string | null) => adminReq({ action: 'run-daily' }, t);
 export const triggerBookScraper = (t: string | null) => adminReq({ action: 'run-books' }, t);
-export const syncCsvData = (sheet: string, data: string, t: string | null) => adminReq({ action: 'csv-update', sheet, data }, t);
+export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => 
+    adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);

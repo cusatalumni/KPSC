@@ -1,7 +1,7 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
-import { clearAndWriteSheetData } from './_lib/sheets-service.js';
+import { clearAndWriteSheetData, appendSheetData } from './_lib/sheets-service.js';
 
 declare var process: any;
 
@@ -38,7 +38,7 @@ export default async function handler(req: any, res: any) {
             return res.status(401).json({ message: error.message || 'Unauthorized' });
         }
 
-        const { action, sheet, data } = req.body;
+        const { action, sheet, data, mode } = req.body;
 
         try {
             switch (action) {
@@ -51,8 +51,14 @@ export default async function handler(req: any, res: any) {
                 case 'csv-update':
                     if (!sheet || !data) return res.status(400).json({ message: 'Missing params' });
                     const rows = parseCsv(data);
-                    await clearAndWriteSheetData(`${sheet}!A2:Z`, rows);
-                    return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows.` });
+                    
+                    if (mode === 'append') {
+                        await appendSheetData(`${sheet}!A1`, rows);
+                        return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}.` });
+                    } else {
+                        await clearAndWriteSheetData(`${sheet}!A2:Z`, rows);
+                        return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows (replaced old data).` });
+                    }
                 default:
                     return res.status(400).json({ message: 'Unknown action' });
             }
