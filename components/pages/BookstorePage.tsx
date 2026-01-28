@@ -21,22 +21,29 @@ const BookCardSkeleton: React.FC = () => (
 const BookCard: React.FC<{ book: Book }> = ({ book }) => {
     const { t } = useTranslation();
     const fallbackImage = 'https://via.placeholder.com/300x400.png?text=PSC+Guide';
+    
+    // Logic: Use stored imageUrl (which should be the AI generated Base64 from the DB)
+    const displayImage = book.imageUrl || fallbackImage;
 
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
             <div className="relative h-72 overflow-hidden bg-slate-50">
                 <img 
-                    src={book.imageUrl || fallbackImage} 
+                    src={displayImage} 
                     alt={book.title} 
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                         (e.target as HTMLImageElement).src = fallbackImage;
-                    }}
+                    loading="lazy"
                 />
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
                     <StarIcon className="h-4 w-4 text-orange-400" />
                 </div>
+                {/* Visual indicator that this is an AI cover if no real image was found */}
+                {!book.imageUrl.startsWith('http') && (
+                    <div className="absolute bottom-2 left-2 bg-indigo-600/80 backdrop-blur-sm px-2 py-0.5 rounded text-[8px] text-white font-black uppercase tracking-widest">
+                        AI Cover
+                    </div>
+                )}
             </div>
             <div className="p-5 flex flex-col flex-grow">
                 <div className="mb-2">
@@ -99,7 +106,7 @@ const BookstorePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (tab === 'degree level') return title.includes('degree') || title.includes('university assistant') || title.includes('secretariat');
         if (tab === 'lgs') return title.includes('lgs') || title.includes('last grade');
         if (tab === 'gk') return title.includes('gk') || title.includes('വിജ്ഞാനം') || title.includes('renaissance');
-        if (tab === 'history') return title.includes('history') || title.includes('ചриത്രം');
+        if (tab === 'history') return title.includes('history') || title.includes('ചരിത്രം');
         if (tab === 'maths') return title.includes('maths') || title.includes('quantitative') || title.includes('reasoning') || title.includes('ഗണിതം');
         if (tab === 'english') return title.includes('english') || title.includes('grammar') || title.includes('oxford');
         if (tab === 'malayalam') return title.includes('malayalam') || title.includes('മലയാളം') || title.includes('sahithyam');

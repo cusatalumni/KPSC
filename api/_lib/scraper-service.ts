@@ -4,7 +4,6 @@ import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
 declare var process: any;
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-// Correct Tracking ID
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
 const QUIZ_CATEGORY_TOPICS_ML = [
@@ -26,7 +25,7 @@ async function generateCoverForBook(title: string, author: string): Promise<stri
         const imgResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
-                parts: [{ text: `A professional academic book cover for a Kerala PSC guide. Title: "${title}", Author: "${author}". Deep blue and gold theme, high quality typography, educational style, no realistic faces.` }]
+                parts: [{ text: `A clean, professional, minimalistic academic book cover for a Kerala PSC guide titled "${title}" by "${author}". Bold typography, deep indigo and gold professional colors, high resolution graphic design style, no realistic human faces, educational theme.` }]
             },
             config: {
                 imageConfig: { aspectRatio: "3:4" }
@@ -35,6 +34,7 @@ async function generateCoverForBook(title: string, author: string): Promise<stri
 
         for (const part of imgResponse.candidates[0].content.parts) {
             if (part.inlineData) {
+                // Return as a full data URI to store in the sheet
                 return `data:image/png;base64,${part.inlineData.data}`;
             }
         }
@@ -152,10 +152,10 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
-    const prompt = `Search for the top 40 best-selling Kerala PSC preparation books currently available on Amazon.in. 
+    const prompt = `Search for the top 30 best-selling Kerala PSC preparation books currently available on Amazon.in. 
     Use Google Search to find actual products. Construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
-    Return a JSON array of books. Format each title as "English Title (Malayalam Title)".
-    Fields: id, title, author, imageUrl (leave empty if not found), amazonLink.`;
+    Return a JSON array of books.
+    Fields: id, title, author, amazonLink.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", 
@@ -171,10 +171,9 @@ async function scrapeAmazonBooks() {
                         id: { type: Type.STRING }, 
                         title: { type: Type.STRING }, 
                         author: { type: Type.STRING },
-                        imageUrl: { type: Type.STRING }, 
                         amazonLink: { type: Type.STRING },
                     }, 
-                    required: ["id", "title", "author", "imageUrl", "amazonLink"]
+                    required: ["id", "title", "author", "amazonLink"]
                 }
             }
         }
@@ -183,20 +182,18 @@ async function scrapeAmazonBooks() {
     const items = JSON.parse(response.text || "[]");
     const processedData = [];
 
-    // Process each book and pre-generate covers if missing
+    // Process each book and generate cover ONCE
     for (const item of items) {
-        let finalImage = item.imageUrl;
-        if (!finalImage || finalImage.trim() === "" || finalImage.length < 10) {
-            console.log(`Generating cover for: ${item.title}`);
-            finalImage = await generateCoverForBook(item.title, item.author);
-        }
+        console.log(`Generating AI cover for: ${item.title}`);
+        const aiCover = await generateCoverForBook(item.title, item.author);
 
         let link = item.amazonLink;
         if (!link.includes('tag=')) {
             link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
         }
 
-        processedData.push([item.id, item.title, item.author, finalImage, link]);
+        // Store [ID, Title, Author, ImageUrl (Base64), AmazonLink]
+        processedData.push([item.id, item.title, item.author, aiCover, link]);
     }
 
     return processedData;

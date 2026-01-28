@@ -3,21 +3,34 @@ import { GoogleAuth } from 'google-auth-library';
 import { google } from 'googleapis';
 
 declare var process: any;
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
+/**
+ * Creates an authorized Sheets client.
+ * Fixes: "incoming JSON object does not contain a client_email field" 
+ * by checking variables explicitly.
+ */
 async function getSheetsClient(scopes: string[]) {
+    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+    if (!clientEmail || !privateKey) {
+        throw new Error('Backend Error: Google Service Account credentials (EMAIL or PRIVATE_KEY) are missing.');
+    }
+
     const auth = new GoogleAuth({
         scopes,
         credentials: {
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+            client_email: clientEmail,
+            private_key: privateKey.replace(/\\n/g, '\n'),
         },
     });
-    const client = await auth.getClient();
-    return google.sheets({ version: 'v4', auth: client as any });
+    
+    const authClient = await auth.getClient();
+    return google.sheets({ version: 'v4', auth: authClient as any });
 }
 
 export const readSheetData = async (range: string) => {
+    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -27,6 +40,7 @@ export const readSheetData = async (range: string) => {
 };
 
 export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
+    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     const sheetName = range.split('!')[0];
     
@@ -47,6 +61,7 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
 
 export const appendSheetData = async (range: string, values: any[][]) => {
     if (values.length === 0) return;
+    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
@@ -62,6 +77,7 @@ export const findAndUpsertRow = async (
     findValue: string,
     newRowData: any[]
 ) => {
+    const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
     const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
