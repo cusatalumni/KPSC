@@ -12,7 +12,6 @@ import { ScaleIcon } from './components/icons/ScaleIcon';
 import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
-  // --- GENERAL EXAMS ---
   {
     id: 'ldc_lgs',
     title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
@@ -22,28 +21,18 @@ export const EXAMS_DATA: Exam[] = [
     level: 'Preliminary'
   },
   {
-    id: 'plus_two_prelims',
-    title: { ml: 'Plus Two Level Prelims (പ്ലസ് ടു പ്രിലിംസ്)', en: 'Plus Two Level Prelims' },
-    description: { ml: 'Civil Police Officer, Excise Inspector തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-indigo-600" }),
-    category: 'General',
-    level: 'Preliminary'
-  },
-  {
     id: 'degree_prelims',
-    title: { ml: 'Degree Level Prelims (ഡിഗ്രി പ്രിലിംസ്)', en: 'Degree Level Prelims' },
+    title: { ml: 'Degree Level Exams (ഡിഗ്രി ലെവൽ)', en: 'Degree Level Exams' },
     description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള ബിരുദതല പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
     category: 'General',
     level: 'Preliminary'
   },
-
-  // --- TECHNICAL EXAMS ---
   {
-    id: 'overseer_gr3',
-    title: { ml: 'Overseer Grade II/III (ഓവർസിയർ)', en: 'Overseer Gr II/III' },
-    description: { ml: 'LSGD, PWD വകുപ്പുകളിലെ സിവിൽ എൻജിനീയറിങ് പരീക്ഷകൾ.', en: 'Civil Engineering exams for PWD & LSGD.' },
-    icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-amber-600" }),
+    id: 'staff_nurse',
+    title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
+    description: { ml: 'ആരോഗ്യ വകുപ്പിലെ നഴ്സിംഗ് തസ്തികകളിലേക്കുള്ള പരീക്ഷ.', en: 'Nursing post exams in Health Department.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-amber-600" }),
     category: 'Technical',
     level: 'Main'
   },
@@ -54,60 +43,65 @@ export const EXAMS_DATA: Exam[] = [
     icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-amber-500" }),
     category: 'Technical',
     level: 'Main'
-  },
-  {
-    id: 'staff_nurse',
-    title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
-    description: { ml: 'ആരോഗ്യ വകുപ്പിലെ നഴ്സിംഗ് തസ്തികകളിലേക്കുള്ള പരീക്ഷ.', en: 'Nursing post exams in Health Department.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-amber-600" }),
-    category: 'Technical',
-    level: 'Main'
-  },
-
-  // --- SPECIAL EXAMS ---
-  {
-    id: 'uni_assistant',
-    title: { ml: 'University Assistant (യൂണിവേഴ്സിറ്റി അസിസ്റ്റന്റ്)', en: 'University Assistant' },
-    description: { ml: 'വിവിധ സർവകലാശാലകളിലെ അസിസ്റ്റന്റ് തസ്തികകൾ.', en: 'Assistant posts in various universities.' },
-    icon: React.createElement(ClipboardListIcon, { className: "h-8 w-8 text-rose-600" }),
-    category: 'Special',
-    level: 'Main'
-  },
-  {
-    id: 'lsgi_secretary',
-    title: { ml: 'LSGI Secretary (പഞ്ചായത്ത് സെക്രട്ടറി)', en: 'LSGI Secretary' },
-    description: { ml: 'തദ്ദേശ സ്വയംഭരണ വകുപ്പിലെ ഉന്നത തസ്തികകൾ.', en: 'High-level posts in Local Self Government.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-rose-500" }),
-    category: 'Special',
-    level: 'Main'
-  },
-  {
-    id: 'bevco_assistant',
-    title: { ml: 'BEVCO Assistant (ബിവറേജ് അസിസ്റ്റന്റ്)', en: 'BEVCO Assistant' },
-    description: { ml: 'ബിവറേജ് കോർപ്പറേഷനിലെ അസിസ്റ്റന്റ് പരീക്ഷകൾ.', en: 'Exams for Beverage Corporation Assistant.' },
-    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-rose-600" }),
-    category: 'Special',
-    level: 'Main'
   }
 ];
 
-// Added LDC_EXAM_CONTENT to fix build error in App.tsx
+// Content for LDC / LGS
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'pt1', title: 'General Knowledge', questions: 50, duration: 45 },
-    { id: 'pt2', title: 'Mental Ability', questions: 20, duration: 20 },
-    { id: 'pt3', title: 'General English', questions: 20, duration: 15 },
-    { id: 'pt4', title: 'Regional Language', questions: 10, duration: 10 },
+    { id: 'ldc_pt1', title: 'General Knowledge', questions: 50, duration: 45 },
+    { id: 'ldc_pt2', title: 'Mental Ability', questions: 20, duration: 20 },
+    { id: 'ldc_pt3', title: 'General English', questions: 20, duration: 15 },
   ],
   studyNotes: [
-    { id: 'sn1', title: 'Kerala History' },
-    { id: 'sn2', title: 'Indian Constitution' },
-    { id: 'sn3', title: 'General Science' },
+    { id: 'ldc_sn1', title: 'Kerala History (കേരള ചരിത്രം)' },
+    { id: 'ldc_sn2', title: 'Indian Constitution (ഭരണഘടന)' },
   ],
   previousPapers: [
-    { id: 'pp1', title: 'LDC 2021 Previous Question Paper' },
-    { id: 'pp2', title: 'LGS 2021 Previous Question Paper' },
+    { id: 'ldc_pp1', title: 'LDC 2021 All Districts' },
+    { id: 'ldc_pp2', title: 'LGS 2021 Previous Paper' },
   ]
+};
+
+// Content for Staff Nurse Gr II
+export const STAFF_NURSE_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'sn_pt1', title: 'Nursing Science (നഴ്സിംഗ് സയൻസ്)', questions: 60, duration: 50 },
+    { id: 'sn_pt2', title: 'Anatomy & Physiology', questions: 20, duration: 20 },
+    { id: 'sn_pt3', title: 'Community Health Nursing', questions: 20, duration: 20 },
+  ],
+  studyNotes: [
+    { id: 'sn_sn1', title: 'Nursing Fundamentals (നഴ്സിംഗ് അടിസ്ഥാനങ്ങൾ)' },
+    { id: 'sn_sn2', title: 'Infection Control Protocols' },
+    { id: 'sn_sn3', title: 'Florence Nightingale History' },
+  ],
+  previousPapers: [
+    { id: 'sn_pp1', title: 'Staff Nurse Gr II 2023 Official Paper' },
+    { id: 'sn_pp2', title: 'Nursing Science 2021 Mains' },
+  ]
+};
+
+// Content for KSEB Sub Engineer
+export const KSEB_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'ks_pt1', title: 'Electrical Engineering', questions: 80, duration: 60 },
+    { id: 'ks_pt2', title: 'Electronics & Circuits', questions: 20, duration: 15 },
+  ],
+  studyNotes: [
+    { id: 'ks_sn1', title: 'Power Systems Fundamentals' },
+    { id: 'ks_sn2', title: 'KSEB Safety Regulations' },
+  ],
+  previousPapers: [
+    { id: 'ks_pp1', title: 'Sub Engineer 2022 KSEB' },
+  ]
+};
+
+// Mapping of Exam IDs to their specific content
+export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
+    'ldc_lgs': LDC_EXAM_CONTENT,
+    'staff_nurse': STAFF_NURSE_CONTENT,
+    'kseb_sub_eng': KSEB_CONTENT,
+    'degree_prelims': LDC_EXAM_CONTENT, // Fallback to LDC if specific not defined
 };
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
@@ -141,11 +135,15 @@ export const STUDY_MATERIALS_DATA: StudyMaterial[] = [
 
 export const TESTIMONIALS_DATA: Testimonial[] = [
   { id: '1', name: 'രാഹുൽ ആർ.', role: 'LDC 2021 ബാച്ച് വിജയി', avatarUrl: 'https://picsum.photos/seed/winner1/200', quote: 'ഈ പ്ലാറ്റ്‌ഫോം എന്റെ പഠനത്തെ വളരെ ലളിതമാക്കി. പ്രത്യേകിച്ച് ഡെയ്‌ലി അപ്‌ഡേറ്റുകൾ പരീക്ഷാ സമയത്ത് എന്നെ ഒരുപാട് സഹായിച്ചു.' },
-  { id: '2', name: 'അഞ്ജലി കൃഷ്ണ', role: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് റാങ്ക് ഹോൾഡർ', avatarUrl: 'https://picsum.photos/seed/winner2/200', quote: 'മോക്ക് ടെസ്റ്റുകൾ പരീക്ഷാ പേടി മാറ്റാൻ വളരെയധികം സഹായിച്ചു. കൃത്യമായ സമയക്രമീകരണത്തിൽ പരിശീലിക്കാൻ സാധിച്ചു.' }
+  { id: '2', name: 'അഞ്ജലി കൃഷ്ണ', role: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് റാങ്ക് ഹോൾഡർ', avatarUrl: 'https://picsum.photos/seed/winner2/200', quote: 'മോക്ക് ടെസ്റ്റുകൾ പരീക്ഷാ പേടി മാറ്റാൻ വളരെയധികം സഹായിച്ചു. കൃത്യമായ സമയക്രമീകരണത്തിൽ പരിശീലിക്കാൻ സാധിച്ചു.' },
+  { id: '3', name: 'അഭിലാഷ് കെ.', role: 'KSEB സബ് എൻജിനീയർ (Rank 4)', avatarUrl: 'https://picsum.photos/seed/winner3/200', quote: 'ടെക്നിക്കൽ പരീക്ഷകൾക്ക് വേണ്ടിയുള്ള ക്വിസുകൾ എന്റെ ആത്മവിശ്വാസം വർധിപ്പിച്ചു.' },
+  { id: '4', name: 'രേഷ്മ എം.ആർ.', role: 'സ്റ്റാഫ് നഴ്സ് ഗ്രേഡ് II വിജയി', avatarUrl: 'https://picsum.photos/seed/winner4/200', quote: 'നഴ്സിംഗ് വിഷയങ്ങളിലെ നോട്ട്സുകൾ വളരെ കൃത്യമാണ്.' }
 ];
 
 export const MOCK_BOOKS_DATA: Book[] = [
-  { id: 'b1', title: 'Kerala PSC LDC Rank File (Malayalam Edition)', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' }
+  { id: 'b1', title: 'Kerala PSC LDC Rank File (Malayalam Edition)', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' },
+  { id: 'b2', title: 'Nursing Science Rank File', author: 'Talent Academy', imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' },
+  { id: 'b3', title: 'Electrical Engineering for PSC', author: 'Rank Master', imageUrl: 'https://m.media-amazon.com/images/I/71iTOsKa8QL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B09BD45BBP?tag=malayalambooks-21' }
 ];
 
 export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
