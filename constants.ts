@@ -9,8 +9,10 @@ import { BeakerIcon } from './components/icons/BeakerIcon';
 import { GlobeAltIcon } from './components/icons/GlobeAltIcon';
 import { LightBulbIcon } from './components/icons/LightBulbIcon';
 import { ScaleIcon } from './components/icons/ScaleIcon';
+import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
+  // --- GENERAL EXAMS ---
   {
     id: 'ldc_lgs',
     title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
@@ -20,128 +22,92 @@ export const EXAMS_DATA: Exam[] = [
     level: 'Preliminary'
   },
   {
-    id: 'degree_prelims',
-    title: { ml: 'Degree Level Prelims (ഡിഗ്രി ലെവൽ പ്രിലിംസ്)', en: 'Degree Level Prelims' },
-    description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-600" }),
+    id: 'plus_two_prelims',
+    title: { ml: 'Plus Two Level Prelims (പ്ലസ് ടു പ്രിലിംസ്)', en: 'Plus Two Level Prelims' },
+    description: { ml: 'Civil Police Officer, Excise Inspector തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-indigo-600" }),
     category: 'General',
     level: 'Preliminary'
   },
   {
-    id: 'police_constable',
-    title: { ml: 'Police Constable (പോലീസ് കോൺസ്റ്റബിൾ)', en: 'Police Constable' },
-    description: { ml: 'യൂണിഫോം തസ്തികകളിലേക്കുള്ള പരീക്ഷകൾ.', en: 'Exams for uniform category posts.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-red-600" }),
-    category: 'Special',
+    id: 'degree_prelims',
+    title: { ml: 'Degree Level Prelims (ഡിഗ്രി പ്രിലിംസ്)', en: 'Degree Level Prelims' },
+    description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള ബിരുദതല പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
+    category: 'General',
     level: 'Preliminary'
+  },
+
+  // --- TECHNICAL EXAMS ---
+  {
+    id: 'overseer_gr3',
+    title: { ml: 'Overseer Grade II/III (ഓവർസിയർ)', en: 'Overseer Gr II/III' },
+    description: { ml: 'LSGD, PWD വകുപ്പുകളിലെ സിവിൽ എൻജിനീയറിങ് പരീക്ഷകൾ.', en: 'Civil Engineering exams for PWD & LSGD.' },
+    icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-amber-600" }),
+    category: 'Technical',
+    level: 'Main'
+  },
+  {
+    id: 'kseb_sub_eng',
+    title: { ml: 'KSEB Sub Engineer (സബ് എൻജിനീയർ)', en: 'KSEB Sub Engineer' },
+    description: { ml: 'കെ.എസ്.ഇ.ബി ഇലക്ട്രിക്കൽ വിഭാഗം പരീക്ഷകൾ.', en: 'KSEB Electrical Engineering exams.' },
+    icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-amber-500" }),
+    category: 'Technical',
+    level: 'Main'
+  },
+  {
+    id: 'staff_nurse',
+    title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
+    description: { ml: 'ആരോഗ്യ വകുപ്പിലെ നഴ്സിംഗ് തസ്തികകളിലേക്കുള്ള പരീക്ഷ.', en: 'Nursing post exams in Health Department.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-amber-600" }),
+    category: 'Technical',
+    level: 'Main'
+  },
+
+  // --- SPECIAL EXAMS ---
+  {
+    id: 'uni_assistant',
+    title: { ml: 'University Assistant (യൂണിവേഴ്സിറ്റി അസിസ്റ്റന്റ്)', en: 'University Assistant' },
+    description: { ml: 'വിവിധ സർവകലാശാലകളിലെ അസിസ്റ്റന്റ് തസ്തികകൾ.', en: 'Assistant posts in various universities.' },
+    icon: React.createElement(ClipboardListIcon, { className: "h-8 w-8 text-rose-600" }),
+    category: 'Special',
+    level: 'Main'
+  },
+  {
+    id: 'lsgi_secretary',
+    title: { ml: 'LSGI Secretary (പഞ്ചായത്ത് സെക്രട്ടറി)', en: 'LSGI Secretary' },
+    description: { ml: 'തദ്ദേശ സ്വയംഭരണ വകുപ്പിലെ ഉന്നത തസ്തികകൾ.', en: 'High-level posts in Local Self Government.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-rose-500" }),
+    category: 'Special',
+    level: 'Main'
+  },
+  {
+    id: 'bevco_assistant',
+    title: { ml: 'BEVCO Assistant (ബിവറേജ് അസിസ്റ്റന്റ്)', en: 'BEVCO Assistant' },
+    description: { ml: 'ബിവറേജ് കോർപ്പറേഷനിലെ അസിസ്റ്റന്റ് പരീക്ഷകൾ.', en: 'Exams for Beverage Corporation Assistant.' },
+    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-rose-600" }),
+    category: 'Special',
+    level: 'Main'
   }
 ];
 
-export const MOCK_TESTS_DATA: MockTest[] = [
-  {
-    id: 'mt_mixed_01',
-    examId: 'ldc_lgs',
-    title: { ml: 'Full Mock Test (Mixed)', en: 'Full Mock Test (Mixed)' },
-    description: { ml: 'എല്ലാ വിഷയങ്ങളും ഉൾപ്പെടുത്തിയ മാതൃകാ പരീക്ഷ.', en: 'Mock test covering all major subjects.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_kerala_01',
-    examId: 'ldc_lgs',
-    title: { ml: 'Kerala History & Renaissance', en: 'Kerala History & Renaissance' },
-    description: { ml: 'കേരള ചരിത്രവും നവോത്ഥാനവും.', en: 'Focus on Kerala History and Renaissance.' },
-    questionsCount: 50,
-    duration: 40,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_const_01',
-    examId: 'degree_prelims',
-    title: { ml: 'Indian Constitution & Polity', en: 'Indian Constitution & Polity' },
-    description: { ml: 'ഭരണഘടനയും രാഷ്ട്രീയവും.', en: 'Comprehensive test on Constitution and Polity.' },
-    questionsCount: 50,
-    duration: 40,
-    negativeMarking: 0.33,
-    isPro: true
-  }
-];
-
-export const QUIZ_CATEGORIES: QuizCategory[] = [
-  {
-    id: 'mixed',
-    title: { ml: 'Mixed (എല്ലാം കലർന്നവ)', en: 'Mixed Questions' },
-    description: { ml: 'എല്ലാ വിഷയങ്ങളിൽ നിന്നുമുള്ള ചോദ്യങ്ങൾ.', en: 'Questions from all categories combined.' },
-    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-yellow-500" })
-  },
-  {
-    id: 'kerala_renaissance',
-    title: { ml: 'Kerala Renaissance (നവോത്ഥാനം)', en: 'Kerala Renaissance' },
-    description: { ml: 'കേരള നവോത്ഥാന ചരിത്രം.', en: 'History of Kerala Social Reformation.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
-  },
-  {
-    id: 'kerala_geography',
-    title: { ml: 'Kerala Geography (ഭൂമിശാസ്ത്രം)', en: 'Kerala Geography' },
-    description: { ml: 'കേരളത്തിന്റെ ഭൂപ്രകൃതി.', en: 'Geographical features of Kerala.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-green-500" })
-  },
-  {
-    id: 'indian_constitution',
-    title: { ml: 'Indian Constitution (ഭരണഘടന)', en: 'Indian Constitution' },
-    description: { ml: 'ഇന്ത്യൻ ഭരണഘടനയും നിയമങ്ങളും.', en: 'Constitution of India and related laws.' },
-    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-blue-500" })
-  },
-  {
-    id: 'indian_history',
-    title: { ml: 'Indian History (ചരിത്രം)', en: 'Indian History' },
-    description: { ml: 'ഇന്ത്യയുടെ പ്രാചീന - ആധുനിക ചരിത്രം.', en: 'Ancient, Medieval and Modern Indian History.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-orange-500" })
-  },
-  {
-    id: 'science',
-    title: { ml: 'Science (ശാസ്ത്രം)', en: 'Science' },
-    description: { ml: 'ഭൗതികശാസ്ത്രം, രസതന്ത്രം, ജീവശാസ്ത്രം.', en: 'Physics, Chemistry and Biology basics.' },
-    icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-purple-500" })
-  },
-  {
-    id: 'english',
-    title: { ml: 'English (ഇംഗ്ലീഷ്)', en: 'English Grammar' },
-    description: { ml: 'ഇംഗ്ലീഷ് ഗ്രാമറും പദസമ്പത്തും.', en: 'Grammar, Vocabulary and Usage.' },
-    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-indigo-400" })
-  },
-  {
-    id: 'malayalam',
-    title: { ml: 'Malayalam (മലയാളം)', en: 'Malayalam' },
-    description: { ml: 'മലയാള വ്യാകരണം, സാഹിത്യം.', en: 'Malayalam Grammar and Literature.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-red-400" })
-  },
-  {
-    id: 'aptitude_reasoning',
-    title: { ml: 'Aptitude & Reasoning (ഗണിതം)', en: 'Aptitude & Reasoning' },
-    description: { ml: 'ഗണിതവും ചിന്താശേഷിയും.', en: 'Mental Ability and Mathematics.' },
-    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-yellow-600" })
-  },
-  {
-    id: 'current_affairs',
-    title: { ml: 'Current Affairs (ആനുകാലികം)', en: 'Current Affairs' },
-    description: { ml: 'ഏറ്റവും പുതിയ വാർത്തകൾ.', en: 'Latest news and updates.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-6 w-6 text-teal-500" })
-  }
-];
-
+// Added LDC_EXAM_CONTENT to fix build error in App.tsx
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'pt1', title: 'History (ചരിത്രം)', questions: 20, duration: 15 },
-    { id: 'pt2', title: 'Geography (ഭൂമിശാസ്ത്രം)', questions: 20, duration: 15 },
-    { id: 'pt3', title: 'Malayalam (മലയാളം)', questions: 10, duration: 10 },
-    { id: 'pt4', title: 'English (ഇംഗ്ലീഷ്)', questions: 10, duration: 10 }
+    { id: 'pt1', title: 'General Knowledge', questions: 50, duration: 45 },
+    { id: 'pt2', title: 'Mental Ability', questions: 20, duration: 20 },
+    { id: 'pt3', title: 'General English', questions: 20, duration: 15 },
+    { id: 'pt4', title: 'Regional Language', questions: 10, duration: 10 },
   ],
-  studyNotes: [{ id: 'sn1', title: 'Kerala Renaissance' }],
-  previousPapers: [{ id: 'pp1', title: 'LDC 2021 Question Paper' }]
+  studyNotes: [
+    { id: 'sn1', title: 'Kerala History' },
+    { id: 'sn2', title: 'Indian Constitution' },
+    { id: 'sn3', title: 'General Science' },
+  ],
+  previousPapers: [
+    { id: 'pp1', title: 'LDC 2021 Previous Question Paper' },
+    { id: 'pp2', title: 'LGS 2021 Previous Question Paper' },
+  ]
 };
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
@@ -214,3 +180,99 @@ export const NAV_STRUCTURE: NavLink[] = [
   },
   { nameKey: 'nav.bookstore', target: 'bookstore' }
 ];
+
+export const QUIZ_CATEGORIES: QuizCategory[] = [
+  {
+    id: 'mixed',
+    title: { ml: 'Mixed (എല്ലാം കലർന്നവ)', en: 'Mixed Questions' },
+    description: { ml: 'എല്ലാ വിഷയങ്ങളിൽ നിന്നുമുള്ള ചോദ്യങ്ങൾ.', en: 'Questions from all categories combined.' },
+    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-yellow-500" })
+  },
+  {
+    id: 'kerala_renaissance',
+    title: { ml: 'Kerala Renaissance', en: 'Kerala Renaissance' },
+    description: { ml: 'കേരള നവോത്ഥാനം.', en: 'Social Reformation in Kerala.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
+  },
+  {
+    id: 'kerala_geography',
+    title: { ml: 'Kerala Geography', en: 'Kerala Geography' },
+    description: { ml: 'കേരള ഭൂമിശാസ്ത്രം.', en: 'Geography of Kerala.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-green-500" })
+  },
+  {
+    id: 'indian_constitution',
+    title: { ml: 'Indian Constitution', en: 'Indian Constitution' },
+    description: { ml: 'ഇന്ത്യൻ ഭരണഘടന.', en: 'Constitution of India.' },
+    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-blue-500" })
+  },
+  {
+    id: 'indian_history',
+    title: { ml: 'Indian History', en: 'Indian History' },
+    description: { ml: 'ഇന്ത്യൻ ചരിത്രം.', en: 'History of India.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-orange-500" })
+  },
+  {
+    id: 'economy',
+    title: { ml: 'Economy', en: 'Economy' },
+    description: { ml: 'സാമ്പത്തിക ശാസ്ത്രം.', en: 'Indian Economy basics.' },
+    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-teal-500" })
+  },
+  {
+    id: 'kerala_history',
+    title: { ml: 'Kerala History', en: 'Kerala History' },
+    description: { ml: 'കേരള ചരിത്രം.', en: 'History of Kerala.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-red-500" })
+  },
+  {
+    id: 'kerala_culture',
+    title: { ml: 'Kerala Culture', en: 'Kerala Culture' },
+    description: { ml: 'കേരള സംസ്കാരം.', en: 'Culture and heritage of Kerala.' },
+    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-pink-500" })
+  },
+  {
+    id: 'indian_geography',
+    title: { ml: 'Indian Geography', en: 'Indian Geography' },
+    description: { ml: 'ഇന്ത്യൻ ഭൂമിശാസ്ത്രം.', en: 'Geography of India.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-cyan-500" })
+  },
+  {
+    id: 'science',
+    title: { ml: 'Science', en: 'Science' },
+    description: { ml: 'ശാസ്ത്രം.', en: 'Physics, Chemistry, Biology.' },
+    icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-purple-500" })
+  },
+  {
+    id: 'current_affairs_cat',
+    title: { ml: 'Current Affairs', en: 'Current Affairs' },
+    description: { ml: 'ആനുകാലികം.', en: 'Latest events and news.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-6 w-6 text-teal-600" })
+  },
+  {
+    id: 'aptitude_reasoning',
+    title: { ml: 'Aptitude & Reasoning', en: 'Aptitude & Reasoning' },
+    description: { ml: 'ഗണിതവും ചിന്താശേഷിയും.', en: 'Mathematics and logical reasoning.' },
+    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-amber-500" })
+  },
+  {
+    id: 'english_malayalam',
+    title: { ml: 'English & Malayalam', en: 'Languages' },
+    description: { ml: 'ഭാഷാ പഠനം.', en: 'English and Malayalam grammar.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-indigo-400" })
+  }
+];
+
+export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
+  {
+    id: 'mt_mixed_01',
+    examId: 'ldc_lgs',
+    title: { ml: 'Full Mock Test (Mixed)', en: 'Full Mock Test (Mixed)' },
+    description: { ml: 'എല്ലാ വിഷയങ്ങളും ഉൾപ്പെടുത്തിയ മാതൃകാ പരീക്ഷ.', en: 'Mock test covering all major subjects.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  }
+];
+
+export const MOCK_TESTS_DATA = LOCK_MOCK_TESTS_DATA;
