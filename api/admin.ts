@@ -1,6 +1,6 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
-import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
+import { runDailyUpdateScrapers, runBookScraper, generateCoverForBook } from "./_lib/scraper-service.js";
 import { readSheetData, clearAndWriteSheetData, appendSheetData, deleteRowById } from './_lib/sheets-service.js';
 
 declare var process: any;
@@ -15,7 +15,7 @@ function parseCsv(csv: string): any[][] {
         .map(line => line.trim())
         .filter(line => line.length > 0)
         .map(line => {
-            // Regex to match commas outside of quotes
+            // Match quoted fields or non-comma sequences
             const matches = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g);
             return matches ? matches.map(cell => cell.trim().replace(/^"(.*)"$/, '$1')) : [];
         });
@@ -86,22 +86,37 @@ export default async function handler(req: any, res: any) {
                     
                     let rows = parseCsv(data);
                     
-                    // Special processing for Bookstore to fix links
+                    // Special processing for Bookstore
                     if (sheet === 'Bookstore') {
-                        rows = rows.map(row => {
+                        // Limit batch size to 10 for AI cover generation during CSV update to avoid lambda timeouts
+                        const processedRows = [];
+                        for (const row of rows) {
                             if (row.length >= 5) {
+                                // 1. Fix Affiliate Link
                                 row[4] = fixAffiliateLink(row[4]);
+                                
+                                // 2. Check if image URL is missing or looks like a placeholder
+                                const title = row[1];
+                                const author = row[2];
+                                const currentImg = (row[3] || '').trim();
+                                
+                                if (!currentImg || currentImg === '' || currentImg.includes('via.placeholder.com')) {
+                                    // Generate AI cover on the fly
+                                    const aiCover = await generateCoverForBook(title, author);
+                                    if (aiCover) row[3] = aiCover;
+                                }
                             }
-                            return row;
-                        });
+                            processedRows.push(row);
+                        }
+                        rows = processedRows;
                     }
                     
                     if (mode === 'append') {
                         await appendSheetData(`${sheet}!A1`, rows);
-                        return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}.` });
+                        return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}. AI covers generated where missing.` });
                     } else {
                         await clearAndWriteSheetData(`${sheet}!A2:Z2000`, rows);
-                        return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows (replaced old data).` });
+                        return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows. AI covers generated where missing.` });
                     }
                 default:
                     return res.status(400).json({ message: 'Unknown action' });
