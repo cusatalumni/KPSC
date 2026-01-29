@@ -1,15 +1,36 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
-import { clearAndWriteSheetData, appendSheetData, deleteRowById } from './_lib/sheets-service.js';
+import { readSheetData, clearAndWriteSheetData, appendSheetData, deleteRowById } from './_lib/sheets-service.js';
 
 declare var process: any;
 
+const AFFILIATE_TAG = 'tag=malayalambooks-21';
+
+/**
+ * Enhanced CSV parser that handles quoted strings containing commas.
+ */
 function parseCsv(csv: string): any[][] {
     return csv.split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)
-        .map(line => line.split(',').map(cell => cell.trim().replace(/^"(.*)"$/, '$1')));
+        .map(line => {
+            // Regex to match commas outside of quotes
+            const matches = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g);
+            return matches ? matches.map(cell => cell.trim().replace(/^"(.*)"$/, '$1')) : [];
+        });
+}
+
+/**
+ * Ensures an Amazon link has the affiliate tag.
+ */
+function fixAffiliateLink(url: string): string {
+    if (!url || typeof url !== 'string') return url;
+    const trimmed = url.trim();
+    if (trimmed.includes('amazon.in') && !trimmed.includes(AFFILIATE_TAG)) {
+        return trimmed + (trimmed.includes('?') ? '&' : '?') + AFFILIATE_TAG;
+    }
+    return trimmed;
 }
 
 export default async function handler(req: any, res: any) {
@@ -49,16 +70,36 @@ export default async function handler(req: any, res: any) {
                     if (!sheet || !id) return res.status(400).json({ message: 'Missing sheet or id' });
                     await deleteRowById(sheet, id);
                     return res.status(200).json({ message: 'Row deleted successfully.' });
+                case 'fix-all-affiliates':
+                    // Read all books, fix links, and write back
+                    const currentBooks = await readSheetData('Bookstore!A2:E');
+                    const fixedBooks = currentBooks.map(row => {
+                        if (row.length >= 5) {
+                            row[4] = fixAffiliateLink(row[4]);
+                        }
+                        return row;
+                    });
+                    await clearAndWriteSheetData('Bookstore!A2:E', fixedBooks);
+                    return res.status(200).json({ message: `Successfully updated affiliate links for ${fixedBooks.length} books.` });
                 case 'csv-update':
                     if (!sheet || !data) return res.status(400).json({ message: 'Missing params' });
-                    const rows = parseCsv(data);
+                    
+                    let rows = parseCsv(data);
+                    
+                    // Special processing for Bookstore to fix links
+                    if (sheet === 'Bookstore') {
+                        rows = rows.map(row => {
+                            if (row.length >= 5) {
+                                row[4] = fixAffiliateLink(row[4]);
+                            }
+                            return row;
+                        });
+                    }
                     
                     if (mode === 'append') {
-                        // For append, we just need the sheet name or A1
                         await appendSheetData(`${sheet}!A1`, rows);
                         return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}.` });
                     } else {
-                        // For replace, we define a large range to clear
                         await clearAndWriteSheetData(`${sheet}!A2:Z2000`, rows);
                         return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows (replaced old data).` });
                     }
