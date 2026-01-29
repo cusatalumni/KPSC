@@ -24,13 +24,12 @@ import AdminPage from './components/pages/AdminPage';
 import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import SitemapPage from './components/pages/SitemapPage';
 import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, PracticeTest } from './types';
-import { LDC_EXAM_CONTENT, EXAMS_DATA } from './constants'; 
+import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
 import type { Page } from './types';
 
 const App: React.FC = () => {
-  // Routing State derived from Hash
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [adminTab, setAdminTab] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
@@ -43,7 +42,6 @@ const App: React.FC = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { language } = useTranslation();
 
-  // Sync state with URL Hash
   const syncStateFromHash = useCallback(() => {
     const hash = window.location.hash.replace('#', '');
     if (!hash) {
@@ -65,7 +63,6 @@ const App: React.FC = () => {
 
     const targetPage = validPages.includes(page) ? page : 'dashboard';
     
-    // Reset or Set selective states based on URL
     if (targetPage === 'exam_details' && id) {
         const exam = EXAMS_DATA.find(e => e.id === id);
         if (exam) setSelectedExam(exam);
@@ -80,7 +77,6 @@ const App: React.FC = () => {
     }
 
     if (targetPage === 'admin_panel') {
-        // id here refers to the tab name, e.g., admin_panel/bookstore
         setAdminTab(id || 'dashboard');
     } else {
         setAdminTab(null);
@@ -205,9 +201,13 @@ const App: React.FC = () => {
                 />;
       case 'exam_details':
         if (!selectedExam) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
+        
+         // Specific content based on ID
+         const examContent = EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT;
+
          return <ExamPage 
             exam={selectedExam} 
-            content={LDC_EXAM_CONTENT}
+            content={examContent}
             onBack={() => handleNavigate('dashboard')}
             onStartTest={handleStartPracticeTest}
             onStartStudy={handleStartStudyMaterial}
