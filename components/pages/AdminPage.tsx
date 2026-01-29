@@ -3,18 +3,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, fixMissingCovers, syncCsvData, getBooks, deleteBook, updateBook } from '../../services/pscDataService';
+import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, syncCsvData, getBooks, deleteBook, updateBook } from '../../services/pscDataService';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { XCircleIcon } from '../icons/XCircleIcon';
 import { ClipboardListIcon } from '../icons/ClipboardListIcon';
 import { MegaphoneIcon } from '../icons/MegaphoneIcon';
-import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { PlusIcon } from '../icons/PlusIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { RssIcon } from '../icons/RssIcon';
-import { SparklesIcon } from '../icons/SparklesIcon';
 import BookCover from '../BookCover';
 import type { Book } from '../../types';
 
@@ -94,42 +92,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
         }
     };
-
-    const handleFixMissingCovers = async () => {
-        if (!confirm("This will scan existing books and generate AI covers for those missing images in the sheet. This may take a minute. Continue?")) return;
-        setStatus({ loading: true, result: null });
-        try {
-            const token = await getToken();
-            const res = await fixMissingCovers(token);
-            setStatus({ 
-                loading: false, 
-                result: { type: 'success', message: res.message }
-            });
-            fetchCurrentBooks();
-        } catch (error: any) {
-            setStatus({ loading: false, result: { type: 'error', message: error.message }});
-        }
-    };
-
-    const handleRegenerateCover = async (book: Book) => {
-        if (!confirm(`Generate a new AI cover for "${book.title}"?`)) return;
-        setStatus({ loading: true, result: null });
-        try {
-            const token = await getToken();
-            await updateBook({
-                id: book.id,
-                title: book.title,
-                author: book.author,
-                imageUrl: '', 
-                amazonLink: book.amazonLink
-            }, token);
-            
-            setStatus({ loading: false, result: { type: 'success', message: 'New cover generated and saved to sheet!' }});
-            fetchCurrentBooks();
-        } catch (error: any) {
-            setStatus({ loading: false, result: { type: 'error', message: error.message }});
-        }
-    }
 
     const handleQuickAddBook = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -293,7 +255,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                             <input type="text" value={quickBook.author} onChange={e => setQuickBook({...quickBook, author: e.target.value})} placeholder="Lakshya Publications" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Image URL (Leave empty to use dynamic cover)</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Image URL (Optional)</label>
                                             <input type="text" value={quickBook.imageUrl} onChange={e => setQuickBook({...quickBook, imageUrl: e.target.value})} placeholder="Paste image URL or leave empty" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
                                         </div>
                                         <div>
@@ -336,19 +298,11 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                 <h3 className="text-3xl font-black text-slate-800">Manage Existing Books</h3>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <button 
-                                        onClick={handleFixMissingCovers}
-                                        disabled={status.loading}
-                                        className="flex items-center space-x-2 bg-teal-50 text-teal-700 font-black px-5 py-2.5 rounded-xl hover:bg-teal-100 transition shadow-sm disabled:opacity-50"
-                                    >
-                                        <SparklesIcon className="h-4 w-4" />
-                                        <span>GENERATE MISSING AI COVERS</span>
-                                    </button>
-                                    <button 
                                         onClick={handleFixAffiliates}
                                         disabled={status.loading}
                                         className="flex items-center space-x-2 bg-indigo-50 text-indigo-700 font-black px-5 py-2.5 rounded-xl hover:bg-indigo-100 transition shadow-sm disabled:opacity-50"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                                         <span>FIX AFFILIATE LINKS</span>
                                     </button>
                                     <button onClick={fetchCurrentBooks} className="bg-slate-100 text-slate-700 font-bold px-5 py-2.5 rounded-xl hover:bg-slate-200 transition">Refresh List</button>
@@ -394,14 +348,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center justify-center space-x-2">
-                                                                <button 
-                                                                    onClick={() => handleRegenerateCover(book)}
-                                                                    className="p-2.5 bg-teal-50 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all shadow-sm"
-                                                                    title="Try AI Generation"
-                                                                    disabled={status.loading}
-                                                                >
-                                                                    <SparklesIcon className="h-5 w-5" />
-                                                                </button>
                                                                 <button 
                                                                     onClick={() => handleEditClick(book)}
                                                                     className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
