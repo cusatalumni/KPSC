@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-import { triggerDailyScraper, triggerBookScraper, syncCsvData, getBooks, deleteBook } from '../../services/pscDataService';
+import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, syncCsvData, getBooks, deleteBook } from '../../services/pscDataService';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { XCircleIcon } from '../icons/XCircleIcon';
@@ -14,6 +14,7 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { RssIcon } from '../icons/RssIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
 import type { Book } from '../../types';
 
 interface PageProps { 
@@ -77,6 +78,22 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         }
     };
 
+    const handleFixAffiliates = async () => {
+        if (!confirm("This will scan all books in the sheet and add affiliate tags to missing links. Continue?")) return;
+        setStatus({ loading: true, result: null });
+        try {
+            const token = await getToken();
+            const res = await fixAllAffiliates(token);
+            setStatus({ 
+                loading: false, 
+                result: { type: 'success', message: res.message }
+            });
+            fetchCurrentBooks();
+        } catch (error: any) {
+            setStatus({ loading: false, result: { type: 'error', message: error.message }});
+        }
+    };
+
     const handleQuickAddBook = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!quickBook.title || !quickBook.link) return;
@@ -84,15 +101,10 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         setStatus({ loading: true, result: null });
         try {
             const token = await getToken();
-            let finalLink = quickBook.link.trim();
-            const tag = 'tag=malayalambooks-21';
-            if (finalLink.includes('amazon.in') && !finalLink.includes(tag)) {
-                finalLink += (finalLink.includes('?') ? '&' : '?') + tag;
-            }
-            
             const bookId = quickBook.id || `book_${Date.now()}`;
-            const csvLine = `${bookId}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${finalLink}`;
+            const csvLine = `${bookId}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${quickBook.link}`;
             
+            // Note: syncCsvData already fixes the affiliate link in the backend
             await syncCsvData('Bookstore', csvLine, token, true);
             
             setStatus({ loading: false, result: { type: 'success', message: quickBook.id ? 'Book updated!' : 'Book added!' }});
@@ -170,11 +182,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                     <div>
                         <h1 className="text-4xl font-black tracking-tight">Admin Console</h1>
                         <p className="text-indigo-300 font-bold opacity-80 uppercase tracking-widest text-[10px] mt-1">Data & Content Management System</p>
-                    </div>
-                </div>
-                <div className="flex flex-col items-end">
-                    <div className="bg-green-500/20 text-green-400 border border-green-500/30 px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest">
-                        Status: Secure Connection
                     </div>
                 </div>
             </header>
@@ -280,9 +287,19 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
 
                         {/* Existing Books Editable Table */}
                         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
-                            <div className="flex items-center justify-between mb-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                 <h3 className="text-3xl font-black text-slate-800">Manage Existing Books</h3>
-                                <button onClick={fetchCurrentBooks} className="text-indigo-600 font-bold hover:underline">Refresh List</button>
+                                <div className="flex items-center space-x-3">
+                                    <button 
+                                        onClick={handleFixAffiliates}
+                                        disabled={status.loading}
+                                        className="flex items-center space-x-2 bg-indigo-50 text-indigo-700 font-black px-5 py-2.5 rounded-xl hover:bg-indigo-100 transition shadow-sm disabled:opacity-50"
+                                    >
+                                        <SparklesIcon className="h-4 w-4" />
+                                        <span>FIX ALL AFFILIATE LINKS</span>
+                                    </button>
+                                    <button onClick={fetchCurrentBooks} className="bg-slate-100 text-slate-700 font-bold px-5 py-2.5 rounded-xl hover:bg-slate-200 transition">Refresh List</button>
+                                </div>
                             </div>
 
                             {loadingBooks ? (
