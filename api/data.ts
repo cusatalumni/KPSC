@@ -55,34 +55,6 @@ export default async function handler(req: any, res: any) {
                 await findAndUpsertRow('StudyMaterialsCache', 0, topic as string, [topic, notes, new Date().toISOString()]);
                 return res.status(200).json({ notes });
 
-            case 'generate-cover':
-                if (!title || !author) return res.status(400).json({ error: 'Meta required' });
-                const imgResponse = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-image',
-                    contents: {
-                        parts: [{ text: `A clean, professional, minimalistic academic book cover for a Kerala PSC guide titled "${title}" by author "${author}". Bold typography, deep indigo and gold professional colors, high resolution graphic design style, no realistic human faces, educational theme.` }]
-                    },
-                    config: {
-                        imageConfig: {
-                            aspectRatio: "3:4"
-                        }
-                    }
-                });
-
-                let base64Image = "";
-                for (const part of imgResponse.candidates[0].content.parts) {
-                    if (part.inlineData) {
-                        base64Image = part.inlineData.data;
-                        break;
-                    }
-                }
-
-                if (!base64Image) {
-                    throw new Error("No image was returned from the generative model.");
-                }
-                
-                return res.status(200).json({ imageBase64: base64Image });
-
             default:
                 return res.status(400).json({ error: 'Invalid type' });
         }
