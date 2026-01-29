@@ -1,7 +1,7 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { runDailyUpdateScrapers, runBookScraper, generateCoverForBook } from "./_lib/scraper-service.js";
-import { readSheetData, clearAndWriteSheetData, appendSheetData, deleteRowById } from './_lib/sheets-service.js';
+import { readSheetData, clearAndWriteSheetData, appendSheetData, deleteRowById, findAndUpsertRow } from './_lib/sheets-service.js';
 
 declare var process: any;
 
@@ -15,7 +15,6 @@ function parseCsv(csv: string): any[][] {
         .map(line => line.trim())
         .filter(line => line.length > 0)
         .map(line => {
-            // Match quoted fields or non-comma sequences
             const matches = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g);
             return matches ? matches.map(cell => cell.trim().replace(/^"(.*)"$/, '$1')) : [];
         });
@@ -56,7 +55,7 @@ export default async function handler(req: any, res: any) {
             return res.status(401).json({ message: error.message || 'Unauthorized' });
         }
 
-        const { action, sheet, data, mode, id } = req.body;
+        const { action, sheet, data, mode, id, bookData } = req.body;
 
         try {
             switch (action) {
@@ -70,6 +69,26 @@ export default async function handler(req: any, res: any) {
                     if (!sheet || !id) return res.status(400).json({ message: 'Missing sheet or id' });
                     await deleteRowById(sheet, id);
                     return res.status(200).json({ message: 'Row deleted successfully.' });
+                case 'update-book':
+                    if (!bookData || !bookData.id) return res.status(400).json({ message: 'Missing book data' });
+                    
+                    let finalImg = (bookData.imageUrl || '').trim();
+                    // If image is missing, generate one
+                    if (!finalImg || finalImg === '' || finalImg.includes('via.placeholder.com')) {
+                        finalImg = await generateCoverForBook(bookData.title, bookData.author);
+                    }
+                    
+                    const rowToUpdate = [
+                        bookData.id,
+                        bookData.title,
+                        bookData.author,
+                        finalImg,
+                        fixAffiliateLink(bookData.amazonLink)
+                    ];
+                    
+                    await findAndUpsertRow('Bookstore', 0, bookData.id, rowToUpdate);
+                    return res.status(200).json({ message: 'Book updated successfully.', book: rowToUpdate });
+
                 case 'fix-all-affiliates':
                     const currentBooksAff = await readSheetData('Bookstore!A2:E');
                     const fixedBooksAff = currentBooksAff.map(row => {
@@ -87,13 +106,13 @@ export default async function handler(req: any, res: any) {
                     const fixedBooksCover = [];
                     
                     for (const row of currentBooksCover) {
-                        if (row.length >= 5) {
+                        if (row.length >= 2) {
                             const title = row[1];
-                            const author = row[2];
+                            const author = row[2] || 'Unknown';
                             const currentImg = (row[3] || '').trim();
                             
-                            // Check if image is missing or a generic placeholder
-                            if (!currentImg || currentImg === '' || currentImg.includes('via.placeholder.com')) {
+                            // More robust check for missing images in the sheet
+                            if (!currentImg || currentImg === '' || currentImg === 'undefined' || currentImg.includes('via.placeholder.com')) {
                                 try {
                                     const aiCover = await generateCoverForBook(title, author);
                                     if (aiCover) {
@@ -109,7 +128,7 @@ export default async function handler(req: any, res: any) {
                     }
                     
                     await clearAndWriteSheetData('Bookstore!A2:E', fixedBooksCover);
-                    return res.status(200).json({ message: `Successfully generated ${fixCount} missing AI covers.` });
+                    return res.status(200).json({ message: `Successfully scanned and fixed ${fixCount} missing covers.` });
 
                 case 'csv-update':
                     if (!sheet || !data) return res.status(400).json({ message: 'Missing params' });
@@ -119,15 +138,24 @@ export default async function handler(req: any, res: any) {
                     if (sheet === 'Bookstore') {
                         const processedRows = [];
                         for (const row of rows) {
-                            if (row.length >= 5) {
-                                row[4] = fixAffiliateLink(row[4]);
+                            if (row.length >= 2) {
+                                if (row.length >= 5) row[4] = fixAffiliateLink(row[4]);
+                                
                                 const title = row[1];
-                                const author = row[2];
+                                const author = row[2] || 'Unknown';
                                 const currentImg = (row[3] || '').trim();
                                 
                                 if (!currentImg || currentImg === '' || currentImg.includes('via.placeholder.com')) {
                                     const aiCover = await generateCoverForBook(title, author);
-                                    if (aiCover) row[3] = aiCover;
+                                    if (aiCover) {
+                                        if (row.length < 4) {
+                                            // Ensure row has enough length
+                                            while(row.length < 4) row.push("");
+                                            row[3] = aiCover;
+                                        } else {
+                                            row[3] = aiCover;
+                                        }
+                                    }
                                 }
                             }
                             processedRows.push(row);
@@ -137,10 +165,10 @@ export default async function handler(req: any, res: any) {
                     
                     if (mode === 'append') {
                         await appendSheetData(`${sheet}!A1`, rows);
-                        return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}. AI covers generated where missing.` });
+                        return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}.` });
                     } else {
                         await clearAndWriteSheetData(`${sheet}!A2:Z2000`, rows);
-                        return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows. AI covers generated where missing.` });
+                        return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows.` });
                     }
                 default:
                     return res.status(400).json({ message: 'Unknown action' });
