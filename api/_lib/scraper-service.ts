@@ -17,7 +17,7 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
-async function generateCoverForBook(title: string, author: string): Promise<string> {
+export async function generateCoverForBook(title: string, author: string): Promise<string> {
     try {
         const imgResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
@@ -49,7 +49,7 @@ async function scrapeKpscNotifications() {
             responseSchema: {
                 type: Type.ARRAY,
                 items: {
-                    type: Type.OBJECT, properties: {
+                    type: Type.OBJECT properties: {
                         id: { type: Type.STRING }, title: { type: Type.STRING },
                         categoryNumber: { type: Type.STRING }, lastDate: { type: Type.STRING },
                         link: { type: Type.STRING },
@@ -69,8 +69,8 @@ async function scrapePscLiveUpdates() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY, items: {
-                    type: Type.OBJECT, properties: {
+                type: Type.ARRAY items: {
+                    type: Type.OBJECT properties: {
                         title: { type: Type.STRING }, url: { type: Type.STRING },
                         section: { type: Type.STRING }, published_date: { type: Type.STRING }
                     }, required: ["title", "url", "section", "published_date"]
@@ -89,8 +89,8 @@ async function scrapeCurrentAffairs() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY, items: {
-                    type: Type.OBJECT, properties: {
+                type: Type.ARRAY items: {
+                    type: Type.OBJECT properties: {
                         id: { type: Type.STRING }, title: { type: Type.STRING },
                         source: { type: Type.STRING }, date: { type: Type.STRING }
                     }, required: ["id", "title", "source", "date"]
@@ -109,8 +109,8 @@ async function scrapeGk() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY, items: {
-                    type: Type.OBJECT, properties: {
+                type: Type.ARRAY items: {
+                    type: Type.OBJECT properties: {
                         id: { type: Type.STRING }, fact: { type: Type.STRING },
                         category: { type: Type.STRING }
                     }, required: ["id", "fact", "category"]
@@ -133,8 +133,8 @@ async function generateNewQuestions() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY, items: {
-                    type: Type.OBJECT, properties: {
+                type: Type.ARRAY items: {
+                    type: Type.OBJECT properties: {
                         id: { type: Type.STRING }, topic: { type: Type.STRING },
                         question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } },
                         correctAnswerIndex: { type: Type.INTEGER }
@@ -197,7 +197,6 @@ export async function runDailyUpdateScrapers() {
     ];
 
     for (const task of tasks) {
-        // We no longer catch silently; errors will propagate to show in the UI
         const newData = await task.scraper();
         await clearAndWriteSheetData(task.range, newData);
     }
