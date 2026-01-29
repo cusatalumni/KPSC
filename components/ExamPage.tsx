@@ -31,52 +31,53 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest,
   };
   
   return (
-    <div className="animate-fade-in max-w-6xl mx-auto">
-      <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-8 group">
+    <div className="animate-fade-in max-w-6xl mx-auto pb-20">
+      <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-black hover:underline mb-10 group">
         <ChevronLeftIcon className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
         <span>ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക (Back to Dashboard)</span>
       </button>
 
-      <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 mb-10">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="flex items-start space-x-6">
-            <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 shadow-sm">
+      <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-slate-100 mb-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600 opacity-[0.03] rounded-full -mr-32 -mt-32"></div>
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 relative z-10">
+          <div className="flex items-start space-x-8">
+            <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-inner flex-shrink-0">
                 {exam.icon}
             </div>
             <div>
-              <h1 className="text-4xl font-black text-slate-800 tracking-tight">{exam.title.ml}</h1>
-              <p className="text-xl text-slate-500 font-medium">{exam.title.en}</p>
-              <div className="flex items-center space-x-3 mt-3">
-                <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase">{exam.category}</span>
-                <span className="bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1 rounded-full uppercase">{exam.level}</span>
+              <h1 className="text-4xl font-black text-slate-800 tracking-tight leading-tight mb-2">{exam.title.ml}</h1>
+              <p className="text-xl text-slate-400 font-bold uppercase tracking-widest text-xs">{exam.title.en}</p>
+              <div className="flex items-center space-x-4 mt-6">
+                <span className="bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-indigo-100 uppercase tracking-widest">{exam.category}</span>
+                <span className="bg-emerald-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-emerald-100 uppercase tracking-widest">{exam.level}</span>
               </div>
             </div>
           </div>
           <button 
             onClick={() => setIsConfigOpen(true)}
-            className="bg-indigo-600 text-white font-black px-10 py-4 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transform hover:scale-105 transition-all"
+            className="btn-vibrant-indigo text-white font-black px-12 py-5 rounded-2xl transition-all transform hover:scale-105 active:scale-95 text-lg"
           >
-            ഫുൾ മോക്ക് ടെസ്റ്റ് (Take Full Mock Test)
+            ഫുൾ മോക്ക് ടെസ്റ്റ് (Take Full Mock)
           </button>
         </header>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 space-y-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2 space-y-16">
           {/* Subject-Wise Modules */}
           <section>
-            <div className="flex items-center space-x-3 mb-6">
-              <ClipboardListIcon className="h-7 w-7 text-indigo-500" />
-              <h2 className="text-2xl font-bold text-slate-800">വിഷയങ്ങൾ തിരിച്ചുള്ള പരിശീലനം (Subject-wise Practice)</h2>
+            <div className="flex items-center space-x-4 mb-8 border-b border-slate-100 pb-4">
+              <ClipboardListIcon className="h-8 w-8 text-indigo-500" />
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">വിഷയങ്ങൾ തിരിച്ചുള്ള പരിശീലനം</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {content.practiceTests.map(test => (
-                <div key={test.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center group hover:border-indigo-300 transition-colors">
+                <div key={test.id} className="bg-white p-6 rounded-3xl shadow-lg border border-slate-200 flex justify-between items-center group hover:border-indigo-400 transition-all hover:shadow-2xl">
                   <div>
-                    <h3 className="font-bold text-slate-800 text-lg">{test.title}</h3>
-                    <p className="text-sm text-slate-500">{test.questions} Qs • {test.duration} mins</p>
+                    <h3 className="font-black text-slate-800 text-lg leading-tight">{test.title}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{test.questions} Qs • {test.duration} mins</p>
                   </div>
-                  <button onClick={() => onStartTest(test, exam.title.ml)} className="bg-slate-100 text-slate-700 font-bold px-5 py-2.5 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                  <button onClick={() => onStartTest(test, exam.title.ml)} className="bg-slate-50 text-slate-400 font-black px-6 py-3 rounded-xl group-hover:btn-vibrant-indigo group-hover:text-white transition-all shadow-sm">
                     Start
                   </button>
                 </div>
@@ -84,41 +85,41 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, onBack, onStartTest,
             </div>
           </section>
 
-          <div className="my-8">
+          <div className="my-10">
             <AdsenseWidget />
           </div>
 
           <RecommendedBooks />
         </div>
 
-        <aside className="space-y-10">
+        <aside className="space-y-12">
            {/* Study Notes */}
-           <section className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                <DocumentTextIcon className="h-6 w-6 text-green-500 mr-3" />
-                പഠനക്കുറിപ്പുകൾ (Study Notes)
+           <section className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 glass-card">
+              <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center border-b border-slate-50 pb-4">
+                <DocumentTextIcon className="h-6 w-6 text-emerald-500 mr-4" />
+                പഠനക്കുറിപ്പുകൾ (Notes)
               </h2>
-               <div className="space-y-3">
+               <div className="space-y-4">
                  {content.studyNotes.map(note => (
-                   <button key={note.id} onClick={() => onStartStudy(note.title)} className="w-full flex items-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 group text-left transition-all">
-                      <span className="text-slate-700 font-bold group-hover:text-indigo-600">{note.title}</span>
-                      <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition-all">→</span>
+                   <button key={note.id} onClick={() => onStartStudy(note.title)} className="w-full flex items-center p-4 rounded-2xl hover:bg-emerald-50 border border-slate-50 group text-left transition-all">
+                      <span className="text-slate-700 font-bold group-hover:text-emerald-700">{note.title}</span>
+                      <span className="ml-auto text-emerald-500 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">→</span>
                    </button>
                  ))}
                </div>
             </section>
 
             {/* Previous Papers */}
-            <section className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                <DocumentDuplicateIcon className="h-6 w-6 text-yellow-500 mr-3" />
-                മുൻവർഷ ചോദ്യങ്ങൾ (Previous Papers)
+            <section className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 glass-card">
+              <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center border-b border-slate-50 pb-4">
+                <DocumentDuplicateIcon className="h-6 w-6 text-amber-500 mr-4" />
+                മുൻവർഷ ചോദ്യങ്ങൾ
               </h2>
-               <div className="space-y-3">
+               <div className="space-y-4">
                  {content.previousPapers.map(paper => (
-                   <button key={paper.id} onClick={() => onNavigate('previous_papers')} className="w-full flex items-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 group text-left transition-all">
-                      <span className="text-slate-700 font-bold group-hover:text-indigo-600">{paper.title}</span>
-                      <span className="ml-auto text-indigo-500 opacity-0 group-hover:opacity-100 transition-all">→</span>
+                   <button key={paper.id} onClick={() => onNavigate('previous_papers')} className="w-full flex items-center p-4 rounded-2xl hover:bg-amber-50 border border-slate-50 group text-left transition-all">
+                      <span className="text-slate-700 font-bold group-hover:text-amber-700">{paper.title}</span>
+                      <span className="ml-auto text-amber-500 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">→</span>
                    </button>
                  ))}
                </div>
