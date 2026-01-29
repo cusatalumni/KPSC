@@ -15,6 +15,7 @@ import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { RssIcon } from '../icons/RssIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
+import BookCover from '../BookCover';
 import type { Book } from '../../types';
 
 interface PageProps { 
@@ -115,7 +116,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         setStatus({ loading: true, result: null });
         try {
             const token = await getToken();
-            // Sending with empty imageUrl triggers the AI generation on the server
             await updateBook({
                 id: book.id,
                 title: book.title,
@@ -293,7 +293,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                             <input type="text" value={quickBook.author} onChange={e => setQuickBook({...quickBook, author: e.target.value})} placeholder="Lakshya Publications" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Image URL (Leave empty to regenerate AI cover)</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Image URL (Leave empty to use dynamic cover)</label>
                                             <input type="text" value={quickBook.imageUrl} onChange={e => setQuickBook({...quickBook, imageUrl: e.target.value})} placeholder="Paste image URL or leave empty" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
                                         </div>
                                         <div>
@@ -369,18 +369,23 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {existingBooks.map(book => {
-                                                const isMissingImage = !book.imageUrl || book.imageUrl === '' || book.imageUrl === 'undefined' || book.imageUrl.includes('via.placeholder.com');
+                                                const hasRealImage = book.imageUrl && book.imageUrl.startsWith('http');
                                                 return (
                                                     <tr key={book.id} className="hover:bg-slate-50/50 transition-colors group">
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center space-x-4">
-                                                                <div className={`h-14 w-11 rounded-md overflow-hidden flex-shrink-0 shadow-sm border ${isMissingImage ? 'bg-red-50 border-red-200' : 'bg-slate-100 border-slate-200'}`}>
-                                                                    <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-full w-full object-cover" />
+                                                                <div className={`h-14 w-11 rounded-md overflow-hidden flex-shrink-0 shadow-sm border border-slate-200`}>
+                                                                    <BookCover 
+                                                                        title={book.title} 
+                                                                        author={book.author} 
+                                                                        imageUrl={book.imageUrl} 
+                                                                        className="w-full h-full" 
+                                                                    />
                                                                 </div>
                                                                 <div>
                                                                     <p className="font-bold text-slate-800 leading-tight line-clamp-1">{book.title}</p>
                                                                     <p className="text-[10px] font-mono text-slate-400 mt-1">{book.id}</p>
-                                                                    {isMissingImage && <span className="text-[8px] font-black text-red-500 uppercase">Image Not In Sheet</span>}
+                                                                    {!hasRealImage && <span className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter">Using Dynamic Cover</span>}
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -392,7 +397,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                                 <button 
                                                                     onClick={() => handleRegenerateCover(book)}
                                                                     className="p-2.5 bg-teal-50 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all shadow-sm"
-                                                                    title="Regenerate AI Cover"
+                                                                    title="Try AI Generation"
                                                                     disabled={status.loading}
                                                                 >
                                                                     <SparklesIcon className="h-5 w-5" />

@@ -6,6 +6,7 @@ import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { StarIcon } from '../icons/StarIcon';
+import BookCover from '../BookCover';
 
 const BookCardSkeleton: React.FC = () => (
     <div className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col border border-slate-100 animate-pulse">
@@ -20,30 +21,19 @@ const BookCardSkeleton: React.FC = () => (
 
 const BookCard: React.FC<{ book: Book }> = ({ book }) => {
     const { t } = useTranslation();
-    const fallbackImage = 'https://via.placeholder.com/300x400.png?text=PSC+Guide';
-    
-    // Logic: Use stored imageUrl (which should be the AI generated Base64 from the DB)
-    const displayImage = book.imageUrl || fallbackImage;
 
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
             <div className="relative h-72 overflow-hidden bg-slate-50">
-                <img 
-                    src={displayImage} 
-                    alt={book.title} 
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
+                <BookCover 
+                    title={book.title} 
+                    author={book.author} 
+                    imageUrl={book.imageUrl} 
+                    className="h-full w-full" 
                 />
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm z-20">
                     <StarIcon className="h-4 w-4 text-orange-400" />
                 </div>
-                {/* Visual indicator that this is an AI cover if no real image was found */}
-                {!book.imageUrl.startsWith('http') && (
-                    <div className="absolute bottom-2 left-2 bg-indigo-600/80 backdrop-blur-sm px-2 py-0.5 rounded text-[8px] text-white font-black uppercase tracking-widest">
-                        AI Cover
-                    </div>
-                )}
             </div>
             <div className="p-5 flex flex-col flex-grow">
                 <div className="mb-2">
