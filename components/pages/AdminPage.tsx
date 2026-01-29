@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, syncCsvData, getBooks, deleteBook } from '../../services/pscDataService';
+import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, fixMissingCovers, syncCsvData, getBooks, deleteBook } from '../../services/pscDataService';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { XCircleIcon } from '../icons/XCircleIcon';
@@ -94,6 +94,22 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         }
     };
 
+    const handleFixMissingCovers = async () => {
+        if (!confirm("This will scan existing books and generate AI covers for those missing images. This may take a minute. Continue?")) return;
+        setStatus({ loading: true, result: null });
+        try {
+            const token = await getToken();
+            const res = await fixMissingCovers(token);
+            setStatus({ 
+                loading: false, 
+                result: { type: 'success', message: res.message }
+            });
+            fetchCurrentBooks();
+        } catch (error: any) {
+            setStatus({ loading: false, result: { type: 'error', message: error.message }});
+        }
+    };
+
     const handleQuickAddBook = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!quickBook.title || !quickBook.link) return;
@@ -104,7 +120,6 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
             const bookId = quickBook.id || `book_${Date.now()}`;
             const csvLine = `${bookId}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${quickBook.link}`;
             
-            // Note: syncCsvData already fixes the affiliate link in the backend
             await syncCsvData('Bookstore', csvLine, token, true);
             
             setStatus({ loading: false, result: { type: 'success', message: quickBook.id ? 'Book updated!' : 'Book added!' }});
@@ -289,14 +304,22 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                 <h3 className="text-3xl font-black text-slate-800">Manage Existing Books</h3>
-                                <div className="flex items-center space-x-3">
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <button 
+                                        onClick={handleFixMissingCovers}
+                                        disabled={status.loading}
+                                        className="flex items-center space-x-2 bg-teal-50 text-teal-700 font-black px-5 py-2.5 rounded-xl hover:bg-teal-100 transition shadow-sm disabled:opacity-50"
+                                    >
+                                        <SparklesIcon className="h-4 w-4" />
+                                        <span>GENERATE MISSING AI COVERS</span>
+                                    </button>
                                     <button 
                                         onClick={handleFixAffiliates}
                                         disabled={status.loading}
                                         className="flex items-center space-x-2 bg-indigo-50 text-indigo-700 font-black px-5 py-2.5 rounded-xl hover:bg-indigo-100 transition shadow-sm disabled:opacity-50"
                                     >
-                                        <SparklesIcon className="h-4 w-4" />
-                                        <span>FIX ALL AFFILIATE LINKS</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                        <span>FIX AFFILIATE LINKS</span>
                                     </button>
                                     <button onClick={fetchCurrentBooks} className="bg-slate-100 text-slate-700 font-bold px-5 py-2.5 rounded-xl hover:bg-slate-200 transition">Refresh List</button>
                                 </div>
@@ -319,7 +342,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                                 <tr key={book.id} className="hover:bg-slate-50/50 transition-colors group">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center space-x-4">
-                                                            <div className="h-14 w-11 bg-slate-100 rounded-md overflow-hidden flex-shrink-0 shadow-sm">
+                                                            <div className="h-14 w-11 bg-slate-100 rounded-md overflow-hidden flex-shrink-0 shadow-sm border border-slate-200">
                                                                 <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-full w-full object-cover" />
                                                             </div>
                                                             <div>
