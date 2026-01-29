@@ -6,6 +6,9 @@ import { StarIcon } from './components/icons/StarIcon';
 import { AcademicCapIcon } from './components/icons/AcademicCapIcon';
 import { ShieldCheckIcon } from './components/icons/ShieldCheckIcon';
 import { BeakerIcon } from './components/icons/BeakerIcon';
+import { GlobeAltIcon } from './components/icons/GlobeAltIcon';
+import { LightBulbIcon } from './components/icons/LightBulbIcon';
+import { ScaleIcon } from './components/icons/ScaleIcon';
 
 export const EXAMS_DATA: Exam[] = [
   {
@@ -25,42 +28,10 @@ export const EXAMS_DATA: Exam[] = [
     level: 'Preliminary'
   },
   {
-    id: 'plus_two_prelims',
-    title: { ml: 'Plus Two Prelims (പ്ലസ് ടു പ്രിലിംസ്)', en: 'Plus Two Prelims' },
-    description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Higher Secondary level examinations.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-400" }),
-    category: 'General',
-    level: 'Preliminary'
-  },
-  {
-    id: 'overseer_civil',
-    title: { ml: 'Overseer Civil (ഓവർസിയർ സിവിൽ)', en: 'Overseer Civil' },
-    description: { ml: 'എഞ്ചിനീയറിംഗ് വിഭാഗം സാങ്കേതിക പരീക്ഷകൾ.', en: 'Technical exams for Engineering wing.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-orange-500" }),
-    category: 'Technical',
-    level: 'Special'
-  },
-  {
-    id: 'staff_nurse',
-    title: { ml: 'Staff Nurse (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse' },
-    description: { ml: 'ഹെൽത്ത് സർവീസ് വിഭാഗം പരീക്ഷകൾ.', en: 'Health Service department exams.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-orange-600" }),
-    category: 'Technical',
-    level: 'Main'
-  },
-  {
     id: 'police_constable',
     title: { ml: 'Police Constable (പോലീസ് കോൺസ്റ്റബിൾ)', en: 'Police Constable' },
     description: { ml: 'യൂണിഫോം തസ്തികകളിലേക്കുള്ള പരീക്ഷകൾ.', en: 'Exams for uniform category posts.' },
     icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-red-600" }),
-    category: 'Special',
-    level: 'Preliminary'
-  },
-  {
-    id: 'fireman',
-    title: { ml: 'Fireman (ഫയർമാൻ)', en: 'Fireman' },
-    description: { ml: 'ഫയർ ആൻഡ് റെസ്ക്യൂ സർവീസ് പരീക്ഷകൾ.', en: 'Fire and Rescue service exams.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-red-500" }),
     category: 'Special',
     level: 'Preliminary'
   }
@@ -68,52 +39,32 @@ export const EXAMS_DATA: Exam[] = [
 
 export const MOCK_TESTS_DATA: MockTest[] = [
   {
-    id: 'mt_ldc_01',
+    id: 'mt_mixed_01',
     examId: 'ldc_lgs',
-    title: { ml: 'LDC Full Mock Test 01', en: 'LDC Full Mock Test 01' },
-    description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ എൽ.ഡി.സി മാതൃകാ പരീക്ഷ.', en: 'Full mock test with 100 questions for LDC.' },
+    title: { ml: 'Full Mock Test (Mixed)', en: 'Full Mock Test (Mixed)' },
+    description: { ml: 'എല്ലാ വിഷയങ്ങളും ഉൾപ്പെടുത്തിയ മാതൃകാ പരീക്ഷ.', en: 'Mock test covering all major subjects.' },
     questionsCount: 100,
     duration: 75,
     negativeMarking: 0.33,
     isPro: false
   },
   {
-    id: 'mt_degree_01',
+    id: 'mt_kerala_01',
+    examId: 'ldc_lgs',
+    title: { ml: 'Kerala History & Renaissance', en: 'Kerala History & Renaissance' },
+    description: { ml: 'കേരള ചരിത്രവും നവോത്ഥാനവും.', en: 'Focus on Kerala History and Renaissance.' },
+    questionsCount: 50,
+    duration: 40,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
+    id: 'mt_const_01',
     examId: 'degree_prelims',
-    title: { ml: 'Degree Prelims Mock 01', en: 'Degree Prelims Mock 01' },
-    description: { ml: 'ഡിഗ്രി ലെവൽ പ്രിലിംസ് മാതൃകാ പരീക്ഷ.', en: 'Complete mock test for Degree Level Prelims.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: true
-  },
-  {
-    id: 'mt_police_01',
-    examId: 'police_constable',
-    title: { ml: 'Police Constable Mock 01', en: 'Police Constable Mock 01' },
-    description: { ml: 'പോലീസ് കോൺസ്റ്റബിൾ മാതൃകാ പരീക്ഷ.', en: 'Targeted mock test for Police Constable aspirants.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_plus_two_01',
-    examId: 'plus_two_prelims',
-    title: { ml: 'Plus Two Prelims Mock 01', en: 'Plus Two Prelims Mock 01' },
-    description: { ml: 'ഹയർ സെക്കൻഡറി തലത്തിലുള്ള പരീക്ഷാ പരിശീലനം.', en: 'Mock test for 12th level preliminary exams.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_nurse_01',
-    examId: 'staff_nurse',
-    title: { ml: 'Staff Nurse Technical Mock 01', en: 'Staff Nurse Technical Mock 01' },
-    description: { ml: 'സ്റ്റാഫ് നഴ്സ് പരീക്ഷയ്ക്കുള്ള സ്പെഷ്യൽ മോക്ക് ടെസ്റ്റ്.', en: 'Technical subject focused mock test for Staff Nurse.' },
-    questionsCount: 100,
-    duration: 90,
+    title: { ml: 'Indian Constitution & Polity', en: 'Indian Constitution & Polity' },
+    description: { ml: 'ഭരണഘടനയും രാഷ്ട്രീയവും.', en: 'Comprehensive test on Constitution and Polity.' },
+    questionsCount: 50,
+    duration: 40,
     negativeMarking: 0.33,
     isPro: true
   }
@@ -121,25 +72,73 @@ export const MOCK_TESTS_DATA: MockTest[] = [
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
   {
-    id: 'gk',
-    title: { ml: 'General Knowledge (പൊതുവിജ്ഞാനം)', en: 'General Knowledge' },
-    description: { ml: 'ചരിത്രം, ഭൂമിശാസ്ത്രം, ഭരണഘടന.', en: 'History, Geography, Constitution.' },
+    id: 'mixed',
+    title: { ml: 'Mixed (എല്ലാം കലർന്നവ)', en: 'Mixed Questions' },
+    description: { ml: 'എല്ലാ വിഷയങ്ങളിൽ നിന്നുമുള്ള ചോദ്യങ്ങൾ.', en: 'Questions from all categories combined.' },
+    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-yellow-500" })
+  },
+  {
+    id: 'kerala_renaissance',
+    title: { ml: 'Kerala Renaissance (നവോത്ഥാനം)', en: 'Kerala Renaissance' },
+    description: { ml: 'കേരള നവോത്ഥാന ചരിത്രം.', en: 'History of Kerala Social Reformation.' },
     icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
   },
   {
-    id: 'maths',
-    title: { ml: 'Mathematics (ഗണിതം)', en: 'Mathematics' },
-    description: { ml: 'അടിസ്ഥാന ഗണിതം, റീസണിംഗ്.', en: 'Basic Arithmetic, Reasoning.' },
-    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-orange-500" })
+    id: 'kerala_geography',
+    title: { ml: 'Kerala Geography (ഭൂമിശാസ്ത്രം)', en: 'Kerala Geography' },
+    description: { ml: 'കേരളത്തിന്റെ ഭൂപ്രകൃതി.', en: 'Geographical features of Kerala.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-green-500" })
+  },
+  {
+    id: 'indian_constitution',
+    title: { ml: 'Indian Constitution (ഭരണഘടന)', en: 'Indian Constitution' },
+    description: { ml: 'ഇന്ത്യൻ ഭരണഘടനയും നിയമങ്ങളും.', en: 'Constitution of India and related laws.' },
+    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-blue-500" })
+  },
+  {
+    id: 'indian_history',
+    title: { ml: 'Indian History (ചരിത്രം)', en: 'Indian History' },
+    description: { ml: 'ഇന്ത്യയുടെ പ്രാചീന - ആധുനിക ചരിത്രം.', en: 'Ancient, Medieval and Modern Indian History.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-orange-500" })
+  },
+  {
+    id: 'science',
+    title: { ml: 'Science (ശാസ്ത്രം)', en: 'Science' },
+    description: { ml: 'ഭൗതികശാസ്ത്രം, രസതന്ത്രം, ജീവശാസ്ത്രം.', en: 'Physics, Chemistry and Biology basics.' },
+    icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-purple-500" })
+  },
+  {
+    id: 'english',
+    title: { ml: 'English (ഇംഗ്ലീഷ്)', en: 'English Grammar' },
+    description: { ml: 'ഇംഗ്ലീഷ് ഗ്രാമറും പദസമ്പത്തും.', en: 'Grammar, Vocabulary and Usage.' },
+    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-indigo-400" })
+  },
+  {
+    id: 'malayalam',
+    title: { ml: 'Malayalam (മലയാളം)', en: 'Malayalam' },
+    description: { ml: 'മലയാള വ്യാകരണം, സാഹിത്യം.', en: 'Malayalam Grammar and Literature.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-red-400" })
+  },
+  {
+    id: 'aptitude_reasoning',
+    title: { ml: 'Aptitude & Reasoning (ഗണിതം)', en: 'Aptitude & Reasoning' },
+    description: { ml: 'ഗണിതവും ചിന്താശേഷിയും.', en: 'Mental Ability and Mathematics.' },
+    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-yellow-600" })
+  },
+  {
+    id: 'current_affairs',
+    title: { ml: 'Current Affairs (ആനുകാലികം)', en: 'Current Affairs' },
+    description: { ml: 'ഏറ്റവും പുതിയ വാർത്തകൾ.', en: 'Latest news and updates.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-6 w-6 text-teal-500" })
   }
 ];
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'pt1', title: 'ചരിത്രം (History)', questions: 20, duration: 15 },
-    { id: 'pt2', title: 'ഭൂമിശാസ്ത്രം (Geography)', questions: 20, duration: 15 },
-    { id: 'pt3', title: 'മലയാളം (Malayalam)', questions: 10, duration: 10 },
-    { id: 'pt4', title: 'ഇംഗ്ലീഷ് (English)', questions: 10, duration: 10 }
+    { id: 'pt1', title: 'History (ചരിത്രം)', questions: 20, duration: 15 },
+    { id: 'pt2', title: 'Geography (ഭൂമിശാസ്ത്രം)', questions: 20, duration: 15 },
+    { id: 'pt3', title: 'Malayalam (മലയാളം)', questions: 10, duration: 10 },
+    { id: 'pt4', title: 'English (ഇംഗ്ലീഷ്)', questions: 10, duration: 10 }
   ],
   studyNotes: [{ id: 'sn1', title: 'Kerala Renaissance' }],
   previousPapers: [{ id: 'pp1', title: 'LDC 2021 Question Paper' }]
@@ -162,7 +161,7 @@ export const MOCK_GK: GkItem[] = [
 ];
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
-    { id: '1', question: 'Father of Kerala Renaissance?', options: ['Sree Narayana Guru', 'Ayyankali', 'Chattampi Swamikal', 'Kumaran Asan'], correctAnswerIndex: 0, topic: 'History', subject: 'GK', difficulty: 'PSC Level' },
+    { id: '1', question: 'Father of Kerala Renaissance?', options: ['Sree Narayana Guru', 'Ayyankali', 'Chattampi Swamikal', 'Kumaran Asan'], correctAnswerIndex: 0, topic: 'Kerala Renaissance', subject: 'GK', difficulty: 'PSC Level' },
 ];
 
 export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
@@ -175,58 +174,12 @@ export const STUDY_MATERIALS_DATA: StudyMaterial[] = [
 ];
 
 export const TESTIMONIALS_DATA: Testimonial[] = [
-  { 
-    id: '1', 
-    name: 'രാഹുൽ ആർ.', 
-    role: 'LDC 2021 ബാച്ച് വിജയി', 
-    avatarUrl: 'https://picsum.photos/seed/winner1/200', 
-    quote: 'ഈ പ്ലാറ്റ്‌ഫോം എന്റെ പഠനത്തെ വളരെ ലളിതമാക്കി. പ്രത്യേകിച്ച് ഡെയ്‌ലി അപ്‌ഡേറ്റുകൾ പരീക്ഷാ സമയത്ത് എന്നെ ഒരുപാട് സഹായിച്ചു.' 
-  },
-  { 
-    id: '2', 
-    name: 'അഞ്ജലി കൃഷ്ണ', 
-    role: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് റാങ്ക് ഹോൾഡർ', 
-    avatarUrl: 'https://picsum.photos/seed/winner2/200', 
-    quote: 'മോക്ക് ടെസ്റ്റുകൾ പരീക്ഷാ പേടി മാറ്റാൻ വളരെയധികം സഹായിച്ചു. കൃത്യമായ സമയക്രമീകരണത്തിൽ പരിശീലിക്കാൻ സാധിച്ചു.' 
-  },
-  { 
-    id: '3', 
-    name: 'ശ്രീജിത്ത് കെ.എസ്.', 
-    role: 'പോലീസ് കോൺസ്റ്റബിൾ റാങ്ക് ലിസ്റ്റ് (നമ്പർ 45)', 
-    avatarUrl: 'https://picsum.photos/seed/winner3/200', 
-    quote: 'PSC ഗുരു നൽകുന്ന പഠന സാമഗ്രികൾ വളരെ ലളിതവും കൃത്യവുമാണ്. ചുരുങ്ങിയ സമയം കൊണ്ട് കൂടുതൽ പഠിക്കാൻ കഴിഞ്ഞു.' 
-  },
-  { 
-    id: '4', 
-    name: 'മീര നായർ', 
-    role: 'LDC എറണാകുളം വിജയി', 
-    avatarUrl: 'https://picsum.photos/seed/winner4/200', 
-    quote: 'ആനുകാലിക സംഭവങ്ങൾ ദിവസവും അപ്ഡേറ്റ് ചെയ്യുന്നത് വലിയൊരു സഹായമായിരുന്നു. റാങ്ക് ലിസ്റ്റിൽ ഇടംപിടിക്കാൻ അത് ഉപകരിച്ചു.' 
-  },
-  { 
-    id: '5', 
-    name: 'വിവേക് വി.എസ്.', 
-    role: 'യൂണിവേഴ്സിറ്റി അസിസ്റ്റന്റ് ബാച്ച്', 
-    avatarUrl: 'https://picsum.photos/seed/winner5/200', 
-    quote: 'സൗജന്യമായി ഇത്രയും നല്ലൊരു പ്ലാറ്റ്‌ഫോം ലഭിക്കുന്നത് ഉദ്യോഗാർത്ഥികൾക്ക് വലിയൊരു അനുഗ്രഹമാണ്. നന്ദി PSC ഗുരു!' 
-  }
+  { id: '1', name: 'രാഹുൽ ആർ.', role: 'LDC 2021 ബാച്ച് വിജയി', avatarUrl: 'https://picsum.photos/seed/winner1/200', quote: 'ഈ പ്ലാറ്റ്‌ഫോം എന്റെ പഠനത്തെ വളരെ ലളിതമാക്കി. പ്രത്യേകിച്ച് ഡെയ്‌ലി അപ്‌ഡേറ്റുകൾ പരീക്ഷാ സമയത്ത് എന്നെ ഒരുപാട് സഹായിച്ചു.' },
+  { id: '2', name: 'അഞ്ജലി കൃഷ്ണ', role: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് റാങ്ക് ഹോൾഡർ', avatarUrl: 'https://picsum.photos/seed/winner2/200', quote: 'മോക്ക് ടെസ്റ്റുകൾ പരീക്ഷാ പേടി മാറ്റാൻ വളരെയധികം സഹായിച്ചു. കൃത്യമായ സമയക്രമീകരണത്തിൽ പരിശീലിക്കാൻ സാധിച്ചു.' }
 ];
 
 export const MOCK_BOOKS_DATA: Book[] = [
-  { 
-    id: 'b1', 
-    title: 'Kerala PSC LDC Rank File (Malayalam Edition)', 
-    author: 'Lakshya Publications', 
-    imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' 
-  },
-  { 
-    id: 'b2', 
-    title: 'PSC Bulletin Question Bank - 10,000 Questions', 
-    author: 'Talent Academy', 
-    imageUrl: 'https://m.media-amazon.com/images/I/61kM2a+zIHL._SY466_.jpg', 
-    amazonLink: 'https://www.amazon.in/dp/B0D5N4G8D9?tag=malayalambooks-21' 
-  }
+  { id: 'b1', title: 'Kerala PSC LDC Rank File (Malayalam Edition)', author: 'Lakshya Publications', imageUrl: 'https://m.media-amazon.com/images/I/81x1sVlXWJL._SY466_.jpg', amazonLink: 'https://www.amazon.in/dp/B0CYX5W3C3?tag=malayalambooks-21' }
 ];
 
 export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
