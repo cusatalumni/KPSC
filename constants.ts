@@ -12,11 +12,20 @@ import { ScaleIcon } from './components/icons/ScaleIcon';
 import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
+  // --- GENERAL EXAMS ---
   {
     id: 'ldc_lgs',
     title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
     description: { ml: 'പത്താം ക്ലാസ്സ് യോഗ്യതയുള്ള പ്രധാന പരീക്ഷകൾ.', en: 'Major exams for 10th level qualification.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
+    category: 'General',
+    level: 'Preliminary'
+  },
+  {
+    id: 'plus_two_prelims',
+    title: { ml: 'Plus Two Prelims (CPO / Excise)', en: 'Plus Two Level Prelims' },
+    description: { ml: 'സിവിൽ പോലീസ് ഓഫീസർ, എക്സൈസ് ഇൻസ്പെക്ടർ തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-indigo-600" }),
     category: 'General',
     level: 'Preliminary'
   },
@@ -28,6 +37,8 @@ export const EXAMS_DATA: Exam[] = [
     category: 'General',
     level: 'Preliminary'
   },
+
+  // --- TECHNICAL EXAMS ---
   {
     id: 'staff_nurse',
     title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
@@ -43,65 +54,94 @@ export const EXAMS_DATA: Exam[] = [
     icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-amber-500" }),
     category: 'Technical',
     level: 'Main'
+  },
+  {
+    id: 'overseer_gr3',
+    title: { ml: 'Overseer Grade II/III (ഓവർസിയർ)', en: 'Overseer Gr II/III' },
+    description: { ml: 'LSGD, PWD വകുപ്പുകളിലെ സിവിൽ എൻജിനീയറിങ് പരീക്ഷകൾ.', en: 'Civil Engineering exams for PWD & LSGD.' },
+    icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-amber-600" }),
+    category: 'Technical',
+    level: 'Main'
+  },
+
+  // --- SPECIAL EXAMS ---
+  {
+    id: 'uni_assistant',
+    title: { ml: 'University Assistant (യൂണിവേഴ്സിറ്റി അസിസ്റ്റന്റ്)', en: 'University Assistant' },
+    description: { ml: 'വിവിധ സർവകലാശാലകളിലെ അസിസ്റ്റന്റ് തസ്തികകൾ.', en: 'Assistant posts in various universities.' },
+    icon: React.createElement(ClipboardListIcon, { className: "h-8 w-8 text-rose-600" }),
+    category: 'Special',
+    level: 'Main'
+  },
+  {
+    id: 'lsgi_secretary',
+    title: { ml: 'LSGI Secretary (പഞ്ചായത്ത് സെക്രട്ടറി)', en: 'LSGI Secretary' },
+    description: { ml: 'തദ്ദേശ സ്വയംഭരണ വകുപ്പിലെ ഉന്നത തസ്തികകൾ.', en: 'High-level posts in Local Self Government.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-rose-500" }),
+    category: 'Special',
+    level: 'Main'
+  },
+  {
+    id: 'bevco_assistant',
+    title: { ml: 'BEVCO Assistant (ബിവറേജ് അസിസ്റ്റന്റ്)', en: 'BEVCO Assistant' },
+    description: { ml: 'ബിവറേജ് കോർപ്പറേഷനിലെ അസിസ്റ്റന്റ് പരീക്ഷകൾ.', en: 'Exams for Beverage Corporation Assistant.' },
+    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-rose-600" }),
+    category: 'Special',
+    level: 'Main'
   }
 ];
 
-// Content for LDC / LGS
+// Specific Content Definitions
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
     { id: 'ldc_pt1', title: 'General Knowledge', questions: 50, duration: 45 },
     { id: 'ldc_pt2', title: 'Mental Ability', questions: 20, duration: 20 },
     { id: 'ldc_pt3', title: 'General English', questions: 20, duration: 15 },
   ],
-  studyNotes: [
-    { id: 'ldc_sn1', title: 'Kerala History (കേരള ചരിത്രം)' },
-    { id: 'ldc_sn2', title: 'Indian Constitution (ഭരണഘടന)' },
-  ],
-  previousPapers: [
-    { id: 'ldc_pp1', title: 'LDC 2021 All Districts' },
-    { id: 'ldc_pp2', title: 'LGS 2021 Previous Paper' },
-  ]
+  studyNotes: [{ id: 'ldc_sn1', title: 'Kerala History' }, { id: 'ldc_sn2', title: 'Indian Constitution' }],
+  previousPapers: [{ id: 'ldc_pp1', title: 'LDC 2021 Previous Paper' }, { id: 'ldc_pp2', title: 'LGS 2021 Previous Paper' }]
 };
 
-// Content for Staff Nurse Gr II
 export const STAFF_NURSE_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'sn_pt1', title: 'Nursing Science (നഴ്സിംഗ് സയൻസ്)', questions: 60, duration: 50 },
+    { id: 'sn_pt1', title: 'Nursing Science', questions: 60, duration: 50 },
     { id: 'sn_pt2', title: 'Anatomy & Physiology', questions: 20, duration: 20 },
-    { id: 'sn_pt3', title: 'Community Health Nursing', questions: 20, duration: 20 },
   ],
-  studyNotes: [
-    { id: 'sn_sn1', title: 'Nursing Fundamentals (നഴ്സിംഗ് അടിസ്ഥാനങ്ങൾ)' },
-    { id: 'sn_sn2', title: 'Infection Control Protocols' },
-    { id: 'sn_sn3', title: 'Florence Nightingale History' },
-  ],
-  previousPapers: [
-    { id: 'sn_pp1', title: 'Staff Nurse Gr II 2023 Official Paper' },
-    { id: 'sn_pp2', title: 'Nursing Science 2021 Mains' },
-  ]
+  studyNotes: [{ id: 'sn_sn1', title: 'Nursing Fundamentals' }, { id: 'sn_sn2', title: 'Infection Control' }],
+  previousPapers: [{ id: 'sn_pp1', title: 'Staff Nurse 2023 Official Paper' }]
 };
 
-// Content for KSEB Sub Engineer
 export const KSEB_CONTENT: ExamPageContent = {
-  practiceTests: [
-    { id: 'ks_pt1', title: 'Electrical Engineering', questions: 80, duration: 60 },
-    { id: 'ks_pt2', title: 'Electronics & Circuits', questions: 20, duration: 15 },
-  ],
-  studyNotes: [
-    { id: 'ks_sn1', title: 'Power Systems Fundamentals' },
-    { id: 'ks_sn2', title: 'KSEB Safety Regulations' },
-  ],
-  previousPapers: [
-    { id: 'ks_pp1', title: 'Sub Engineer 2022 KSEB' },
-  ]
+  practiceTests: [{ id: 'ks_pt1', title: 'Electrical Engineering', questions: 80, duration: 60 }],
+  studyNotes: [{ id: 'ks_sn1', title: 'Power Systems' }],
+  previousPapers: [{ id: 'ks_pp1', title: 'Sub Engineer 2022 Paper' }]
 };
 
-// Mapping of Exam IDs to their specific content
+export const CPO_EXAM_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'cpo_pt1', title: 'Indian Geography', questions: 30, duration: 25 },
+    { id: 'cpo_pt2', title: 'Current Affairs', questions: 20, duration: 15 },
+  ],
+  studyNotes: [{ id: 'cpo_sn1', title: 'Police Department Facts' }],
+  previousPapers: [{ id: 'cpo_pp1', title: 'CPO 2022 Official Paper' }]
+};
+
+export const SPECIAL_EXAM_CONTENT: ExamPageContent = {
+  practiceTests: [{ id: 'sp_pt1', title: 'General Studies', questions: 50, duration: 45 }],
+  studyNotes: [{ id: 'sp_sn1', title: 'Administrative Rules' }],
+  previousPapers: [{ id: 'sp_pp1', title: 'University Assistant 2023 Paper' }]
+};
+
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
     'ldc_lgs': LDC_EXAM_CONTENT,
+    'plus_two_prelims': CPO_EXAM_CONTENT,
+    'degree_prelims': LDC_EXAM_CONTENT,
     'staff_nurse': STAFF_NURSE_CONTENT,
     'kseb_sub_eng': KSEB_CONTENT,
-    'degree_prelims': LDC_EXAM_CONTENT, // Fallback to LDC if specific not defined
+    'overseer_gr3': KSEB_CONTENT,
+    'uni_assistant': SPECIAL_EXAM_CONTENT,
+    'lsgi_secretary': SPECIAL_EXAM_CONTENT,
+    'bevco_assistant': SPECIAL_EXAM_CONTENT,
 };
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
