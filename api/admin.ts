@@ -18,10 +18,8 @@ export default async function handler(req: any, res: any) {
     const authHeader = req.headers.authorization;
     const cronSecret = process.env.CRON_SECRET;
 
-    // 1. Check if it's a Vercel Cron Job
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
         try {
-            console.log("Cron job triggered: Running daily scrapers...");
             await runDailyUpdateScrapers();
             return res.status(200).json({ message: 'Cron: Daily scraping successful.' });
         } catch (error: any) {
@@ -30,7 +28,6 @@ export default async function handler(req: any, res: any) {
         }
     }
 
-    // 2. If not a cron, verify as Admin via Clerk (Dashboard Actions)
     if (req.method === 'POST') {
         try {
             await verifyAdmin(req);
@@ -57,10 +54,12 @@ export default async function handler(req: any, res: any) {
                     const rows = parseCsv(data);
                     
                     if (mode === 'append') {
+                        // For append, we just need the sheet name or A1
                         await appendSheetData(`${sheet}!A1`, rows);
                         return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}.` });
                     } else {
-                        await clearAndWriteSheetData(`${sheet}!A2:Z`, rows);
+                        // For replace, we define a large range to clear
+                        await clearAndWriteSheetData(`${sheet}!A2:Z2000`, rows);
                         return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows (replaced old data).` });
                     }
                 default:
