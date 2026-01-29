@@ -12,7 +12,6 @@ import { ScaleIcon } from './components/icons/ScaleIcon';
 import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
-  // --- GENERAL EXAMS ---
   {
     id: 'ldc_lgs',
     title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
@@ -37,8 +36,6 @@ export const EXAMS_DATA: Exam[] = [
     category: 'General',
     level: 'Preliminary'
   },
-
-  // --- TECHNICAL EXAMS ---
   {
     id: 'staff_nurse',
     title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
@@ -54,95 +51,129 @@ export const EXAMS_DATA: Exam[] = [
     icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-amber-500" }),
     category: 'Technical',
     level: 'Main'
-  },
-  {
-    id: 'overseer_gr3',
-    title: { ml: 'Overseer Grade II/III (ഓവർസിയർ)', en: 'Overseer Gr II/III' },
-    description: { ml: 'LSGD, PWD വകുപ്പുകളിലെ സിവിൽ എൻജിനീയറിങ് പരീക്ഷകൾ.', en: 'Civil Engineering exams for PWD & LSGD.' },
-    icon: React.createElement(ScaleIcon, { className: "h-8 w-8 text-amber-600" }),
-    category: 'Technical',
-    level: 'Main'
-  },
-
-  // --- SPECIAL EXAMS ---
-  {
-    id: 'uni_assistant',
-    title: { ml: 'University Assistant (യൂണിവേഴ്സിറ്റി അസിസ്റ്റന്റ്)', en: 'University Assistant' },
-    description: { ml: 'വിവിധ സർവകലാശാലകളിലെ അസിസ്റ്റന്റ് തസ്തികകൾ.', en: 'Assistant posts in various universities.' },
-    icon: React.createElement(ClipboardListIcon, { className: "h-8 w-8 text-rose-600" }),
-    category: 'Special',
-    level: 'Main'
-  },
-  {
-    id: 'lsgi_secretary',
-    title: { ml: 'LSGI Secretary (പഞ്ചായത്ത് സെക്രട്ടറി)', en: 'LSGI Secretary' },
-    description: { ml: 'തദ്ദേശ സ്വയംഭരണ വകുപ്പിലെ ഉന്നത തസ്തികകൾ.', en: 'High-level posts in Local Self Government.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-rose-500" }),
-    category: 'Special',
-    level: 'Main'
-  },
-  {
-    id: 'bevco_assistant',
-    title: { ml: 'BEVCO Assistant (ബിവറേജ് അസിസ്റ്റന്റ്)', en: 'BEVCO Assistant' },
-    description: { ml: 'ബിവറേജ് കോർപ്പറേഷനിലെ അസിസ്റ്റന്റ് പരീക്ഷകൾ.', en: 'Exams for Beverage Corporation Assistant.' },
-    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-rose-600" }),
-    category: 'Special',
-    level: 'Main'
   }
 ];
 
-// Specific Content Definitions
+// Content Map organized by the new standardized Subject/Topic list
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ldc_pt1', title: 'General Knowledge', questions: 50, duration: 45 },
-    { id: 'ldc_pt2', title: 'Mental Ability', questions: 20, duration: 20 },
-    { id: 'ldc_pt3', title: 'General English', questions: 20, duration: 15 },
+    { id: 'ldc_gk', title: 'General Knowledge', questions: 50, duration: 40, topic: 'Subject:GK' },
+    { id: 'ldc_ml', title: 'Malayalam Grammar', questions: 10, duration: 10, topic: 'Topic:Malayalam Grammar' },
+    { id: 'ldc_en', title: 'English Grammar', questions: 10, duration: 10, topic: 'Topic:English Grammar' },
+    { id: 'ldc_ma', title: 'Mental Ability', questions: 10, duration: 15, topic: 'Topic:Mental Ability' },
+    { id: 'ldc_sc', title: 'Science (Bio/Phy/Che)', questions: 20, duration: 15, topic: 'Subject:Science' },
   ],
-  studyNotes: [{ id: 'ldc_sn1', title: 'Kerala History' }, { id: 'ldc_sn2', title: 'Indian Constitution' }],
-  previousPapers: [{ id: 'ldc_pp1', title: 'LDC 2021 Previous Paper' }, { id: 'ldc_pp2', title: 'LGS 2021 Previous Paper' }]
+  studyNotes: [{ id: 'sn_kh', title: 'Kerala History' }, { id: 'sn_ic', title: 'Indian Constitution' }],
+  previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
 };
 
 export const STAFF_NURSE_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'sn_pt1', title: 'Nursing Science', questions: 60, duration: 50 },
-    { id: 'sn_pt2', title: 'Anatomy & Physiology', questions: 20, duration: 20 },
+    { id: 'sn_ns', title: 'Nursing Science', questions: 80, duration: 60, topic: 'Topic:Nursing Science' },
+    { id: 'sn_an', title: 'Anatomy', questions: 20, duration: 20, topic: 'Topic:Anatomy' },
   ],
-  studyNotes: [{ id: 'sn_sn1', title: 'Nursing Fundamentals' }, { id: 'sn_sn2', title: 'Infection Control' }],
-  previousPapers: [{ id: 'sn_pp1', title: 'Staff Nurse 2023 Official Paper' }]
+  studyNotes: [{ id: 'sn_fn', title: 'Nursing Fundamentals' }],
+  previousPapers: [{ id: 'pp_sn23', title: 'Staff Nurse 2023 Paper' }]
 };
 
 export const KSEB_CONTENT: ExamPageContent = {
-  practiceTests: [{ id: 'ks_pt1', title: 'Electrical Engineering', questions: 80, duration: 60 }],
-  studyNotes: [{ id: 'ks_sn1', title: 'Power Systems' }],
-  previousPapers: [{ id: 'ks_pp1', title: 'Sub Engineer 2022 Paper' }]
-};
-
-export const CPO_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'cpo_pt1', title: 'Indian Geography', questions: 30, duration: 25 },
-    { id: 'cpo_pt2', title: 'Current Affairs', questions: 20, duration: 15 },
+    { id: 'ks_ee', title: 'Electrical Engineering', questions: 70, duration: 60, topic: 'Subject:Technical' },
+    { id: 'ks_em', title: 'Engineering Maths', questions: 20, duration: 25, topic: 'Topic:Engineering Mathematics' },
+    { id: 'ks_gk', title: 'General GK', questions: 10, duration: 10, topic: 'Subject:GK' },
   ],
-  studyNotes: [{ id: 'cpo_sn1', title: 'Police Department Facts' }],
-  previousPapers: [{ id: 'cpo_pp1', title: 'CPO 2022 Official Paper' }]
-};
-
-export const SPECIAL_EXAM_CONTENT: ExamPageContent = {
-  practiceTests: [{ id: 'sp_pt1', title: 'General Studies', questions: 50, duration: 45 }],
-  studyNotes: [{ id: 'sp_sn1', title: 'Administrative Rules' }],
-  previousPapers: [{ id: 'sp_pp1', title: 'University Assistant 2023 Paper' }]
+  studyNotes: [{ id: 'sn_ps', title: 'Power Systems' }],
+  previousPapers: [{ id: 'pp_se22', title: 'Sub Engineer 2022 Paper' }]
 };
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
     'ldc_lgs': LDC_EXAM_CONTENT,
-    'plus_two_prelims': CPO_EXAM_CONTENT,
     'degree_prelims': LDC_EXAM_CONTENT,
     'staff_nurse': STAFF_NURSE_CONTENT,
     'kseb_sub_eng': KSEB_CONTENT,
-    'overseer_gr3': KSEB_CONTENT,
-    'uni_assistant': SPECIAL_EXAM_CONTENT,
-    'lsgi_secretary': SPECIAL_EXAM_CONTENT,
-    'bevco_assistant': SPECIAL_EXAM_CONTENT,
 };
+
+// Quiz categories aligned with the new hierarchical list
+export const QUIZ_CATEGORIES: QuizCategory[] = [
+  {
+    id: 'ml_grammar',
+    title: { ml: 'Malayalam Grammar', en: 'Malayalam Grammar' },
+    description: { ml: 'മലയാള വ്യാകരണം.', en: 'Comprehensive Malayalam grammar.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-indigo-500" })
+  },
+  {
+    id: 'ml_vocab',
+    title: { ml: 'Malayalam Vocabulary', en: 'Malayalam Vocabulary' },
+    description: { ml: 'മലയാള പദശേഖരം.', en: 'Synonyms, Antonyms, Phrases.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-indigo-400" })
+  },
+  {
+    id: 'mental_ability',
+    title: { ml: 'Mental Ability', en: 'Mental Ability' },
+    description: { ml: 'ഗണിതവും ചിന്താശേഷിയും.', en: 'Quantitative Aptitude and Mental Ability.' },
+    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-amber-500" })
+  },
+  {
+    id: 'english_grammar',
+    title: { ml: 'English Grammar', en: 'English Grammar' },
+    description: { ml: 'ഇംഗ്ലീഷ് വ്യാകരണം.', en: 'Comprehensive English grammar.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-blue-500" })
+  },
+  {
+    id: 'indian_const',
+    title: { ml: 'Indian Constitution', en: 'Indian Constitution' },
+    description: { ml: 'ഇന്ത്യൻ ഭരണഘടന.', en: 'Articles, Parts, and Amendments.' },
+    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-rose-500" })
+  },
+  {
+    id: 'kerala_hist',
+    title: { ml: 'Kerala History', en: 'Kerala History' },
+    description: { ml: 'കേരള ചരിത്രം.', en: 'From early times to modern Kerala.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-emerald-500" })
+  },
+  {
+    id: 'science_bio',
+    title: { ml: 'Biology', en: 'Biology' },
+    description: { ml: 'ജീവശാസ്ത്രം.', en: 'Human Body, Plants, and Animals.' },
+    icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-green-500" })
+  },
+  {
+    id: 'current_affairs_cat',
+    title: { ml: 'Current Affairs', en: 'Current Affairs' },
+    description: { ml: 'ആനുകാലികം.', en: 'Latest news and events.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-6 w-6 text-teal-600" })
+  }
+];
+
+export const NAV_STRUCTURE: NavLink[] = [
+  { nameKey: 'nav.home', target: 'dashboard' },
+  {
+    nameKey: 'nav.practice',
+    children: [
+      { nameKey: 'nav.mockTests', target: 'mock_test_home' },
+      { nameKey: 'nav.quizzes', target: 'quiz_home' },
+    ]
+  },
+  {
+    nameKey: 'nav.examHub',
+    children: [
+      { nameKey: 'nav.pscLive', target: 'psc_live_updates' },
+      { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
+      { nameKey: 'nav.previousPapers', target: 'previous_papers' },
+      { nameKey: 'dashboard.notifications.title', target: 'psc_live_updates' },
+    ]
+  },
+  {
+    nameKey: 'nav.resources',
+    children: [
+      { nameKey: 'nav.currentAffairs', target: 'current_affairs' },
+      { nameKey: 'nav.gk', target: 'gk' },
+      { nameKey: 'nav.studyMaterials', target: 'study_material' },
+      { nameKey: 'nav.sitemap', target: 'sitemap' },
+    ]
+  },
+  { nameKey: 'nav.bookstore', target: 'bookstore' }
+];
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
   { id: '1', title: 'LDC - Various Departments', categoryNumber: '207/2025', lastDate: '25-09-2025', link: '#' },
@@ -188,117 +219,6 @@ export const MOCK_BOOKS_DATA: Book[] = [
 
 export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
 export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [];
-
-export const NAV_STRUCTURE: NavLink[] = [
-  { nameKey: 'nav.home', target: 'dashboard' },
-  {
-    nameKey: 'nav.practice',
-    children: [
-      { nameKey: 'nav.mockTests', target: 'mock_test_home' },
-      { nameKey: 'nav.quizzes', target: 'quiz_home' },
-    ]
-  },
-  {
-    nameKey: 'nav.examHub',
-    children: [
-      { nameKey: 'nav.pscLive', target: 'psc_live_updates' },
-      { nameKey: 'nav.examCalendar', target: 'exam_calendar' },
-      { nameKey: 'nav.previousPapers', target: 'previous_papers' },
-      { nameKey: 'dashboard.notifications.title', target: 'psc_live_updates' },
-    ]
-  },
-  {
-    nameKey: 'nav.resources',
-    children: [
-      { nameKey: 'nav.currentAffairs', target: 'current_affairs' },
-      { nameKey: 'nav.gk', target: 'gk' },
-      { nameKey: 'nav.studyMaterials', target: 'study_material' },
-      { nameKey: 'nav.sitemap', target: 'sitemap' },
-    ]
-  },
-  { nameKey: 'nav.bookstore', target: 'bookstore' }
-];
-
-export const QUIZ_CATEGORIES: QuizCategory[] = [
-  {
-    id: 'mixed',
-    title: { ml: 'Mixed (എല്ലാം കലർന്നവ)', en: 'Mixed Questions' },
-    description: { ml: 'എല്ലാ വിഷയങ്ങളിൽ നിന്നുമുള്ള ചോദ്യങ്ങൾ.', en: 'Questions from all categories combined.' },
-    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-yellow-500" })
-  },
-  {
-    id: 'kerala_renaissance',
-    title: { ml: 'Kerala Renaissance', en: 'Kerala Renaissance' },
-    description: { ml: 'കേരള നവോത്ഥാനം.', en: 'Social Reformation in Kerala.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-indigo-500" })
-  },
-  {
-    id: 'kerala_geography',
-    title: { ml: 'Kerala Geography', en: 'Kerala Geography' },
-    description: { ml: 'കേരള ഭൂമിശാസ്ത്രം.', en: 'Geography of Kerala.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-green-500" })
-  },
-  {
-    id: 'indian_constitution',
-    title: { ml: 'Indian Constitution', en: 'Indian Constitution' },
-    description: { ml: 'ഇന്ത്യൻ ഭരണഘടന.', en: 'Constitution of India.' },
-    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-blue-500" })
-  },
-  {
-    id: 'indian_history',
-    title: { ml: 'Indian History', en: 'Indian History' },
-    description: { ml: 'ഇന്ത്യൻ ചരിത്രം.', en: 'History of India.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-orange-500" })
-  },
-  {
-    id: 'economy',
-    title: { ml: 'Economy', en: 'Economy' },
-    description: { ml: 'സാമ്പത്തിക ശാസ്ത്രം.', en: 'Indian Economy basics.' },
-    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-teal-500" })
-  },
-  {
-    id: 'kerala_history',
-    title: { ml: 'Kerala History', en: 'Kerala History' },
-    description: { ml: 'കേരള ചരിത്രം.', en: 'History of Kerala.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-red-500" })
-  },
-  {
-    id: 'kerala_culture',
-    title: { ml: 'Kerala Culture', en: 'Kerala Culture' },
-    description: { ml: 'കേരള സംസ്കാരം.', en: 'Culture and heritage of Kerala.' },
-    icon: React.createElement(StarIcon, { className: "h-6 w-6 text-pink-500" })
-  },
-  {
-    id: 'indian_geography',
-    title: { ml: 'Indian Geography', en: 'Indian Geography' },
-    description: { ml: 'ഇന്ത്യൻ ഭൂമിശാസ്ത്രം.', en: 'Geography of India.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-cyan-500" })
-  },
-  {
-    id: 'science',
-    title: { ml: 'Science', en: 'Science' },
-    description: { ml: 'ശാസ്ത്രം.', en: 'Physics, Chemistry, Biology.' },
-    icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-purple-500" })
-  },
-  {
-    id: 'current_affairs_cat',
-    title: { ml: 'Current Affairs', en: 'Current Affairs' },
-    description: { ml: 'ആനുകാലികം.', en: 'Latest events and news.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-6 w-6 text-teal-600" })
-  },
-  {
-    id: 'aptitude_reasoning',
-    title: { ml: 'Aptitude & Reasoning', en: 'Aptitude & Reasoning' },
-    description: { ml: 'ഗണിതവും ചിന്താശേഷിയും.', en: 'Mathematics and logical reasoning.' },
-    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-amber-500" })
-  },
-  {
-    id: 'english_malayalam',
-    title: { ml: 'English & Malayalam', en: 'Languages' },
-    description: { ml: 'ഭാഷാ പഠനം.', en: 'English and Malayalam grammar.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-indigo-400" })
-  }
-];
 
 export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
   {
