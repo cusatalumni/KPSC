@@ -4,6 +4,7 @@ import { getBooks } from '../services/pscDataService';
 import type { Book } from '../types';
 import { BookOpenIcon } from './icons/BookOpenIcon';
 import { useTranslation } from '../contexts/LanguageContext';
+import BookCover from './BookCover';
 
 const BookOfTheDayWidget: React.FC = () => {
     const { t } = useTranslation();
@@ -50,7 +51,12 @@ const BookOfTheDayWidget: React.FC = () => {
                 <h4 className="text-xl font-bold text-slate-800">{t('bookOfTheDay.title')}</h4>
             </div>
             <div className="flex space-x-4 items-center">
-                <img src={book.imageUrl || 'https://via.placeholder.com/96x128'} alt={book.title} className="w-24 h-32 object-cover rounded-md shadow-sm flex-shrink-0" referrerPolicy="no-referrer" />
+                <BookCover 
+                    title={book.title} 
+                    author={book.author} 
+                    imageUrl={book.imageUrl} 
+                    className="w-24 h-32 rounded-md shadow-sm flex-shrink-0" 
+                />
                 <div className="flex-1">
                     <h5 className="font-bold text-slate-800 leading-tight line-clamp-2">{book.title}</h5>
                     <p className="text-sm text-slate-500 mb-3">{book.author}</p>

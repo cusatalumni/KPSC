@@ -4,15 +4,19 @@ import { getBooks } from '../services/pscDataService';
 import type { Book } from '../types';
 import { BookOpenIcon } from './icons/BookOpenIcon';
 import { useTranslation } from '../contexts/LanguageContext';
+import BookCover from './BookCover';
 
 const BookItem: React.FC<{ book: Book }> = ({ book }) => {
     const { t } = useTranslation();
-    const fallbackImage = 'https://via.placeholder.com/80x96.png?text=PSC+Guide';
-    const currentImageUrl = book.imageUrl || fallbackImage;
 
     return (
         <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-center space-x-4">
-            <img src={currentImageUrl} alt={book.title} className="w-20 h-24 object-cover rounded-md flex-shrink-0 shadow-sm" referrerPolicy="no-referrer" />
+            <BookCover 
+                title={book.title} 
+                author={book.author} 
+                imageUrl={book.imageUrl} 
+                className="w-20 h-24 rounded-md flex-shrink-0 shadow-sm" 
+            />
             <div className="flex-1">
                 <h3 className="font-bold text-slate-800 line-clamp-2">{book.title}</h3>
                 <p className="text-sm text-slate-500">{book.author}</p>
