@@ -87,40 +87,63 @@ export default async function handler(req: any, res: any) {
             case 'questions':
                 if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 10;
-                const searchTopic = (topic as string).toLowerCase();
+                let searchStr = (topic as string).toLowerCase().trim();
+                
+                let targetType = 'any'; 
+                if (searchStr.startsWith('subject:')) {
+                    targetType = 'subject';
+                    searchStr = searchStr.replace('subject:', '').trim();
+                } else if (searchStr.startsWith('topic:')) {
+                    targetType = 'topic';
+                    searchStr = searchStr.replace('topic:', '').trim();
+                }
+
                 const allQsFromSheet = await readSheetData('QuestionBank!A2:G').catch(() => []);
                 
                 const uniqueSheetQs = new Map();
                 allQsFromSheet.forEach(r => {
                     if (!r[2]) return;
+                    const qTopic = (r[1] || '').toLowerCase().trim();
+                    const qSubject = (r[5] || '').toLowerCase().trim();
                     const normalized = normalizeText(r[2]);
-                    if (!uniqueSheetQs.has(normalized)) {
+
+                    let matches = false;
+                    if (targetType === 'subject') {
+                        matches = qSubject === searchStr || qSubject.includes(searchStr);
+                    } else if (targetType === 'topic') {
+                        matches = qTopic === searchStr || qTopic.includes(searchStr);
+                    } else {
+                        matches = qTopic.includes(searchStr) || qSubject.includes(searchStr) || searchStr.includes('mixed');
+                    }
+
+                    if (matches && !uniqueSheetQs.has(normalized)) {
                         uniqueSheetQs.set(normalized, {
-                            id: r[0], topic: r[1] || 'General', question: r[2], 
-                            options: resilientParseOptions(r[3] || '[]'), correctAnswerIndex: parseInt(r[4] || '0'), 
-                            subject: r[5] || 'GK', difficulty: r[6] || 'PSC Level'
+                            id: r[0], 
+                            topic: r[1] || 'General', 
+                            question: r[2], 
+                            options: resilientParseOptions(r[3] || '[]'), 
+                            correctAnswerIndex: parseInt(r[4] || '0'), 
+                            subject: r[5] || 'GK', 
+                            difficulty: r[6] || 'PSC Level'
                         });
                     }
                 });
 
-                const mappedAllQs = Array.from(uniqueSheetQs.values());
-                const isMixed = searchTopic.includes('mixed') || searchTopic.includes('mock');
+                let filtered = Array.from(uniqueSheetQs.values());
 
-                let filtered = isMixed ? mappedAllQs.sort(() => 0.5 - Math.random()).slice(0, qLimit) : mappedAllQs.filter(q => q.topic.toLowerCase().includes(searchTopic));
-
-                if (filtered.length >= qLimit) {
-                    return res.status(200).json(filtered.slice(0, qLimit).sort(() => 0.5 - Math.random()));
+                if (filtered.length < qLimit) {
+                    const aiResponse = await ai.models.generateContent({
+                        model: 'gemini-3-flash-preview',
+                        contents: `Generate ${qLimit - filtered.length} unique MCQs in Malayalam for ${targetType === 'subject' ? 'subject' : 'topic'}: "${searchStr}". 
+                        Strictly relevant to Kerala PSC levels. 
+                        JSON fields: id, topic, question, options (4 choices), correctAnswerIndex (0-3).`,
+                        config: { responseMimeType: "application/json" }
+                    });
+                    const aiQs = JSON.parse(aiResponse.text || "[]");
+                    filtered = [...filtered, ...aiQs];
                 }
 
-                const aiResponse = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
-                    contents: `Generate ${qLimit - filtered.length} unique MCQs in Malayalam for topic: "${topic}". JSON fields: id, topic, question, options, correctAnswerIndex.`,
-                    config: { responseMimeType: "application/json" }
-                });
-
-                const aiQs = JSON.parse(aiResponse.text || "[]");
-                const finalResult = [...filtered, ...aiQs].slice(0, qLimit);
-                return res.status(200).json(finalResult);
+                return res.status(200).json(filtered.slice(0, qLimit).sort(() => 0.5 - Math.random()));
 
             case 'study-material':
                 if (!topic) return res.status(400).json({ error: 'Topic required' });
