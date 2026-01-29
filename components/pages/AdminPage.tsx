@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, fixMissingCovers, syncCsvData, getBooks, deleteBook } from '../../services/pscDataService';
+import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, fixMissingCovers, syncCsvData, getBooks, deleteBook, updateBook } from '../../services/pscDataService';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { XCircleIcon } from '../icons/XCircleIcon';
@@ -95,7 +95,7 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
     };
 
     const handleFixMissingCovers = async () => {
-        if (!confirm("This will scan existing books and generate AI covers for those missing images. This may take a minute. Continue?")) return;
+        if (!confirm("This will scan existing books and generate AI covers for those missing images in the sheet. This may take a minute. Continue?")) return;
         setStatus({ loading: true, result: null });
         try {
             const token = await getToken();
@@ -110,6 +110,27 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         }
     };
 
+    const handleRegenerateCover = async (book: Book) => {
+        if (!confirm(`Generate a new AI cover for "${book.title}"?`)) return;
+        setStatus({ loading: true, result: null });
+        try {
+            const token = await getToken();
+            // Sending with empty imageUrl triggers the AI generation on the server
+            await updateBook({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                imageUrl: '', 
+                amazonLink: book.amazonLink
+            }, token);
+            
+            setStatus({ loading: false, result: { type: 'success', message: 'New cover generated and saved to sheet!' }});
+            fetchCurrentBooks();
+        } catch (error: any) {
+            setStatus({ loading: false, result: { type: 'error', message: error.message }});
+        }
+    }
+
     const handleQuickAddBook = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!quickBook.title || !quickBook.link) return;
@@ -118,9 +139,14 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         try {
             const token = await getToken();
             const bookId = quickBook.id || `book_${Date.now()}`;
-            const csvLine = `${bookId}, ${quickBook.title}, ${quickBook.author || 'Unknown'}, ${quickBook.imageUrl || ''}, ${quickBook.link}`;
             
-            await syncCsvData('Bookstore', csvLine, token, true);
+            await updateBook({
+                id: bookId,
+                title: quickBook.title,
+                author: quickBook.author,
+                imageUrl: quickBook.imageUrl,
+                amazonLink: quickBook.link
+            }, token);
             
             setStatus({ loading: false, result: { type: 'success', message: quickBook.id ? 'Book updated!' : 'Book added!' }});
             setQuickBook({ id: '', title: '', author: '', link: '', imageUrl: '' });
@@ -267,6 +293,10 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                             <input type="text" value={quickBook.author} onChange={e => setQuickBook({...quickBook, author: e.target.value})} placeholder="Lakshya Publications" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
                                         </div>
                                         <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Image URL (Leave empty to regenerate AI cover)</label>
+                                            <input type="text" value={quickBook.imageUrl} onChange={e => setQuickBook({...quickBook, imageUrl: e.target.value})} placeholder="Paste image URL or leave empty" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
+                                        </div>
+                                        <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Amazon Link</label>
                                             <input type="url" value={quickBook.link} onChange={e => setQuickBook({...quickBook, link: e.target.value})} placeholder="Paste amazon.in URL" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-orange-500/10 outline-none" />
                                         </div>
@@ -338,42 +368,54 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
-                                            {existingBooks.map(book => (
-                                                <tr key={book.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center space-x-4">
-                                                            <div className="h-14 w-11 bg-slate-100 rounded-md overflow-hidden flex-shrink-0 shadow-sm border border-slate-200">
-                                                                <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-full w-full object-cover" />
+                                            {existingBooks.map(book => {
+                                                const isMissingImage = !book.imageUrl || book.imageUrl === '' || book.imageUrl === 'undefined' || book.imageUrl.includes('via.placeholder.com');
+                                                return (
+                                                    <tr key={book.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center space-x-4">
+                                                                <div className={`h-14 w-11 rounded-md overflow-hidden flex-shrink-0 shadow-sm border ${isMissingImage ? 'bg-red-50 border-red-200' : 'bg-slate-100 border-slate-200'}`}>
+                                                                    <img src={book.imageUrl || 'https://via.placeholder.com/40'} className="h-full w-full object-cover" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-slate-800 leading-tight line-clamp-1">{book.title}</p>
+                                                                    <p className="text-[10px] font-mono text-slate-400 mt-1">{book.id}</p>
+                                                                    {isMissingImage && <span className="text-[8px] font-black text-red-500 uppercase">Image Not In Sheet</span>}
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="font-bold text-slate-800 leading-tight line-clamp-1">{book.title}</p>
-                                                                <p className="text-[10px] font-mono text-slate-400 mt-1">{book.id}</p>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="text-sm font-medium text-slate-600">{book.author}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center justify-center space-x-2">
+                                                                <button 
+                                                                    onClick={() => handleRegenerateCover(book)}
+                                                                    className="p-2.5 bg-teal-50 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Regenerate AI Cover"
+                                                                    disabled={status.loading}
+                                                                >
+                                                                    <SparklesIcon className="h-5 w-5" />
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => handleEditClick(book)}
+                                                                    className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Edit"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => handleDeleteBook(book.id)}
+                                                                    className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                                                    title="Delete"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                </button>
                                                             </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="text-sm font-medium text-slate-600">{book.author}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center justify-center space-x-2">
-                                                            <button 
-                                                                onClick={() => handleEditClick(book)}
-                                                                className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                                                                title="Edit"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => handleDeleteBook(book.id)}
-                                                                className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                                                                title="Delete"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                             {existingBooks.length === 0 && (
                                                 <tr>
                                                     <td colSpan={3} className="px-6 py-12 text-center text-slate-400 font-medium italic">
