@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ml">
   <head>
@@ -10,35 +11,74 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manjari:wght@400;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-      // CRITICAL: Polyfill process.env for browser environment before modules load
       window.process = window.process || { env: {} };
     </script>
     <style>
-      body { font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif; }
+      body { 
+        font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif; 
+        background-color: #f8fafc;
+      }
       .ticker-wrap { flex-grow: 1; overflow: hidden; }
       .ticker-move { display: flex; animation: ticker-scroll 40s linear infinite; }
       @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+      
       .animate-fade-in { animation: fade-in 0.5s ease-in-out forwards; }
       @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      
       .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
       @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+      /* Premium UI Components */
+      .btn-vibrant-indigo {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.3);
+      }
+      .btn-vibrant-indigo:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+        transform: translateY(-2px);
+      }
+
+      .btn-vibrant-amber {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.3);
+      }
+
+      .btn-vibrant-rose {
+        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+        box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.3);
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .section-gradient-indigo { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+      .section-gradient-amber { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+      .section-gradient-rose { background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%); }
+
+      /* Custom Shadows */
+      .premium-shadow {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@0.12.0",
-    "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.2.8?external=react,react-dom",
-    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-    "react/": "https://esm.sh/react@18.2.0/",
-    "@clerk/backend": "https://esm.sh/@clerk/backend@^2.29.5",
-    "google-auth-library": "https://esm.sh/google-auth-library@^10.5.0",
-    "googleapis": "https://esm.sh/googleapis@^170.1.0"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "@google/genai": "https://esm.sh/@google/genai@0.12.0",
+        "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.2.8?external=react,react-dom",
+        "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+        "react/": "https://esm.sh/react@18.2.0/",
+        "@clerk/backend": "https://esm.sh/@clerk/backend@^2.29.5",
+        "google-auth-library": "https://esm.sh/google-auth-library@^10.5.0",
+        "googleapis": "https://esm.sh/googleapis@^170.1.0"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
