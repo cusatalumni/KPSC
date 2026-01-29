@@ -1,15 +1,12 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
-import { runDailyUpdateScrapers, runBookScraper, generateCoverForBook } from "./_lib/scraper-service.js";
+import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
 import { readSheetData, clearAndWriteSheetData, appendSheetData, deleteRowById, findAndUpsertRow } from './_lib/sheets-service.js';
 
 declare var process: any;
 
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
-/**
- * Enhanced CSV parser that handles quoted strings containing commas.
- */
 function parseCsv(csv: string): any[][] {
     return csv.split('\n')
         .map(line => line.trim())
@@ -20,9 +17,6 @@ function parseCsv(csv: string): any[][] {
         });
 }
 
-/**
- * Ensures an Amazon link has the affiliate tag.
- */
 function fixAffiliateLink(url: string): string {
     if (!url || typeof url !== 'string') return url;
     const trimmed = url.trim();
@@ -72,22 +66,16 @@ export default async function handler(req: any, res: any) {
                 case 'update-book':
                     if (!bookData || !bookData.id) return res.status(400).json({ message: 'Missing book data' });
                     
-                    let finalImg = (bookData.imageUrl || '').trim();
-                    // If image is missing, generate one
-                    if (!finalImg || finalImg === '' || finalImg.includes('via.placeholder.com')) {
-                        finalImg = await generateCoverForBook(bookData.title, bookData.author);
-                    }
-                    
                     const rowToUpdate = [
                         bookData.id,
                         bookData.title,
                         bookData.author,
-                        finalImg,
+                        (bookData.imageUrl || '').trim(),
                         fixAffiliateLink(bookData.amazonLink)
                     ];
                     
                     await findAndUpsertRow('Bookstore', 0, bookData.id, rowToUpdate);
-                    return res.status(200).json({ message: 'Book updated successfully.', book: rowToUpdate });
+                    return res.status(200).json({ message: 'Book updated successfully.' });
 
                 case 'fix-all-affiliates':
                     const currentBooksAff = await readSheetData('Bookstore!A2:E');
@@ -98,77 +86,25 @@ export default async function handler(req: any, res: any) {
                         return row;
                     });
                     await clearAndWriteSheetData('Bookstore!A2:E', fixedBooksAff);
-                    return res.status(200).json({ message: `Successfully updated affiliate links for ${fixedBooksAff.length} books.` });
+                    return res.status(200).json({ message: `Successfully updated affiliate links.` });
                 
-                case 'fix-missing-covers':
-                    const currentBooksCover = await readSheetData('Bookstore!A2:E');
-                    let fixCount = 0;
-                    const fixedBooksCover = [];
-                    
-                    for (const row of currentBooksCover) {
-                        if (row.length >= 2) {
-                            const title = row[1];
-                            const author = row[2] || 'Unknown';
-                            const currentImg = (row[3] || '').trim();
-                            
-                            // More robust check for missing images in the sheet
-                            if (!currentImg || currentImg === '' || currentImg === 'undefined' || currentImg.includes('via.placeholder.com')) {
-                                try {
-                                    const aiCover = await generateCoverForBook(title, author);
-                                    if (aiCover) {
-                                        row[3] = aiCover;
-                                        fixCount++;
-                                    }
-                                } catch (e) {
-                                    console.error(`Failed to generate cover for: ${title}`);
-                                }
-                            }
-                        }
-                        fixedBooksCover.push(row);
-                    }
-                    
-                    await clearAndWriteSheetData('Bookstore!A2:E', fixedBooksCover);
-                    return res.status(200).json({ message: `Successfully scanned and fixed ${fixCount} missing covers.` });
-
                 case 'csv-update':
                     if (!sheet || !data) return res.status(400).json({ message: 'Missing params' });
-                    
                     let rows = parseCsv(data);
                     
                     if (sheet === 'Bookstore') {
-                        const processedRows = [];
-                        for (const row of rows) {
-                            if (row.length >= 2) {
-                                if (row.length >= 5) row[4] = fixAffiliateLink(row[4]);
-                                
-                                const title = row[1];
-                                const author = row[2] || 'Unknown';
-                                const currentImg = (row[3] || '').trim();
-                                
-                                if (!currentImg || currentImg === '' || currentImg.includes('via.placeholder.com')) {
-                                    const aiCover = await generateCoverForBook(title, author);
-                                    if (aiCover) {
-                                        if (row.length < 4) {
-                                            // Ensure row has enough length
-                                            while(row.length < 4) row.push("");
-                                            row[3] = aiCover;
-                                        } else {
-                                            row[3] = aiCover;
-                                        }
-                                    }
-                                }
-                            }
-                            processedRows.push(row);
-                        }
-                        rows = processedRows;
+                        rows = rows.map(row => {
+                            if (row.length >= 5) row[4] = fixAffiliateLink(row[4]);
+                            return row;
+                        });
                     }
                     
                     if (mode === 'append') {
                         await appendSheetData(`${sheet}!A1`, rows);
-                        return res.status(200).json({ message: `Appended ${rows.length} rows to ${sheet}.` });
+                        return res.status(200).json({ message: `Appended ${rows.length} rows.` });
                     } else {
                         await clearAndWriteSheetData(`${sheet}!A2:Z2000`, rows);
-                        return res.status(200).json({ message: `Updated ${sheet} with ${rows.length} rows.` });
+                        return res.status(200).json({ message: `Updated ${sheet} successfully.` });
                     }
                 default:
                     return res.status(400).json({ message: 'Unknown action' });
