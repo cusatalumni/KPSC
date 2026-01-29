@@ -17,29 +17,6 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
-export async function generateCoverForBook(title: string, author: string): Promise<string> {
-    try {
-        const imgResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [{ text: `A clean, professional, minimalistic academic book cover for a Kerala PSC guide titled "${title}" by "${author}". Bold typography, deep indigo and gold professional colors, high resolution graphic design style, no realistic human faces, educational theme.` }]
-            },
-            config: {
-                imageConfig: { aspectRatio: "3:4" }
-            }
-        });
-
-        for (const part of imgResponse.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:image/png;base64,${part.inlineData.data}`;
-            }
-        }
-    } catch (e) {
-        console.error("Cover generation failed in scraper:", e);
-    }
-    return '';
-}
-
 async function scrapeKpscNotifications() {
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -49,7 +26,7 @@ async function scrapeKpscNotifications() {
             responseSchema: {
                 type: Type.ARRAY,
                 items: {
-                    type: Type.OBJECT properties: {
+                    type: Type.OBJECT, properties: {
                         id: { type: Type.STRING }, title: { type: Type.STRING },
                         categoryNumber: { type: Type.STRING }, lastDate: { type: Type.STRING },
                         link: { type: Type.STRING },
@@ -69,8 +46,8 @@ async function scrapePscLiveUpdates() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY items: {
-                    type: Type.OBJECT properties: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
                         title: { type: Type.STRING }, url: { type: Type.STRING },
                         section: { type: Type.STRING }, published_date: { type: Type.STRING }
                     }, required: ["title", "url", "section", "published_date"]
@@ -89,8 +66,8 @@ async function scrapeCurrentAffairs() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY items: {
-                    type: Type.OBJECT properties: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
                         id: { type: Type.STRING }, title: { type: Type.STRING },
                         source: { type: Type.STRING }, date: { type: Type.STRING }
                     }, required: ["id", "title", "source", "date"]
@@ -109,8 +86,8 @@ async function scrapeGk() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY items: {
-                    type: Type.OBJECT properties: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
                         id: { type: Type.STRING }, fact: { type: Type.STRING },
                         category: { type: Type.STRING }
                     }, required: ["id", "fact", "category"]
@@ -133,8 +110,8 @@ async function generateNewQuestions() {
         config: {
             responseMimeType: "application/json",
             responseSchema: {
-                type: Type.ARRAY items: {
-                    type: Type.OBJECT properties: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
                         id: { type: Type.STRING }, topic: { type: Type.STRING },
                         question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } },
                         correctAnswerIndex: { type: Type.INTEGER }
@@ -174,18 +151,14 @@ async function scrapeAmazonBooks() {
     });
     
     const items = JSON.parse(response.text || "[]");
-    const processedData = [];
-
-    for (const item of items) {
-        const aiCover = await generateCoverForBook(item.title, item.author);
+    return items.map((item: any) => {
         let link = item.amazonLink;
         if (!link.includes('tag=')) {
             link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
         }
-        processedData.push([item.id, item.title, item.author, aiCover, link]);
-    }
-
-    return processedData;
+        // imageUrl is left blank so the frontend uses dynamic covers
+        return [item.id, item.title, item.author, "", link];
+    });
 }
 
 export async function runDailyUpdateScrapers() {
