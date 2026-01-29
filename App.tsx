@@ -131,7 +131,7 @@ const App: React.FC = () => {
     setActiveTest({ 
         title: testTitle, 
         questionsCount: test.questionsCount,
-        topic: testTitle,
+        topic: 'mixed', // Full mocks use mixed questions
         isPro: test.isPro,
         negativeMarking: test.negativeMarking
     });
@@ -139,13 +139,14 @@ const App: React.FC = () => {
     setCurrentPage('test');
   };
   
-  const handleStartPracticeTest = (test: PracticeTest | { title: string, questions: number }, examTitle: string) => {
-    const testTitle = `${examTitle} - ${test.title}`;
+  const handleStartPracticeTest = (test: { title: string, questions: number, topic?: string, negativeMarking?: number }, examTitle: string) => {
+    // FIX: Use the specific internal topic string for the API, not the display title
     setActiveTest({ 
-        title: testTitle, 
+        title: `${examTitle} - ${test.title}`, 
         questionsCount: test.questions,
-        topic: testTitle,
-        isPro: false
+        topic: test.topic || 'mixed',
+        isPro: false,
+        negativeMarking: test.negativeMarking || 0.33
     });
     setPreviousPage('exam_details');
     setCurrentPage('test');
@@ -156,7 +157,7 @@ const App: React.FC = () => {
     setActiveTest({ 
         title: quizTitle, 
         questionsCount: 25,
-        topic: quizTitle,
+        topic: `Topic:${category.title.en}`, // Use English title as a stable topic key
         isPro: category.isPro 
     });
     setPreviousPage(currentPage);
@@ -202,7 +203,6 @@ const App: React.FC = () => {
       case 'exam_details':
         if (!selectedExam) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
         
-         // Specific content based on ID
          const examContent = EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT;
 
          return <ExamPage 
