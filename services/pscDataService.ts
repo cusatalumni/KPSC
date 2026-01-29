@@ -79,5 +79,6 @@ export const fixAllAffiliates = (t: string | null) => adminReq({ action: 'fix-al
 export const fixMissingCovers = (t: string | null) => adminReq({ action: 'fix-missing-covers' }, t);
 export const deleteBook = (id: string, t: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, t);
 export const updateBook = (bookData: any, t: string | null) => adminReq({ action: 'update-book', bookData }, t);
+export const addQuestion = (qData: QuizQuestion, t: string | null) => adminReq({ action: 'add-question', qData }, t);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => 
     adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
