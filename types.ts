@@ -25,7 +25,7 @@ export interface QuizQuestion {
   options: string[];
   correctAnswerIndex: number;
   topic: string;
-  subject: 'GK' | 'Quantitative Aptitude' | 'Reasoning' | 'English' | 'Malayalam' | 'Technical';
+  subject: 'GK' | 'Maths' | 'English' | 'Malayalam' | 'Science' | 'Technical' | 'Current Affairs';
   difficulty: Difficulty;
   explanation?: string;
 }
@@ -107,6 +107,7 @@ export interface PracticeTest {
   title: string;
   questions: number;
   duration: number;
+  topic?: string; // Specific topic for database filtering
 }
 
 export interface ExamPageContent {
