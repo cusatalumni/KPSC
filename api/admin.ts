@@ -71,37 +71,61 @@ export default async function handler(req: any, res: any) {
                     await deleteRowById(sheet, id);
                     return res.status(200).json({ message: 'Row deleted successfully.' });
                 case 'fix-all-affiliates':
-                    // Read all books, fix links, and write back
-                    const currentBooks = await readSheetData('Bookstore!A2:E');
-                    const fixedBooks = currentBooks.map(row => {
+                    const currentBooksAff = await readSheetData('Bookstore!A2:E');
+                    const fixedBooksAff = currentBooksAff.map(row => {
                         if (row.length >= 5) {
                             row[4] = fixAffiliateLink(row[4]);
                         }
                         return row;
                     });
-                    await clearAndWriteSheetData('Bookstore!A2:E', fixedBooks);
-                    return res.status(200).json({ message: `Successfully updated affiliate links for ${fixedBooks.length} books.` });
+                    await clearAndWriteSheetData('Bookstore!A2:E', fixedBooksAff);
+                    return res.status(200).json({ message: `Successfully updated affiliate links for ${fixedBooksAff.length} books.` });
+                
+                case 'fix-missing-covers':
+                    const currentBooksCover = await readSheetData('Bookstore!A2:E');
+                    let fixCount = 0;
+                    const fixedBooksCover = [];
+                    
+                    for (const row of currentBooksCover) {
+                        if (row.length >= 5) {
+                            const title = row[1];
+                            const author = row[2];
+                            const currentImg = (row[3] || '').trim();
+                            
+                            // Check if image is missing or a generic placeholder
+                            if (!currentImg || currentImg === '' || currentImg.includes('via.placeholder.com')) {
+                                try {
+                                    const aiCover = await generateCoverForBook(title, author);
+                                    if (aiCover) {
+                                        row[3] = aiCover;
+                                        fixCount++;
+                                    }
+                                } catch (e) {
+                                    console.error(`Failed to generate cover for: ${title}`);
+                                }
+                            }
+                        }
+                        fixedBooksCover.push(row);
+                    }
+                    
+                    await clearAndWriteSheetData('Bookstore!A2:E', fixedBooksCover);
+                    return res.status(200).json({ message: `Successfully generated ${fixCount} missing AI covers.` });
+
                 case 'csv-update':
                     if (!sheet || !data) return res.status(400).json({ message: 'Missing params' });
                     
                     let rows = parseCsv(data);
                     
-                    // Special processing for Bookstore
                     if (sheet === 'Bookstore') {
-                        // Limit batch size to 10 for AI cover generation during CSV update to avoid lambda timeouts
                         const processedRows = [];
                         for (const row of rows) {
                             if (row.length >= 5) {
-                                // 1. Fix Affiliate Link
                                 row[4] = fixAffiliateLink(row[4]);
-                                
-                                // 2. Check if image URL is missing or looks like a placeholder
                                 const title = row[1];
                                 const author = row[2];
                                 const currentImg = (row[3] || '').trim();
                                 
                                 if (!currentImg || currentImg === '' || currentImg.includes('via.placeholder.com')) {
-                                    // Generate AI cover on the fly
                                     const aiCover = await generateCoverForBook(title, author);
                                     if (aiCover) row[3] = aiCover;
                                 }
