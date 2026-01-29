@@ -57,6 +57,7 @@ const adminReq = async (body: any, token: string | null) => {
 
 export const triggerDailyScraper = (t: string | null) => adminReq({ action: 'run-daily' }, t);
 export const triggerBookScraper = (t: string | null) => adminReq({ action: 'run-books' }, t);
+export const fixAllAffiliates = (t: string | null) => adminReq({ action: 'fix-all-affiliates' }, t);
 export const deleteBook = (id: string, t: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, t);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => 
     adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
