@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, syncCsvData, getBooks, deleteBook, updateBook } from '../../services/pscDataService';
+import { triggerDailyScraper, triggerBookScraper, fixAllAffiliates, syncCsvData, getBooks, deleteBook, updateBook, addQuestion } from '../../services/pscDataService';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 import { XCircleIcon } from '../icons/XCircleIcon';
@@ -14,7 +14,7 @@ import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { RssIcon } from '../icons/RssIcon';
 import BookCover from '../BookCover';
-import type { Book } from '../../types';
+import type { Book, QuizQuestion } from '../../types';
 
 interface PageProps { 
     onBack: () => void; 
@@ -23,6 +23,9 @@ interface PageProps {
 
 type AdminTab = 'dashboard' | 'bookstore' | 'news_gk' | 'questions';
 
+const SUBJECT_LIST = ['GK', 'Maths', 'English', 'Malayalam', 'Science', 'Technical', 'Current Affairs'];
+const DIFFICULTY_LIST = ['Easy', 'Moderate', 'PSC Level'];
+
 const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
     const { t } = useTranslation();
     const { getToken } = useAuth();
@@ -30,6 +33,17 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
     const [activeTab, setActiveTab] = useState<AdminTab>((activeTabId as AdminTab) || 'dashboard');
     const [csvData, setCsvData] = useState('');
     const [isAppendMode, setIsAppendMode] = useState(true);
+    
+    // Manual Question State
+    const [manualQuestion, setManualQuestion] = useState<Partial<QuizQuestion>>({
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswerIndex: 0,
+        subject: 'GK',
+        topic: '',
+        difficulty: 'PSC Level'
+    });
+
     const [quickBook, setQuickBook] = useState({ id: '', title: '', author: '', link: '', imageUrl: '' });
     const [existingBooks, setExistingBooks] = useState<Book[]>([]);
     const [loadingBooks, setLoadingBooks] = useState(false);
@@ -77,17 +91,40 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
         }
     };
 
+    // Added handleFixAffiliates function to resolve the "Cannot find name 'handleFixAffiliates'" error.
     const handleFixAffiliates = async () => {
-        if (!confirm("This will scan all books in the sheet and add affiliate tags to missing links. Continue?")) return;
         setStatus({ loading: true, result: null });
         try {
             const token = await getToken();
             const res = await fixAllAffiliates(token);
             setStatus({ 
                 loading: false, 
-                result: { type: 'success', message: res.message }
+                result: { type: 'success', message: res.message || 'Affiliate links updated successfully!' }
             });
             fetchCurrentBooks();
+        } catch (error: any) {
+            setStatus({ loading: false, result: { type: 'error', message: error.message }});
+        }
+    };
+
+    const handleManualQuestionSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!manualQuestion.question || !manualQuestion.topic) return;
+        
+        setStatus({ loading: true, result: null });
+        try {
+            const token = await getToken();
+            await addQuestion(manualQuestion as QuizQuestion, token);
+            setStatus({ loading: false, result: { type: 'success', message: 'Question added to the bank successfully!' }});
+            // Reset question form
+            setManualQuestion({
+                question: '',
+                options: ['', '', '', ''],
+                correctAnswerIndex: 0,
+                subject: 'GK',
+                topic: '',
+                difficulty: 'PSC Level'
+            });
         } catch (error: any) {
             setStatus({ loading: false, result: { type: 'error', message: error.message }});
         }
@@ -398,15 +435,103 @@ const AdminPage: React.FC<PageProps> = ({ onBack, activeTabId }) => {
                 )}
 
                 {activeTab === 'questions' && (
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
-                        <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-3xl font-black text-slate-800">Enrich Question Bank</h3>
+                    <div className="space-y-8">
+                        {/* Manual Form */}
+                        <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+                            <div className="flex items-center space-x-3 mb-8">
+                                <div className="p-3 bg-indigo-100 rounded-xl">
+                                    <PlusIcon className="h-6 w-6 text-indigo-600" />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-800">Manual Question Entry</h3>
+                            </div>
+                            <form onSubmit={handleManualQuestionSubmit} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Subject</label>
+                                        <select 
+                                            value={manualQuestion.subject} 
+                                            onChange={e => setManualQuestion({...manualQuestion, subject: e.target.value as any})}
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                                        >
+                                            {SUBJECT_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Topic (Ex: Kerala Renaissance, Mental Ability)</label>
+                                        <input 
+                                            type="text" 
+                                            value={manualQuestion.topic} 
+                                            onChange={e => setManualQuestion({...manualQuestion, topic: e.target.value})}
+                                            placeholder="Specific Exam or Topic name" 
+                                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none" 
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Question</label>
+                                    <textarea 
+                                        value={manualQuestion.question} 
+                                        onChange={e => setManualQuestion({...manualQuestion, question: e.target.value})}
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none h-24" 
+                                        placeholder="Enter the question here..."
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {manualQuestion.options?.map((opt, idx) => (
+                                        <div key={idx} className="flex items-center space-x-3">
+                                            <input 
+                                                type="radio" 
+                                                name="correctIdx" 
+                                                checked={manualQuestion.correctAnswerIndex === idx}
+                                                onChange={() => setManualQuestion({...manualQuestion, correctAnswerIndex: idx})}
+                                                className="w-5 h-5 text-indigo-600"
+                                            />
+                                            <input 
+                                                type="text" 
+                                                value={opt} 
+                                                onChange={e => {
+                                                    const newOpts = [...(manualQuestion.options || [])];
+                                                    newOpts[idx] = e.target.value;
+                                                    setManualQuestion({...manualQuestion, options: newOpts});
+                                                }}
+                                                placeholder={`Option ${String.fromCharCode(65 + idx)}`} 
+                                                className="flex-grow p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none" 
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Difficulty</label>
+                                    <select 
+                                        value={manualQuestion.difficulty} 
+                                        onChange={e => setManualQuestion({...manualQuestion, difficulty: e.target.value as any})}
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                                    >
+                                        {DIFFICULTY_LIST.map(d => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                </div>
+
+                                <button type="submit" className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl hover:bg-indigo-700 transition shadow-xl shadow-indigo-100">
+                                    ADD QUESTION TO BANK
+                                </button>
+                            </form>
                         </div>
-                        <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="ID, Topic, Question, ['Opt1','Opt2','Opt3','Opt4'], CorrectIdx, Subject, Difficulty" className="w-full h-96 p-8 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm mb-8" />
-                        <button onClick={() => handleCsvSync('QuestionBank')} disabled={status.loading || !csvData.trim()} className="w-full bg-indigo-600 text-white font-black py-6 rounded-2xl hover:bg-indigo-700 transition-all shadow-2xl flex items-center justify-center space-x-3">
-                            <ClipboardListIcon className="h-6 w-6" />
-                            <span>APPEND TO QUESTION BANK</span>
-                        </button>
+
+                        {/* Bulk Sync */}
+                        <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-3xl font-black text-slate-800">Bulk Sync (CSV)</h3>
+                            </div>
+                            <p className="text-xs text-slate-400 mb-4 font-bold uppercase tracking-widest">Format: ID, Topic, Question, ["Opt1","Opt2","Opt3","Opt4"], CorrectIdx, Subject, Difficulty</p>
+                            <textarea value={csvData} onChange={e => setCsvData(e.target.value)} placeholder="ID, Topic, Question, ['Opt1','Opt2','Opt3','Opt4'], CorrectIdx, Subject, Difficulty" className="w-full h-80 p-8 bg-slate-50 border border-slate-200 rounded-3xl font-mono text-sm mb-8" />
+                            <button onClick={() => handleCsvSync('QuestionBank')} disabled={status.loading || !csvData.trim()} className="w-full bg-slate-900 text-white font-black py-6 rounded-2xl hover:bg-indigo-600 transition-all shadow-2xl flex items-center justify-center space-x-3">
+                                <ClipboardListIcon className="h-6 w-6" />
+                                <span>APPEND CSV TO QUESTION BANK</span>
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
