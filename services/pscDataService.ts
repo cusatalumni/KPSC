@@ -9,6 +9,36 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
         return await res.json();
     } catch (e) {
         console.warn(`Data fetch for ${params} failed, using local mock data.`, e);
+        
+        // Advanced local filtering for questions when offline/failed
+        if (params.includes('type=questions')) {
+            const urlParams = new URLSearchParams(params);
+            const topic = urlParams.get('topic')?.toLowerCase() || '';
+            const count = parseInt(urlParams.get('count') || '10');
+            
+            let targetSearch = topic;
+            let targetType = 'any';
+            if (topic.startsWith('subject:')) {
+                targetType = 'subject';
+                targetSearch = topic.replace('subject:', '');
+            } else if (topic.startsWith('topic:')) {
+                targetType = 'topic';
+                targetSearch = topic.replace('topic:', '');
+            }
+
+            const filtered = (MOCK_QUESTION_BANK as any as QuizQuestion[]).filter(q => {
+                const qTopic = q.topic.toLowerCase();
+                const qSubject = q.subject.toLowerCase();
+                
+                if (targetType === 'subject') return qSubject.includes(targetSearch);
+                if (targetType === 'topic') return qTopic.includes(targetSearch);
+                return qTopic.includes(targetSearch) || qSubject.includes(targetSearch) || targetSearch.includes('mixed');
+            });
+
+            // Return filtered mock data shuffled
+            return filtered.slice(0, count).sort(() => 0.5 - Math.random()) as any as T;
+        }
+
         return mockData;
     }
 };
