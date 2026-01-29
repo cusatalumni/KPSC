@@ -87,37 +87,44 @@ export default async function handler(req: any, res: any) {
             case 'questions':
                 if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 10;
-                let searchStr = (topic as string).toLowerCase().trim();
+                let rawTopic = (topic as string).trim();
+                let searchStr = rawTopic.toLowerCase();
                 
                 let targetType = 'any'; 
+                let searchVal = searchStr;
                 if (searchStr.startsWith('subject:')) {
                     targetType = 'subject';
-                    searchStr = searchStr.replace('subject:', '').trim();
+                    searchVal = searchStr.replace('subject:', '').trim();
                 } else if (searchStr.startsWith('topic:')) {
                     targetType = 'topic';
-                    searchStr = searchStr.replace('topic:', '').trim();
+                    searchVal = searchStr.replace('topic:', '').trim();
                 }
 
                 const allQsFromSheet = await readSheetData('QuestionBank!A2:G').catch(() => []);
-                
-                const uniqueSheetQs = new Map();
-                allQsFromSheet.forEach(r => {
-                    if (!r[2]) return;
+                const filtered: any[] = [];
+                const seenQs = new Set();
+
+                for (const r of allQsFromSheet) {
+                    if (!r[2]) continue;
                     const qTopic = (r[1] || '').toLowerCase().trim();
                     const qSubject = (r[5] || '').toLowerCase().trim();
-                    const normalized = normalizeText(r[2]);
+                    const normalizedQ = normalizeText(r[2]);
 
                     let matches = false;
                     if (targetType === 'subject') {
-                        matches = qSubject === searchStr || qSubject.includes(searchStr);
+                        matches = qSubject === searchVal || qSubject.includes(searchVal);
                     } else if (targetType === 'topic') {
-                        matches = qTopic === searchStr || qTopic.includes(searchStr);
+                        matches = qTopic === searchVal || qTopic.includes(searchVal);
+                    } else if (searchStr === 'mixed' || searchStr === 'mixed mock') {
+                        matches = true;
                     } else {
-                        matches = qTopic.includes(searchStr) || qSubject.includes(searchStr) || searchStr.includes('mixed');
+                        // Fallback: check if search string is in topic OR subject
+                        matches = qTopic.includes(searchStr) || qSubject.includes(searchStr);
                     }
 
-                    if (matches && !uniqueSheetQs.has(normalized)) {
-                        uniqueSheetQs.set(normalized, {
+                    if (matches && !seenQs.has(normalizedQ)) {
+                        seenQs.add(normalizedQ);
+                        filtered.push({
                             id: r[0], 
                             topic: r[1] || 'General', 
                             question: r[2], 
@@ -127,20 +134,35 @@ export default async function handler(req: any, res: any) {
                             difficulty: r[6] || 'PSC Level'
                         });
                     }
-                });
-
-                let filtered = Array.from(uniqueSheetQs.values());
+                }
 
                 if (filtered.length < qLimit) {
+                    const aiPrompt = `Generate ${qLimit - filtered.length} unique Multiple Choice Questions in Malayalam for Kerala PSC.
+                    Focus on: ${rawTopic}. 
+                    Requirements:
+                    1. High quality Kerala PSC standard.
+                    2. JSON format array of objects.
+                    3. Fields: id, topic, question, options (4 choices), correctAnswerIndex (0-3), subject, difficulty.
+                    Ensure the subject field is one of: GK, Maths, English, Malayalam, Science, Technical, Current Affairs.`;
+
                     const aiResponse = await ai.models.generateContent({
                         model: 'gemini-3-flash-preview',
-                        contents: `Generate ${qLimit - filtered.length} unique MCQs in Malayalam for ${targetType === 'subject' ? 'subject' : 'topic'}: "${searchStr}". 
-                        Strictly relevant to Kerala PSC levels. 
-                        JSON fields: id, topic, question, options (4 choices), correctAnswerIndex (0-3).`,
+                        contents: aiPrompt,
                         config: { responseMimeType: "application/json" }
                     });
-                    const aiQs = JSON.parse(aiResponse.text || "[]");
-                    filtered = [...filtered, ...aiQs];
+                    
+                    try {
+                        const aiQs = JSON.parse(aiResponse.text || "[]");
+                        aiQs.forEach((q: any) => {
+                            const norm = normalizeText(q.question);
+                            if (!seenQs.has(norm)) {
+                                seenQs.add(norm);
+                                filtered.push(q);
+                            }
+                        });
+                    } catch (e) {
+                        console.error("AI Question Parse Error", e);
+                    }
                 }
 
                 return res.status(200).json(filtered.slice(0, qLimit).sort(() => 0.5 - Math.random()));
