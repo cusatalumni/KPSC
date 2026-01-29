@@ -49,7 +49,7 @@ export default async function handler(req: any, res: any) {
             return res.status(401).json({ message: error.message || 'Unauthorized' });
         }
 
-        const { action, sheet, data, mode, id, bookData } = req.body;
+        const { action, sheet, data, mode, id, bookData, qData } = req.body;
 
         try {
             switch (action) {
@@ -76,6 +76,21 @@ export default async function handler(req: any, res: any) {
                     
                     await findAndUpsertRow('Bookstore', 0, bookData.id, rowToUpdate);
                     return res.status(200).json({ message: 'Book updated successfully.' });
+
+                case 'add-question':
+                    if (!qData || !qData.question) return res.status(400).json({ message: 'Missing question data' });
+                    const qId = qData.id || `q_${Date.now()}`;
+                    const qRow = [
+                        qId,
+                        qData.topic,
+                        qData.question,
+                        JSON.stringify(qData.options),
+                        qData.correctAnswerIndex,
+                        qData.subject,
+                        qData.difficulty
+                    ];
+                    await appendSheetData('QuestionBank!A1', [qRow]);
+                    return res.status(200).json({ message: 'Question added to bank successfully.' });
 
                 case 'fix-all-affiliates':
                     const currentBooksAff = await readSheetData('Bookstore!A2:E');
