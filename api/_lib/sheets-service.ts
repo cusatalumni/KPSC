@@ -3,65 +3,46 @@ import { google } from 'googleapis';
 
 declare var process: any;
 
-/**
- * Robustly formats the private key for Google Auth.
- * Handles escaped newlines, extra quotes, and missing headers.
- */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
-    
     let cleaned = key.trim();
-    
-    // Remove surrounding quotes if they exist
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
     }
-    
-    // Replace escaped \n with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
-    
-    // Ensure the key has the correct PEM headers
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
-        // This is a last resort fallback; ideally the key should be full PEM
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
-    
     return cleaned;
 };
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID;
-    if (!id) throw new Error('Backend Error: SPREADSHEET_ID is missing in environment variables.');
+    if (!id) throw new Error('Backend Error: SPREADSHEET_ID missing.');
     return id.trim().replace(/['"]/g, '');
 };
 
-/**
- * Initializes the Google Sheets client using explicit JWT for service account auth.
- * Explicit JWT avoids the "Application Default Credentials" (ADC) lookup which often 
- * fails in Vercel/Serverless environments.
- */
 async function getSheetsClient(scopes: string[]) {
     const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL)?.trim().replace(/['"]/g, '');
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error(`Auth Config Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing.`);
+        throw new Error(`Auth Config Error: Credentials missing.`);
     }
 
     try {
-        // Use JWT directly for service account authentication
-        const auth = new google.auth.JWT(
-            clientEmail,
-            undefined, // keyFile
-            privateKey,
-            scopes
-        );
-
-        return google.sheets({ version: 'v4', auth });
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: clientEmail,
+                private_key: privateKey,
+            },
+            scopes: scopes,
+        });
+        const authClient = await auth.getClient();
+        return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) {
-        console.error("Failed to initialize Google Auth:", e.message);
-        throw new Error(`Google API Authentication Initialization Failed: ${e.message}`);
+        throw new Error(`Google API Authentication Failed: ${e.message}`);
     }
 }
 
