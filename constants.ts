@@ -37,6 +37,30 @@ export const EXAMS_DATA: Exam[] = [
     level: 'Preliminary'
   },
   {
+    id: 'veo_exam',
+    title: { ml: 'VEO (വില്ലേജ് എക്സ്റ്റൻഷൻ ഓഫീസർ)', en: 'Village Extension Officer' },
+    description: { ml: 'ഗ്രാമവികസന വകുപ്പിലെ പ്രധാന പരീക്ഷ.', en: 'Key exam in Rural Development department.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-emerald-600" }),
+    category: 'General',
+    level: 'Main'
+  },
+  {
+    id: 'fireman_exam',
+    title: { ml: 'Fireman / Firewoman (ഫയർമാൻ)', en: 'Fireman / Firewoman' },
+    description: { ml: 'ഫയർ ആന്റ് റെസ്ക്യൂ സർവീസിലെ പരീക്ഷകൾ.', en: 'Fire and Rescue services exams.' },
+    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-red-500" }),
+    category: 'Special',
+    level: 'Preliminary'
+  },
+  {
+    id: 'lp_up_assistant',
+    title: { ml: 'LP/UP Assistant (എൽ.പി/യു.പി അസിസ്റ്റന്റ്)', en: 'LP/UP Assistant' },
+    description: { ml: 'വിദ്യാഭ്യാസ വകുപ്പിലെ അദ്ധ്യാപക തസ്തികകൾ.', en: 'Teaching posts in Education department.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-purple-600" }),
+    category: 'General',
+    level: 'Main'
+  },
+  {
     id: 'staff_nurse',
     title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
     description: { ml: 'ആരോഗ്യ വകുപ്പിലെ നഴ്സിംഗ് തസ്തികകളിലേക്കുള്ള പരീക്ഷ.', en: 'Nursing post exams in Health Department.' },
@@ -66,6 +90,17 @@ export const LDC_EXAM_CONTENT: ExamPageContent = {
   previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
 };
 
+export const TEACHING_EXAM_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'teach_psy', title: 'Psychology & Pedagogy', questions: 20, duration: 25, topic: 'Topic:Educational Psychology' },
+    { id: 'teach_gk', title: 'General Knowledge', questions: 15, duration: 15, topic: 'Subject:GK' },
+    { id: 'teach_ml', title: 'Malayalam', questions: 10, duration: 10, topic: 'Subject:Malayalam' },
+    { id: 'teach_en', title: 'English', questions: 10, duration: 10, topic: 'Subject:English' },
+  ],
+  studyNotes: [{ id: 'sn_psy', title: 'Learning Theories' }],
+  previousPapers: [{ id: 'pp_lpup22', title: 'LP/UP 2022 Paper' }]
+};
+
 export const STAFF_NURSE_CONTENT: ExamPageContent = {
   practiceTests: [
     { id: 'sn_ns', title: 'Nursing Science', questions: 20, duration: 20, topic: 'Topic:Nursing Science' },
@@ -90,6 +125,9 @@ export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
     'ldc_lgs': LDC_EXAM_CONTENT,
     'plus_two_prelims': LDC_EXAM_CONTENT,
     'degree_prelims': LDC_EXAM_CONTENT,
+    'veo_exam': LDC_EXAM_CONTENT,
+    'fireman_exam': LDC_EXAM_CONTENT,
+    'lp_up_assistant': TEACHING_EXAM_CONTENT,
     'staff_nurse': STAFF_NURSE_CONTENT,
     'kseb_sub_eng': KSEB_CONTENT,
 };
@@ -97,7 +135,7 @@ export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
   // --- GK / HISTORY ---
   { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'GK', difficulty: 'PSC Level' },
-  { id: 'h2', question: "ഇന്ത്യൻ നാഷണൽ കോൺഗ്രസ് സ്ഥാപിച്ചത് ആര്?", options: ['എ.ഒ. ഹ്യൂം', 'ഗാന്ധിജി', 'നെഹ്‌റു', 'തിലക്'], correctAnswerIndex: 0, topic: 'Indian History', subject: 'GK', difficulty: 'PSC Level' },
+  { id: 'h2', question: "ഇന്ത്യൻ നാഷണൽ കോൺഗ്രസ് സ്ഥാപിച്ചത് ആര്?", options: ['എ.ഓ. ഹ്യൂം', 'ഗാന്ധിജി', 'നെഹ്‌റു', 'തിലക്'], correctAnswerIndex: 0, topic: 'Indian History', subject: 'GK', difficulty: 'PSC Level' },
   { id: 'h3', question: "കേരള സിംഹം എന്നറിയപ്പെടുന്നത് ആര്?", options: ['പഴശ്ശിരാജ', 'വേലുത്തമ്പി ദളവ', 'കുഞ്ഞാലി മരക്കാർ', 'അയ്യങ്കാലി'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'GK', difficulty: 'PSC Level' },
   { id: 'c1', question: "ഇന്ത്യൻ ഭരണഘടനയുടെ ശില്പി?", options: ['ബി.ആർ. അംബേദ്കർ', 'നെഹ്‌റു', 'രാജേന്ദ്ര പ്രസാദ്', 'പട്ടേൽ'], correctAnswerIndex: 0, topic: 'Indian Constitution', subject: 'GK', difficulty: 'Easy' },
   
@@ -151,10 +189,30 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
 
 export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
   {
+    id: 'mt_ldc_01',
+    examId: 'ldc_lgs',
+    title: { ml: 'LDC Model Test 01', en: 'LDC Model Test 01' },
+    description: { ml: 'എൽ.ഡി.സി സിലബസ് പ്രകാരമുള്ള മാതൃകാ പരീക്ഷ.', en: 'Mock test based on LDC syllabus.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
+    id: 'mt_lpup_01',
+    examId: 'lp_up_assistant',
+    title: { ml: 'LP/UP Assistant Mock', en: 'LP/UP Assistant Mock' },
+    description: { ml: 'സൈക്കോളജി ഉൾപ്പെടെയുള്ള മോക്ക് ടെസ്റ്റ്.', en: 'Mock test including Psychology section.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
     id: 'mt_mixed_01',
     examId: 'ldc_lgs',
     title: { ml: 'Full Mock Test (Mixed)', en: 'Full Mock Test (Mixed)' },
-    description: { ml: 'എല്ലാ विषयोंങ്ങളും ഉൾപ്പെടുത്തിയ മാതൃകാ പരീക്ഷ.', en: 'Mock test covering all major subjects.' },
+    description: { ml: 'എല്ലാ വിഷയങ്ങളും ഉൾപ്പെടുത്തിയ മാതൃകാ പരീക്ഷ.', en: 'Mock test covering all major subjects.' },
     questionsCount: 50,
     duration: 45,
     negativeMarking: 0.33,
