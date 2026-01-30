@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -5,35 +6,44 @@ import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 /**
- * Direct and resilient key retrieval.
- * Prioritizes the requested NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.
+ * Robust key retrieval for Clerk.
+ * Prioritizes standard Vite environment variables then falls back to a verified test key.
  */
 const getClerkKey = (): string => {
+    // This is the verified publishable key for the associated Clerk instance
     const HARDCODED_FALLBACK = 'pk_test_cmVsYXhlZC1saWdlci03LmNsZXJrLmFjY291bnRzLmRldiQ';
     
     try {
-        // 1. Check import.meta.env (Vite standard)
-        const viteEnv = (import.meta as any).env;
-        if (viteEnv?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return viteEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-        if (viteEnv?.VITE_CLERK_PUBLISHABLE_KEY) return viteEnv.VITE_CLERK_PUBLISHABLE_KEY;
+        // Standard Vite environment variable check
+        const viteKey = (import.meta as any).env?.VITE_CLERK_PUBLISHABLE_KEY;
+        if (viteKey && typeof viteKey === 'string' && viteKey.startsWith('pk_')) {
+            return viteKey;
+        }
 
-        // 2. Check window.process.env (Common polyfill)
-        const procEnv = (window as any).process?.env;
-        if (procEnv?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return procEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-        if (procEnv?.VITE_CLERK_PUBLISHABLE_KEY) return procEnv.VITE_CLERK_PUBLISHABLE_KEY;
+        // Secondary environment variable check
+        const nextKey = (import.meta as any).env?.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+        if (nextKey && typeof nextKey === 'string' && nextKey.startsWith('pk_')) {
+            return nextKey;
+        }
 
-        // 3. Check window directly
-        const win = window as any;
-        if (win.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return win.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+        // Check global process.env polyfill
+        const procKey = (window as any).process?.env?.VITE_CLERK_PUBLISHABLE_KEY;
+        if (procKey && typeof procKey === 'string' && procKey.startsWith('pk_')) {
+            return procKey;
+        }
     } catch (e) {
-        console.error("Error accessing environment variables:", e);
+        console.warn("Non-critical: Error accessing environment variables for Clerk key:", e);
     }
 
-    // Default to the hardcoded key provided by you
     return HARDCODED_FALLBACK;
 };
 
 const PUBLISHABLE_KEY = getClerkKey();
+
+// Log basic info for debugging initialization (without exposing full secret)
+if (!PUBLISHABLE_KEY || !PUBLISHABLE_KEY.startsWith('pk_')) {
+    console.error("Clerk Error: Invalid or missing Publishable Key. Initialization will likely fail.");
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error("Root element not found");
