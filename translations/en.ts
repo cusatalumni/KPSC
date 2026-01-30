@@ -126,6 +126,7 @@ export const translations = {
     loading: "AI is writing your study notes..."
   },
   test: {
+    guestMode: "You are practicing as a Guest. Please login to save your performance history.",
     noQuestionsError: "No questions are available for this topic.",
     fetchError: "There was an error fetching questions.",
     backToPrevious: "Back to Previous Page",
@@ -154,6 +155,7 @@ export const translations = {
     title: "Test Result",
     yourScore: "Your Score",
     summary: "You answered {{score}} out of {{total}} questions correctly.",
+    saveProgress: "Login to save your learning progress.",
     feedback: {
       excellent: "Excellent!",
       good: "Good effort!",
