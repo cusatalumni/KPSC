@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useUser, SignInButton } from '@clerk/clerk-react';
 import { TrophyIcon } from './icons/TrophyIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -20,6 +21,7 @@ interface TestResultPageProps {
 
 const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, onBackToPrevious }) => {
   const { t } = useTranslation();
+  const { isSignedIn } = useUser();
   const percentage = Math.round((score / total) * 100);
   
   const getFeedback = () => {
@@ -37,6 +39,17 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, on
         <TrophyIcon className="h-20 w-20 mx-auto text-teal-400" />
         <h1 className="text-3xl font-bold text-slate-800 mt-4">{t('results.title')}</h1>
         
+        {!isSignedIn && (
+          <div className="mt-6 bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+             <p className="text-indigo-900 font-bold mb-4">{t('results.saveProgress')}</p>
+             <SignInButton mode="modal">
+               <button className="bg-indigo-600 text-white font-black px-8 py-3 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">
+                  {t('login')}
+               </button>
+             </SignInButton>
+          </div>
+        )}
+
         <div className="my-8">
             <p className="text-xl text-slate-600">{t('results.yourScore')}</p>
             <p className="text-6xl font-bold text-indigo-600 my-2">{score} <span className="text-4xl text-slate-500">/ {total}</span></p>

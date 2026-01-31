@@ -1,3 +1,4 @@
+
 import { google } from 'googleapis';
 
 declare var process: any;
@@ -8,76 +9,60 @@ declare var process: any;
  */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
-
+    
     let cleaned = key.trim();
-
-    // Remove surrounding quotes if present
-    if (
-        (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
-        (cleaned.startsWith("'") && cleaned.endsWith("'"))
-    ) {
+    
+    // Remove surrounding quotes if they exist (common in some env management UIs)
+    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
+        (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
     }
-
-    // Replace escaped newlines
+    
+    // Replace escaped \n with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
-
-    // Ensure PEM headers exist
+    
+    // Ensure the key has the correct PEM headers
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
-
+    
     return cleaned;
 };
 
 const getSpreadsheetId = (): string => {
-    const id =
-        process.env.SPREADSHEET_ID ||
-        process.env.GOOGLE_SPREADSHEET_ID ||
-        process.env.VITE_SPREADSHEET_ID;
-
-    if (!id) {
-        throw new Error('Backend Error: SPREADSHEET_ID is missing in environment variables.');
-    }
-
+    const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID || process.env.VITE_SPREADSHEET_ID;
+    if (!id) throw new Error('Backend Error: SPREADSHEET_ID is missing in environment variables.');
     return id.trim().replace(/['"]/g, '');
 };
 
 /**
- * Initializes Google Sheets client using GoogleAuth (stable approach).
- * This avoids ADC/JWT issues in serverless environments.
+ * Initializes the Google Sheets client using GoogleAuth with explicit service account credentials.
+ * This method is the most robust for Vercel/Serverless as it directly provides the credentials 
+ * object instead of relying on transport-level ADC lookups.
  */
 async function getSheetsClient(scopes: string[]) {
-    const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL)
-        ?.trim()
-        .replace(/['"]/g, '');
-
-    const privateKey = formatPrivateKey(
-        process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY
-    );
+    const clientEmail = (process.env.GOOGLE_CLIENT_EMAIL || process.env.CLIENT_EMAIL)?.trim().replace(/['"]/g, '');
+    const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY || process.env.PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error('Auth Config Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing.');
+        throw new Error(`Auth Config Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing. Please check Vercel environment variables.`);
     }
 
     try {
+        // Create an explicit GoogleAuth instance with provided credentials
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: clientEmail,
                 private_key: privateKey,
             },
-            scopes,
+            scopes: scopes,
         });
 
-        const authClient = await auth.getClient();
-
-        return google.sheets({
-            version: 'v4',
-            auth: authClient as any,
-        });
+        // Passing the auth instance directly to the factory method
+        return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error('Failed to initialize Google Auth:', e.message);
-        throw new Error(`Google API Authentication Failed: ${e.message}`);
+        console.error("Failed to initialize Google Auth Client:", e.message);
+        throw new Error(`Google API Auth Initialization Failed: ${e.message}`);
     }
 }
 
@@ -87,6 +72,7 @@ async function getSheetsClient(scopes: string[]) {
 const getSafeRange = (range: string) => {
     if (range.includes('!')) {
         const [sheet, cells] = range.split('!');
+        // Escape single quotes in sheet names by doubling them
         return `'${sheet.replace(/'/g, "''")}'!${cells}`;
     }
     return `'${range.replace(/'/g, "''")}'`;
@@ -94,37 +80,33 @@ const getSafeRange = (range: string) => {
 
 export const readSheetData = async (range: string) => {
     const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient([
-        'https://www.googleapis.com/auth/spreadsheets.readonly',
-    ]);
-
-    const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: getSafeRange(range),
+    const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
+    const response = await sheets.spreadsheets.values.get({ 
+        spreadsheetId, 
+        range: getSafeRange(range) 
     });
-
     return response.data.values || [];
 };
 
 export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
     const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient([
-        'https://www.googleapis.com/auth/spreadsheets',
-    ]);
-
-    // Clear existing data
-    await sheets.spreadsheets.values.clear({
-        spreadsheetId,
-        range: getSafeRange(range),
+    const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
+    
+    // Clear the range first to prevent stale data if the new set is smaller
+    await sheets.spreadsheets.values.clear({ 
+        spreadsheetId, 
+        range: getSafeRange(range) 
     });
-
+    
     if (values.length === 0) return;
 
+    // Write starting from the cell specified in range (usually A2)
     const sheetName = range.split('!')[0];
+    const startCell = range.split('!')[1]?.split(':')[0] || 'A2';
 
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: getSafeRange(`${sheetName}!A2`),
+        range: getSafeRange(`${sheetName}!${startCell}`),
         valueInputOption: 'USER_ENTERED',
         requestBody: { values },
     });
@@ -132,12 +114,9 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
 
 export const appendSheetData = async (range: string, values: any[][]) => {
     if (values.length === 0) return;
-
     const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient([
-        'https://www.googleapis.com/auth/spreadsheets',
-    ]);
-
+    const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
+    
     await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: getSafeRange(range),
@@ -148,31 +127,22 @@ export const appendSheetData = async (range: string, values: any[][]) => {
 
 export const deleteRowById = async (sheetName: string, id: string) => {
     const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient([
-        'https://www.googleapis.com/auth/spreadsheets',
-    ]);
-
+    const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
+    
     const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const sheet = spreadsheet.data.sheets?.find(
-        s => s.properties?.title === sheetName
-    );
-
+    const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
     const sheetId = sheet?.properties?.sheetId;
-    if (sheetId === undefined) {
-        throw new Error(`Sheet ${sheetName} not found.`);
-    }
+
+    if (sheetId === undefined) throw new Error(`Sheet '${sheetName}' not found in spreadsheet.`);
 
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: getSafeRange(`${sheetName}!A:A`),
     });
-
     const rows = response.data.values || [];
     const rowIndex = rows.findIndex(row => row[0] === id);
 
-    if (rowIndex === -1) {
-        throw new Error(`Row with ID ${id} not found.`);
-    }
+    if (rowIndex === -1) throw new Error(`Row with ID '${id}' not found in sheet '${sheetName}'.`);
 
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
@@ -181,34 +151,26 @@ export const deleteRowById = async (sheetName: string, id: string) => {
                 {
                     deleteDimension: {
                         range: {
-                            sheetId,
+                            sheetId: sheetId,
                             dimension: 'ROWS',
                             startIndex: rowIndex,
-                            endIndex: rowIndex + 1,
-                        },
-                    },
-                },
-            ],
-        },
+                            endIndex: rowIndex + 1
+                        }
+                    }
+                }
+            ]
+        }
     });
 };
 
-export const findAndUpsertRow = async (
-    sheetName: string,
-    findColumnIndex: number,
-    findValue: string,
-    newRowData: any[]
-) => {
+export const findAndUpsertRow = async (sheetName: string, findColumnIndex: number, findValue: string, newRowData: any[]) => {
     const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient([
-        'https://www.googleapis.com/auth/spreadsheets',
-    ]);
-
-    const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: getSafeRange(`${sheetName}!A:A`),
+    const sheets = await getSheetsClient(['https://www.googleapis.com/auth/spreadsheets']);
+    
+    const response = await sheets.spreadsheets.values.get({ 
+        spreadsheetId, 
+        range: getSafeRange(`${sheetName}!A:A`) 
     });
-
     const rows = response.data.values || [];
     const rowIndex = rows.findIndex(row => row[findColumnIndex] === findValue);
 

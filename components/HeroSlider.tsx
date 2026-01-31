@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import type { Page } from '../types';
@@ -18,21 +19,21 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
             descriptionKey: 'heroSlider.slide1.description',
             ctaKey: 'heroSlider.slide1.cta',
             ctaTarget: 'quiz_home' as Page,
-            imageUrl: 'https://picsum.photos/seed/ai-learning/1200/500'
+            imageUrl: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1200&auto=format&fit=crop'
         },
         {
             titleKey: 'heroSlider.slide2.title',
             descriptionKey: 'heroSlider.slide2.description',
             ctaKey: 'heroSlider.slide2.cta',
             ctaTarget: 'mock_test_home' as Page,
-            imageUrl: 'https://picsum.photos/seed/exam-hall/1200/500'
+            imageUrl: 'https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=1200&auto=format&fit=crop'
         },
         {
             titleKey: 'heroSlider.slide3.title',
             descriptionKey: 'heroSlider.slide3.description',
             ctaKey: 'heroSlider.slide3.cta',
             ctaTarget: 'psc_live_updates' as Page,
-            imageUrl: 'https://picsum.photos/seed/government-news/1200/500'
+            imageUrl: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?q=80&w=1200&auto=format&fit=crop'
         },
     ];
 
@@ -54,25 +55,27 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
     }, [currentSlide, goToNext]);
 
     return (
-        <section className="relative h-96 md:h-80 w-full overflow-hidden rounded-2xl shadow-lg">
+        <section className="relative h-[400px] md:h-80 w-full overflow-hidden rounded-[2.5rem] shadow-2xl premium-shadow">
             {slides.map((slide, index) => (
                 <div
                     key={index}
-                    className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out ${currentSlide === index ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
                     style={{ backgroundImage: `url(${slide.imageUrl})` }}
                 >
-                    <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-                    <div className="relative w-full h-full flex items-center justify-center text-center p-6">
-                         <div className="max-w-3xl mx-auto">
-                            <h2 className="text-4xl font-bold text-white mb-3 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.2s' : '0s'}` }}>
+                    {/* Rich Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/60 to-transparent"></div>
+                    
+                    <div className="relative w-full h-full flex items-center justify-start text-left p-12">
+                         <div className="max-w-2xl">
+                            <h2 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.2s' : '0s'}` }}>
                                 {t(slide.titleKey)}
                             </h2>
-                            <p className="text-lg text-slate-200 mb-8 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.4s' : '0s'}` }}>
+                            <p className="text-lg text-slate-200 mb-8 font-medium opacity-90 animate-fade-in-up" style={{ animationDelay: `${currentSlide === index ? '0.4s' : '0s'}` }}>
                                 {t(slide.descriptionKey)}
                             </p>
                             <button
                                 onClick={() => onNavigate(slide.ctaTarget)}
-                                className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out text-lg animate-fade-in-up"
+                                className="bg-white text-slate-900 font-black px-10 py-4 rounded-2xl shadow-xl hover:bg-indigo-600 hover:text-white transform transition-all duration-300 text-lg animate-fade-in-up"
                                 style={{ animationDelay: `${currentSlide === index ? '0.6s' : '0s'}` }}
                             >
                                 {t(slide.ctaKey)}
@@ -85,26 +88,26 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onNavigate }) => {
             {/* Navigation Arrows */}
             <button
                 onClick={goToPrev}
-                className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/50 hover:bg-white text-slate-700 p-2 rounded-full shadow-md transition"
+                className="absolute top-1/2 left-6 transform -translate-y-1/2 bg-white/10 backdrop-blur-md hover:bg-white text-white hover:text-slate-900 p-3 rounded-2xl shadow-md transition-all z-20"
                 aria-label="Previous Slide"
             >
                 <ChevronLeftIcon className="h-6 w-6" />
             </button>
             <button
                 onClick={goToNext}
-                className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/50 hover:bg-white text-slate-700 p-2 rounded-full shadow-md transition"
+                className="absolute top-1/2 right-6 transform -translate-y-1/2 bg-white/10 backdrop-blur-md hover:bg-white text-white hover:text-slate-900 p-3 rounded-2xl shadow-md transition-all z-20"
                 aria-label="Next Slide"
             >
                 <ChevronRightIcon className="h-6 w-6" />
             </button>
 
             {/* Dot Indicators */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            <div className="absolute bottom-6 left-12 flex space-x-2 z-20">
                 {slides.map((_, index) => (
                     <button
                         key={index}
                         onClick={() => goToSlide(index)}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === index ? 'bg-indigo-600 scale-125' : 'bg-white/70 hover:bg-white'}`}
+                        className={`h-2 transition-all duration-300 rounded-full ${currentSlide === index ? 'w-10 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`}
                         aria-label={`Go to slide ${index + 1}`}
                     />
                 ))}
