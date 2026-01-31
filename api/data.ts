@@ -1,14 +1,14 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
 import { readSheetData } from './_lib/sheets-service.js';
 
 export default async function handler(req: any, res: any) {
     const { type, topic, count, examId } = req.query;
 
     try {
+        // Early check for environment variables indirectly via readSheetData calls
         switch (type) {
             case 'exams':
-                const eRows = await readSheetData('Exams!A2:H').catch(() => []);
+                const eRows = await readSheetData('Exams!A2:H');
                 return res.status(200).json(eRows.map(r => ({
                     id: r[0], title_ml: r[1], title_en: r[2], 
                     description_ml: r[3], description_en: r[4], 
@@ -16,7 +16,7 @@ export default async function handler(req: any, res: any) {
                 })));
 
             case 'syllabus':
-                const sRows = await readSheetData('Syllabus!A2:F').catch(() => []);
+                const sRows = await readSheetData('Syllabus!A2:F');
                 const filteredSyllabus = sRows
                     .filter(r => r[1] === examId)
                     .map(r => ({
@@ -28,25 +28,46 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(filteredSyllabus);
 
             case 'notifications':
-                let nRows = await readSheetData('Notifications!A2:E').catch(() => []);
+                let nRows = await readSheetData('Notifications!A2:E');
                 return res.status(200).json(nRows.map(r => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] || '#' })));
             
             case 'updates':
-                let uRows = await readSheetData('LiveUpdates!A2:D').catch(() => []);
+                let uRows = await readSheetData('LiveUpdates!A2:D');
                 return res.status(200).json(uRows.map(r => ({ title: r[0], url: r[1] || '#', section: r[2] || 'Update', published_date: r[3] })));
 
             case 'questions':
                 if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 10;
-                const allQs = await readSheetData('QuestionBank!A2:G').catch(() => []);
+                const allQs = await readSheetData('QuestionBank!A2:G');
                 const filtered = allQs.filter(r => (r[1] || '').toLowerCase().includes((topic as string).toLowerCase()))
                     .map(r => ({ id: r[0], topic: r[1], question: r[2], options: JSON.parse(r[3] || '[]'), correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6] }));
                 return res.status(200).json(filtered.slice(0, qLimit));
 
+            case 'books':
+                const bRows = await readSheetData('Bookstore!A2:E');
+                return res.status(200).json(bRows.map(r => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));
+
+            case 'affairs':
+                const aRows = await readSheetData('CurrentAffairs!A2:D');
+                return res.status(200).json(aRows.map(r => ({ id: r[0], title: r[1], source: r[2], date: r[3] })));
+
+            case 'gk':
+                const gRows = await readSheetData('GK!A2:C');
+                return res.status(200).json(gRows.map(r => ({ id: r[0], fact: r[1], category: r[2] })));
+
+            case 'study-material':
+                if (!topic) return res.status(400).json({ error: 'Topic required' });
+                // Simple placeholder for study material logic
+                return res.status(200).json({ notes: `# Study Material for ${topic}\n\nNotes content from sheet would go here.` });
+
             default:
-                return res.status(400).json({ error: 'Invalid type' });
+                return res.status(400).json({ error: 'Invalid type requested' });
         }
     } catch (error: any) {
-        res.status(500).json({ error: error.message });
+        console.error(`API Error [${type}]:`, error.message);
+        return res.status(500).json({ 
+            error: error.message,
+            tip: "Please check your Vercel Environment Variables (SPREADSHEET_ID, GOOGLE_PRIVATE_KEY, etc.)"
+        });
     }
 }
