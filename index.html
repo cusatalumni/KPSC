@@ -1,24 +1,25 @@
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
-    "googleapis": "https://esm.sh/googleapis@^171.0.0",
-    "@clerk/backend": "https://esm.sh/@clerk/backend@^2.29.7",
-    "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@^5.60.0"
-  }
-}
-</script>
-
 <!DOCTYPE html>
 <html lang="ml">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>കേരള PSC ഗുരു | PSC Guidance </title>
+    <title>കേരള PSC ഗുരു | PSC Guidance</title>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
+        "googleapis": "https://esm.sh/googleapis@^171.0.0",
+        "@clerk/backend": "https://esm.sh/@clerk/backend@^2.29.7",
+        "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@^5.60.0"
+      }
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,4 +41,53 @@
       @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
       
       .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
-      
+      @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+      .animate-fade-in-up-fast { animation: fade-in-up-fast 0.3s ease-out forwards; }
+      @keyframes fade-in-up-fast { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+      /* Multi-Chromatic Theme System */
+      .btn-vibrant-indigo {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        box-shadow: 0 4px 15px -1px rgba(79, 70, 229, 0.4);
+      }
+      .btn-vibrant-indigo:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+      .btn-vibrant-emerald {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 15px -1px rgba(16, 185, 129, 0.4);
+      }
+      .btn-vibrant-emerald:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+      .btn-vibrant-amber {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 15px -1px rgba(245, 158, 11, 0.4);
+      }
+
+      .btn-vibrant-rose {
+        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+        box-shadow: 0 4px 15px -1px rgba(244, 63, 94, 0.4);
+      }
+
+      .btn-vibrant-cyan {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        box-shadow: 0 4px 15px -1px rgba(6, 182, 212, 0.4);
+      }
+
+      .glass-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .premium-shadow {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0776870820469795" crossorigin="anonymous"></script>
+  </body>
+</html>
