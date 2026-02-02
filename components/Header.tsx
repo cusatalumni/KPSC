@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { SignInButton, UserButton, useUser } from '@clerk/clerk-react';
 import { NAV_STRUCTURE } from '../constants';
@@ -44,6 +45,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
+      // Fix: Use handleClickOutside instead of handleClickAddress
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
@@ -67,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
     return (
       <SignInButton mode="modal">
-        <button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-5 py-2 rounded-full shadow-lg hover:scale-105 transform transition duration-300 ease-in-out">
+        <button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transform transition duration-300 ease-in-out">
           {t('login')}
         </button>
       </SignInButton>
@@ -80,8 +82,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
     if (isSignedIn) {
       return (
-        <div className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50">
-          <span className="font-semibold text-slate-700">
+        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+          <span className="font-bold text-slate-700">
             {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
           </span>
           <UserButton afterSignOutUrl="/" />
@@ -90,13 +92,12 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
     return (
       <SignInButton mode="modal">
-        <button className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold px-5 py-3 rounded-lg shadow-lg">
+        <button className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold px-5 py-4 rounded-xl shadow-lg">
           {t('login')}
         </button>
       </SignInButton>
     );
   };
-
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -113,7 +114,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             </div>
           </div>
 
-          {/* Desktop Nav */}
           <nav ref={navRef} className="hidden md:flex items-center space-x-1 lg:space-x-2 relative">
             {NAV_STRUCTURE.map(link => (
                 link.children ? (
@@ -147,8 +147,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
           </nav>
 
           <div className="flex items-center space-x-4">
-             {/* Language Switcher */}
-            <button onClick={toggleLanguage} className="hidden md:block text-slate-500 hover:bg-slate-100 font-semibold px-3 py-2 rounded-md transition-colors">
+            <button onClick={toggleLanguage} className="hidden md:block text-slate-500 hover:bg-slate-100 font-bold px-3 py-2 rounded-md transition-colors">
               {language === 'ml' ? 'English' : 'മലയാളം'}
             </button>
             
@@ -156,7 +155,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               {renderAuthControls()}
             </div>
             
-             {/* Mobile Menu Button */}
             <div className="md:hidden">
                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-slate-600 hover:bg-slate-100">
                     {isMenuOpen ? <XMarkIcon className="h-7 w-7" /> : <Bars3Icon className="h-7 w-7" />}
@@ -166,7 +164,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
         </div>
       </div>
       
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-slate-200 px-4 py-4 absolute w-full shadow-lg">
             <nav className="flex flex-col space-y-1">
@@ -206,7 +203,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 )}
             </nav>
             <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-                <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-semibold px-3 py-3 rounded-md transition-colors">
+                <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-bold px-3 py-3 rounded-md transition-colors">
                     Switch to {language === 'ml' ? 'English' : 'മലയാളം'}
                 </button>
                 {renderMobileAuthControls()}
