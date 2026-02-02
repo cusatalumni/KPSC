@@ -52,7 +52,7 @@ if (rootElement) {
                         <p>ലോഗിൻ സിസ്റ്റം പ്രവർത്തിക്കാൻ ആവശ്യമായ <b>VITE_CLERK_PUBLISHABLE_KEY</b> കണ്ടെത്താനായില്ല.</p>
                         <p className="text-xs font-bold text-yellow-500">പരിഹാരം:</p>
                         <ol className="list-decimal list-inside space-y-2 text-[11px]">
-                            <li>Vercel Settings -> Environment Variables തുറക്കുക.</li>
+                            <li>Vercel Settings → Environment Variables തുറക്കുക.</li>
                             <li><b>VITE_CLERK_PUBLISHABLE_KEY</b> എന്ന പേരിൽ കീ നൽകുക.</li>
                             <li>സേവ് ചെയ്ത ശേഷം Vercel-ൽ ഒന്നുകൂടി <b>Redeploy</b> ചെയ്യുക.</li>
                         </ol>
