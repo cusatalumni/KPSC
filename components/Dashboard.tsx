@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ExamCard from './ExamCard';
 import { getDetectedExams, getExams } from '../services/pscDataService';
 import type { Exam, Page } from '../types';
@@ -8,43 +8,111 @@ import NewsTicker from './NewsTicker';
 import HeroSlider from './HeroSlider';
 
 const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: (page: Page) => void; onStartStudy: (topic: string) => void; }> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const [detectedExams, setDetectedExams] = useState<Exam[]>([]);
   const [allExams, setAllExams] = useState<Exam[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDetectedExams().then(setDetectedExams).catch(console.error);
-    getExams().then(setAllExams).catch(console.error);
+    Promise.all([
+        getDetectedExams(),
+        getExams()
+    ]).then(([detected, exams]) => {
+        setDetectedExams(detected);
+        setAllExams(exams);
+        setLoading(false);
+    }).catch(err => {
+        console.error("Dashboard Load Error:", err);
+        setLoading(false);
+    });
   }, []);
 
-  const categories = [
-    { id: 'Live', title: { ml: 'പുതിയ വിജ്ഞാപനങ്ങൾ', en: 'Live Recruitment' }, theme: 'rose' },
-    { id: 'General', title: { ml: 'ജനറൽ പരീക്ഷകൾ', en: 'General Exams' }, theme: 'indigo' },
-    { id: 'Technical', title: { ml: 'സാങ്കേതിക പരീക്ഷകൾ', en: 'Technical Exams' }, theme: 'amber' }
-  ];
+  // Define display themes for categories
+  const categoryThemes: Record<string, 'indigo' | 'amber' | 'rose' | 'emerald' | 'cyan'> = {
+    'General': 'indigo',
+    'Technical': 'amber',
+    'Special': 'rose',
+    'Live': 'rose',
+    'Degree': 'emerald',
+    '10th': 'cyan'
+  };
+
+  // Group exams by category dynamically
+  const groupedExams = useMemo(() => {
+    const groups: Record<string, Exam[]> = {};
+    
+    // Add detected live exams first
+    if (detectedExams.length > 0) {
+        groups['Live'] = detectedExams;
+    }
+
+    allExams.forEach(exam => {
+        const cat = exam.category || 'General';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(exam);
+    });
+    return groups;
+  }, [detectedExams, allExams]);
+
+  const sortedCategoryIds = useMemo(() => {
+    const mainCategories = ['Live', 'General', 'Technical', 'Special'];
+    const otherCategories = Object.keys(groupedExams).filter(id => !mainCategories.includes(id));
+    return [...mainCategories, ...otherCategories].filter(id => groupedExams[id]);
+  }, [groupedExams]);
+
+  if (loading) {
+    return (
+        <div className="space-y-12 animate-pulse">
+            <div className="h-64 bg-slate-200 rounded-[2.5rem]"></div>
+            <div className="h-12 bg-slate-200 rounded-full w-3/4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-200 rounded-[2.5rem]"></div>)}
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-12">
       <HeroSlider onNavigate={onNavigate} />
       <NewsTicker />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-3 space-y-16">
-          {categories.map(cat => {
-            const list = cat.id === 'Live' ? detectedExams : allExams.filter(e => e.category === cat.id);
-            if (list.length === 0) return null;
-            return (
-              <section key={cat.id} className="animate-fade-in-up">
-                <div className="flex items-center space-x-4 mb-8 border-b pb-4">
-                  <div className={`h-8 w-1.5 ${cat.theme === 'indigo' ? 'bg-indigo-600' : 'bg-rose-600'} rounded-full`}></div>
-                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">{cat.title[language]}</h3>
+      
+      <div className="lg:col-span-3 space-y-16">
+        {sortedCategoryIds.map(catId => {
+          const list = groupedExams[catId] || [];
+          const theme = categoryThemes[catId] || 'indigo';
+          
+          return (
+            <section key={catId} className="animate-fade-in-up">
+              <div className="flex items-center justify-between mb-8 border-b pb-4">
+                <div className="flex items-center space-x-4">
+                  <div className={`h-8 w-1.5 ${theme === 'indigo' ? 'bg-indigo-600' : theme === 'amber' ? 'bg-amber-600' : theme === 'rose' ? 'bg-rose-600' : 'bg-emerald-600'} rounded-full`}></div>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                    {catId === 'Live' ? t('dashboard.notifications.title') : catId}
+                  </h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                  {list.map(exam => <ExamCard key={exam.id} exam={exam} onNavigate={onNavigateToExam} language={language} theme={cat.theme as any} />)}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{list.length} Items</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                {list.map(exam => (
+                    <ExamCard 
+                        key={exam.id} 
+                        exam={exam} 
+                        onNavigate={onNavigateToExam} 
+                        language={language} 
+                        theme={theme as any} 
+                    />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+
+        {Object.keys(groupedExams).length === 0 && (
+            <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                <p className="text-slate-400 font-bold">No examination data available. Check Google Sheets config.</p>
+            </div>
+        )}
       </div>
     </div>
   );

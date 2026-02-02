@@ -5,10 +5,10 @@ export default async function handler(req: any, res: any) {
     const { type, topic, count, examId } = req.query;
 
     try {
-        // Early check for environment variables indirectly via readSheetData calls
         switch (type) {
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
+                if (!eRows || eRows.length === 0) return res.status(200).json([]);
                 return res.status(200).json(eRows.map(r => ({
                     id: r[0], title_ml: r[1], title_en: r[2], 
                     description_ml: r[3], description_en: r[4], 
@@ -39,12 +39,33 @@ export default async function handler(req: any, res: any) {
                 if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 10;
                 const allQs = await readSheetData('QuestionBank!A2:G');
-                const filtered = allQs.filter(r => (r[1] || '').toLowerCase().includes((topic as string).toLowerCase()))
-                    .map(r => ({ id: r[0], topic: r[1], question: r[2], options: JSON.parse(r[3] || '[]'), correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6] }));
-                return res.status(200).json(filtered.slice(0, qLimit));
+                
+                // Flexible matching logic for topics
+                const cleanTopic = (topic as string).toLowerCase().replace(/^(topic|subject):/i, '').trim();
+
+                const filtered = allQs.filter(r => {
+                    const rowTopic = (r[1] || '').toLowerCase().replace(/^(topic|subject):/i, '').trim();
+                    const rowSubject = (r[5] || '').toLowerCase().trim();
+                    const rowQuestion = (r[2] || '').toLowerCase();
+
+                    // Match if search term is in topic, subject, or the question itself
+                    return rowTopic.includes(cleanTopic) || 
+                           rowSubject.includes(cleanTopic) || 
+                           cleanTopic.includes(rowTopic);
+                }).map(r => ({ 
+                    id: r[0], topic: r[1], question: r[2], 
+                    options: JSON.parse(r[3] || '[]'), 
+                    correctAnswerIndex: parseInt(r[4] || '0'), 
+                    subject: r[5], difficulty: r[6] 
+                }));
+                
+                // Shuffle if we have many questions to keep it fresh
+                const shuffled = filtered.sort(() => 0.5 - Math.random());
+                return res.status(200).json(shuffled.slice(0, qLimit));
 
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
+                if (!bRows || bRows.length === 0) return res.status(200).json([]);
                 return res.status(200).json(bRows.map(r => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));
 
             case 'affairs':
@@ -55,19 +76,11 @@ export default async function handler(req: any, res: any) {
                 const gRows = await readSheetData('GK!A2:C');
                 return res.status(200).json(gRows.map(r => ({ id: r[0], fact: r[1], category: r[2] })));
 
-            case 'study-material':
-                if (!topic) return res.status(400).json({ error: 'Topic required' });
-                // Simple placeholder for study material logic
-                return res.status(200).json({ notes: `# Study Material for ${topic}\n\nNotes content from sheet would go here.` });
-
             default:
                 return res.status(400).json({ error: 'Invalid type requested' });
         }
     } catch (error: any) {
-        console.error(`API Error [${type}]:`, error.message);
-        return res.status(500).json({ 
-            error: error.message,
-            tip: "Please check your Vercel Environment Variables (SPREADSHEET_ID, GOOGLE_PRIVATE_KEY, etc.)"
-        });
+        console.error(`API Runtime Error [${type}]:`, error.message);
+        return res.status(500).json({ error: "Failed to fetch data from source. Please verify Google Sheet permissions." });
     }
 }
