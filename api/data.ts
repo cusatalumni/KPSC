@@ -40,13 +40,18 @@ export default async function handler(req: any, res: any) {
                 const qLimit = parseInt(count as string) || 10;
                 const allQs = await readSheetData('QuestionBank!A2:G');
                 
-                // Clean the input topic for matching
-                const searchTopic = (topic as string).toLowerCase().replace(/^(topic|subject):/i, '').trim();
+                // Flexible matching logic for topics
+                const cleanTopic = (topic as string).toLowerCase().replace(/^(topic|subject):/i, '').trim();
 
                 const filtered = allQs.filter(r => {
                     const rowTopic = (r[1] || '').toLowerCase().replace(/^(topic|subject):/i, '').trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    return rowTopic.includes(searchTopic) || rowSubject.includes(searchTopic);
+                    const rowQuestion = (r[2] || '').toLowerCase();
+
+                    // Match if search term is in topic, subject, or the question itself
+                    return rowTopic.includes(cleanTopic) || 
+                           rowSubject.includes(cleanTopic) || 
+                           cleanTopic.includes(rowTopic);
                 }).map(r => ({ 
                     id: r[0], topic: r[1], question: r[2], 
                     options: JSON.parse(r[3] || '[]'), 
@@ -54,10 +59,13 @@ export default async function handler(req: any, res: any) {
                     subject: r[5], difficulty: r[6] 
                 }));
                 
-                return res.status(200).json(filtered.slice(0, qLimit));
+                // Shuffle if we have many questions to keep it fresh
+                const shuffled = filtered.sort(() => 0.5 - Math.random());
+                return res.status(200).json(shuffled.slice(0, qLimit));
 
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
+                if (!bRows || bRows.length === 0) return res.status(200).json([]);
                 return res.status(200).json(bRows.map(r => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));
 
             case 'affairs':
@@ -73,6 +81,6 @@ export default async function handler(req: any, res: any) {
         }
     } catch (error: any) {
         console.error(`API Runtime Error [${type}]:`, error.message);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Failed to fetch data from source. Please verify Google Sheet permissions." });
     }
 }
