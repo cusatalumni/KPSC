@@ -51,24 +51,28 @@ export default async function handler(req: any, res: any) {
                 
                 if (!allQs || allQs.length === 0) return res.status(200).json([]);
 
-                const cleanTopic = (topic as string).toLowerCase()
-                    .replace(/^(topic|subject|exam):/i, '')
-                    .trim();
+                // Enhanced clean matching logic
+                const requestedTopic = (topic as string).toLowerCase().trim();
+                const cleanInputTopic = requestedTopic.replace(/^(topic|subject):/i, '').trim();
 
                 const filtered = allQs.filter(r => {
-                    const rowTopic = (r[1] || '').toLowerCase()
-                        .replace(/^(topic|subject|exam):/i, '')
-                        .trim();
+                    const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    const rowQuestion = (r[2] || '').toLowerCase();
-
-                    return rowTopic.includes(cleanTopic) || 
-                           cleanTopic.includes(rowTopic) ||
-                           rowSubject.includes(cleanTopic) ||
-                           (cleanTopic.length > 3 && rowQuestion.includes(cleanTopic));
+                    const cleanRowTopic = rowTopic.replace(/^(topic|subject):/i, '').trim();
+                    
+                    // Match if any of the clean versions match
+                    return cleanRowTopic === cleanInputTopic || 
+                           rowTopic === requestedTopic ||
+                           rowSubject === cleanInputTopic ||
+                           rowTopic.includes(cleanInputTopic);
                 }).map(r => {
                     let options = [];
-                    try { options = JSON.parse(r[3] || '[]'); } catch(e) { options = [r[3] || "Option A", "Option B", "Option C", "Option D"]; }
+                    try { 
+                        options = JSON.parse(r[3] || '[]'); 
+                        if (!Array.isArray(options)) throw new Error();
+                    } catch(e) { 
+                        options = [r[3] || "Option A", "Option B", "Option C", "Option D"]; 
+                    }
                     return { 
                         id: r[0], 
                         topic: r[1], 
@@ -80,6 +84,7 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
+                // Shuffle results
                 const finalQuestions = filtered.sort(() => 0.5 - Math.random());
                 return res.status(200).json(finalQuestions.slice(0, qLimit));
 
@@ -109,6 +114,6 @@ export default async function handler(req: any, res: any) {
         }
     } catch (error: any) {
         console.error(`API Runtime Error [${type}]:`, error.message);
-        return res.status(200).json([]); // Always return empty array on data error
+        return res.status(200).json([]);
     }
 }

@@ -45,7 +45,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      // Fix: Use handleClickOutside instead of handleClickAddress
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
@@ -55,7 +54,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
   const renderAuthControls = () => {
     if (!isLoaded) {
-      return <div className="h-10 w-24 bg-slate-200 rounded-full animate-pulse"></div>;
+      return (
+        <div className="h-10 w-24 bg-slate-100 rounded-full animate-pulse flex items-center justify-center text-[10px] text-slate-300 font-bold">
+            LOADING...
+        </div>
+      );
     }
     if (isSignedIn) {
       return (
@@ -69,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
     return (
       <SignInButton mode="modal">
-        <button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transform transition duration-300 ease-in-out">
+        <button className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-black px-6 py-2.5 rounded-full shadow-lg hover:scale-105 active:scale-95 transform transition duration-300 ease-in-out">
           {t('login')}
         </button>
       </SignInButton>
@@ -77,12 +80,10 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   };
 
   const renderMobileAuthControls = () => {
-    if (!isLoaded) {
-      return <div className="h-12 w-full bg-slate-200 rounded-lg animate-pulse"></div>;
-    }
+    if (!isLoaded) return null;
     if (isSignedIn) {
       return (
-        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
           <span className="font-bold text-slate-700">
             {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
           </span>
@@ -92,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
     return (
       <SignInButton mode="modal">
-        <button className="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold px-5 py-4 rounded-xl shadow-lg">
+        <button className="w-full bg-indigo-600 text-white font-black px-5 py-4 rounded-2xl shadow-lg">
           {t('login')}
         </button>
       </SignInButton>

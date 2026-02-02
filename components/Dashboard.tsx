@@ -27,14 +27,15 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     });
   }, []);
 
-  // Define display themes for categories
+  // Theme map for UI aesthetics
   const categoryThemes: Record<string, 'indigo' | 'amber' | 'rose' | 'emerald' | 'cyan'> = {
     'General': 'indigo',
     'Technical': 'amber',
     'Special': 'rose',
     'Live': 'rose',
     'Degree': 'emerald',
-    '10th': 'cyan'
+    '10th': 'cyan',
+    'Preliminary': 'indigo'
   };
 
   // Group exams by category dynamically
@@ -54,17 +55,18 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     return groups;
   }, [detectedExams, allExams]);
 
+  // Sort categories so main ones appear first
   const sortedCategoryIds = useMemo(() => {
-    const mainCategories = ['Live', 'General', 'Technical', 'Special'];
-    const otherCategories = Object.keys(groupedExams).filter(id => !mainCategories.includes(id));
-    return [...mainCategories, ...otherCategories].filter(id => groupedExams[id]);
+    const priority = ['Live', 'General', 'Technical', 'Special'];
+    const otherCategories = Object.keys(groupedExams).filter(id => !priority.includes(id)).sort();
+    return [...priority.filter(p => groupedExams[p]), ...otherCategories];
   }, [groupedExams]);
 
   if (loading) {
     return (
         <div className="space-y-12 animate-pulse">
-            <div className="h-64 bg-slate-200 rounded-[2.5rem]"></div>
-            <div className="h-12 bg-slate-200 rounded-full w-3/4"></div>
+            <div className="h-72 bg-slate-200 rounded-[2.5rem]"></div>
+            <div className="h-10 bg-slate-200 rounded-full w-1/3"></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-200 rounded-[2.5rem]"></div>)}
             </div>
@@ -77,21 +79,30 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
       <HeroSlider onNavigate={onNavigate} />
       <NewsTicker />
       
-      <div className="lg:col-span-3 space-y-16">
+      <div className="space-y-16">
         {sortedCategoryIds.map(catId => {
           const list = groupedExams[catId] || [];
           const theme = categoryThemes[catId] || 'indigo';
           
+          // Localization for internal keys
+          const displayTitle = catId === 'Live' ? t('dashboard.notifications.title') : 
+                               catId === 'General' ? 'General Exams' : 
+                               catId === 'Technical' ? 'Technical Exams' : 
+                               catId === 'Special' ? 'Special Exams' : catId;
+
           return (
             <section key={catId} className="animate-fade-in-up">
-              <div className="flex items-center justify-between mb-8 border-b pb-4">
+              <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
                 <div className="flex items-center space-x-4">
-                  <div className={`h-8 w-1.5 ${theme === 'indigo' ? 'bg-indigo-600' : theme === 'amber' ? 'bg-amber-600' : theme === 'rose' ? 'bg-rose-600' : 'bg-emerald-600'} rounded-full`}></div>
-                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">
-                    {catId === 'Live' ? t('dashboard.notifications.title') : catId}
-                  </h3>
+                  <div className={`h-8 w-1.5 ${
+                    theme === 'indigo' ? 'bg-indigo-600' : 
+                    theme === 'amber' ? 'bg-amber-600' : 
+                    theme === 'rose' ? 'bg-rose-600' : 
+                    theme === 'emerald' ? 'bg-emerald-600' : 'bg-cyan-600'
+                  } rounded-full`}></div>
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">{displayTitle}</h3>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{list.length} Items</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-100">{list.length} Exams</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                 {list.map(exam => (
@@ -108,9 +119,9 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
           );
         })}
 
-        {Object.keys(groupedExams).length === 0 && (
-            <div className="text-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-bold">No examination data available. Check Google Sheets config.</p>
+        {sortedCategoryIds.length === 0 && (
+            <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                <p className="text-slate-400 font-bold">No examinations found in the database.</p>
             </div>
         )}
       </div>
