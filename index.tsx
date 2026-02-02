@@ -6,42 +6,46 @@ import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 /**
- * Robust key retrieval for Clerk.
- * It scans all available environment sources for a string starting with 'pk_'.
+ * Enhanced Clerk key retrieval.
+ * In Vite, variables MUST start with VITE_ to be visible in the browser.
  */
 const getClerkKey = (): string | null => {
     try {
         const metaEnv = (import.meta as any).env || {};
         const processEnv = (window as any).process?.env || {};
+        const allEnv = { ...processEnv, ...metaEnv };
         
-        // 1. Direct priority check
-        const directKey = metaEnv.VITE_CLERK_PUBLISHABLE_KEY || processEnv.VITE_CLERK_PUBLISHABLE_KEY;
-        if (directKey && typeof directKey === 'string' && directKey.startsWith('pk_')) {
-            return directKey.trim();
+        // Log keys found (masked for safety) to help user debug
+        console.log("Environment keys detected:", Object.keys(allEnv).filter(k => k.includes('CLERK') || k.startsWith('VITE_')));
+
+        // 1. Look for the standard Vite-prefixed key first
+        const standardKey = allEnv.VITE_CLERK_PUBLISHABLE_KEY || allEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+        if (standardKey && typeof standardKey === 'string' && standardKey.trim().startsWith('pk_')) {
+            return standardKey.trim();
         }
 
-        // 2. Scan all environment variables for a value that looks like a Clerk PK
-        // This helps if the user accidentally used the key as the NAME of the variable in Vercel.
-        const allEntries = { ...processEnv, ...metaEnv };
-        
-        // Check values first
-        for (const value of Object.values(allEntries)) {
-            if (typeof value === 'string' && value.startsWith('pk_')) {
-                console.log("Clerk Publishable Key detected from value.");
-                return value.trim();
+        // 2. Search all values for anything starting with pk_
+        for (const value of Object.values(allEnv)) {
+            if (typeof value === 'string' && value.trim().startsWith('pk_')) {
+                // Ignore secret keys (sk_)
+                if (!value.trim().startsWith('sk_')) {
+                    console.log("Clerk key found by value scanning.");
+                    return value.trim();
+                }
             }
         }
 
-        // Check keys (in case the value was pasted as the name)
-        for (const key of Object.keys(allEntries)) {
+        // 3. Search all keys for the pattern (case where key was used as name)
+        for (const key of Object.keys(allEnv)) {
             if (key.startsWith('pk_')) {
-                console.log("Clerk Publishable Key detected from key name.");
-                return key.split('_NEXT_PUBLIC')[0].trim();
+                console.log("Clerk key found embedded in environment variable name.");
+                // Extract only the pk_ part up to the first suffix
+                const match = key.match(/(pk_(test|live)_[a-zA-Z0-9]+)/);
+                if (match) return match[1];
             }
         }
-
     } catch (e) {
-        console.error("Clerk key lookup failed:", e);
+        console.error("Clerk key lookup error:", e);
     }
     return null;
 };
@@ -60,14 +64,16 @@ if (rootElement) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-black mb-4">Login Configuration Error</h1>
-                    <p className="text-slate-500 font-medium mb-6 leading-relaxed">
-                        Clerk Publishable Key (starting with <b>pk_</b>) could not be found in your environment variables. 
-                        Please check your Vercel settings and redeploy.
+                    <h1 className="text-2xl font-black mb-4">Login Config Error</h1>
+                    <p className="text-slate-500 font-medium mb-6 leading-relaxed text-sm">
+                        Clerk Publishable Key not found. <br/><br/>
+                        <b>Required Action:</b><br/>
+                        In Vercel, set a variable with Name: <code className="bg-slate-100 px-1 text-indigo-600">VITE_CLERK_PUBLISHABLE_KEY</code> and Value: <code className="bg-slate-100 px-1 text-indigo-600">pk_live_...</code>
                     </p>
-                    <button onClick={() => window.location.reload()} className="w-full btn-vibrant-indigo text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95">
+                    <button onClick={() => window.location.reload()} className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95">
                         Retry Connection
                     </button>
+                    <p className="mt-4 text-[10px] text-slate-400">Check browser console (F12) for detailed logs.</p>
                 </div>
             </div>
         );
