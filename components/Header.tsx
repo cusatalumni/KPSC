@@ -49,8 +49,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     };
   }, []);
 
-  const adminButtonClasses = "flex items-center space-x-2 text-slate-600 bg-yellow-100 hover:bg-yellow-200 font-bold transition duration-200 px-3 py-2 rounded-md";
-  const mobileAdminButtonClasses = "flex items-center space-x-2 text-slate-700 bg-yellow-100 hover:bg-yellow-200 text-left font-bold p-3 rounded-md transition duration-200";
+  const adminButtonClasses = "flex items-center space-x-2 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-black transition duration-200 px-4 py-2 rounded-xl border border-indigo-100";
+  const mobileAdminButtonClasses = "flex items-center space-x-2 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-left font-black p-4 rounded-xl transition duration-200 border border-indigo-100";
 
   const renderAuthControls = () => {
     if (!isLoaded) {
@@ -62,10 +62,15 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     }
     if (isSignedIn) {
       return (
-        <div className="flex items-center space-x-3">
-          <span className="hidden lg:inline text-sm font-medium text-slate-700">
-            {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
-          </span>
+        <div className="flex items-center space-x-4">
+          <div className="text-right flex flex-col items-end">
+            <span className="hidden lg:inline text-xs font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+              {isAdmin ? '🛡️ Administrator' : '🎓 Student Account'}
+            </span>
+            <span className="hidden lg:inline text-sm font-bold text-slate-700">
+              {user?.firstName || 'My Profile'}
+            </span>
+          </div>
           <UserButton afterSignOutUrl="/" />
         </div>
       );
@@ -83,10 +88,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     if (!isLoaded) return null;
     if (isSignedIn) {
       return (
-        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-          <span className="font-bold text-slate-700">
-            {user?.firstName ? `${t('welcome')}, ${user.firstName}!` : t('myAccount')}
-          </span>
+        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{isAdmin ? 'ADMIN' : 'STUDENT'}</span>
+            <span className="font-bold text-slate-700">
+              {user?.firstName || 'My Account'}
+            </span>
+          </div>
           <UserButton afterSignOutUrl="/" />
         </div>
       );
@@ -105,13 +113,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavClick('dashboard')}>
-            <LogoIcon className="h-12 w-12" />
+            <LogoIcon className="h-14 w-14" variant="transparent" />
             <div>
               <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-slate-800" style={{fontFamily: "'Manjari', sans-serif"}}>{t('app.title')}</h1>
+                <h1 className="text-2xl font-bold text-slate-800" style={{fontFamily: "'Manjari', sans-serif"}}>PSC Guidance Kerala</h1>
                 <AiBadge />
               </div>
-              <p className="text-sm text-indigo-700 font-medium -mt-1">{t('app.subtitle')}</p>
+              <p className="text-sm text-indigo-700 font-medium -mt-1">കേരള PSC ഗുരു</p>
             </div>
           </div>
 
@@ -119,14 +127,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             {NAV_STRUCTURE.map(link => (
                 link.children ? (
                     <div key={link.nameKey} className="relative">
-                        <button onClick={() => handleDropdownToggle(link.nameKey)} className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-medium transition duration-200 px-3 py-2 rounded-md">
+                        <button onClick={() => handleDropdownToggle(link.nameKey)} className="flex items-center space-x-1 text-slate-600 hover:text-indigo-600 font-bold transition duration-200 px-3 py-2 rounded-md">
                             <span>{t(link.nameKey)}</span>
                             <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${openDropdown === link.nameKey ? 'rotate-180' : ''}`} />
                         </button>
                         {openDropdown === link.nameKey && (
                             <div className="absolute top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-100 py-2 z-50 animate-fade-in-up-fast">
                                 {link.children.map(child => (
-                                    <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left px-4 py-2 text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition duration-150">
+                                    <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left px-4 py-2 text-slate-600 hover:bg-slate-100 hover:text-indigo-600 transition duration-150 font-medium">
                                         {t(child.nameKey)}
                                     </button>
                                 ))}
@@ -134,7 +142,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                         )}
                     </div>
                 ) : (
-                    <button key={link.nameKey} onClick={() => handleNavClick(link.target as Page)} className="text-slate-600 hover:text-indigo-600 font-medium transition duration-200 px-3 py-2 rounded-md">
+                    <button key={link.nameKey} onClick={() => handleNavClick(link.target as Page)} className="text-slate-600 hover:text-indigo-600 font-bold transition duration-200 px-3 py-2 rounded-md">
                         {t(link.nameKey)}
                     </button>
                 )
@@ -148,8 +156,8 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <button onClick={toggleLanguage} className="hidden md:block text-slate-500 hover:bg-slate-100 font-bold px-3 py-2 rounded-md transition-colors">
-              {language === 'ml' ? 'English' : 'മലയാളം'}
+            <button onClick={toggleLanguage} className="hidden md:block text-slate-500 hover:bg-slate-100 font-black px-3 py-2 rounded-xl transition-colors text-xs border border-transparent hover:border-slate-200">
+              {language === 'ml' ? 'ENG' : 'മലയാളം'}
             </button>
             
             <div className="hidden md:block">
@@ -157,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             </div>
             
             <div className="md:hidden">
-                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-md text-slate-600 hover:bg-slate-100">
+                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-xl text-slate-600 hover:bg-slate-100">
                     {isMenuOpen ? <XMarkIcon className="h-7 w-7" /> : <Bars3Icon className="h-7 w-7" />}
                 </button>
             </div>
@@ -166,20 +174,20 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
       </div>
       
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-slate-200 px-4 py-4 absolute w-full shadow-lg">
+        <div className="md:hidden bg-white border-t border-slate-200 px-4 py-4 absolute w-full shadow-xl animate-fade-in-up-fast">
             <nav className="flex flex-col space-y-1">
                  {NAV_STRUCTURE.map((link) => (
                     <div key={link.nameKey}>
                         {link.children ? (
                             <>
-                                <button onClick={() => handleDropdownToggle(link.nameKey)} className="w-full flex justify-between items-center text-slate-700 hover:bg-slate-100 text-left font-semibold p-3 rounded-md transition duration-200">
+                                <button onClick={() => handleDropdownToggle(link.nameKey)} className="w-full flex justify-between items-center text-slate-700 hover:bg-slate-50 text-left font-black p-3 rounded-xl transition duration-200">
                                     <span>{t(link.nameKey)}</span>
                                     <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${openDropdown === link.nameKey ? 'rotate-180' : ''}`} />
                                 </button>
                                 {openDropdown === link.nameKey && (
-                                    <div className="pl-4 mt-1 space-y-1 border-l-2 border-slate-200 ml-3">
+                                    <div className="pl-4 mt-1 space-y-1 border-l-2 border-slate-200 ml-3 mb-2">
                                         {link.children.map(child => (
-                                            <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left text-slate-600 hover:bg-slate-100 font-medium p-3 rounded-md transition duration-200">
+                                            <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left text-slate-600 hover:bg-slate-50 font-bold p-3 rounded-xl transition duration-200">
                                                 {t(child.nameKey)}
                                             </button>
                                         ))}
@@ -189,7 +197,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                         ) : (
                              <button 
                                 onClick={() => handleNavClick(link.target as Page)}
-                                className="w-full text-slate-700 hover:bg-slate-100 text-left font-semibold p-3 rounded-md transition duration-200"
+                                className="w-full text-slate-700 hover:bg-slate-50 text-left font-black p-3 rounded-xl transition duration-200"
                             >
                                 {t(link.nameKey)}
                             </button>
@@ -204,7 +212,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 )}
             </nav>
             <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-                <button onClick={toggleLanguage} className="w-full text-slate-600 hover:bg-slate-100 font-bold px-3 py-3 rounded-md transition-colors">
+                <button onClick={toggleLanguage} className="w-full text-slate-600 bg-slate-50 hover:bg-slate-100 font-black px-3 py-4 rounded-2xl transition-colors">
                     Switch to {language === 'ml' ? 'English' : 'മലയാളം'}
                 </button>
                 {renderMobileAuthControls()}
