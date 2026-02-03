@@ -1,8 +1,8 @@
 
 export const translations = {
   app: {
-    title: "കേരള പി.എസ്.സി ഗുരു",
-    subtitle: "PSC Guidance Kerala"
+    title: "PSC Guidance Kerala",
+    subtitle: "കേരള PSC ഗുരു"
   },
   login: "ലോഗിൻ",
   welcome: "സ്വാഗതം",
@@ -22,6 +22,11 @@ export const translations = {
   error: {
     fetchData: "വിവരങ്ങൾ ലഭിക്കുന്നതിൽ പിഴവ് സംഭവിച്ചു.",
     fetchNotifications: "അറിയിപ്പുകൾ ലഭിക്കുന്നതിൽ പിഴവ് സംഭവിച്ചു."
+  },
+  auth: {
+    admin: "അഡ്മിനിസ്ട്രേറ്റർ",
+    student: "വിദ്യാർത്ഥി",
+    profile: "പ്രൊഫൈൽ"
   },
   nav: {
     home: "ഹോം",
@@ -78,7 +83,13 @@ export const translations = {
     }
   },
   dashboard: {
-    topCourses: "പ്രധാന കോഴ്സകളും",
+    topCourses: "പ്രധാന കോഴ്സുകൾ",
+    examCategories: {
+      General: "ജനറൽ പരീക്ഷകൾ",
+      Technical: "സാങ്കേതിക പരീക്ഷകൾ",
+      Special: "സ്പെഷ്യൽ പരീക്ഷകൾ",
+      Live: "പുതിയ അറിയിപ്പുകൾ"
+    },
     notifications: {
         title: "പുതിയ അറിയിപ്പുകൾ",
         subtitle: "ദിവസവും പുതുക്കിയ ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ",
@@ -123,14 +134,17 @@ export const translations = {
     }
   },
   studyMaterial: {
+    title: "പഠന സാമഗ്രികൾ",
     subtitle: "AI-ജനറേറ്റഡ് പഠന കുറിപ്പുകൾ",
-    loading: "AI നിങ്ങൾക്കായി പഠന കുറിപ്പുകൾ തയ്യാറാക്കുന്നു..."
+    loading: "AI നിങ്ങൾക്കായി പഠന കുറിപ്പുകൾ തയ്യാറാക്കുന്നു...",
+    allMaterials: "എല്ലാം കാണുക"
   },
   test: {
     guestMode: "നിങ്ങൾ ഇപ്പോൾ ഗസ്റ്റ് ആയിട്ടാണ് ഈ ടെസ്റ്റ് ചെയ്യുന്നത്. നിങ്ങളുടെ സ്കോറുകൾ സേവ് ചെയ്യാൻ ദയവായി ലോഗിൻ ചെയ്യുക.",
-    noQuestionsError: "ഈ വിഷയത്തിൽ ചോദ്യങ്ങളൊന്നും ലഭ്യമല്ല.",
+    noQuestionsError: "ഈ विषयोंത്തിൽ ചോദ്യങ്ങളൊന്നും ലഭ്യമല്ല.",
     fetchError: "ചോദ്യങ്ങൾ ലഭ്യമാക്കുന്നതിൽ പിഴവുണ്ടായി.",
     backToPrevious: "മുമ്പത്തെ പേജിലേക്ക് മടങ്ങുക",
+    quitExam: "പരീക്ഷാ ഹാളിൽ നിന്നും പുറത്തിറങ്ങുക",
     loading: {
       ml: "AI നിങ്ങൾക്കായി പുതിയ ചോദ്യങ്ങൾ തയ്യാറാക്കുന്നു...",
       en: "AI is generating fresh questions for you..."
@@ -140,6 +154,7 @@ export const translations = {
     next: "അടുത്തത്",
     submit: "സമർപ്പിക്കുക",
     endTest: "പരീക്ഷ അവസാനിപ്പിക്കുക",
+    progress: "പഠന പുരോഗതി",
     modal: {
       title: "പരീക്ഷ സമർപ്പിക്കുക",
       body: "ഈ പരീക്ഷ സമർപ്പിക്കാൻ നിങ്ങൾ തയ്യാറാണോ?",
@@ -175,6 +190,8 @@ export const translations = {
     disclosure: "അഫിലിയേറ്റ് വെളിപ്പെടുത്തൽ"
   },
   examPage: {
-    recommendedBooks: "ശുപാർശ ചെയ്യുന്ന പുസ്തകങ്ങൾ"
+    recommendedBooks: "ശുപാർശ ചെയ്യുന്ന പുസ്തകങ്ങൾ",
+    topicPractice: "വിഷയങ്ങൾ തിരിച്ചുള്ള പരിശീലനം",
+    backToDashboard: "ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക"
   }
 };

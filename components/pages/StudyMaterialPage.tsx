@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getStudyMaterial } from '../../services/pscDataService';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
@@ -34,9 +35,9 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
     // Simple markdown to HTML renderer
     const renderMarkdown = (text: string) => {
         let html = text
-            .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-slate-800 mt-6 mb-3">$1</h2>')
-            .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-slate-900 mt-8 mb-4 border-b pb-2">$1</h1>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-800">$1</strong>')
+            .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-slate-800 dark:text-white mt-6 mb-3">$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-8 mb-4 border-b dark:border-slate-800 pb-2">$1</h1>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-800 dark:text-slate-200">$1</strong>')
             .replace(/^\* (.*$)/gim, '<li>$1</li>')
             .replace(/^- (.*$)/gim, '<li>$1</li>')
             
@@ -46,31 +47,31 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg animate-fade-in">
+        <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl shadow-lg animate-fade-in border border-slate-100 dark:border-slate-800">
             <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
                 <ChevronLeftIcon className="h-5 w-5" />
                 <span>{t('test.backToPrevious')}</span>
             </button>
 
-            <header className="mb-6 border-b pb-4">
-                <h1 className="text-4xl font-bold text-slate-800">{topic}</h1>
+            <header className="mb-6 border-b dark:border-slate-800 pb-4">
+                <h1 className="text-4xl font-bold text-slate-800 dark:text-white">{topic}</h1>
                 <p className="text-lg text-slate-500 mt-1">{t('studyMaterial.subtitle')}</p>
             </header>
 
             {loading && (
                 <div className="flex flex-col items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <p className="mt-4 text-lg text-slate-600">{t('studyMaterial.loading')}</p>
+                    <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">{t('studyMaterial.loading')}</p>
                 </div>
             )}
 
             {error && (
-                 <div className="text-center text-red-500 bg-red-50 p-6 rounded-lg">{error}</div>
+                 <div className="text-center text-red-500 bg-red-50 dark:bg-red-950/20 p-6 rounded-lg border border-red-100 dark:border-red-900/50">{error}</div>
             )}
 
             {!loading && !error && (
                 <article 
-                    className="prose prose-slate max-w-none text-lg leading-relaxed"
+                    className="prose prose-slate dark:prose-invert max-w-none text-lg leading-relaxed dark:text-slate-300"
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
                 >
                 </article>

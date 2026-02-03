@@ -1,8 +1,8 @@
 
 export const translations = {
   app: {
-    title: "Kerala PSC Guru",
-    subtitle: "PSC Guidance Kerala"
+    title: "PSC Guidance Kerala",
+    subtitle: "Kerala PSC Guru"
   },
   login: "Login",
   welcome: "Welcome",
@@ -22,6 +22,11 @@ export const translations = {
   error: {
     fetchData: "An error occurred while fetching data.",
     fetchNotifications: "An error occurred while fetching notifications."
+  },
+  auth: {
+    admin: "Administrator",
+    student: "Student Account",
+    profile: "Profile"
   },
   nav: {
     home: "Home",
@@ -57,7 +62,8 @@ export const translations = {
       running: "Running...",
       run: "Run",
       success: "Success! The database has been updated.",
-      error: "An error occurred: "
+      error: "An error occurred: ",
+      csvHelp: "Don't forget to mention the exam name (e.g., LDC) in the 'Topic' column when uploading questions."
   },
   heroSlider: {
     slide1: {
@@ -78,6 +84,12 @@ export const translations = {
   },
   dashboard: {
     topCourses: "Top Courses",
+    examCategories: {
+      General: "General Exams",
+      Technical: "Technical Exams",
+      Special: "Special Exams",
+      Live: "New Notifications"
+    },
     notifications: {
         title: "Latest Notifications",
         subtitle: "The latest updates, refreshed daily.",
@@ -122,14 +134,17 @@ export const translations = {
     }
   },
   studyMaterial: {
+    title: "Study Materials",
     subtitle: "AI-generated study notes",
-    loading: "AI is writing your study notes..."
+    loading: "AI is writing your study notes...",
+    allMaterials: "View All"
   },
   test: {
     guestMode: "You are practicing as a Guest. Please login to save your performance history.",
     noQuestionsError: "No questions are available for this topic.",
     fetchError: "There was an error fetching questions.",
     backToPrevious: "Back to Previous Page",
+    quitExam: "Quit and Exit Examination",
     loading: {
       ml: "AI നിങ്ങൾക്കായി പുതിയ ചോദ്യങ്ങൾ തയ്യാറാക്കുന്നു...",
       en: "AI is generating fresh questions for you..."
@@ -139,6 +154,7 @@ export const translations = {
     next: "Next",
     submit: "Submit",
     endTest: "End Test",
+    progress: "Course Progress",
     modal: {
       title: "Submit Test",
       body: "Are you sure you want to submit this test?",
@@ -174,6 +190,8 @@ export const translations = {
     disclosure: "Affiliate Disclosure"
   },
   examPage: {
-    recommendedBooks: "Recommended Books"
+    recommendedBooks: "Recommended Books",
+    topicPractice: "Topic-wise Practice",
+    backToDashboard: "Back to Dashboard"
   }
 };

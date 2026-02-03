@@ -27,6 +27,7 @@ import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, Prac
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
+import { useTheme } from './contexts/ThemeContext';
 import type { Page } from './types';
 
 const App: React.FC = () => {
@@ -41,6 +42,7 @@ const App: React.FC = () => {
   const { user, isSignedIn } = useUser();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { language } = useTranslation();
+  const { theme } = useTheme();
 
   const syncStateFromHash = useCallback(() => {
     const hash = window.location.hash.replace('#', '');
@@ -131,7 +133,7 @@ const App: React.FC = () => {
     setActiveTest({ 
         title: testTitle, 
         questionsCount: test.questionsCount,
-        topic: 'mixed', // Full mocks use mixed questions
+        topic: 'mixed', 
         isPro: test.isPro,
         negativeMarking: test.negativeMarking
     });
@@ -140,7 +142,6 @@ const App: React.FC = () => {
   };
   
   const handleStartPracticeTest = (test: { title: string, questions: number, topic?: string, negativeMarking?: number }, examTitle: string) => {
-    // FIX: Use the specific internal topic string for the API, not the display title
     setActiveTest({ 
         title: `${examTitle} - ${test.title}`, 
         questionsCount: test.questions,
@@ -157,7 +158,7 @@ const App: React.FC = () => {
     setActiveTest({ 
         title: quizTitle, 
         questionsCount: 25,
-        topic: `Topic:${category.title.en}`, // Use English title as a stable topic key
+        topic: `Topic:${category.title.en}`, 
         isPro: category.isPro 
     });
     setPreviousPage(currentPage);
@@ -262,9 +263,9 @@ const App: React.FC = () => {
   const isTestPage = currentPage === 'test';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+    <div className={`min-h-screen transition-colors duration-500 flex flex-col ${theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
       {!isTestPage && <Header onNavigate={handleNavigate} />}
-      <main className={`flex-grow ${isTestPage ? '' : 'container mx-auto px-4 py-8'}`}>
+      <main className={`flex-grow transition-colors duration-500 ${isTestPage ? '' : 'container mx-auto px-4 py-8'}`}>
         {renderContent()}
       </main>
       {!isTestPage && <Footer onNavigate={handleNavigate}/>}

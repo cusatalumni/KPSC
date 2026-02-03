@@ -4,10 +4,10 @@ import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 /**
  * Enhanced Clerk key retrieval.
- * In Vite, variables MUST start with VITE_ to be visible in the browser.
  */
 const getClerkKey = (): string | null => {
     try {
@@ -15,13 +15,11 @@ const getClerkKey = (): string | null => {
         const processEnv = (window as any).process?.env || {};
         const allEnv = { ...processEnv, ...metaEnv };
         
-        // 1. Check for standard Vite key
         const standardKey = allEnv.VITE_CLERK_PUBLISHABLE_KEY || allEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
         if (standardKey && typeof standardKey === 'string' && standardKey.trim().startsWith('pk_')) {
             return standardKey.trim();
         }
 
-        // 2. Scan all values just in case
         for (const value of Object.values(allEnv)) {
             if (typeof value === 'string' && value.trim().startsWith('pk_')) {
                 if (!value.trim().startsWith('sk_')) return value.trim();
@@ -67,9 +65,11 @@ if (rootElement) {
         root.render(
             <React.StrictMode>
                 <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-                    <LanguageProvider>
-                        <App />
-                    </LanguageProvider>
+                    <ThemeProvider>
+                        <LanguageProvider>
+                            <App />
+                        </LanguageProvider>
+                    </ThemeProvider>
                 </ClerkProvider>
             </React.StrictMode>
         );
