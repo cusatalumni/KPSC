@@ -23,12 +23,11 @@ import GkPage from './components/pages/GkPage';
 import AdminPage from './components/pages/AdminPage';
 import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import SitemapPage from './components/pages/SitemapPage';
-import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, PracticeTest } from './types';
+import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, Page } from './types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
-import type { Page } from './types';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -36,7 +35,6 @@ const App: React.FC = () => {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any } | null>(null);
-  const [previousPage, setPreviousPage] = useState<Page>('dashboard');
   const [activeStudyTopic, setActiveStudyTopic] = useState<string | null>(null);
   
   const { user, isSignedIn } = useUser();
@@ -137,7 +135,6 @@ const App: React.FC = () => {
         isPro: test.isPro,
         negativeMarking: test.negativeMarking
     });
-    setPreviousPage(currentPage);
     setCurrentPage('test');
   };
   
@@ -149,7 +146,6 @@ const App: React.FC = () => {
         isPro: false,
         negativeMarking: test.negativeMarking || 0.33
     });
-    setPreviousPage('exam_details');
     setCurrentPage('test');
   };
 
@@ -161,7 +157,6 @@ const App: React.FC = () => {
         topic: `Topic:${category.title.en}`, 
         isPro: category.isPro 
     });
-    setPreviousPage(currentPage);
     setCurrentPage('test');
   }
 
@@ -203,9 +198,7 @@ const App: React.FC = () => {
                 />;
       case 'exam_details':
         if (!selectedExam) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
-        
          const examContent = EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT;
-
          return <ExamPage 
             exam={selectedExam} 
             content={examContent}
@@ -241,7 +234,7 @@ const App: React.FC = () => {
       case 'gk':
         return <GkPage onBack={() => handleNavigate('dashboard')} />;
       case 'admin_panel':
-        return <AdminPage onBack={() => handleNavigate('dashboard')} activeTabId={adminTab} />;
+        return <AdminPage onBack={() => handleNavigate('dashboard')} />;
       case 'study_material':
         if (!activeStudyTopic) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
         return <StudyMaterialPage 
@@ -263,7 +256,7 @@ const App: React.FC = () => {
   const isTestPage = currentPage === 'test';
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 flex flex-col ${theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+    <div className={`min-h-screen transition-colors duration-500 flex flex-col ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
       {!isTestPage && <Header onNavigate={handleNavigate} />}
       <main className={`flex-grow transition-colors duration-500 ${isTestPage ? '' : 'container mx-auto px-4 py-8'}`}>
         {renderContent()}

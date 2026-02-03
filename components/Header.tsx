@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             <span className="hidden lg:inline text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">
               {isAdmin ? `🛡️ ${t('auth.admin')}` : `🎓 ${t('auth.student')}`}
             </span>
-            <span className="hidden lg:inline text-sm font-bold text-slate-700 dark:text-slate-200">
+            <span className="hidden lg:inline text-sm font-bold text-slate-700 dark:text-slate-100">
               {user?.firstName || t('auth.profile')}
             </span>
           </div>
@@ -106,14 +106,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             {NAV_STRUCTURE.map(link => (
                 link.children ? (
                     <div key={link.nameKey} className="relative">
-                        <button onClick={() => handleDropdownToggle(link.nameKey)} className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition duration-200 px-3 py-2 rounded-md">
+                        <button onClick={() => handleDropdownToggle(link.nameKey)} className="flex items-center space-x-1 text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition duration-200 px-3 py-2 rounded-md">
                             <span>{t(link.nameKey)}</span>
                             <ChevronDownIcon className={`h-4 w-4 transition-transform duration-200 ${openDropdown === link.nameKey ? 'rotate-180' : ''}`} />
                         </button>
                         {openDropdown === link.nameKey && (
                             <div className="absolute top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-50 animate-fade-in-up-fast">
                                 {link.children.map(child => (
-                                    <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition duration-150 font-medium">
+                                    <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition duration-150 font-medium">
                                         {t(child.nameKey)}
                                     </button>
                                 ))}
@@ -121,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                         )}
                     </div>
                 ) : (
-                    <button key={link.nameKey} onClick={() => handleNavClick(link.target as Page)} className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition duration-200 px-3 py-2 rounded-md">
+                    <button key={link.nameKey} onClick={() => handleNavClick(link.target as Page)} className="text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold transition duration-200 px-3 py-2 rounded-md">
                         {t(link.nameKey)}
                     </button>
                 )
@@ -143,7 +143,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
             </button>
 
-            <button onClick={toggleLanguage} className="hidden md:block text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 font-black px-3 py-2 rounded-xl transition-colors text-xs border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
+            <button onClick={toggleLanguage} className="hidden md:block text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 font-black px-3 py-2 rounded-xl transition-colors text-xs border border-transparent hover:border-slate-200 dark:border-slate-800">
               {language === 'ml' ? 'ENG' : 'മലയാളം'}
             </button>
             
@@ -167,14 +167,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                     <div key={link.nameKey}>
                         {link.children ? (
                             <>
-                                <button onClick={() => handleDropdownToggle(link.nameKey)} className="w-full flex justify-between items-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 text-left font-black p-3 rounded-xl transition duration-200">
+                                <button onClick={() => handleDropdownToggle(link.nameKey)} className="w-full flex justify-between items-center text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 text-left font-black p-3 rounded-xl transition duration-200">
                                     <span>{t(link.nameKey)}</span>
                                     <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${openDropdown === link.nameKey ? 'rotate-180' : ''}`} />
                                 </button>
                                 {openDropdown === link.nameKey && (
                                     <div className="pl-4 mt-1 space-y-1 border-l-2 border-slate-200 dark:border-slate-800 ml-3 mb-2">
                                         {link.children.map(child => (
-                                            <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold p-3 rounded-xl transition duration-200">
+                                            <button key={child.nameKey} onClick={() => handleNavClick(child.target as Page)} className="w-full text-left text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 font-bold p-3 rounded-xl transition duration-200">
                                                 {t(child.nameKey)}
                                             </button>
                                         ))}
@@ -184,7 +184,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                         ) : (
                              <button 
                                 onClick={() => handleNavClick(link.target as Page)}
-                                className="w-full text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 text-left font-black p-3 rounded-xl transition duration-200"
+                                className="w-full text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 text-left font-black p-3 rounded-xl transition duration-200"
                             >
                                 {t(link.nameKey)}
                             </button>

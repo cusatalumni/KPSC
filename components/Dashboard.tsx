@@ -27,7 +27,6 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     });
   }, []);
 
-  // Theme map for UI aesthetics
   const categoryThemes: Record<string, 'indigo' | 'amber' | 'rose' | 'emerald' | 'cyan'> = {
     'General': 'indigo',
     'Technical': 'amber',
@@ -38,15 +37,11 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     'Preliminary': 'indigo'
   };
 
-  // Group exams by category dynamically
   const groupedExams = useMemo(() => {
     const groups: Record<string, Exam[]> = {};
-    
-    // Add detected live exams first
     if (detectedExams.length > 0) {
         groups['Live'] = detectedExams;
     }
-
     allExams.forEach(exam => {
         const cat = exam.category || 'General';
         if (!groups[cat]) groups[cat] = [];
@@ -55,7 +50,6 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     return groups;
   }, [detectedExams, allExams]);
 
-  // Sort categories so main ones appear first
   const sortedCategoryIds = useMemo(() => {
     const priority = ['Live', 'General', 'Technical', 'Special'];
     const otherCategories = Object.keys(groupedExams).filter(id => !priority.includes(id)).sort();
@@ -65,10 +59,10 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
   if (loading) {
     return (
         <div className="space-y-12 animate-pulse">
-            <div className="h-72 bg-slate-200 rounded-[2.5rem]"></div>
-            <div className="h-10 bg-slate-200 rounded-full w-1/3"></div>
+            <div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>
+            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-full w-1/3"></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-200 rounded-[2.5rem]"></div>)}
+                {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>)}
             </div>
         </div>
     );
@@ -83,13 +77,11 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
         {sortedCategoryIds.map(catId => {
           const list = groupedExams[catId] || [];
           const theme = categoryThemes[catId] || 'indigo';
-          
-          // Localization for category titles
           const displayTitle = t(`dashboard.examCategories.${catId}`) || catId;
 
           return (
             <section key={catId} className="animate-fade-in-up">
-              <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-4">
+              <div className="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
                 <div className="flex items-center space-x-4">
                   <div className={`h-8 w-1.5 ${
                     theme === 'indigo' ? 'bg-indigo-600' : 

@@ -9,7 +9,6 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
     // Remove wrapping quotes and fix newlines
     let cleaned = key.trim();
     
-    // Some platforms wrap the key in extra quotes
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
@@ -37,14 +36,12 @@ async function getSheetsClient() {
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim().replace(/['"]/g, '');
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
-    if (!clientEmail) {
-        throw new Error('Backend Error: GOOGLE_CLIENT_EMAIL is missing. Check Vercel environment variables.');
-    }
-    if (!privateKey) {
-        throw new Error('Backend Error: GOOGLE_PRIVATE_KEY is missing. Check Vercel environment variables.');
+    if (!clientEmail || !privateKey) {
+        throw new Error('Backend Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing. Check Vercel environment variables.');
     }
 
     try {
+        // Explicitly passing credentials object to avoid "default credentials" error
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: clientEmail,
@@ -71,7 +68,6 @@ export const readSheetData = async (range: string) => {
         return response.data.values || [];
     } catch (error: any) {
         console.error(`Sheet Read Error [${range}]:`, error.message);
-        // Fallback or throw based on preference. Here we throw to show the error.
         throw error;
     }
 };
