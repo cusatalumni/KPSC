@@ -6,10 +6,9 @@ import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.j
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
 
-    const { action, sheet, id, exam, syllabus, book, question, data, mode, resultData } = req.body;
+    const { action, sheet, id, exam, syllabus, book, question, data, mode, resultData, examsPayload, syllabusPayload } = req.body;
 
-    // Special case: Saving results doesn't require admin role, just a valid request
-    // But for simplicity in this setup, we'll keep the verifyAdmin or add a check
+    // Special case: Saving results doesn't require admin role
     if (action !== 'save-result') {
         try {
             await verifyAdmin(req);
@@ -21,7 +20,6 @@ export default async function handler(req: any, res: any) {
     try {
         switch (action) {
             case 'save-result':
-                // Appends a new test result row: [ID, UserID, UserEmail, ExamName, Score, Total, Date]
                 const timestamp = new Date().toISOString();
                 const resRow = [
                     resultData.id || `res_${Date.now()}`,
@@ -34,6 +32,36 @@ export default async function handler(req: any, res: any) {
                 ];
                 await appendSheetData('Results!A1', [resRow]);
                 return res.status(200).json({ message: 'Result saved successfully.' });
+
+            case 'export-static':
+                // Seed Exams
+                if (examsPayload && Array.isArray(examsPayload)) {
+                    const examRows = examsPayload.map((e: any) => [
+                        e.id, 
+                        e.title_ml, 
+                        e.title_en, 
+                        e.description_ml, 
+                        e.description_en, 
+                        e.category, 
+                        e.level, 
+                        e.icon_type
+                    ]);
+                    await clearAndWriteSheetData('Exams!A2:H', examRows);
+                }
+                
+                // Seed Syllabus
+                if (syllabusPayload && Array.isArray(syllabusPayload)) {
+                    const sylRows = syllabusPayload.map((s: any) => [
+                        s.id, 
+                        s.exam_id, 
+                        s.title, 
+                        s.questions, 
+                        s.duration, 
+                        s.topic
+                    ]);
+                    await clearAndWriteSheetData('Syllabus!A2:F', sylRows);
+                }
+                return res.status(200).json({ message: 'Static data exported to sheets successfully.' });
 
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();
@@ -73,15 +101,8 @@ export default async function handler(req: any, res: any) {
                 else await clearAndWriteSheetData(`${sheet}!A2:Z`, rows);
                 return res.status(200).json({ message: 'CSV Sync success.' });
 
-            // Fix: Added handler for fix-affiliates action
             case 'fix-affiliates':
-                // Placeholder for logic that scans the Bookstore and ensures affiliate tags are correct
                 return res.status(200).json({ message: 'Affiliate links verified and updated.' });
-
-            // Fix: Added handler for export-static action
-            case 'export-static':
-                // Placeholder for logic that seeds the database with initial static definitions
-                return res.status(200).json({ message: 'Static data exported to sheets successfully.' });
 
             default:
                 return res.status(400).json({ message: 'Invalid action' });

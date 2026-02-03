@@ -38,13 +38,7 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     }
 };
 
-// Fix: Added missing export for getDetectedExams
-/**
- * Fetches exams that are currently "detected" (placeholder for live detections).
- */
 export const getDetectedExams = async (): Promise<Exam[]> => {
-    // In a production environment, this could derive from recent psc notifications
-    // or a specialized sheet for priority exams.
     return [];
 };
 
@@ -103,43 +97,25 @@ export const updateExam = (exam: any, token: string | null) => adminReq({ action
 export const updateSyllabus = (syllabus: any, token: string | null) => adminReq({ action: 'update-syllabus', syllabus }, token);
 export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
-
-// Fix: Added missing export for fixAllAffiliates
-/**
- * Triggers a process to fix all affiliate links in the bookstore.
- */
 export const fixAllAffiliates = (token: string | null) => adminReq({ action: 'fix-affiliates' }, token);
 
-// Fix: Added missing export for getStudyMaterial
-/**
- * Generates study material notes using AI for a given topic.
- */
+export const exportStaticExamsToSheet = (token: string | null, examsPayload: any[], syllabusPayload: any[]) => 
+    adminReq({ action: 'export-static', examsPayload, syllabusPayload }, token);
+
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
     try {
         const response = await fetch('/api/ai', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                prompt: `Generate detailed study notes in Malayalam for the Kerala PSC exam topic: "${topic}". 
-                Include key facts, historical context if applicable, and bullet points for easy reading. 
-                Use markdown formatting (headers, bold text, lists).`,
+                prompt: `Generate detailed study notes in Malayalam for the Kerala PSC exam topic: "${topic}". Use markdown formatting.`,
                 model: 'gemini-3-flash-preview',
             }),
         });
-
         if (!response.ok) throw new Error('AI generation failed');
         const data = await response.json();
         return { notes: data.text || 'വിവരങ്ങൾ ലഭ്യമല്ല.' };
     } catch (error) {
-        console.error("Error generating study material:", error);
         return { notes: "പഠന സാമഗ്രികൾ തയ്യാറാക്കുന്നതിൽ സാങ്കേതിക തകരാർ സംഭവിച്ചു." };
     }
 };
-
-// Fix: Added missing export for exportStaticExamsToSheet
-/**
- * Exports the static default exams defined in constants.ts to the Google Sheet.
- */
-export const exportStaticExamsToSheet = (token: string | null) => adminReq({ action: 'export-static' }, token);

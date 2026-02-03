@@ -4,6 +4,8 @@ import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { getExams, updateExam, deleteExam, updateSyllabus, exportStaticExamsToSheet } from '../../services/pscDataService';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+// Import missing constants needed for static data export
+import { EXAMS_DATA, EXAM_CONTENT_MAP } from '../constants';
 
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { getToken } = useAuth();
@@ -30,7 +32,36 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setLoading(true);
         const token = await getToken();
         try {
-            const res = await exportStaticExamsToSheet(token);
+            // Prepare payloads for static export as expected by the service
+            // Map icons back to strings for sheet storage
+            const examsPayload = EXAMS_DATA.map(e => ({
+                id: e.id,
+                title_ml: e.title.ml,
+                title_en: e.title.en,
+                description_ml: e.description.ml,
+                description_en: e.description.en,
+                category: e.category,
+                level: e.level,
+                icon_type: e.id.includes('ldc') ? 'book' : e.id.includes('shield') ? 'shield' : 'cap' 
+            }));
+
+            // Prepare syllabus payload
+            const syllabusPayload: any[] = [];
+            Object.entries(EXAM_CONTENT_MAP).forEach(([examId, content]) => {
+                content.practiceTests.forEach(test => {
+                    syllabusPayload.push({
+                        id: test.id,
+                        exam_id: examId,
+                        title: test.title,
+                        questions: test.questions,
+                        duration: test.duration,
+                        topic: test.topic
+                    });
+                });
+            });
+
+            // Fixed: Provided missing arguments examsPayload and syllabusPayload to exportStaticExamsToSheet
+            const res = await exportStaticExamsToSheet(token, examsPayload, syllabusPayload);
             setStatus(res.message);
             fetchExams();
         } catch (e: any) {
