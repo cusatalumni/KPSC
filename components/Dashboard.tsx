@@ -84,11 +84,8 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
           const list = groupedExams[catId] || [];
           const theme = categoryThemes[catId] || 'indigo';
           
-          // Localization for internal keys
-          const displayTitle = catId === 'Live' ? t('dashboard.notifications.title') : 
-                               catId === 'General' ? 'General Exams' : 
-                               catId === 'Technical' ? 'Technical Exams' : 
-                               catId === 'Special' ? 'Special Exams' : catId;
+          // Localization for category titles
+          const displayTitle = t(`dashboard.examCategories.${catId}`) || catId;
 
           return (
             <section key={catId} className="animate-fade-in-up">
@@ -100,9 +97,9 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                     theme === 'rose' ? 'bg-rose-600' : 
                     theme === 'emerald' ? 'bg-emerald-600' : 'bg-cyan-600'
                   } rounded-full`}></div>
-                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">{displayTitle}</h3>
+                  <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{displayTitle}</h3>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-100">{list.length} Exams</span>
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">{list.length} {t('nav.mockTests')}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                 {list.map(exam => (
@@ -120,8 +117,8 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
         })}
 
         {sortedCategoryIds.length === 0 && (
-            <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-bold">No examinations found in the database.</p>
+            <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                <p className="text-slate-400 font-bold">{t('error.fetchData')}</p>
             </div>
         )}
       </div>
