@@ -8,6 +8,7 @@ export default async function handler(req: any, res: any) {
         switch (type) {
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
+                if (eRows.length === 0) return res.status(200).json([]);
                 return res.status(200).json(eRows.map(r => ({
                     id: r[0], title_ml: r[1], title_en: r[2], 
                     description_ml: r[3], description_en: r[4], 
@@ -57,11 +58,18 @@ export default async function handler(req: any, res: any) {
                            rowTopic.includes(cleanInputTopic);
                 }).map(r => {
                     let options = [];
+                    const optionsRaw = r[3] || '[]';
                     try { 
-                        options = JSON.parse(r[3] || '[]'); 
-                        if (!Array.isArray(options)) throw new Error();
+                        // Try to parse if it's a JSON string like ["A","B"]
+                        if (optionsRaw.trim().startsWith('[')) {
+                            options = JSON.parse(optionsRaw);
+                        } else {
+                            // If it's a comma-separated string
+                            options = optionsRaw.split(',').map((o: string) => o.trim());
+                        }
+                        if (!Array.isArray(options) || options.length < 2) throw new Error();
                     } catch(e) { 
-                        options = [r[3] || "A", "B", "C", "D"]; 
+                        options = [optionsRaw, "Option B", "Option C", "Option D"]; 
                     }
                     return { 
                         id: r[0], topic: r[1], question: r[2], options: options, 
@@ -89,12 +97,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(400).json({ error: 'Invalid type requested' });
         }
     } catch (error: any) {
-        console.error(`API Handler Error [${type}]:`, error.message);
-        // Return 500 but keep it friendly. On production, you might want to return mock data as fallback.
-        return res.status(500).json({ 
-            error: 'Database connection failed', 
-            details: error.message,
-            help: 'Check if Google Sheet is shared with your service account email.'
-        });
+        console.error(`API Error:`, error.message);
+        return res.status(500).json({ error: 'Database connection failed', details: error.message });
     }
 }

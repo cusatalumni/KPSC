@@ -1,11 +1,11 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useUser, SignInButton } from '@clerk/clerk-react';
 import { TrophyIcon } from './icons/TrophyIcon';
 import { ArrowPathIcon } from './icons/ArrowPathIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 import AdsenseWidget from './AdsenseWidget';
-import type { TestResult } from '../types';
+import { saveTestResult } from '../services/pscDataService';
 
 interface TestResultPageProps {
   score: number;
@@ -17,13 +17,32 @@ interface TestResultPageProps {
     subjectBreakdown?: Record<string, { correct: number; total: number }>;
   };
   onBackToPrevious: () => void;
+  testTitle?: string;
 }
 
-const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, onBackToPrevious }) => {
+const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, onBackToPrevious, testTitle = "General Test" }) => {
   const { t } = useTranslation();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const percentage = Math.round((score / total) * 100);
   
+  useEffect(() => {
+    // Auto-save result to sheet
+    const saveResultToSheet = async () => {
+        try {
+            await saveTestResult({
+                userId: user?.id,
+                userEmail: user?.primaryEmailAddress?.emailAddress,
+                testTitle,
+                score,
+                total
+            });
+        } catch (e) {
+            console.error("Failed to save result to Google Sheets:", e);
+        }
+    };
+    saveResultToSheet();
+  }, [user, score, total, testTitle]);
+
   const getFeedback = () => {
     if (percentage >= 80) return { message: t('results.feedback.excellent'), color: "text-green-600" };
     if (percentage >= 60) return { message: t('results.feedback.good'), color: "text-indigo-600" };
@@ -35,13 +54,13 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, on
 
   return (
     <div className="flex flex-col items-center justify-center py-10 max-w-4xl mx-auto px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-full transform transition-all animate-fade-in-up">
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl text-center w-full transform transition-all animate-fade-in-up border border-slate-100 dark:border-slate-800">
         <TrophyIcon className="h-20 w-20 mx-auto text-teal-400" />
-        <h1 className="text-3xl font-bold text-slate-800 mt-4">{t('results.title')}</h1>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-white mt-4">{t('results.title')}</h1>
         
         {!isSignedIn && (
-          <div className="mt-6 bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
-             <p className="text-indigo-900 font-bold mb-4">{t('results.saveProgress')}</p>
+          <div className="mt-6 bg-indigo-50 dark:bg-indigo-950/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+             <p className="text-indigo-900 dark:text-indigo-300 font-bold mb-4">{t('results.saveProgress')}</p>
              <SignInButton mode="modal">
                <button className="bg-indigo-600 text-white font-black px-8 py-3 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">
                   {t('login')}
@@ -51,55 +70,25 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, on
         )}
 
         <div className="my-8">
-            <p className="text-xl text-slate-600">{t('results.yourScore')}</p>
-            <p className="text-6xl font-bold text-indigo-600 my-2">{score} <span className="text-4xl text-slate-500">/ {total}</span></p>
+            <p className="text-xl text-slate-600 dark:text-slate-400">{t('results.yourScore')}</p>
+            <p className="text-6xl font-bold text-indigo-600 dark:text-indigo-400 my-2">{score} <span className="text-4xl text-slate-500">/ {total}</span></p>
             <p className={`text-2xl font-semibold ${feedback.color}`}>{feedback.message}</p>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-            <span className="block text-sm text-green-600 font-bold uppercase tracking-wider">Correct</span>
-            <span className="text-2xl font-bold text-green-700">{stats?.correct || 0}</span>
+          <div className="bg-green-50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900/30">
+            <span className="block text-sm text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">Correct</span>
+            <span className="text-2xl font-bold text-green-700 dark:text-green-300">{stats?.correct || 0}</span>
           </div>
-          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-            <span className="block text-sm text-red-600 font-bold uppercase tracking-wider">Wrong</span>
-            <span className="text-2xl font-bold text-red-700">{stats?.wrong || 0}</span>
+          <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+            <span className="block text-sm text-red-600 dark:text-red-400 font-bold uppercase tracking-wider">Wrong</span>
+            <span className="text-2xl font-bold text-red-700 dark:text-red-300">{stats?.wrong || 0}</span>
           </div>
-          <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
-            <span className="block text-sm text-slate-500 font-bold uppercase tracking-wider">Skipped</span>
-            <span className="text-2xl font-bold text-slate-600">{stats?.skipped || 0}</span>
+          <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+            <span className="block text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Skipped</span>
+            <span className="text-2xl font-bold text-slate-600 dark:text-slate-300">{stats?.skipped || 0}</span>
           </div>
         </div>
-
-        {/* Subject Analysis Module */}
-        {stats?.subjectBreakdown && Object.keys(stats.subjectBreakdown).length > 0 && (
-          <div className="mt-10 text-left">
-            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
-              <span className="w-1.5 h-6 bg-indigo-600 rounded-full mr-3"></span>
-              Subject-wise Analysis
-            </h2>
-            <div className="space-y-4">
-              {Object.entries(stats.subjectBreakdown).map(([subject, data]) => {
-                const subPercentage = Math.round((data.correct / data.total) * 100);
-                return (
-                  <div key={subject} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-slate-700">{subject}</span>
-                      <span className="text-sm font-bold text-slate-500">{data.correct} / {data.total} ({subPercentage}%)</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-1000 ${subPercentage >= 75 ? 'bg-green-500' : subPercentage >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
-                        style={{ width: `${subPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         <div className="my-8">
             <AdsenseWidget />
@@ -107,7 +96,7 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, on
 
         <button 
             onClick={onBackToPrevious}
-            className="mt-8 w-full bg-slate-800 text-white font-bold py-4 px-6 rounded-xl hover:bg-slate-900 transition-transform transform hover:scale-[1.02] flex items-center justify-center space-x-2 shadow-lg"
+            className="mt-8 w-full bg-slate-800 dark:bg-slate-700 text-white font-bold py-4 px-6 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-transform transform hover:scale-[1.02] flex items-center justify-center space-x-2 shadow-lg"
         >
            <ArrowPathIcon className="h-5 w-5" />
            <span>{t('test.backToPrevious')}</span>

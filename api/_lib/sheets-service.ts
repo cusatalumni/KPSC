@@ -6,13 +6,20 @@ declare var process: any;
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     
-    // Remove surrounding quotes if any
-    let cleaned = key.trim().replace(/^['"]|['"]$/g, '');
+    // Remove wrapping quotes and fix newlines
+    let cleaned = key.trim();
     
-    // Handle escaped newlines
+    // Some platforms wrap the key in extra quotes
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+        cleaned = cleaned.substring(1, cleaned.length - 1);
+    } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+        cleaned = cleaned.substring(1, cleaned.length - 1);
+    }
+    
+    // Replace escaped \n with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
     
-    // Ensure the key has the correct header/footer
+    // Ensure the markers are correct
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
@@ -22,7 +29,7 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-    if (!id) throw new Error('Missing Environment Variable: SPREADSHEET_ID');
+    if (!id) throw new Error('Backend Error: SPREADSHEET_ID environment variable is missing.');
     return id.trim().replace(/['"]/g, '');
 };
 
@@ -30,8 +37,12 @@ async function getSheetsClient() {
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim().replace(/['"]/g, '');
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
-    if (!clientEmail) throw new Error('Missing Environment Variable: GOOGLE_CLIENT_EMAIL');
-    if (!privateKey) throw new Error('Missing Environment Variable: GOOGLE_PRIVATE_KEY');
+    if (!clientEmail) {
+        throw new Error('Backend Error: GOOGLE_CLIENT_EMAIL is missing. Check Vercel environment variables.');
+    }
+    if (!privateKey) {
+        throw new Error('Backend Error: GOOGLE_PRIVATE_KEY is missing. Check Vercel environment variables.');
+    }
 
     try {
         const auth = new google.auth.GoogleAuth({
@@ -41,20 +52,13 @@ async function getSheetsClient() {
             },
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
-        return google.sheets({ version: 'v4', auth });
+        const client = await auth.getClient();
+        return google.sheets({ version: 'v4', auth: client as any });
     } catch (e: any) {
-        console.error("Google Auth Initialization Error:", e.message);
-        throw new Error(`Failed to initialize Google Auth: ${e.message}`);
+        console.error("Authentication Setup Failed:", e.message);
+        throw new Error(`Google Sheets Auth Failed: ${e.message}`);
     }
 }
-
-const getSafeRange = (range: string) => {
-    if (range.includes('!')) {
-        const [sheet, cells] = range.split('!');
-        return `'${sheet.replace(/'/g, "''")}'!${cells}`;
-    }
-    return `'${range.replace(/'/g, "''")}'`;
-};
 
 export const readSheetData = async (range: string) => {
     try {
@@ -62,96 +66,110 @@ export const readSheetData = async (range: string) => {
         const sheets = await getSheetsClient();
         const response = await sheets.spreadsheets.values.get({ 
             spreadsheetId, 
-            range: getSafeRange(range) 
+            range: range.includes('!') ? range : `'${range}'` 
         });
         return response.data.values || [];
     } catch (error: any) {
         console.error(`Sheet Read Error [${range}]:`, error.message);
-        // Throwing error so the handler can catch it and report status
+        // Fallback or throw based on preference. Here we throw to show the error.
+        throw error;
+    }
+};
+
+export const appendSheetData = async (range: string, values: any[][]) => {
+    if (values.length === 0) return;
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values },
+        });
+    } catch (error: any) {
+        console.error(`Sheet Append Error [${range}]:`, error.message);
         throw error;
     }
 };
 
 export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    await sheets.spreadsheets.values.clear({ spreadsheetId, range: getSafeRange(range) });
-    if (values.length === 0) return;
-    
-    const sheetName = range.split('!')[0];
-    const startCell = range.split('!')[1]?.split(':')[0] || 'A2';
-    
-    await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: getSafeRange(`${sheetName}!${startCell}`),
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values },
-    });
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        await sheets.spreadsheets.values.clear({ spreadsheetId, range });
+        if (values.length > 0) {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values },
+            });
+        }
+    } catch (error: any) {
+        console.error(`Sheet Update Error [${range}]:`, error.message);
+        throw error;
+    }
 };
 
-export const appendSheetData = async (range: string, values: any[][]) => {
-    if (values.length === 0) return;
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: getSafeRange(range),
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values },
-    });
+export const findAndUpsertRow = async (sheetName: string, id: string, newRowData: any[]) => {
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        
+        const response = await sheets.spreadsheets.values.get({ 
+            spreadsheetId, 
+            range: `${sheetName}!A:A` 
+        });
+        
+        const rows = response.data.values || [];
+        const rowIndex = rows.findIndex(row => row[0] === id);
+        
+        if (rowIndex !== -1) {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!A${rowIndex + 1}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [newRowData] },
+            });
+        } else {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: `${sheetName}!A1`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [newRowData] },
+            });
+        }
+    } catch (error: any) {
+        console.error(`Sheet Upsert Error [${sheetName}]:`, error.message);
+        throw error;
+    }
 };
 
 export const deleteRowById = async (sheetName: string, id: string) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
-    const sheetId = sheet?.properties?.sheetId;
-    
-    if (sheetId === undefined) throw new Error(`Sheet '${sheetName}' not found.`);
-    
-    const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: getSafeRange(`${sheetName}!A:A`),
-    });
-    
-    const rows = response.data.values || [];
-    const rowIndex = rows.findIndex(row => row[0] === id);
-    
-    if (rowIndex === -1) throw new Error(`ID '${id}' not found in '${sheetName}'.`);
-    
-    await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-            requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 } } }]
-        }
-    });
-};
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+        const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
+        const sheetId = sheet?.properties?.sheetId;
+        
+        if (sheetId === undefined) throw new Error(`Sheet ${sheetName} not found.`);
 
-export const findAndUpsertRow = async (sheetName: string, findColumnIndex: number, findValue: string, newRowData: any[]) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    const response = await sheets.spreadsheets.values.get({ 
-        spreadsheetId, 
-        range: getSafeRange(`${sheetName}!A:A`) 
-    });
-    
-    const rows = response.data.values || [];
-    const rowIndex = rows.findIndex(row => row[findColumnIndex] === findValue);
-    
-    if (rowIndex !== -1) {
-        await sheets.spreadsheets.values.update({
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
+        const rows = response.data.values || [];
+        const rowIndex = rows.findIndex(row => row[0] === id);
+        
+        if (rowIndex === -1) return;
+
+        await sheets.spreadsheets.batchUpdate({
             spreadsheetId,
-            range: getSafeRange(`${sheetName}!A${rowIndex + 1}`),
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [newRowData] },
+            requestBody: {
+                requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 } } }]
+            }
         });
-    } else {
-        await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: getSafeRange(`${sheetName}!A1`),
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [newRowData] },
-        });
+    } catch (error: any) {
+        console.error(`Sheet Delete Error [${sheetName}]:`, error.message);
+        throw error;
     }
 };

@@ -1,40 +1,33 @@
 
-# Setup Guide: Google Sheets as a Database for Kerala PSC Guru
+# ഗൂഗിൾ ഷീറ്റ് കണക്ഷൻ ഗൈഡ് (Google Sheets Connection Guide)
 
-Follow these steps to configure your application correctly using Google Sheets as your backend.
+നിങ്ങളുടെ ആപ്പിൽ "Could not load the default credentials" എന്ന എറർ വരുന്നുണ്ടെങ്കിൽ താഴെ പറയുന്ന സ്റ്റെപ്പുകൾ ചെയ്യുക:
 
-## Part 1: Google Sheets Tabs & Columns
+### ഘട്ടം 1: ഗൂഗിൾ സർവീസ് അക്കൗണ്ട് ഉണ്ടാക്കുക
+1. [Google Cloud Console](https://console.cloud.google.com/) സന്ദർശിക്കുക.
+2. ഒരു പുതിയ പ്രോജക്റ്റ് ഉണ്ടാക്കുക (അല്ലെങ്കിൽ നിലവിലുള്ളത് തിരഞ്ഞെടുക്കുക).
+3. **APIs & Services > Library** എന്നതിൽ പോയി "Google Sheets API" സെർച്ച് ചെയ്ത് **Enable** ചെയ്യുക.
+4. **APIs & Services > Credentials** എന്നതിൽ പോയി **Create Credentials** ക്ലിക്ക് ചെയ്ത് **Service Account** തിരഞ്ഞെടുക്കുക.
+5. സർവീസ് അക്കൗണ്ടിന് ഒരു പേര് നൽകി **Create and Continue** അമർത്തുക.
+6. റോൾ (Role) തിരഞ്ഞെടുക്കാൻ പറഞ്ഞാൽ **Editor** എന്ന് നൽകുക.
+7. സർവീസ് അക്കൗണ്ട് സേവ് ചെയ്ത ശേഷം, ലിസ്റ്റിലുള്ള ആ അക്കൗണ്ടിൽ ക്ലിക്ക് ചെയ്യുക.
+8. **Keys** ടാബിൽ പോയി **Add Key > Create New Key** ക്ലിക്ക് ചെയ്യുക. **JSON** ഫോർമാറ്റ് തിരഞ്ഞെടുത്ത് ഡൗൺലോഡ് ചെയ്യുക.
 
-Create the following tabs in your Google Sheet and add the headers in the first row (A1, B1, C1...).
+### ഘട്ടം 2: Vercel-ൽ വിവരങ്ങൾ ചേർക്കുക
+ഡൗൺലോഡ് ചെയ്ത JSON ഫയലിലെ വിവരങ്ങൾ വരിക്കലിലെ (Vercel) Environment Variables-ൽ ചേർക്കുക:
+1. `client_email` എന്നതിലെ ഇമെയിൽ കോപ്പി ചെയ്ത് Vercel-ൽ **GOOGLE_CLIENT_EMAIL** എന്ന പേരിൽ സേവ് ചെയ്യുക.
+2. `private_key` എന്നതിലെ വലിയ കീ (-----BEGIN PRIVATE KEY----- മുതൽ തുടങ്ങുന്നത്) കോപ്പി ചെയ്ത് **GOOGLE_PRIVATE_KEY** എന്ന പേരിൽ സേവ് ചെയ്യുക. (ഇരട്ട ഉദ്ധരണികൾ - Double Quotes ഉണ്ടെങ്കിൽ അത് കളയരുത്).
+3. നിങ്ങളുടെ ഗൂഗിൾ ഷീറ്റിന്റെ URL-ൽ നിന്നുള്ള ID (ഉദാഹരണത്തിന് `https://docs.google.com/spreadsheets/d/ABC123XYZ/edit` എന്നതിലെ `ABC123XYZ`) കോപ്പി ചെയ്ത് **SPREADSHEET_ID** എന്ന പേരിൽ സേവ് ചെയ്യുക.
 
-### 1. `Exams` Tab
-This stores the main list of examinations.
-- **A: `id`** - Unique ID for the exam (e.g., `ldc_exam`).
-- **B: `title_ml`** - Malayalam Title.
-- **C: `title_en`** - English Title.
-- **D: `description_ml`** - Malayalam Description.
-- **E: `description_en`** - English Description.
-- **F: `category`** - `General`, `Technical`, or `Special`.
-- **G: `level`** - `Preliminary`, `Main`, `Departmental`, or `Special`.
-- **H: `icon_type`** - Choose from: `book`, `shield`, `cap`, `beaker`, `light`, `star`, `globe`.
+### ഘട്ടം 3: ഷീറ്റ് ഷെയർ ചെയ്യുക (ഏറ്റവും പ്രധാനം)
+1. നിങ്ങളുടെ ഗൂഗിൾ ഷീറ്റ് തുറക്കുക.
+2. വലതുവശത്ത് മുകളിലുള്ള **Share** ബട്ടൺ അമർത്തുക.
+3. സർവീസ് അക്കൗണ്ട് ഇമെയിൽ (ഘട്ടം 2-ൽ ലഭിച്ചത്) അവിടെ പേസ്റ്റ് ചെയ്യുക.
+4. പെർമിഷൻ **Editor** ആണെന്ന് ഉറപ്പുവരുത്തി **Send** ചെയ്യുക.
 
-### 2. `Syllabus` Tab
-This defines the practice modules/topics inside each exam.
-- **A: `id`** - Unique ID for the topic (e.g., `ldc_maths_1`).
-- **B: `exam_id`** - Must match the `id` from the **Exams** tab.
-- **C: `title`** - Display name of the test (e.g., `Mental Ability`).
-- **D: `questions`** - Number of questions (e.g., `20`).
-- **E: `duration`** - Duration in minutes (e.g., `15`).
-- **F: `topic`** - String to filter questions from **QuestionBank** (e.g., `Topic:Mental Ability`).
+---
 
-### 3. `QuestionBank` Tab
-The pool of all questions.
-- **A: `id`** - Unique ID.
-- **B: `topic`** - Match this with the `topic` column in the **Syllabus** tab.
-- **C: `question`** - The question text.
-- **D: `options`** - JSON array of 4 options (e.g., `["A", "B", "C", "D"]`).
-- **E: `correctAnswerIndex`** - 0, 1, 2, or 3.
-- **F: `subject`** - `GK`, `Maths`, `English`, `Malayalam`, `Science`, or `Technical`.
-- **G: `difficulty`** - `Easy`, `Moderate`, or `PSC Level`.
+### Apps Script Reminder
+ഷീറ്റിലെ ടാബുകൾ ശരിയാക്കാൻ ആപ്പിനുള്ളിലെ `SHEET_INITIALIZER.js` എന്ന ഫയലിലെ കോഡ് കോപ്പി ചെയ്ത് ഗൂഗിൾ ഷീറ്റിലെ **Extensions > Apps Script** എന്നതിൽ പേസ്റ്റ് ചെയ്ത് റൺ ചെയ്യുക.
 
-... (Other tabs like Notifications, Bookstore etc. follow their existing structures)
+**ഇത്രയും ചെയ്താൽ കണക്ഷൻ ശരിയാകുകയും ആപ്പിലെ മാറ്റങ്ങൾ ഷീറ്റിൽ വരികയും ചെയ്യും.**

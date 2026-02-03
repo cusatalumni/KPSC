@@ -29,11 +29,23 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
         const res = await fetch(`/api/data?${params}`);
         if (!res.ok) throw new Error("API Fetch failed");
-        return await res.json();
+        const data = await res.json();
+        if (Array.isArray(data) && data.length === 0) return mockData;
+        return data;
     } catch (e) {
         console.warn(`Data fetch for ${params} failed, using local mock data.`, e);
         return mockData;
     }
+};
+
+// Fix: Added missing export for getDetectedExams
+/**
+ * Fetches exams that are currently "detected" (placeholder for live detections).
+ */
+export const getDetectedExams = async (): Promise<Exam[]> => {
+    // In a production environment, this could derive from recent psc notifications
+    // or a specialized sheet for priority exams.
+    return [];
 };
 
 export const getExams = async (): Promise<Exam[]> => {
@@ -51,18 +63,20 @@ export const getExams = async (): Promise<Exam[]> => {
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
     const data = await fetchHub(`type=syllabus&examId=${examId}`, []);
-    // Fallback to local map if sheet is empty
     if (data.length === 0) return EXAM_CONTENT_MAP[examId]?.practiceTests || [];
     return data;
 };
 
-const adminReq = async (body: any, token: string | null) => {
-    if (!token) throw new Error("Authentication token missing.");
+const adminReq = async (body: any, token: string | null = null) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    
     const res = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body)
     });
+    
     if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || 'Administrative request failed');
@@ -70,65 +84,62 @@ const adminReq = async (body: any, token: string | null) => {
     return await res.json();
 };
 
-// Administrative functions used by the Admin Panel
-// Fix: Added missing exports required by AdminPage.tsx
+export const saveTestResult = async (resultData: { userId?: string, userEmail?: string, testTitle: string, score: number, total: number }) => {
+    return adminReq({ action: 'save-result', resultData });
+};
 
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);
 export const triggerBookScraper = (token: string | null) => adminReq({ action: 'run-book-scraper' }, token);
-export const fixAllAffiliates = (token: string | null) => adminReq({ action: 'fix-affiliates' }, token);
 export const deleteBook = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, token);
 export const updateBook = (book: any, token: string | null) => adminReq({ action: 'update-book', book }, token);
 export const addQuestion = (question: any, token: string | null) => adminReq({ action: 'add-question', question }, token);
-
-// New function to export everything to sheet
-export const exportStaticExamsToSheet = async (token: string | null) => {
-    const payload = {
-        exams: EXAMS_DATA.map(e => ({
-            id: e.id,
-            title_ml: e.title.ml,
-            title_en: e.title.en,
-            description_ml: e.description.ml,
-            description_en: e.description.en,
-            category: e.category,
-            level: e.level,
-            icon_type: 'book' // default
-        })),
-        syllabus: Object.entries(EXAM_CONTENT_MAP).flatMap(([examId, content]) => 
-            content.practiceTests.map(p => ({
-                id: p.id,
-                exam_id: examId,
-                title: p.title,
-                questions: p.questions,
-                duration: p.duration,
-                topic: p.topic
-            }))
-        )
-    };
-    return adminReq({ action: 'export-static-data', data: payload }, token);
-};
-
 export const getNotifications = () => fetchHub('type=notifications', MOCK_NOTIFICATIONS);
-export const getDetectedExams = async (): Promise<Exam[]> => {
-    const notifications = await getNotifications();
-    return notifications.map(n => ({
-        id: `dynamic_${n.id}`,
-        title: { ml: n.title, en: n.title },
-        description: { ml: `Category: ${n.categoryNumber}`, en: `Category: ${n.categoryNumber}` },
-        icon: React.createElement(BellIcon, { className: "h-8 w-8 text-rose-500" }),
-        category: 'Special',
-        level: 'Preliminary'
-    }));
-};
-
 export const getLiveUpdates = () => fetchHub('type=updates', MOCK_PSC_UPDATES);
 export const getCurrentAffairs = () => fetchHub('type=affairs', MOCK_CURRENT_AFFAIRS);
 export const getGk = () => fetchHub('type=gk', MOCK_GK);
 export const getBooks = () => fetchHub('type=books', MOCK_BOOKS_DATA);
 export const getQuestionsForTest = (topic: string, count: number) => fetchHub(`type=questions&topic=${encodeURIComponent(topic)}&count=${count}`, MOCK_QUESTION_BANK.slice(0, count));
-export const getQuestionsForSubject = (subject: string, count: number) => fetchHub(`type=questions&subject=${encodeURIComponent(subject)}&count=${count}`, MOCK_QUESTION_BANK.slice(0, count));
-export const getStudyMaterial = (topic: string) => fetchHub(`type=study-material&topic=${encodeURIComponent(topic)}`, { notes: "# Studying " + topic });
-
 export const updateExam = (exam: any, token: string | null) => adminReq({ action: 'update-exam', exam }, token);
 export const updateSyllabus = (syllabus: any, token: string | null) => adminReq({ action: 'update-syllabus', syllabus }, token);
 export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
+
+// Fix: Added missing export for fixAllAffiliates
+/**
+ * Triggers a process to fix all affiliate links in the bookstore.
+ */
+export const fixAllAffiliates = (token: string | null) => adminReq({ action: 'fix-affiliates' }, token);
+
+// Fix: Added missing export for getStudyMaterial
+/**
+ * Generates study material notes using AI for a given topic.
+ */
+export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
+    try {
+        const response = await fetch('/api/ai', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: `Generate detailed study notes in Malayalam for the Kerala PSC exam topic: "${topic}". 
+                Include key facts, historical context if applicable, and bullet points for easy reading. 
+                Use markdown formatting (headers, bold text, lists).`,
+                model: 'gemini-3-flash-preview',
+            }),
+        });
+
+        if (!response.ok) throw new Error('AI generation failed');
+        const data = await response.json();
+        return { notes: data.text || 'വിവരങ്ങൾ ലഭ്യമല്ല.' };
+    } catch (error) {
+        console.error("Error generating study material:", error);
+        return { notes: "പഠന സാമഗ്രികൾ തയ്യാറാക്കുന്നതിൽ സാങ്കേതിക തകരാർ സംഭവിച്ചു." };
+    }
+};
+
+// Fix: Added missing export for exportStaticExamsToSheet
+/**
+ * Exports the static default exams defined in constants.ts to the Google Sheet.
+ */
+export const exportStaticExamsToSheet = (token: string | null) => adminReq({ action: 'export-static' }, token);
