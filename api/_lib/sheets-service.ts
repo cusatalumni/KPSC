@@ -6,19 +6,18 @@ declare var process: any;
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     
-    // Remove wrapping quotes and fix newlines
     let cleaned = key.trim();
     
+    // Remove wrapping quotes if they exist
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
     
-    // Replace escaped \n with actual newlines
+    // Replace escaped newlines with actual ones
     cleaned = cleaned.replace(/\\n/g, '\n');
     
-    // Ensure the markers are correct
     if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
@@ -37,11 +36,11 @@ async function getSheetsClient() {
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error('Backend Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing. Check Vercel environment variables.');
+        throw new Error('Backend Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing. Please check Vercel settings.');
     }
 
     try {
-        // Explicitly passing credentials object to avoid "default credentials" error
+        // Use direct credential object to bypass 'default credentials' lookup
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: clientEmail,
@@ -49,11 +48,11 @@ async function getSheetsClient() {
             },
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
-        const client = await auth.getClient();
-        return google.sheets({ version: 'v4', auth: client as any });
+        const authClient = await auth.getClient();
+        return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) {
-        console.error("Authentication Setup Failed:", e.message);
-        throw new Error(`Google Sheets Auth Failed: ${e.message}`);
+        console.error("Google Sheets Client Init Failed:", e.message);
+        throw new Error(`Auth Failed: ${e.message}`);
     }
 }
 
@@ -73,7 +72,7 @@ export const readSheetData = async (range: string) => {
 };
 
 export const appendSheetData = async (range: string, values: any[][]) => {
-    if (values.length === 0) return;
+    if (!values || values.length === 0) return;
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
@@ -93,11 +92,12 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
-        await sheets.spreadsheets.values.clear({ spreadsheetId, range });
-        if (values.length > 0) {
+        const rangeName = range.split('!')[0];
+        await sheets.spreadsheets.values.clear({ spreadsheetId, range: range });
+        if (values && values.length > 0) {
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
-                range,
+                range: `${rangeName}!A2`,
                 valueInputOption: 'USER_ENTERED',
                 requestBody: { values },
             });
@@ -112,12 +112,7 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
-        
-        const response = await sheets.spreadsheets.values.get({ 
-            spreadsheetId, 
-            range: `${sheetName}!A:A` 
-        });
-        
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
         const rowIndex = rows.findIndex(row => row[0] === id);
         

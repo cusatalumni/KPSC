@@ -33,43 +33,13 @@ export default async function handler(req: any, res: any) {
                 await appendSheetData('Results!A1', [resRow]);
                 return res.status(200).json({ message: 'Result saved successfully.' });
 
-            case 'export-static':
-                // Seed Exams
-                if (examsPayload && Array.isArray(examsPayload)) {
-                    const examRows = examsPayload.map((e: any) => [
-                        e.id, 
-                        e.title_ml, 
-                        e.title_en, 
-                        e.description_ml, 
-                        e.description_en, 
-                        e.category, 
-                        e.level, 
-                        e.icon_type
-                    ]);
-                    await clearAndWriteSheetData('Exams!A2:H', examRows);
-                }
-                
-                // Seed Syllabus
-                if (syllabusPayload && Array.isArray(syllabusPayload)) {
-                    const sylRows = syllabusPayload.map((s: any) => [
-                        s.id, 
-                        s.exam_id, 
-                        s.title, 
-                        s.questions, 
-                        s.duration, 
-                        s.topic
-                    ]);
-                    await clearAndWriteSheetData('Syllabus!A2:F', sylRows);
-                }
-                return res.status(200).json({ message: 'Static data exported to sheets successfully.' });
-
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();
-                return res.status(200).json({ message: 'Scrapers completed.' });
+                return res.status(200).json({ message: 'Daily Scrapers completed successfully.' });
 
             case 'run-book-scraper':
                 await runBookScraper();
-                return res.status(200).json({ message: 'Books updated.' });
+                return res.status(200).json({ message: 'Books sync completed.' });
 
             case 'update-exam':
                 const examRow = [exam.id, exam.title_ml, exam.title_en, exam.description_ml, exam.description_en, exam.category, exam.level, exam.icon_type];
@@ -87,21 +57,25 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Book saved.' });
 
             case 'add-question':
-                const qRow = [question.id || `q_${Date.now()}`, question.topic, question.question, JSON.stringify(question.options), question.correctAnswerIndex, question.subject, question.difficulty];
+                const qRow = [
+                    `q_${Date.now()}`, 
+                    question.topic, 
+                    question.question, 
+                    JSON.stringify(question.options), 
+                    question.correctAnswerIndex, 
+                    question.subject, 
+                    question.difficulty
+                ];
                 await appendSheetData('QuestionBank!A1', [qRow]);
                 return res.status(200).json({ message: 'Question added.' });
 
             case 'delete-row':
                 await deleteRowById(sheet, id);
-                return res.status(200).json({ message: 'Deleted.' });
-
-            case 'csv-update':
-                const rows = data.split('\n').map((l: string) => l.split(','));
-                if (mode === 'append') await appendSheetData(`${sheet}!A1`, rows);
-                else await clearAndWriteSheetData(`${sheet}!A2:Z`, rows);
-                return res.status(200).json({ message: 'CSV Sync success.' });
+                return res.status(200).json({ message: 'Deleted from sheet.' });
 
             case 'fix-affiliates':
+                // Logic already in scraper service for automatic link fixing
+                await runBookScraper();
                 return res.status(200).json({ message: 'Affiliate links verified and updated.' });
 
             default:
