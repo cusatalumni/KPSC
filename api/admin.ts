@@ -38,7 +38,16 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Books updated.' });
 
             case 'update-exam':
-                const examRow = [exam.id, exam.title_ml, exam.title_en || '', exam.description_ml || '', exam.description_en || '', exam.category || 'General', exam.level || 'Preliminary', exam.icon_type || 'book'];
+                const examRow = [
+                    exam.id, 
+                    exam.title_ml, 
+                    exam.title_en || '', 
+                    exam.description_ml || '', 
+                    exam.description_en || '', 
+                    exam.category || 'General', 
+                    exam.level || 'Preliminary', 
+                    exam.icon_type || 'book'
+                ];
                 await findAndUpsertRow('Exams', exam.id, examRow);
                 return res.status(200).json({ message: 'Exam saved.' });
 

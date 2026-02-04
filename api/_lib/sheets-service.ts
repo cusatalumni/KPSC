@@ -6,11 +6,13 @@ declare var process: any;
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     let cleaned = key.trim();
+    // Remove wrapping quotes if they exist
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
+    // Critical: Replace literal \n with actual newline characters
     return cleaned.replace(/\\n/g, '\n');
 };
 
@@ -29,15 +31,17 @@ async function getSheetsClient() {
     }
 
     try {
+        // Use JWT directly to ensure "identity" is passed with every call
         const auth = new google.auth.JWT(
             clientEmail,
-            null,
+            undefined,
             privateKey,
             ['https://www.googleapis.com/auth/spreadsheets']
         );
+        
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Auth Failure:", e.message);
+        console.error("Auth Failure during client init:", e.message);
         throw e;
     }
 }
@@ -110,7 +114,11 @@ export const deleteRowById = async (sheetName: string, id: string) => {
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
     const rows = response.data.values || [];
     const rowIndex = rows.findIndex(row => row[0] === id);
-    if (rowIndex === -1) return;
+    
+    if (rowIndex === -1) {
+        console.warn(`ID ${id} not found in ${sheetName}`);
+        return;
+    }
 
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
