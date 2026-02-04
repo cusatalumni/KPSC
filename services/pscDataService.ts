@@ -38,8 +38,15 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     }
 };
 
-export const getDetectedExams = async (): Promise<Exam[]> => {
-    return [];
+const adminReq = async (body: any, token: string | null = null) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Administrative request failed');
+    }
+    return await res.json();
 };
 
 export const getExams = async (): Promise<Exam[]> => {
@@ -61,27 +68,7 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
     return data;
 };
 
-const adminReq = async (body: any, token: string | null = null) => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    
-    const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body)
-    });
-    
-    if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Administrative request failed');
-    }
-    return await res.json();
-};
-
-export const saveTestResult = async (resultData: { userId?: string, userEmail?: string, testTitle: string, score: number, total: number }) => {
-    return adminReq({ action: 'save-result', resultData });
-};
-
+export const saveTestResult = (resultData: any) => adminReq({ action: 'save-result', resultData });
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);
 export const triggerBookScraper = (token: string | null) => adminReq({ action: 'run-book-scraper' }, token);
 export const deleteBook = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, token);
@@ -98,9 +85,7 @@ export const updateSyllabus = (syllabus: any, token: string | null) => adminReq(
 export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
 export const fixAllAffiliates = (token: string | null) => adminReq({ action: 'fix-affiliates' }, token);
-
-export const exportStaticExamsToSheet = (token: string | null, examsPayload: any[], syllabusPayload: any[]) => 
-    adminReq({ action: 'export-static', examsPayload, syllabusPayload }, token);
+export const testConnection = (token: string | null) => adminReq({ action: 'test-connection' }, token);
 
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
     try {
@@ -119,3 +104,7 @@ export const getStudyMaterial = async (topic: string): Promise<{ notes: string }
         return { notes: "പഠന സാമഗ്രികൾ തയ്യാറാക്കുന്നതിൽ സാങ്കേതിക തകരാർ സംഭവിച്ചു." };
     }
 };
+
+export const getDetectedExams = async (): Promise<Exam[]> => [];
+export const exportStaticExamsToSheet = (token: string | null, examsPayload: any[], syllabusPayload: any[]) => 
+    adminReq({ action: 'export-static', examsPayload, syllabusPayload }, token);
