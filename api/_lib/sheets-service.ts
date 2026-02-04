@@ -11,9 +11,7 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
-    // Replace literal \n with actual newlines
-    cleaned = cleaned.replace(/\\n/g, '\n');
-    return cleaned;
+    return cleaned.replace(/\\n/g, '\n');
 };
 
 const getSpreadsheetId = (): string => {
@@ -27,123 +25,97 @@ async function getSheetsClient() {
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error('GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing.');
+        throw new Error('GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY environment variables are missing.');
     }
 
     try {
-        // Using JWT directly is more reliable in serverless environments
         const auth = new google.auth.JWT(
             clientEmail,
-            null as any,
+            null,
             privateKey,
             ['https://www.googleapis.com/auth/spreadsheets']
         );
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Sheets Client Init Failed:", e.message);
+        console.error("Auth Failure:", e.message);
         throw e;
     }
 }
 
 export const readSheetData = async (range: string) => {
-    try {
-        const spreadsheetId = getSpreadsheetId();
-        const sheets = await getSheetsClient();
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
-        return response.data.values || [];
-    } catch (error: any) {
-        console.error(`Read Error [${range}]:`, error.message);
-        throw error;
-    }
+    const spreadsheetId = getSpreadsheetId();
+    const sheets = await getSheetsClient();
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    return response.data.values || [];
 };
 
 export const appendSheetData = async (range: string, values: any[][]) => {
     if (!values.length) return;
-    try {
-        const spreadsheetId = getSpreadsheetId();
-        const sheets = await getSheetsClient();
-        await sheets.spreadsheets.values.append({
+    const spreadsheetId = getSpreadsheetId();
+    const sheets = await getSheetsClient();
+    await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values },
+    });
+};
+
+export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
+    const spreadsheetId = getSpreadsheetId();
+    const sheets = await getSheetsClient();
+    await sheets.spreadsheets.values.clear({ spreadsheetId, range });
+    if (values.length > 0) {
+        await sheets.spreadsheets.values.update({
             spreadsheetId,
             range,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values },
         });
-    } catch (error: any) {
-        console.error(`Append Error [${range}]:`, error.message);
-        throw error;
-    }
-};
-
-export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
-    try {
-        const spreadsheetId = getSpreadsheetId();
-        const sheets = await getSheetsClient();
-        await sheets.spreadsheets.values.clear({ spreadsheetId, range });
-        if (values.length > 0) {
-            await sheets.spreadsheets.values.update({
-                spreadsheetId,
-                range,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values },
-            });
-        }
-    } catch (error: any) {
-        console.error(`Update Error [${range}]:`, error.message);
-        throw error;
     }
 };
 
 export const findAndUpsertRow = async (sheetName: string, id: string, newRowData: any[]) => {
-    try {
-        const spreadsheetId = getSpreadsheetId();
-        const sheets = await getSheetsClient();
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
-        const rows = response.data.values || [];
-        const rowIndex = rows.findIndex(row => row[0] === id);
-        
-        if (rowIndex !== -1) {
-            await sheets.spreadsheets.values.update({
-                spreadsheetId,
-                range: `${sheetName}!A${rowIndex + 1}`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [newRowData] },
-            });
-        } else {
-            await sheets.spreadsheets.values.append({
-                spreadsheetId,
-                range: `${sheetName}!A1`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [newRowData] },
-            });
-        }
-    } catch (error: any) {
-        console.error(`Upsert Error [${sheetName}]:`, error.message);
-        throw error;
+    const spreadsheetId = getSpreadsheetId();
+    const sheets = await getSheetsClient();
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
+    const rows = response.data.values || [];
+    const rowIndex = rows.findIndex(row => row[0] === id);
+    
+    if (rowIndex !== -1) {
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}!A${rowIndex + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [newRowData] },
+        });
+    } else {
+        await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: `${sheetName}!A1`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [newRowData] },
+        });
     }
 };
 
 export const deleteRowById = async (sheetName: string, id: string) => {
-    try {
-        const spreadsheetId = getSpreadsheetId();
-        const sheets = await getSheetsClient();
-        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-        const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
-        const sheetId = sheet?.properties?.sheetId;
-        if (sheetId === undefined) throw new Error(`Sheet ${sheetName} not found.`);
+    const spreadsheetId = getSpreadsheetId();
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
+    const sheetId = sheet?.properties?.sheetId;
+    if (sheetId === undefined) throw new Error(`Sheet ${sheetName} not found.`);
 
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
-        const rows = response.data.values || [];
-        const rowIndex = rows.findIndex(row => row[0] === id);
-        if (rowIndex === -1) return;
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
+    const rows = response.data.values || [];
+    const rowIndex = rows.findIndex(row => row[0] === id);
+    if (rowIndex === -1) return;
 
-        await sheets.spreadsheets.batchUpdate({
-            spreadsheetId,
-            requestBody: {
-                requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 } } }]
-            }
-        });
-    } catch (error: any) {
-        console.error(`Delete Error [${sheetName}]:`, error.message);
-        throw error;
-    }
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 } } }]
+        }
+    });
 };
