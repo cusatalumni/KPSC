@@ -11,13 +11,12 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
-    cleaned = cleaned.replace(/\\n/g, '\n');
-    return cleaned;
+    return cleaned.replace(/\\n/g, '\n');
 };
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-    if (!id) throw new Error('SPREADSHEET_ID is missing.');
+    if (!id) throw new Error('SPREADSHEET_ID environment variable is missing.');
     return id.trim().replace(/['"]/g, '');
 };
 
@@ -30,15 +29,18 @@ async function getSheetsClient() {
     }
 
     try {
-        const auth = new google.auth.JWT(
-            clientEmail,
-            undefined,
-            privateKey,
-            ['https://www.googleapis.com/auth/spreadsheets']
-        );
-        return google.sheets({ version: 'v4', auth });
+        // Explicitly passing credentials to bypass environment discovery
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: clientEmail,
+                private_key: privateKey,
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
+        const authClient = await auth.getClient();
+        return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) {
-        console.error("Sheets Auth Failed:", e.message);
+        console.error("Auth Initialization Failed:", e.message);
         throw e;
     }
 }
