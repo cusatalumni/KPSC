@@ -23,13 +23,15 @@ import GkPage from './components/pages/GkPage';
 import AdminPage from './components/pages/AdminPage';
 import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import SitemapPage from './components/pages/SitemapPage';
-import type { Exam, MockTest, QuizCategory, SubscriptionStatus, ActiveTest, Page } from './types';
+import LoadingScreen from './components/LoadingScreen';
+import type { Exam, MockTest, SubscriptionStatus, ActiveTest, Page } from './types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
 
 const App: React.FC = () => {
+  const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
@@ -40,6 +42,12 @@ const App: React.FC = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { language } = useTranslation();
   const { theme } = useTheme();
+
+  useEffect(() => {
+      // Show splash for at least 2 seconds for branding
+      const timer = setTimeout(() => setIsAppLoading(false), 2000);
+      return () => clearTimeout(timer);
+  }, []);
 
   const syncStateFromHash = useCallback(() => {
     const hash = window.location.hash.replace('#', '');
@@ -107,17 +115,6 @@ const App: React.FC = () => {
     window.location.hash = `exam_details/${exam.id}`;
   };
 
-  const handleStartTest = (test: MockTest) => {
-    setActiveTest({ 
-        title: test.title[language], 
-        questionsCount: test.questionsCount,
-        topic: 'mixed', 
-        isPro: test.isPro,
-        negativeMarking: test.negativeMarking
-    });
-    setCurrentPage('test');
-  };
-  
   const handleStartPracticeTest = (test: { title: string, questions: number, topic?: string }, examTitle: string) => {
     setActiveTest({ 
         title: `${examTitle} - ${test.title}`, 
@@ -188,6 +185,8 @@ const App: React.FC = () => {
     }
   }
   
+  if (isAppLoading) return <LoadingScreen />;
+
   const isTestPage = currentPage === 'test';
 
   return (

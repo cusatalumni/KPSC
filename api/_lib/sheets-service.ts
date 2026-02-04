@@ -3,24 +3,15 @@ import { google } from 'googleapis';
 
 declare var process: any;
 
-/**
- * Robust private key formatter.
- * Ensures the key is in correct PEM format for Google Auth.
- */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
-    
     let cleaned = key.trim();
-    
-    // Handle cases where the key might be wrapped in different types of quotes
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
-    
-    // Replace literal '\n' string with actual newline characters
-    // This is the most common fix for Vercel deployment issues
+    // Vercel handles escaped newlines differently; replace literal '\n'
     return cleaned.replace(/\\n/g, '\n');
 };
 
@@ -35,129 +26,137 @@ async function getSheetsClient() {
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error('Missing Google Credentials: Check GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY.');
+        throw new Error('GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY not found in environment.');
     }
 
     try {
-        // Using GoogleAuth instead of JWT for better compatibility in serverless
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: clientEmail,
-                private_key: privateKey,
-            },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
+        // Use JWT for explicit authentication - this avoids looking for local json files
+        const auth = new google.auth.JWT(
+            clientEmail,
+            undefined,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+        
+        // This force-triggers authentication to ensure credentials are valid early on
+        await auth.authorize();
         
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Sheets Client Init Error:", e.message);
-        throw e;
+        console.error("Critical Sheets Auth Error:", e.message);
+        throw new Error(`Authentication Failed: ${e.message}`);
     }
 }
 
 export const readSheetData = async (range: string) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    const response = await sheets.spreadsheets.values.get({ 
-        spreadsheetId, 
-        range 
-    });
-    return response.data.values || [];
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+        return response.data.values || [];
+    } catch (error: any) {
+        console.error(`Read Error on ${range}:`, error.message);
+        throw error;
+    }
 };
 
 export const appendSheetData = async (range: string, values: any[][]) => {
     if (!values.length) return;
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values },
-    });
-};
-
-export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    await sheets.spreadsheets.values.clear({ spreadsheetId, range });
-    if (values.length > 0) {
-        await sheets.spreadsheets.values.update({
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        await sheets.spreadsheets.values.append({
             spreadsheetId,
             range,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values },
         });
+    } catch (error: any) {
+        console.error(`Append Error:`, error.message);
+        throw error;
+    }
+};
+
+export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        await sheets.spreadsheets.values.clear({ spreadsheetId, range });
+        if (values.length > 0) {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values },
+            });
+        }
+    } catch (error: any) {
+        console.error(`Clear/Write Error:`, error.message);
+        throw error;
     }
 };
 
 export const findAndUpsertRow = async (sheetName: string, id: string, newRowData: any[]) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    
-    // 1. Get the current IDs (column A)
-    const response = await sheets.spreadsheets.values.get({ 
-        spreadsheetId, 
-        range: `${sheetName}!A:A` 
-    });
-    
-    const rows = response.data.values || [];
-    const rowIndex = rows.findIndex(row => row[0] === id);
-    
-    if (rowIndex !== -1) {
-        // Update
-        await sheets.spreadsheets.values.update({
-            spreadsheetId,
-            range: `${sheetName}!A${rowIndex + 1}`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [newRowData] },
-        });
-    } else {
-        // Insert
-        await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: `${sheetName}!A1`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [newRowData] },
-        });
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
+        const rows = response.data.values || [];
+        const rowIndex = rows.findIndex(row => row[0] === id);
+        
+        if (rowIndex !== -1) {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!A${rowIndex + 1}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [newRowData] },
+            });
+        } else {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: `${sheetName}!A1`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [newRowData] },
+            });
+        }
+    } catch (error: any) {
+        console.error(`Upsert Error:`, error.message);
+        throw error;
     }
 };
 
 export const deleteRowById = async (sheetName: string, id: string) => {
-    const spreadsheetId = getSpreadsheetId();
-    const sheets = await getSheetsClient();
-    
-    // Find numeric sheet ID
-    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
-    const sheetId = sheet?.properties?.sheetId;
-    
-    if (sheetId === undefined) throw new Error(`Sheet ${sheetName} not found.`);
+    try {
+        const spreadsheetId = getSpreadsheetId();
+        const sheets = await getSheetsClient();
+        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+        const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
+        const sheetId = sheet?.properties?.sheetId;
+        if (sheetId === undefined) throw new Error(`Sheet tab "${sheetName}" not found.`);
 
-    // Find row index
-    const response = await sheets.spreadsheets.values.get({ 
-        spreadsheetId, 
-        range: `${sheetName}!A:A` 
-    });
-    const rows = response.data.values || [];
-    const rowIndex = rows.findIndex(row => row[0] === id);
-    
-    if (rowIndex === -1) return;
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
+        const rows = response.data.values || [];
+        const rowIndex = rows.findIndex(row => row[0] === id);
+        
+        if (rowIndex === -1) return;
 
-    // Delete via batchUpdate
-    await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-            requests: [{
-                deleteDimension: {
-                    range: {
-                        sheetId,
-                        dimension: 'ROWS',
-                        startIndex: rowIndex,
-                        endIndex: rowIndex + 1
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            requestBody: {
+                requests: [{
+                    deleteDimension: {
+                        range: {
+                            sheetId,
+                            dimension: 'ROWS',
+                            startIndex: rowIndex,
+                            endIndex: rowIndex + 1
+                        }
                     }
-                }
-            }]
-        }
-    });
+                }]
+            }
+        });
+    } catch (error: any) {
+        console.error(`Delete Error:`, error.message);
+        throw error;
+    }
 };

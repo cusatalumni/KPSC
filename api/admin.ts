@@ -6,7 +6,7 @@ import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.j
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
 
-    const { action, sheet, id, exam, syllabus, book, question, data, mode, resultData } = req.body;
+    const { action, sheet, id, exam, syllabus, book, question, data, mode, resultData, examsPayload, syllabusPayload } = req.body;
 
     // Handle results saving separately (accessible to non-admins)
     if (action === 'save-result') {
@@ -40,16 +40,24 @@ export default async function handler(req: any, res: any) {
         switch (action) {
             case 'test-connection':
                 try {
-                    // Try to read one cell to verify identity
                     const test = await readSheetData('Exams!A1:A1');
                     return res.status(200).json({ 
                         message: 'Google Sheets Identity Verified Successfully!', 
                         data: test 
                     });
                 } catch (e: any) {
-                    console.error("Test connection failed:", e.message);
-                    return res.status(500).json({ message: `Identity verification failed: ${e.message}. Tip: Check if service account is shared with the sheet as Editor.` });
+                    return res.status(500).json({ message: `Identity verification failed: ${e.message}.` });
                 }
+
+            case 'export-static':
+                if (!examsPayload || !syllabusPayload) throw new Error('Payload missing for export.');
+                // Write static exams
+                const eRows = examsPayload.map((e: any) => [e.id, e.title_ml, e.title_en, e.description_ml, e.description_en, e.category, e.level, e.icon_type]);
+                await clearAndWriteSheetData('Exams!A2:H', eRows);
+                // Write static syllabus
+                const sRows = syllabusPayload.map((s: any) => [s.id, s.exam_id, s.title, s.questions, s.duration, s.topic]);
+                await clearAndWriteSheetData('Syllabus!A2:F', sRows);
+                return res.status(200).json({ message: 'Default data exported successfully.' });
 
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();

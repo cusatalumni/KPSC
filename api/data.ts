@@ -24,9 +24,12 @@ export default async function handler(req: any, res: any) {
                 })));
 
             case 'questions':
-                if (!topic) return res.status(400).json({ error: 'Topic is required' });
+                if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 20;
-                const allQs = await readSheetData('QuestionBank!A2:G');
+                let allQs = [];
+                try {
+                    allQs = await readSheetData('QuestionBank!A2:G');
+                } catch (e) { console.error("Question fetch error:", e); }
 
                 const searchTopic = (topic as string).toLowerCase().trim();
                 const cleanTopic = searchTopic.replace(/^(topic|subject):/i, '').trim();
@@ -34,9 +37,7 @@ export default async function handler(req: any, res: any) {
                 const filtered = allQs.filter(r => {
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    return rowTopic.includes(cleanTopic) || 
-                           rowSubject.includes(cleanTopic) || 
-                           cleanTopic.includes(rowTopic);
+                    return rowTopic.includes(cleanTopic) || rowSubject.includes(cleanTopic);
                 }).map(r => {
                     let options = [];
                     try {
@@ -49,8 +50,7 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
-                const shuffled = filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit);
-                return res.status(200).json(shuffled);
+                return res.status(200).json(filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit));
 
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
@@ -73,10 +73,10 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(gRows.map(r => ({ id: r[0], fact: r[1], category: r[2] })));
 
             default:
-                return res.status(400).json({ error: 'Invalid data type requested' });
+                return res.status(400).json({ error: 'Invalid type' });
         }
     } catch (error: any) {
-        console.error("Data Fetch Error:", error.message);
-        return res.status(500).json({ error: error.message });
+        console.error("Data API Error:", error.message);
+        return res.status(200).json([]); // Return empty array instead of 500 to keep UI alive
     }
 }

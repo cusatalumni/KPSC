@@ -28,12 +28,17 @@ const getIcon = (type: string) => {
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
         const res = await fetch(`/api/data?${params}`);
-        if (!res.ok) throw new Error("API Fetch failed");
+        if (!res.ok) {
+            console.warn(`FetchHub warning: ${res.status} for ${params}. Falling back to mocks.`);
+            return mockData;
+        }
         const data = await res.json();
-        if (Array.isArray(data) && data.length === 0) return mockData;
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+            return mockData;
+        }
         return data;
     } catch (e) {
-        console.warn(`Data fetch for ${params} failed, using local mock data.`, e);
+        console.error(`FetchHub Error for ${params}:`, e);
         return mockData;
     }
 };
@@ -41,21 +46,27 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
 const adminReq = async (body: any, token: string | null = null) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body) });
-    if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Administrative request failed');
+    
+    try {
+        const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body) });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Request Failed' }));
+            throw new Error(err.message || `Admin API Error ${res.status}`);
+        }
+        return await res.json();
+    } catch (e: any) {
+        console.error("Admin Request Error:", e.message);
+        throw e;
     }
-    return await res.json();
 };
 
 export const getExams = async (): Promise<Exam[]> => {
     const raw = await fetchHub('type=exams', []);
-    if (raw.length === 0) return EXAMS_DATA;
+    if (!raw || raw.length === 0) return EXAMS_DATA;
     return raw.map((e: any) => ({
         id: e.id,
-        title: { ml: e.title_ml, en: e.title_en },
-        description: { ml: e.description_ml, en: e.description_en },
+        title: { ml: e.title_ml, en: e.title_en || e.title_ml },
+        description: { ml: e.description_ml, en: e.description_en || e.description_ml },
         category: e.category,
         level: e.level,
         icon: getIcon(e.icon_type)
@@ -64,7 +75,9 @@ export const getExams = async (): Promise<Exam[]> => {
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
     const data = await fetchHub(`type=syllabus&examId=${examId}`, []);
-    if (data.length === 0) return EXAM_CONTENT_MAP[examId]?.practiceTests || [];
+    if (!data || data.length === 0) {
+        return EXAM_CONTENT_MAP[examId]?.practiceTests || EXAM_CONTENT_MAP['ldc_lgs']?.practiceTests || [];
+    }
     return data;
 };
 
@@ -84,7 +97,6 @@ export const updateExam = (exam: any, token: string | null) => adminReq({ action
 export const updateSyllabus = (syllabus: any, token: string | null) => adminReq({ action: 'update-syllabus', syllabus }, token);
 export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
-export const fixAllAffiliates = (token: string | null) => adminReq({ action: 'fix-affiliates' }, token);
 export const testConnection = (token: string | null) => adminReq({ action: 'test-connection' }, token);
 
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
@@ -93,15 +105,14 @@ export const getStudyMaterial = async (topic: string): Promise<{ notes: string }
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                prompt: `Generate detailed study notes in Malayalam for the Kerala PSC exam topic: "${topic}". Use markdown formatting.`,
+                prompt: `Generate detailed study notes in Malayalam for: "${topic}".`,
                 model: 'gemini-3-flash-preview',
             }),
         });
-        if (!response.ok) throw new Error('AI generation failed');
         const data = await response.json();
         return { notes: data.text || 'വിവരങ്ങൾ ലഭ്യമല്ല.' };
     } catch (error) {
-        return { notes: "പഠന സാമഗ്രികൾ തയ്യാറാക്കുന്നതിൽ സാങ്കേതിക തകരാർ സംഭവിച്ചു." };
+        return { notes: "തകരാർ സംഭവിച്ചു." };
     }
 };
 
