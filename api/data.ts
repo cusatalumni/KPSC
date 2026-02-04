@@ -34,7 +34,6 @@ export default async function handler(req: any, res: any) {
                 const filtered = allQs.filter(r => {
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    // Match if topic contains search string or vice-versa
                     return rowTopic.includes(cleanTopic) || 
                            rowSubject.includes(cleanTopic) || 
                            cleanTopic.includes(rowTopic);
@@ -50,7 +49,6 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
-                // Shuffle and take requested count
                 const shuffled = filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit);
                 return res.status(200).json(shuffled);
 
@@ -62,10 +60,23 @@ export default async function handler(req: any, res: any) {
                 const nRows = await readSheetData('Notifications!A2:E');
                 return res.status(200).json(nRows.map(r => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] })));
 
+            case 'updates':
+                const uRows = await readSheetData('LiveUpdates!A2:D');
+                return res.status(200).json(uRows.map(r => ({ title: r[0], url: r[1], section: r[2], published_date: r[3] })));
+
+            case 'affairs':
+                const aRows = await readSheetData('CurrentAffairs!A2:D');
+                return res.status(200).json(aRows.map(r => ({ id: r[0], title: r[1], source: r[2], date: r[3] })));
+
+            case 'gk':
+                const gRows = await readSheetData('GK!A2:C');
+                return res.status(200).json(gRows.map(r => ({ id: r[0], fact: r[1], category: r[2] })));
+
             default:
-                return res.status(400).json({ error: 'Invalid type' });
+                return res.status(400).json({ error: 'Invalid data type requested' });
         }
     } catch (error: any) {
+        console.error("Data Fetch Error:", error.message);
         return res.status(500).json({ error: error.message });
     }
 }
