@@ -5,29 +5,19 @@ declare var process: any;
 
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
-    
     let cleaned = key.trim();
-    
-    // Remove wrapping quotes if they exist
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
-    
-    // Replace escaped newlines with actual ones
     cleaned = cleaned.replace(/\\n/g, '\n');
-    
-    if (!cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
-        cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
-    }
-    
     return cleaned;
 };
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-    if (!id) throw new Error('Backend Error: SPREADSHEET_ID environment variable is missing.');
+    if (!id) throw new Error('SPREADSHEET_ID is missing.');
     return id.trim().replace(/['"]/g, '');
 };
 
@@ -36,23 +26,20 @@ async function getSheetsClient() {
     const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error('Backend Error: GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing. Please check Vercel settings.');
+        throw new Error('GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY is missing.');
     }
 
     try {
-        // Use direct credential object to bypass 'default credentials' lookup
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: clientEmail,
-                private_key: privateKey,
-            },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
-        const authClient = await auth.getClient();
-        return google.sheets({ version: 'v4', auth: authClient as any });
+        const auth = new google.auth.JWT(
+            clientEmail,
+            undefined,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+        return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Google Sheets Client Init Failed:", e.message);
-        throw new Error(`Auth Failed: ${e.message}`);
+        console.error("Sheets Auth Failed:", e.message);
+        throw e;
     }
 }
 
@@ -60,19 +47,16 @@ export const readSheetData = async (range: string) => {
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
-        const response = await sheets.spreadsheets.values.get({ 
-            spreadsheetId, 
-            range: range.includes('!') ? range : `'${range}'` 
-        });
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         return response.data.values || [];
     } catch (error: any) {
-        console.error(`Sheet Read Error [${range}]:`, error.message);
+        console.error(`Read Error [${range}]:`, error.message);
         throw error;
     }
 };
 
 export const appendSheetData = async (range: string, values: any[][]) => {
-    if (!values || values.length === 0) return;
+    if (!values.length) return;
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
@@ -83,7 +67,7 @@ export const appendSheetData = async (range: string, values: any[][]) => {
             requestBody: { values },
         });
     } catch (error: any) {
-        console.error(`Sheet Append Error [${range}]:`, error.message);
+        console.error(`Append Error [${range}]:`, error.message);
         throw error;
     }
 };
@@ -92,18 +76,17 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
-        const rangeName = range.split('!')[0];
-        await sheets.spreadsheets.values.clear({ spreadsheetId, range: range });
-        if (values && values.length > 0) {
+        await sheets.spreadsheets.values.clear({ spreadsheetId, range });
+        if (values.length > 0) {
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
-                range: `${rangeName}!A2`,
+                range,
                 valueInputOption: 'USER_ENTERED',
                 requestBody: { values },
             });
         }
     } catch (error: any) {
-        console.error(`Sheet Update Error [${range}]:`, error.message);
+        console.error(`Update Error [${range}]:`, error.message);
         throw error;
     }
 };
@@ -132,7 +115,7 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
             });
         }
     } catch (error: any) {
-        console.error(`Sheet Upsert Error [${sheetName}]:`, error.message);
+        console.error(`Upsert Error [${sheetName}]:`, error.message);
         throw error;
     }
 };
@@ -144,13 +127,11 @@ export const deleteRowById = async (sheetName: string, id: string) => {
         const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
         const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
         const sheetId = sheet?.properties?.sheetId;
-        
         if (sheetId === undefined) throw new Error(`Sheet ${sheetName} not found.`);
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
         const rowIndex = rows.findIndex(row => row[0] === id);
-        
         if (rowIndex === -1) return;
 
         await sheets.spreadsheets.batchUpdate({
@@ -160,7 +141,7 @@ export const deleteRowById = async (sheetName: string, id: string) => {
             }
         });
     } catch (error: any) {
-        console.error(`Sheet Delete Error [${sheetName}]:`, error.message);
+        console.error(`Delete Error [${sheetName}]:`, error.message);
         throw error;
     }
 };
