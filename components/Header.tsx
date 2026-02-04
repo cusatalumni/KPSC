@@ -33,19 +33,23 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   
   const handleNavClick = (page: Page) => {
     onNavigate(page);
-    setOpenDropdown(null);
-    setIsMenuOpen(false);
+    // Use a small timeout to ensure the UI doesn't collapse before the event finishes
+    setTimeout(() => {
+        setOpenDropdown(null);
+        setIsMenuOpen(false);
+    }, 50);
   }
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Use 'click' instead of 'mousedown' to avoid unmounting buttons before their click fires
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
         setOpenDropdown(null);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 
@@ -92,7 +96,10 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               <div key={link.nameKey} className="relative group/nav">
                 {link.children ? (
                   <button 
-                    onClick={() => setOpenDropdown(openDropdown === link.nameKey ? null : link.nameKey)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDropdown(openDropdown === link.nameKey ? null : link.nameKey);
+                    }}
                     className={`flex items-center space-x-1 font-black text-sm uppercase tracking-wider transition duration-200 ${openDropdown === link.nameKey ? 'text-indigo-600' : 'text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
                   >
                     <span>{t(link.nameKey)}</span>

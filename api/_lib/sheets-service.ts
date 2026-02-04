@@ -5,13 +5,14 @@ declare var process: any;
 
 /**
  * Robust private key formatter for Google Service Account keys.
+ * Handles common environment variable issues in Vercel.
  */
 const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     
     let cleaned = key.trim();
     
-    // Remove wrapping quotes if present
+    // 1. Remove wrapping quotes if present
     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
@@ -19,10 +20,10 @@ const formatPrivateKey = (key: string | undefined): string | undefined => {
         cleaned = cleaned.substring(1, cleaned.length - 1);
     }
     
-    // Fix escaped newlines which is the #1 cause of auth failure
+    // 2. Fix escaped newlines which is the #1 cause of auth failure
     cleaned = cleaned.replace(/\\n/g, '\n');
     
-    // Ensure standard PEM headers
+    // 3. Ensure standard PEM headers are present
     if (cleaned && !cleaned.includes('-----BEGIN PRIVATE KEY-----')) {
         cleaned = `-----BEGIN PRIVATE KEY-----\n${cleaned}\n-----END PRIVATE KEY-----`;
     }
@@ -41,31 +42,32 @@ async function getSheetsClient() {
     const rawKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKey = formatPrivateKey(rawKey);
 
-    if (!clientEmail) throw new Error('GOOGLE_CLIENT_EMAIL is missing.');
-    if (!privateKey) throw new Error('GOOGLE_PRIVATE_KEY is missing or invalid.');
+    if (!clientEmail) throw new Error('GOOGLE_CLIENT_EMAIL is missing in environment variables.');
+    if (!privateKey) throw new Error('GOOGLE_PRIVATE_KEY is missing or malformed.');
 
     try {
-        // Use a scopes array for the service account
         const scopes = ['https://www.googleapis.com/auth/spreadsheets'];
         
-        // Initialize JWT auth client
-        const auth = new google.auth.JWT(
-            clientEmail,
-            null,
-            privateKey,
-            scopes
-        );
+        // Use the object-based constructor for better reliability with the library
+        const auth = new google.auth.JWT({
+            email: clientEmail,
+            key: privateKey,
+            scopes: scopes
+        });
 
-        // Force an authorization attempt to catch key errors early
+        // Test authorization immediately to catch key errors
         await auth.authorize();
         
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Sheets Auth Error:", e.message);
-        // Clean error message to avoid exposing server paths
-        const msg = e.message.includes('No key or keyFile set') 
-            ? 'The Private Key format is incorrect. Please check the Vercel GOOGLE_PRIVATE_KEY variable.'
-            : e.message;
+        console.error("Sheets Auth Exception:", e.message);
+        // Map common errors to user-friendly messages
+        let msg = e.message;
+        if (msg.includes('No key or keyFile set')) {
+            msg = 'The Private Key is empty or invalid. Please check the Vercel GOOGLE_PRIVATE_KEY variable.';
+        } else if (msg.includes('invalid_grant')) {
+            msg = 'Authentication Failed: Invalid credentials or key expired.';
+        }
         throw new Error(`Authentication Failed: ${msg}`);
     }
 }
@@ -77,7 +79,7 @@ export const readSheetData = async (range: string) => {
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         return response.data.values || [];
     } catch (e: any) {
-        console.error(`Read Error: ${e.message}`);
+        console.error(`Read Error on range ${range}:`, e.message);
         throw e;
     }
 };
@@ -94,7 +96,7 @@ export const appendSheetData = async (range: string, values: any[][]) => {
             requestBody: { values },
         });
     } catch (e: any) {
-        console.error(`Append Error: ${e.message}`);
+        console.error(`Append Error on range ${range}:`, e.message);
         throw e;
     }
 };
@@ -113,7 +115,7 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
             });
         }
     } catch (e: any) {
-        console.error(`Write Error: ${e.message}`);
+        console.error(`Write Error on range ${range}:`, e.message);
         throw e;
     }
 };
@@ -142,7 +144,7 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
             });
         }
     } catch (e: any) {
-        console.error(`Upsert Error: ${e.message}`);
+        console.error(`Upsert Error on sheet ${sheetName}:`, e.message);
         throw e;
     }
 };
@@ -178,7 +180,7 @@ export const deleteRowById = async (sheetName: string, id: string) => {
             }
         });
     } catch (e: any) {
-        console.error(`Delete Error: ${e.message}`);
+        console.error(`Delete Error on sheet ${sheetName}:`, e.message);
         throw e;
     }
 };

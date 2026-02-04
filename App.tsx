@@ -50,8 +50,10 @@ const App: React.FC = () => {
   }, []);
 
   const syncStateFromHash = useCallback(() => {
-    const hash = window.location.hash.replace('#', '');
-    if (!hash || hash === '' || hash === '/') {
+    const rawHash = window.location.hash || '#dashboard';
+    const hash = rawHash.replace(/^#\/?/, '');
+    
+    if (!hash || hash === '' || hash === 'dashboard') {
         setCurrentPage('dashboard');
         setSelectedExam(null);
         window.scrollTo(0, 0);
@@ -105,11 +107,12 @@ const App: React.FC = () => {
   }, [user, isSignedIn]);
 
   const handleNavigate = (page: string) => {
-    // If navigating to current hash, manually trigger sync to ensure it works
-    if (window.location.hash === `#${page}`) {
-        syncStateFromHash();
+    // Force cleaning the target page string
+    const target = page.startsWith('#') ? page : `#${page}`;
+    if (window.location.hash === target) {
+        syncStateFromHash(); // Manually sync if the hash doesn't change
     } else {
-        window.location.hash = page;
+        window.location.hash = target;
     }
   };
 
@@ -193,7 +196,7 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
       {!isTestPage && <Header onNavigate={handleNavigate as any} />}
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main key={currentPage} className="flex-grow container mx-auto px-4 py-8">
         {renderContent()}
       </main>
       {!isTestPage && <Footer onNavigate={handleNavigate as any}/>}
