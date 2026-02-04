@@ -40,32 +40,54 @@ export default async function handler(req: any, res: any) {
         switch (action) {
             case 'test-connection':
                 try {
-                    const test = await readSheetData('Exams!A1:A1');
+                    // Try to read a small range to confirm credentials work
+                    await readSheetData('Exams!A1:A1');
                     return res.status(200).json({ 
-                        message: 'Google Sheets Identity Verified Successfully!', 
-                        data: test 
+                        message: 'Google Sheets Connection Verified! You are ready to manage content.'
                     });
                 } catch (e: any) {
-                    return res.status(500).json({ message: `Identity verification failed: ${e.message}.` });
+                    console.error("Test Connection Fail:", e.message);
+                    return res.status(500).json({ message: `Connection failed: ${e.message}` });
                 }
 
             case 'export-static':
-                if (!examsPayload || !syllabusPayload) throw new Error('Payload missing for export.');
-                // Write static exams
-                const eRows = examsPayload.map((e: any) => [e.id, e.title_ml, e.title_en, e.description_ml, e.description_en, e.category, e.level, e.icon_type]);
+                if (!examsPayload || !syllabusPayload) {
+                    throw new Error('Payload missing for export. Please refresh the page and try again.');
+                }
+                
+                // Write static exams (A to H: id, ml, en, desc_ml, desc_en, cat, level, icon)
+                const eRows = examsPayload.map((e: any) => [
+                    e.id, 
+                    e.title_ml, 
+                    e.title_en || '', 
+                    e.description_ml || '', 
+                    e.description_en || '', 
+                    e.category || 'General', 
+                    e.level || 'Preliminary', 
+                    e.icon_type || 'book'
+                ]);
                 await clearAndWriteSheetData('Exams!A2:H', eRows);
-                // Write static syllabus
-                const sRows = syllabusPayload.map((s: any) => [s.id, s.exam_id, s.title, s.questions, s.duration, s.topic]);
+                
+                // Write static syllabus (A to F: id, exam_id, title, questions, duration, topic)
+                const sRows = syllabusPayload.map((s: any) => [
+                    s.id, 
+                    s.exam_id, 
+                    s.title, 
+                    s.questions, 
+                    s.duration, 
+                    s.topic
+                ]);
                 await clearAndWriteSheetData('Syllabus!A2:F', sRows);
-                return res.status(200).json({ message: 'Default data exported successfully.' });
+                
+                return res.status(200).json({ message: 'Default Exam and Syllabus data has been restored to your Google Sheet.' });
 
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();
-                return res.status(200).json({ message: 'System content updated successfully.' });
+                return res.status(200).json({ message: 'Daily content scraper finished successfully.' });
 
             case 'run-book-scraper':
                 await runBookScraper();
-                return res.status(200).json({ message: 'Bookstore inventory synced with Amazon.' });
+                return res.status(200).json({ message: 'Amazon bookstore sync finished successfully.' });
 
             case 'update-exam':
                 const examRow = [
@@ -110,7 +132,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: `Entry removed from ${sheet}.` });
 
             case 'csv-update':
-                const rows = data.split('\n')
+                const csvRows = data.split('\n')
                     .filter((l:string) => l.trim() !== '')
                     .map((line: string) => {
                         const parts = line.split(',').map(p => p.trim());
@@ -122,17 +144,17 @@ export default async function handler(req: any, res: any) {
                     });
                 
                 if (mode === 'append') { 
-                    await appendSheetData(`${sheet}!A1`, rows); 
+                    await appendSheetData(`${sheet}!A1`, csvRows); 
                 } else { 
-                    await clearAndWriteSheetData(`${sheet}!A2`, rows); 
+                    await clearAndWriteSheetData(`${sheet}!A2`, csvRows); 
                 }
-                return res.status(200).json({ message: 'Bulk data imported.' });
+                return res.status(200).json({ message: 'Bulk data imported successfully.' });
 
             default:
                 return res.status(400).json({ message: 'Invalid action.' });
         }
     } catch (error: any) {
         console.error("Admin API Master Error:", error.message);
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 }
