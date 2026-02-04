@@ -24,6 +24,7 @@ export default async function handler(req: any, res: any) {
             await appendSheetData('Results!A1', [resRow]);
             return res.status(200).json({ message: 'Result saved.' });
         } catch (e: any) { 
+            console.error("Result save error:", e.message);
             return res.status(500).json({ message: `Failed to save result: ${e.message}` }); 
         }
     }
@@ -38,11 +39,17 @@ export default async function handler(req: any, res: any) {
     try {
         switch (action) {
             case 'test-connection':
-                const test = await readSheetData('Exams!A1:A1');
-                return res.status(200).json({ 
-                    message: 'Google Sheets Connection Successful!', 
-                    data: test 
-                });
+                try {
+                    // Try to read one cell to verify identity
+                    const test = await readSheetData('Exams!A1:A1');
+                    return res.status(200).json({ 
+                        message: 'Google Sheets Identity Verified Successfully!', 
+                        data: test 
+                    });
+                } catch (e: any) {
+                    console.error("Test connection failed:", e.message);
+                    return res.status(500).json({ message: `Identity verification failed: ${e.message}. Tip: Check if service account is shared with the sheet as Editor.` });
+                }
 
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();
@@ -64,7 +71,7 @@ export default async function handler(req: any, res: any) {
                     exam.icon_type || 'book'
                 ];
                 await findAndUpsertRow('Exams', exam.id, examRow);
-                return res.status(200).json({ message: 'Exam information saved to database.' });
+                return res.status(200).json({ message: 'Exam information saved.' });
 
             case 'update-syllabus':
                 const sylRow = [
@@ -90,7 +97,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Book details saved.' });
 
             case 'delete-row':
-                if (!sheet || !id) throw new Error('Target sheet and ID are required for deletion.');
+                if (!sheet || !id) throw new Error('Target sheet and ID are required.');
                 await deleteRowById(sheet, id);
                 return res.status(200).json({ message: `Entry removed from ${sheet}.` });
 
@@ -111,13 +118,13 @@ export default async function handler(req: any, res: any) {
                 } else { 
                     await clearAndWriteSheetData(`${sheet}!A2`, rows); 
                 }
-                return res.status(200).json({ message: 'Bulk data imported successfully.' });
+                return res.status(200).json({ message: 'Bulk data imported.' });
 
             default:
-                return res.status(400).json({ message: 'Invalid administrative action.' });
+                return res.status(400).json({ message: 'Invalid action.' });
         }
     } catch (error: any) {
-        console.error("Admin API Error:", error.message);
+        console.error("Admin API Master Error:", error.message);
         return res.status(500).json({ message: error.message });
     }
 }
