@@ -1,10 +1,33 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogoIcon } from './icons/LogoIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 
+const MOTIVATIONAL_QUOTES = [
+    "നിങ്ങളുടെ കഠിനാധ്വാനം ഒരിക്കലും വെറുതെയാകില്ല.",
+    "വിജയം എന്നത് വീണ്ടും വീണ്ടും ശ്രമിക്കുന്നതിലൂടെ ലഭിക്കുന്നതാണ്.",
+    "നിങ്ങളുടെ സ്വപ്നങ്ങളെ പിന്തുടരുക, അവ പൂവണിയുന്ന കാലം വരും.",
+    "ഓരോ ചെറിയ ചുവടുവെപ്പും വലിയ മാറ്റങ്ങൾക്ക് തുടക്കമാണ്.",
+    "ക്ഷമയും കഠിനാധ്വാനവുമാണ് വിജയത്തിലേക്കുള്ള താക്കോൽ.",
+    "പരാജയങ്ങൾ വിജയത്തിലേക്കുള്ള ചവിട്ടുപടികളാണ്.",
+    "നിങ്ങൾ ഇന്ന് ചെയ്യുന്നതാണ് നിങ്ങളുടെ നാളെയെ തീരുമാനിക്കുന്നത്."
+];
+
 const LoadingScreen: React.FC = () => {
     const { t } = useTranslation();
+    const [quote, setQuote] = useState("");
+    const [logoVariant, setLogoVariant] = useState<'transparent' | 'dark'>('transparent');
+
+    useEffect(() => {
+        // Pick a random quote on mount
+        const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+        setQuote(randomQuote);
+        
+        // Randomly pick logo variant (transparent or dark) to make it look dynamic as requested
+        const variants: Array<'transparent' | 'dark'> = ['transparent', 'dark'];
+        const randomVariant = variants[Math.floor(Math.random() * variants.length)];
+        setLogoVariant(randomVariant);
+    }, []);
     
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white dark:bg-slate-950 overflow-hidden animate-fade-in">
@@ -14,21 +37,30 @@ const LoadingScreen: React.FC = () => {
 
             <div className="relative mb-12 flex flex-col items-center">
                 {/* Logo Container with 3D-like Shadow */}
-                <div className="bg-white dark:bg-slate-900 p-10 rounded-[3.5rem] shadow-[0_25px_50px_-12px_rgba(79,70,229,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 animate-bounce transition-transform duration-1000">
-                    <LogoIcon className="h-44 w-44 md:h-64 md:w-64" variant="transparent" />
+                <div className="bg-white dark:bg-slate-900 p-8 md:p-10 rounded-[3.5rem] shadow-[0_25px_50px_-12px_rgba(79,70,229,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 animate-bounce transition-transform duration-1000">
+                    <LogoIcon 
+                        className="h-44 w-44 md:h-64 md:w-64" 
+                        variant={logoVariant} 
+                    />
                 </div>
                 {/* Glowing Pulse behind logo */}
                 <div className="absolute inset-0 bg-indigo-500/10 rounded-full blur-3xl -z-10 animate-pulse scale-125"></div>
             </div>
             
             <div className="text-center space-y-8 max-w-sm px-6">
-                <div>
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-800 dark:text-white tracking-tighter leading-none mb-3">
+                <div className="space-y-4">
+                    <h1 className="text-4xl md:text-5xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">
                         {t('app.title')}
                     </h1>
                     <div className="h-1.5 w-16 bg-indigo-600 mx-auto rounded-full"></div>
-                    <p className="text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] md:text-xs mt-4">
+                    <p className="text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] md:text-xs">
                         {t('app.subtitle')}
+                    </p>
+                </div>
+
+                <div className="py-6 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 animate-fade-in-up">
+                    <p className="text-slate-600 dark:text-slate-300 italic font-medium leading-relaxed">
+                        "{quote}"
                     </p>
                 </div>
                 

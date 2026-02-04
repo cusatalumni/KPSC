@@ -44,22 +44,25 @@ const App: React.FC = () => {
   const { theme } = useTheme();
 
   useEffect(() => {
-      const timer = setTimeout(() => setIsAppLoading(false), 2000);
+      // Simulate app loading with quotes
+      const timer = setTimeout(() => setIsAppLoading(false), 2500);
       return () => clearTimeout(timer);
   }, []);
 
   const syncStateFromHash = useCallback(() => {
     const hash = window.location.hash.replace('#', '');
-    if (!hash || hash === '') {
+    if (!hash || hash === '' || hash === '/') {
         setCurrentPage('dashboard');
         setSelectedExam(null);
+        window.scrollTo(0, 0);
         return;
     }
 
     const parts = hash.split('/');
-    const page = parts[0] as Page;
+    const pageName = parts[0] as Page;
     const id = parts[1];
     
+    // Explicit list of all available routes
     const validPages: Page[] = [
       'dashboard', 'exam_details', 'test', 'results', 'bookstore', 
       'about', 'privacy', 'terms', 'disclosure', 'exam_calendar', 
@@ -68,27 +71,23 @@ const App: React.FC = () => {
       'study_material', 'sitemap'
     ];
 
-    const targetPage = validPages.includes(page) ? page : 'dashboard';
+    const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
         const exam = EXAMS_DATA.find(e => e.id === id);
         if (exam) setSelectedExam(exam);
-    } else if (targetPage !== 'exam_details') {
+    } else {
         setSelectedExam(null);
     }
     
     if (targetPage === 'study_material' && id) {
         setActiveStudyTopic(decodeURIComponent(id));
-    } else if (targetPage !== 'study_material') {
+    } else {
         setActiveStudyTopic(null);
     }
 
-    if (targetPage !== 'test' && targetPage !== 'results') {
-        setActiveTest(null);
-        setTestResult(null);
-    }
-
     setCurrentPage(targetPage);
+    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
@@ -99,117 +98,90 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isSignedIn && user?.id) {
-      const status = subscriptionService.getSubscriptionStatus(user.id);
-      setSubscriptionStatus(status);
+      setSubscriptionStatus(subscriptionService.getSubscriptionStatus(user.id));
     } else {
       setSubscriptionStatus('free');
     }
   }, [user, isSignedIn]);
 
-  const handleNavigate = (page: Page) => {
-    // If we're already on the page, hash change might not trigger hashchange event
-    // unless the target is different. We force clear and then set.
+  const handleNavigate = (page: string) => {
+    // If navigating to current hash, manually trigger sync to ensure it works
     if (window.location.hash === `#${page}`) {
-        window.location.hash = ''; // Briefly clear
+        syncStateFromHash();
+    } else {
+        window.location.hash = page;
     }
-    window.location.hash = page;
-    window.scrollTo(0, 0);
   };
-
-  const handleNavigateToExam = (exam: Exam) => {
-    handleNavigate(`exam_details/${exam.id}` as any);
-  };
-
-  const handleStartPracticeTest = (test: { title: string, questions: number, topic?: string }, examTitle: string) => {
-    setActiveTest({ 
-        title: `${examTitle} - ${test.title}`, 
-        questionsCount: test.questions,
-        topic: test.topic || 'mixed',
-        isPro: false
-    });
-    handleNavigate('test');
-  };
-
-  const handleFinishTest = (score: number, total: number, stats?: any) => {
-    setTestResult({ score, total, stats });
-    handleNavigate('results');
-  };
-  
-  const handleStartStudyMaterial = (topic: string) => {
-    handleNavigate(`study_material/${encodeURIComponent(topic)}` as any);
-  };
-
-  const handleBackToPreviousPage = () => {
-    window.history.back();
-  }
 
   const renderContent = () => {
     switch(currentPage) {
       case 'test':
-        if (!activeTest) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
-        return <TestPage 
-                  activeTest={activeTest}
-                  subscriptionStatus={subscriptionStatus}
-                  onTestComplete={handleFinishTest} 
-                  onBack={handleBackToPreviousPage}
-                  onNavigateToUpgrade={() => handleNavigate('upgrade')}
-                />;
+        return activeTest ? (
+          <TestPage 
+            activeTest={activeTest}
+            subscriptionStatus={subscriptionStatus}
+            onTestComplete={(score, total, stats) => {
+                setTestResult({ score, total, stats });
+                handleNavigate('results');
+            }} 
+            onBack={() => window.history.back()}
+            onNavigateToUpgrade={() => handleNavigate('upgrade')}
+          />
+        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+
       case 'results':
-        if (!testResult) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
-        return <TestResultPage 
-                  score={testResult.score} 
-                  total={testResult.total} 
-                  stats={testResult.stats}
-                  onBackToPrevious={handleBackToPreviousPage} 
-                />;
+        return testResult ? (
+          <TestResultPage 
+            score={testResult.score} 
+            total={testResult.total} 
+            stats={testResult.stats}
+            onBackToPrevious={() => handleNavigate('dashboard')} 
+          />
+        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+
       case 'exam_details':
-        if (!selectedExam) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
-         const examContent = EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT;
-         return <ExamPage 
+        return selectedExam ? (
+          <ExamPage 
             exam={selectedExam} 
-            content={examContent}
+            content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT}
             onBack={() => handleNavigate('dashboard')}
-            onStartTest={handleStartPracticeTest}
-            onStartStudy={handleStartStudyMaterial}
+            onStartTest={(test: any, examTitle: string) => {
+                setActiveTest({ title: `${examTitle} - ${test.title}`, questionsCount: test.questions, topic: test.topic || 'mixed' });
+                handleNavigate('test');
+            }}
+            onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
             onNavigate={handleNavigate}
-          />;
-      case 'bookstore':
-        return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
-      case 'about':
-        return <AboutUsPage onBack={() => handleNavigate('dashboard')} />;
-      case 'privacy':
-        return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
-      case 'terms':
-        return <TermsPage onBack={() => handleNavigate('dashboard')} />;
-      case 'disclosure':
-        return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
-      case 'exam_calendar':
-        return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
-      case 'quiz_home':
-        return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={() => handleNavigate('test')} subscriptionStatus={subscriptionStatus} />;
-      case 'mock_test_home':
-        return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => handleStartPracticeTest({ title: test.title.ml, questions: test.questionsCount }, 'Mock Test')} />;
-      case 'psc_live_updates':
-        return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
-      case 'previous_papers':
-        return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
-      case 'current_affairs':
-        return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
-      case 'gk':
-        return <GkPage onBack={() => handleNavigate('dashboard')} />;
-      case 'admin_panel':
-        return <AdminPage onBack={() => handleNavigate('dashboard')} />;
+          />
+        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+
+      case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
+      case 'about': return <AboutUsPage onBack={() => handleNavigate('dashboard')} />;
+      case 'privacy': return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
+      case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
+      case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
+      case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
+      case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={() => handleNavigate('test')} subscriptionStatus={subscriptionStatus} />;
+      case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => {
+          setActiveTest({ title: test.title.ml, questionsCount: test.questionsCount, topic: 'mixed' });
+          handleNavigate('test');
+      }} />;
+      case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
+      case 'previous_papers': return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
+      case 'current_affairs': return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
+      case 'gk': return <GkPage onBack={() => handleNavigate('dashboard')} />;
+      case 'admin_panel': return <AdminPage onBack={() => handleNavigate('dashboard')} />;
+      case 'sitemap': return <SitemapPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate as any} />;
       case 'study_material':
-        if (!activeStudyTopic) return <Dashboard onNavigateToExam={handleNavigateToExam} onNavigate={handleNavigate} onStartStudy={handleStartStudyMaterial} />;
-        return <StudyMaterialPage topic={activeStudyTopic} onBack={handleBackToPreviousPage} />;
-      case 'sitemap':
-        return <SitemapPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate} />;
+        return activeStudyTopic ? (
+            <StudyMaterialPage topic={activeStudyTopic} onBack={() => window.history.back()} />
+        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+      
       case 'dashboard':
       default:
         return <Dashboard 
-                  onNavigateToExam={handleNavigateToExam} 
+                  onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} 
                   onNavigate={handleNavigate}
-                  onStartStudy={handleStartStudyMaterial}
+                  onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
                 />;
     }
   }
@@ -219,12 +191,12 @@ const App: React.FC = () => {
   const isTestPage = currentPage === 'test';
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 flex flex-col ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
-      {!isTestPage && <Header onNavigate={handleNavigate} />}
-      <main className={`flex-grow container mx-auto px-4 py-8`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+      {!isTestPage && <Header onNavigate={handleNavigate as any} />}
+      <main className="flex-grow container mx-auto px-4 py-8">
         {renderContent()}
       </main>
-      {!isTestPage && <Footer onNavigate={handleNavigate}/>}
+      {!isTestPage && <Footer onNavigate={handleNavigate as any}/>}
     </div>
   );
 };
