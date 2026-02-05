@@ -17,15 +17,18 @@ const QUIZ_CATEGORY_TOPICS_ML = [
 ];
 
 /**
- * Enhanced AI instance creator with strict environment variable checks.
+ * Enhanced AI instance creator.
+ * Attempts to find the API key in multiple environment variable locations.
  */
 function getAi() {
-    // Check for standard API_KEY or the common GOOGLE_API_KEY fallback
-    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY;
+    // Priority: API_KEY > GOOGLE_API_KEY > VITE_API_KEY
+    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY || process.env.VITE_API_KEY;
+    
     if (!key) {
-        console.error("CRITICAL ERROR: API_KEY is missing in the environment variables.");
-        throw new Error("API_KEY missing for Scraper. Ensure API_KEY is set in Vercel Settings.");
+        console.error("ENVIRONMENT ERROR: API_KEY is missing. Current process.env keys:", Object.keys(process.env));
+        throw new Error("API_KEY missing for Scraper. Ensure 'API_KEY' is added to Vercel Environment Variables and the project is redeployed.");
     }
+    
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
@@ -101,7 +104,7 @@ async function scrapeGk() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate 25 interesting and important General Knowledge facts in Malayalam for Kerala PSC aspirants. Focus on History, Geography, and Science. Return as JSON array with 'id', 'fact', 'category'.`,
+        contents: `Generate 25 interesting and important General Knowledge facts in Malayalam for Kerala PSC aspirants. Return as JSON array with 'id', 'fact', 'category'.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -121,7 +124,7 @@ async function scrapeGk() {
 async function generateNewQuestions() {
     const ai = getAi();
     const topics = QUIZ_CATEGORY_TOPICS_ML;
-    const prompt = `Generate 20 high-quality MCQ questions in Malayalam for Kerala PSC. Use current patterns. topics: ${topics.join(', ')}. return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`;
+    const prompt = `Generate 20 MCQ questions in Malayalam for Kerala PSC. topics: ${topics.join(', ')}. return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', contents: prompt,
@@ -144,7 +147,7 @@ async function generateNewQuestions() {
 
 async function scrapeAmazonBooks() {
     const ai = getAi();
-    const prompt = `Search for top 25 Kerala PSC preparation books (Rank Files, Question Banks) on Amazon.in. Return as JSON array of objects with id, title, author, and amazonLink. Only return valid Amazon India product URLs.`;
+    const prompt = `Search for top 25 Kerala PSC preparation books on Amazon.in. Return as JSON array of objects with id, title, author, and amazonLink.`;
 
     try {
         const response = await ai.models.generateContent({
