@@ -39,7 +39,7 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </button>
 
             <header className="mb-12 text-center">
-                <div className="bg-teal-50 dark:bg-teal-950/30 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <div className="bg-teal-50 dark:bg-teal-950/30 w-20 h-20 rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
                     <NewspaperIcon className="h-10 w-10 text-teal-600" />
                 </div>
                 <h1 className="text-5xl font-black text-slate-800 dark:text-white tracking-tight">
@@ -49,7 +49,7 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </header>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin"></div>
                     <p className="mt-4 text-slate-500 font-bold tracking-widest uppercase text-xs">{t('loading')}</p>
                 </div>
@@ -58,16 +58,16 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {items.map((item) => (
-                        <div key={item.id} className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl transition-all duration-300 flex flex-col justify-between group">
+                        <div key={item.id} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
                             <div>
-                                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-teal-600 transition-colors">{item.title}</h3>
-                                <div className="mt-6 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-4">
+                                <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-teal-600 transition-colors">{item.title}</h3>
+                                <div className="mt-8 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-5">
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('currentAffairs.source')}</span>
-                                        <span className="font-bold text-teal-600 text-xs">{item.source}</span>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('currentAffairs.source')}</span>
+                                        <span className="font-black text-teal-600 text-xs">{item.source}</span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('date')}</span>
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('date')}</span>
                                         <span className="block font-bold text-slate-500 text-xs">{item.date}</span>
                                     </div>
                                 </div>
