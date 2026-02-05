@@ -49,26 +49,21 @@ export default async function handler(req: any, res: any) {
                     const rawOptions = r[3] || '';
                     
                     try {
-                        // Check if options are already JSON (e.g. ["A", "B", "C", "D"])
-                        if (rawOptions.trim().startsWith('[')) {
-                            options = JSON.parse(rawOptions);
-                        } 
-                        // Handle pipe separated strings (e.g. Option1|Option2|Option3|Option4)
-                        else if (rawOptions.includes('|')) {
-                            options = rawOptions.split('|').map((o: any) => o.trim());
-                        } 
-                        // Handle comma separated
-                        else if (rawOptions.includes(',')) {
-                            options = rawOptions.split(',').map((o: any) => o.trim());
-                        }
-                        else {
-                            options = [rawOptions, "B", "C", "D"];
+                        const trimmed = rawOptions.trim();
+                        if (trimmed.startsWith('[')) {
+                            options = JSON.parse(trimmed);
+                        } else if (trimmed.includes('|')) {
+                            options = trimmed.split('|').map((o: any) => o.trim());
+                        } else if (trimmed.includes(',')) {
+                            options = trimmed.split(',').map((o: any) => o.trim());
+                        } else {
+                            options = [trimmed || "Option A", "Option B", "Option C", "Option D"];
                         }
                     } catch(e) { 
-                        options = ["Option A", "Option B", "Option C", "Option D"]; 
+                        options = ["A", "B", "C", "D"]; 
                     }
 
-                    // Pad with placeholders if less than 4 options were found
+                    // Always ensure we have 4 items
                     while (options.length < 4) {
                         options.push(`Option ${String.fromCharCode(65 + options.length)}`);
                     }
