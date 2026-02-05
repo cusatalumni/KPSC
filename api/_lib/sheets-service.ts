@@ -42,33 +42,20 @@ async function getSheetsClient() {
     const rawKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKey = formatPrivateKey(rawKey);
 
-    if (!clientEmail) throw new Error('GOOGLE_CLIENT_EMAIL is missing in environment variables.');
-    if (!privateKey) throw new Error('GOOGLE_PRIVATE_KEY is missing or malformed.');
+    if (!clientEmail) throw new Error('GOOGLE_CLIENT_EMAIL is missing.');
+    if (!privateKey) throw new Error('GOOGLE_PRIVATE_KEY is missing.');
 
     try {
-        const scopes = ['https://www.googleapis.com/auth/spreadsheets'];
-        
-        // Use the object-based constructor for better reliability with the library
-        const auth = new google.auth.JWT({
-            email: clientEmail,
-            key: privateKey,
-            scopes: scopes
-        });
-
-        // Test authorization immediately to catch key errors
-        await auth.authorize();
-        
+        const auth = new google.auth.JWT(
+            clientEmail,
+            undefined,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
         return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
         console.error("Sheets Auth Exception:", e.message);
-        // Map common errors to user-friendly messages
-        let msg = e.message;
-        if (msg.includes('No key or keyFile set')) {
-            msg = 'The Private Key is empty or invalid. Please check the Vercel GOOGLE_PRIVATE_KEY variable.';
-        } else if (msg.includes('invalid_grant')) {
-            msg = 'Authentication Failed: Invalid credentials or key expired.';
-        }
-        throw new Error(`Authentication Failed: ${msg}`);
+        throw new Error(`Authentication Failed: ${e.message}`);
     }
 }
 

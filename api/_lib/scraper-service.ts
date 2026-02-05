@@ -3,7 +3,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData } from './sheets-service.js';
 
 declare var process: any;
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
 const QUIZ_CATEGORY_TOPICS_ML = [
@@ -17,7 +16,14 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
+function getAi() {
+    const key = process.env.API_KEY;
+    if (!key) throw new Error("API_KEY missing for Scraper");
+    return new GoogleGenAI({ apiKey: key });
+}
+
 async function scrapeKpscNotifications() {
+    const ai = getAi();
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 10 most recent notifications. For each, extract: full title, category number, last date (DD-MM-YYYY), and direct URL. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
@@ -40,6 +46,7 @@ async function scrapeKpscNotifications() {
 }
 
 async function scrapePscLiveUpdates() {
+    const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Scrape the 15 most recent updates from keralapsc.gov.in (Ranked Lists, Latest Updates, Notifications). For each, provide title, full URL, section, and publication date (YYYY-MM-DD). Return as JSON array.`,
@@ -60,6 +67,7 @@ async function scrapePscLiveUpdates() {
 }
 
 async function scrapeCurrentAffairs() {
+    const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Generate 10 recent, relevant current affairs topics for Kerala PSC exams in Malayalam. For each, provide a unique ID, a concise title, the source (e.g., 'മാതൃഭൂമി'), and today's date (YYYY-MM-DD). Return as JSON array.`,
@@ -80,6 +88,7 @@ async function scrapeCurrentAffairs() {
 }
 
 async function scrapeGk() {
+    const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Generate 25 diverse General Knowledge facts in Malayalam suitable for PSC exams. For each, provide a unique ID, the fact itself, and a category (e.g., 'കേരളം', 'ഇന്ത്യ', 'ശാസ്ത്രം'). Return as JSON array.`,
@@ -100,6 +109,7 @@ async function scrapeGk() {
 }
 
 async function generateNewQuestions() {
+    const ai = getAi();
     const topics = QUIZ_CATEGORY_TOPICS_ML;
     const prompt = `Generate a JSON array of ${topics.length * 2} unique multiple-choice questions in Malayalam suitable for a Kerala PSC exam. 
     Distribute them among the following topics: ${topics.join(', ')}.
@@ -125,6 +135,7 @@ async function generateNewQuestions() {
 }
 
 async function scrapeAmazonBooks() {
+    const ai = getAi();
     const prompt = `Search for the top 30 best-selling Kerala PSC preparation books currently available on Amazon.in. construct the URL as: https://www.amazon.in/dp/[REAL_ASIN]?tag=malayalambooks-21
     Return a JSON array of books. Fields: id, title, author, amazonLink.`;
 
@@ -156,7 +167,6 @@ async function scrapeAmazonBooks() {
         if (!link.includes('tag=')) {
             link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
         }
-        // imageUrl is left blank so the frontend uses dynamic covers
         return [item.id, item.title, item.author, "", link];
     });
 }
@@ -170,12 +180,20 @@ export async function runDailyUpdateScrapers() {
     ];
 
     for (const task of tasks) {
-        const newData = await task.scraper();
-        await clearAndWriteSheetData(task.range, newData);
+        try {
+            const newData = await task.scraper();
+            await clearAndWriteSheetData(task.range, newData);
+        } catch (e: any) {
+            console.error(`Scraper task ${task.name} failed:`, e.message);
+        }
     }
 
-    const newQuestions = await generateNewQuestions();
-    await appendSheetData('QuestionBank!A1', newQuestions);
+    try {
+        const newQuestions = await generateNewQuestions();
+        await appendSheetData('QuestionBank!A1', newQuestions);
+    } catch (e: any) {
+        console.error("Question generation failed:", e.message);
+    }
 }
 
 export async function runBookScraper() {

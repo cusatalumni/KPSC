@@ -15,7 +15,6 @@ export default async function handler(req: any, res: any) {
                 })));
 
             case 'syllabus':
-                // Expected Syllabus Format: id, exam_id, title, questions, duration, subject, topic
                 const sRows = await readSheetData('Syllabus!A2:G');
                 return res.status(200).json(sRows.filter(r => r[1] === examId).map(r => ({
                     id: r[0], exam_id: r[1], title: r[2], 
@@ -30,34 +29,61 @@ export default async function handler(req: any, res: any) {
                 let allQs = [];
                 try {
                     allQs = await readSheetData('QuestionBank!A2:G');
-                } catch (e) { console.error("Question fetch error:", e); }
+                } catch (e) { 
+                    console.error("Question fetch error:", e); 
+                    return res.status(200).json([]);
+                }
 
                 const filterSubject = (subject as string || '').toLowerCase().trim();
                 const filterTopic = (topic as string || '').toLowerCase().trim();
 
                 const filtered = allQs.filter(r => {
-                    // Column B (Index 1) is Topic, Column F (Index 5) is Subject
+                    if (!r || r.length < 3) return false;
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    
-                    // Logic: Match provided filters. If "mixed" or empty, skip that filter.
                     const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject === filterSubject;
                     const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
-                    
                     return isSubjectMatch && isTopicMatch;
                 }).map(r => {
-                    let options = [];
+                    let options: string[] = [];
+                    const rawOptions = r[3] || '';
+                    
                     try {
-                        const raw = r[3] || '[]';
-                        options = raw.startsWith('[') ? JSON.parse(raw) : raw.split('|').map((o:any)=>o.trim());
-                    } catch(e) { options = ["A", "B", "C", "D"]; }
+                        // Check if options are already JSON (e.g. ["A", "B", "C", "D"])
+                        if (rawOptions.trim().startsWith('[')) {
+                            options = JSON.parse(rawOptions);
+                        } 
+                        // Handle pipe separated strings (e.g. Option1|Option2|Option3|Option4)
+                        else if (rawOptions.includes('|')) {
+                            options = rawOptions.split('|').map((o: any) => o.trim());
+                        } 
+                        // Handle comma separated
+                        else if (rawOptions.includes(',')) {
+                            options = rawOptions.split(',').map((o: any) => o.trim());
+                        }
+                        else {
+                            options = [rawOptions, "B", "C", "D"];
+                        }
+                    } catch(e) { 
+                        options = ["Option A", "Option B", "Option C", "Option D"]; 
+                    }
+
+                    // Pad with placeholders if less than 4 options were found
+                    while (options.length < 4) {
+                        options.push(`Option ${String.fromCharCode(65 + options.length)}`);
+                    }
+
                     return { 
-                        id: r[0], topic: r[1], question: r[2], options: options, 
-                        correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6] 
+                        id: r[0], 
+                        topic: r[1], 
+                        question: r[2], 
+                        options: options.slice(0, 4), 
+                        correctAnswerIndex: parseInt(r[4] || '0'), 
+                        subject: r[5], 
+                        difficulty: r[6] 
                     };
                 });
                 
-                // Shuffle and limit
                 return res.status(200).json(filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit));
 
             case 'books':

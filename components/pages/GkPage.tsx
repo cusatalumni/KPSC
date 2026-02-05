@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getGk } from '../../services/pscDataService';
 import type { GkItem } from '../../types';
@@ -31,39 +32,47 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, [fetchItems]);
 
     return (
-        <div className="animate-fade-in">
-            <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-semibold hover:underline mb-6">
-                <ChevronLeftIcon className="h-5 w-5" />
+        <div className="animate-fade-in max-w-7xl mx-auto px-4 pb-20">
+            <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-black hover:underline mb-10 group">
+                <ChevronLeftIcon className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
                 <span>{t('backToDashboard')}</span>
             </button>
 
-            <header className="mb-8 text-center border-b border-slate-200 pb-6">
-                <LightBulbIcon className="h-16 w-16 mx-auto text-yellow-500" />
-                <h1 className="text-4xl font-bold text-slate-800 mt-4">
+            <header className="mb-12 text-center">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <LightBulbIcon className="h-10 w-10 text-yellow-500" />
+                </div>
+                <h1 className="text-5xl font-black text-slate-800 dark:text-white tracking-tight">
                 {t('gk.title')}
-                <span className="block text-2xl text-slate-500 mt-1 font-normal">General Knowledge</span>
                 </h1>
-                <p className="text-lg text-slate-600 mt-2 max-w-2xl mx-auto">{t('gk.subtitle')}</p>
+                <p className="text-xl text-slate-500 font-medium mt-4 max-w-2xl mx-auto">{t('gk.subtitle')}</p>
             </header>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <div className="w-10 h-10 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
-                    <p className="mt-4 text-lg text-slate-600">{t('loading')}</p>
+                <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+                    <div className="w-12 h-12 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
+                    <p className="mt-4 text-slate-500 font-bold tracking-widest uppercase text-xs">{t('loading')}</p>
                 </div>
             ) : error ? (
-                <div className="text-center text-red-500 bg-red-50 p-6 rounded-lg">{error}</div>
+                <div className="text-center text-red-500 bg-red-50 p-12 rounded-[2.5rem] border border-red-100 font-bold">{error}</div>
             ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {items.map((item) => (
-                        <div key={item.id} className="block bg-white p-5 rounded-xl shadow-md border border-slate-200">
-                            <p className="text-lg text-slate-800">{item.fact}</p>
-                            <span className="inline-block mt-2 text-xs font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{item.category}</span>
+                        <div key={item.id} className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border-2 border-slate-50 dark:border-slate-800 hover:border-yellow-200 dark:hover:border-yellow-900 transition-all duration-300 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-50 dark:bg-yellow-900/10 rounded-bl-[4rem] -mr-8 -mt-8 transition-transform group-hover:scale-125"></div>
+                            <div className="relative z-10">
+                                <p className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-relaxed italic">"{item.fact}"</p>
+                                <div className="mt-8 flex items-center">
+                                    <span className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-yellow-200 dark:border-yellow-800/50">
+                                        {item.category}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
-             <div className="mt-8">
+             <div className="mt-16">
                 <AdsenseWidget />
             </div>
         </div>
