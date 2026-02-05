@@ -61,7 +61,7 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <div key={item.id} className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-xl border-2 border-slate-50 dark:border-slate-800 hover:border-yellow-200 dark:hover:border-yellow-900 transition-all duration-300 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-50 dark:bg-yellow-900/10 rounded-bl-[5rem] -mr-10 -mt-10 transition-transform group-hover:scale-125"></div>
                             <div className="relative z-10 h-full flex flex-col justify-between">
-                                <p className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-relaxed italic">"{item.fact}"</p>
+                                <p className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-relaxed italic drop-shadow-sm">"{item.fact}"</p>
                                 <div className="mt-10 flex items-center">
                                     <span className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 text-[10px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-yellow-200 dark:border-yellow-800/50 shadow-sm">
                                         {item.category}

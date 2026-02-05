@@ -1,6 +1,46 @@
 
 import { readSheetData } from './_lib/sheets-service.js';
 
+/**
+ * Smartly parses question options from various string formats
+ */
+const parseOptions = (raw: string): string[] => {
+    if (!raw) return [];
+    let clean = raw.trim();
+    
+    // 1. Try standard JSON parsing
+    try {
+        if (clean.startsWith('[') && clean.endsWith(']')) {
+            return JSON.parse(clean);
+        }
+    } catch (e) {
+        // If it fails, it might be using single quotes like ['a', 'b']
+        try {
+            return JSON.parse(clean.replace(/'/g, '"'));
+        } catch (e2) {
+            // Still fails, strip brackets and proceed to split
+            clean = clean.substring(1, clean.length - 1);
+        }
+    }
+
+    // 2. Try Pipe Separation
+    if (clean.includes('|')) {
+        return clean.split('|').map(s => s.trim());
+    }
+
+    // 3. Try Comma Separation (handling quotes)
+    if (clean.includes(',')) {
+        // Regex to split by comma but ignore commas inside quotes
+        const parts = clean.match(/(".*?"|'.*?'|[^,]+)/g);
+        if (parts) {
+            return parts.map(s => s.trim().replace(/^["']|["']$/g, ''));
+        }
+    }
+
+    // 4. Fallback: single value
+    return [clean];
+};
+
 export default async function handler(req: any, res: any) {
     const { type, topic, subject, count, examId } = req.query;
 
@@ -45,25 +85,9 @@ export default async function handler(req: any, res: any) {
                     const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
                     return isSubjectMatch && isTopicMatch;
                 }).map(r => {
-                    let options: string[] = [];
-                    const rawOptions = r[3] || '';
+                    let options = parseOptions(r[3] || '');
                     
-                    try {
-                        const trimmed = rawOptions.trim();
-                        if (trimmed.startsWith('[')) {
-                            options = JSON.parse(trimmed);
-                        } else if (trimmed.includes('|')) {
-                            options = trimmed.split('|').map((o: any) => o.trim());
-                        } else if (trimmed.includes(',')) {
-                            options = trimmed.split(',').map((o: any) => o.trim());
-                        } else {
-                            options = [trimmed || "Option A", "Option B", "Option C", "Option D"];
-                        }
-                    } catch(e) { 
-                        options = ["A", "B", "C", "D"]; 
-                    }
-
-                    // Always ensure we have 4 items
+                    // Always ensure we have exactly 4 items for the UI
                     while (options.length < 4) {
                         options.push(`Option ${String.fromCharCode(65 + options.length)}`);
                     }
