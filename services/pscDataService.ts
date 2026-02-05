@@ -84,6 +84,7 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
 export const saveTestResult = (resultData: any) => adminReq({ action: 'save-result', resultData });
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);
 export const triggerBookScraper = (token: string | null) => adminReq({ action: 'run-book-scraper' }, token);
+export const applyAffiliateTags = (token: string | null) => adminReq({ action: 'apply-affiliate-tags' }, token);
 export const deleteBook = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, token);
 export const updateBook = (book: any, token: string | null) => adminReq({ action: 'update-book', book }, token);
 export const addQuestion = (question: any, token: string | null) => adminReq({ action: 'add-question', question }, token);

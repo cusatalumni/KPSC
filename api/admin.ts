@@ -60,21 +60,56 @@ export default async function handler(req: any, res: any) {
                 ]);
                 await clearAndWriteSheetData('Exams!A2:H', eRows);
                 
-                // Syllabus Format: id, exam_id, title, questions, duration, subject, topic
+                // Static syllabus (A to G: id, exam_id, title, questions, duration, subject, topic)
                 const sRows = syllabusPayload.map((s: any) => [
                     s.id, s.exam_id, s.title, s.questions, s.duration, s.subject || '', s.topic || ''
                 ]);
                 await clearAndWriteSheetData('Syllabus!A2:G', sRows);
                 
-                return res.status(200).json({ message: 'Defaults restored with Subject-Topic separation.' });
+                return res.status(200).json({ message: 'Defaults restored with updated Syllabus structure.' });
 
             case 'run-daily-scraper':
-                await runDailyUpdateScrapers();
-                return res.status(200).json({ message: 'Daily content scraper finished.' });
+                try {
+                    await runDailyUpdateScrapers();
+                    return res.status(200).json({ message: 'Daily content scraper finished.' });
+                } catch (e: any) {
+                    throw new Error(`Scraper Error: ${e.message}`);
+                }
 
             case 'run-book-scraper':
-                await runBookScraper();
-                return res.status(200).json({ message: 'Amazon sync finished.' });
+                try {
+                    await runBookScraper();
+                    return res.status(200).json({ message: 'Amazon sync finished.' });
+                } catch (e: any) {
+                    throw new Error(`Book Scraper Error: ${e.message}`);
+                }
+
+            case 'apply-affiliate-tags':
+                const books = await readSheetData('Bookstore!A2:E');
+                const tag = 'tag=malayalambooks-21';
+                const updatedBooks = books.map(row => {
+                    let link = row[4] || '';
+                    if (link && !link.includes(tag)) {
+                        link += (link.includes('?') ? '&' : '?') + tag;
+                    }
+                    row[4] = link;
+                    return row;
+                });
+                await clearAndWriteSheetData('Bookstore!A2:E', updatedBooks);
+                return res.status(200).json({ message: 'Affiliate tags applied to all books.' });
+
+            case 'add-question':
+                const qRow = [
+                    question.id || `q_${Date.now()}`, 
+                    question.topic, 
+                    question.question, 
+                    JSON.stringify(question.options), 
+                    question.correctAnswerIndex, 
+                    question.subject, 
+                    question.difficulty || 'Moderate'
+                ];
+                await appendSheetData('QuestionBank!A1', [qRow]);
+                return res.status(200).json({ message: 'Question added to bank.' });
 
             case 'update-exam':
                 const examRow = [
@@ -85,7 +120,6 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Exam saved.' });
 
             case 'update-syllabus':
-                // Format: id, exam_id, title, questions, duration, subject, topic
                 const sylRow = [
                     syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, 
                     syllabus.duration, syllabus.subject || '', syllabus.topic || ''
@@ -109,7 +143,6 @@ export default async function handler(req: any, res: any) {
                     .map((line: string) => {
                         const parts = line.split(',').map(p => p.trim());
                         if (sheet === 'QuestionBank') {
-                            // Col B: Topic (parts[0]), Col F: Subject (parts[4])
                             const opts = parts[2] ? JSON.stringify(parts[2].split('|')) : '[]';
                             return [`q_bulk_${Date.now()}_${Math.random()}`, parts[0], parts[1], opts, parts[3], parts[4], parts[5]];
                         }
@@ -124,6 +157,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(400).json({ message: 'Invalid action.' });
         }
     } catch (error: any) {
-        return res.status(500).json({ message: `Server Error: ${error.message}` });
+        console.error("Admin API error:", error.message);
+        return res.status(500).json({ message: error.message || 'Server Error' });
     }
 }
