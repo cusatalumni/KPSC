@@ -60,13 +60,13 @@ export default async function handler(req: any, res: any) {
                 ]);
                 await clearAndWriteSheetData('Exams!A2:H', eRows);
                 
-                // Static syllabus (A to G: id, exam_id, title, questions, duration, subject, topic)
+                // Syllabus Format: id, exam_id, title, questions, duration, subject, topic
                 const sRows = syllabusPayload.map((s: any) => [
                     s.id, s.exam_id, s.title, s.questions, s.duration, s.subject || '', s.topic || ''
                 ]);
                 await clearAndWriteSheetData('Syllabus!A2:G', sRows);
                 
-                return res.status(200).json({ message: 'Defaults restored with updated Syllabus structure.' });
+                return res.status(200).json({ message: 'Defaults restored with Subject-Topic separation.' });
 
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();
@@ -85,6 +85,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Exam saved.' });
 
             case 'update-syllabus':
+                // Format: id, exam_id, title, questions, duration, subject, topic
                 const sylRow = [
                     syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, 
                     syllabus.duration, syllabus.subject || '', syllabus.topic || ''
@@ -108,6 +109,7 @@ export default async function handler(req: any, res: any) {
                     .map((line: string) => {
                         const parts = line.split(',').map(p => p.trim());
                         if (sheet === 'QuestionBank') {
+                            // Col B: Topic (parts[0]), Col F: Subject (parts[4])
                             const opts = parts[2] ? JSON.stringify(parts[2].split('|')) : '[]';
                             return [`q_bulk_${Date.now()}_${Math.random()}`, parts[0], parts[1], opts, parts[3], parts[4], parts[5]];
                         }

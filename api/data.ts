@@ -15,6 +15,7 @@ export default async function handler(req: any, res: any) {
                 })));
 
             case 'syllabus':
+                // Expected Syllabus Format: id, exam_id, title, questions, duration, subject, topic
                 const sRows = await readSheetData('Syllabus!A2:G');
                 return res.status(200).json(sRows.filter(r => r[1] === examId).map(r => ({
                     id: r[0], exam_id: r[1], title: r[2], 
@@ -35,14 +36,13 @@ export default async function handler(req: any, res: any) {
                 const filterTopic = (topic as string || '').toLowerCase().trim();
 
                 const filtered = allQs.filter(r => {
+                    // Column B (Index 1) is Topic, Column F (Index 5) is Subject
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
                     
-                    // Strict filtering logic:
-                    // If subject filter is "mixed" or empty, ignore it.
-                    // Same for topic.
-                    const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject.includes(filterSubject);
-                    const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic.includes(filterTopic);
+                    // Logic: Match provided filters. If "mixed" or empty, skip that filter.
+                    const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject === filterSubject;
+                    const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
                     
                     return isSubjectMatch && isTopicMatch;
                 }).map(r => {
@@ -57,6 +57,7 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
+                // Shuffle and limit
                 return res.status(200).json(filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit));
 
             case 'books':
