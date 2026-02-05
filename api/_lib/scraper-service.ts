@@ -17,10 +17,9 @@ const QUIZ_CATEGORY_TOPICS_ML = [
 ];
 
 function getAi() {
-    // Explicit check for server-side secret
     const key = process.env.API_KEY;
     if (!key) {
-        console.error("API_KEY is missing from environment variables.");
+        console.error("CRITICAL: API_KEY is missing from environment variables.");
         throw new Error("API_KEY missing for Scraper");
     }
     return new GoogleGenAI({ apiKey: key });
@@ -138,34 +137,65 @@ async function generateNewQuestions() {
 
 async function scrapeAmazonBooks() {
     const ai = getAi();
-    const prompt = `Search for top 30 PSC preparation books on Amazon.in. Return JSON: id, title, author, amazonLink.`;
+    // Improved prompt for better search grounding and structured response
+    const prompt = `Use Google Search to find the 25 most popular and latest Kerala PSC preparation books currently listed on Amazon.in. 
+    Focus on Rank Files, Question Banks, and Subject-wise guides from publishers like Talent Academy, Lakshya, and DC Books.
+    For each book, identify its unique ID (use ASIN if possible), full title, author name, and the direct Amazon product link. 
+    Construct the URL format strictly as: https://www.amazon.in/dp/[ASIN]?tag=malayalambooks-21
+    Return the result ONLY as a JSON array of objects.`;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", 
-        contents: prompt,
-        config: {
-            tools: [{ googleSearch: {} }],
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.ARRAY, 
-                items: {
-                    type: Type.OBJECT, properties: {
-                        id: { type: Type.STRING }, title: { type: Type.STRING }, 
-                        author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
-                    }, required: ["id", "title", "author", "amazonLink"]
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview", 
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY, 
+                    items: {
+                        type: Type.OBJECT, 
+                        properties: {
+                            id: { type: Type.STRING, description: "ASIN or Unique Identifier" }, 
+                            title: { type: Type.STRING, description: "Full book title" }, 
+                            author: { type: Type.STRING, description: "Author or Publisher" },
+                            amazonLink: { type: Type.STRING, description: "Full Amazon India URL with tag" },
+                        }, 
+                        required: ["id", "title", "author", "amazonLink"]
+                    }
                 }
             }
+        });
+        
+        let textResponse = response.text || "[]";
+        
+        // Basic cleanup in case AI includes Markdown blocks
+        if (textResponse.includes('```json')) {
+            textResponse = textResponse.split('```json')[1].split('```')[0].trim();
+        } else if (textResponse.includes('```')) {
+            textResponse = textResponse.split('```')[1].split('```')[0].trim();
         }
-    });
-    
-    const items = JSON.parse(response.text || "[]");
-    return items.map((item: any) => {
-        let link = item.amazonLink;
-        if (!link.includes('tag=')) {
-            link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
-        }
-        return [item.id, item.title, item.author, "", link];
-    });
+
+        const items = JSON.parse(textResponse);
+        
+        return items.map((item: any) => {
+            let link = item.amazonLink || '';
+            // Defensive tag injection if AI forgot it
+            if (link.includes('amazon.in') && !link.includes('tag=')) {
+                link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
+            }
+            return [
+                item.id || `b_${Math.random().toString(36).substr(2, 9)}`, 
+                item.title, 
+                item.author, 
+                "", // Image URL column (empty to trigger procedural fallback)
+                link
+            ];
+        });
+    } catch (e: any) {
+        console.error("Scrape Amazon Books logic error:", e.message);
+        throw new Error(`Failed to scrape Amazon: ${e.message}`);
+    }
 }
 
 export async function runDailyUpdateScrapers() {
@@ -181,7 +211,7 @@ export async function runDailyUpdateScrapers() {
             const newData = await task.scraper();
             await clearAndWriteSheetData(task.range, newData);
         } catch (e: any) {
-            console.error(`Task ${task.name} failed:`, e.message);
+            console.error(`Scraper task ${task.name} failed:`, e.message);
         }
     }
 
@@ -189,11 +219,20 @@ export async function runDailyUpdateScrapers() {
         const newQuestions = await generateNewQuestions();
         await appendSheetData('QuestionBank!A1', newQuestions);
     } catch (e: any) {
-        console.error("Questions generation failed:", e.message);
+        console.error("Question generation failed:", e.message);
     }
 }
 
 export async function runBookScraper() {
-    const newBookData = await scrapeAmazonBooks();
-    await clearAndWriteSheetData('Bookstore!A2:E', newBookData);
+    try {
+        const newBookData = await scrapeAmazonBooks();
+        if (newBookData && newBookData.length > 0) {
+            await clearAndWriteSheetData('Bookstore!A2:E', newBookData);
+        } else {
+            console.warn("No book data was returned from the scraper.");
+        }
+    } catch (e: any) {
+        console.error("Book Scraper main task failed:", e.message);
+        throw e;
+    }
 }

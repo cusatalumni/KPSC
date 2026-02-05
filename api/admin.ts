@@ -60,7 +60,6 @@ export default async function handler(req: any, res: any) {
                 ]);
                 await clearAndWriteSheetData('Exams!A2:H', eRows);
                 
-                // Static syllabus (A to G: id, exam_id, title, questions, duration, subject, topic)
                 const sRows = syllabusPayload.map((s: any) => [
                     s.id, s.exam_id, s.title, s.questions, s.duration, s.subject || '', s.topic || ''
                 ]);
@@ -73,15 +72,16 @@ export default async function handler(req: any, res: any) {
                     await runDailyUpdateScrapers();
                     return res.status(200).json({ message: 'Daily content scraper finished.' });
                 } catch (e: any) {
-                    throw new Error(`Scraper Error: ${e.message}`);
+                    return res.status(500).json({ message: `Scraper Error: ${e.message}` });
                 }
 
             case 'run-book-scraper':
                 try {
                     await runBookScraper();
-                    return res.status(200).json({ message: 'Amazon sync finished.' });
+                    return res.status(200).json({ message: 'Amazon sync finished successfully!' });
                 } catch (e: any) {
-                    throw new Error(`Book Scraper Error: ${e.message}`);
+                    console.error("Book Scraper API Handler Error:", e.message);
+                    return res.status(500).json({ message: `Book Sync Failed: ${e.message}` });
                 }
 
             case 'apply-affiliate-tags':
