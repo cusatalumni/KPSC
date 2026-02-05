@@ -2,42 +2,46 @@
 import { readSheetData } from './_lib/sheets-service.js';
 
 /**
- * Smartly parses question options from various string formats
+ * Robustly parses options from various string formats like:
+ * ['A', 'B', 'C', 'D'] OR "A,B,C,D" OR "A|B|C|D"
  */
-const parseOptions = (raw: string): string[] => {
+const smartParseOptions = (raw: string): string[] => {
     if (!raw) return [];
     let clean = raw.trim();
     
-    // 1. Try standard JSON parsing
-    try {
-        if (clean.startsWith('[') && clean.endsWith(']')) {
-            return JSON.parse(clean);
+    // 1. Try cleaning single quotes if it looks like an array string ['...', '...']
+    if (clean.startsWith('[') && clean.endsWith(']')) {
+        // Remove brackets
+        let content = clean.substring(1, clean.length - 1);
+        
+        // Split by comma followed by quotes to handle content that might contain internal commas
+        // This handles: 'Option 1', 'Option 2', 'Option 3', 'Option 4'
+        const parts = content.match(/('([^']*)'|"([^"]*)")/g);
+        if (parts && parts.length >= 2) {
+            return parts.map(p => p.substring(1, p.length - 1).trim());
         }
-    } catch (e) {
-        // If it fails, it might be using single quotes like ['a', 'b']
-        try {
-            return JSON.parse(clean.replace(/'/g, '"'));
-        } catch (e2) {
-            // Still fails, strip brackets and proceed to split
-            clean = clean.substring(1, clean.length - 1);
-        }
+        
+        // Fallback for simple comma split inside brackets
+        return content.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
     }
 
-    // 2. Try Pipe Separation
+    // 2. Try Standard JSON parsing
+    try {
+        return JSON.parse(clean);
+    } catch (e) {
+        // Silently proceed to other formats
+    }
+
+    // 3. Try Pipe Separation
     if (clean.includes('|')) {
         return clean.split('|').map(s => s.trim());
     }
 
-    // 3. Try Comma Separation (handling quotes)
+    // 4. Try basic comma separation
     if (clean.includes(',')) {
-        // Regex to split by comma but ignore commas inside quotes
-        const parts = clean.match(/(".*?"|'.*?'|[^,]+)/g);
-        if (parts) {
-            return parts.map(s => s.trim().replace(/^["']|["']$/g, ''));
-        }
+        return clean.split(',').map(s => s.trim());
     }
 
-    // 4. Fallback: single value
     return [clean];
 };
 
@@ -85,9 +89,9 @@ export default async function handler(req: any, res: any) {
                     const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
                     return isSubjectMatch && isTopicMatch;
                 }).map(r => {
-                    let options = parseOptions(r[3] || '');
+                    let options = smartParseOptions(r[3] || '');
                     
-                    // Always ensure we have exactly 4 items for the UI
+                    // Pad to 4 options to ensure UI consistency
                     while (options.length < 4) {
                         options.push(`Option ${String.fromCharCode(65 + options.length)}`);
                     }

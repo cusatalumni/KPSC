@@ -64,7 +64,7 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <div className="mt-8 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-5">
                                     <div className="flex flex-col">
                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('currentAffairs.source')}</span>
-                                        <span className="font-black text-teal-600 text-xs">{item.source}</span>
+                                        <span className="font-black text-teal-600 text-xs tracking-tight">{item.source}</span>
                                     </div>
                                     <div className="text-right">
                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('date')}</span>

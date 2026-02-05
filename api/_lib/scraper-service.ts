@@ -17,8 +17,12 @@ const QUIZ_CATEGORY_TOPICS_ML = [
 ];
 
 function getAi() {
+    // Explicit check for server-side secret
     const key = process.env.API_KEY;
-    if (!key) throw new Error("API_KEY missing");
+    if (!key) {
+        console.error("API_KEY is missing from environment variables.");
+        throw new Error("API_KEY missing for Scraper");
+    }
     return new GoogleGenAI({ apiKey: key });
 }
 
@@ -26,7 +30,7 @@ async function scrapeKpscNotifications() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Act as a web scraper. Go to "https://keralapsc.gov.in/index.php/notifications". Scrape the 10 most recent notifications. Return as a JSON array. Each object needs 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
+        contents: `Act as a web scraper for keralapsc.gov.in notifications. Extract 10 items. Return as JSON array with 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -49,7 +53,7 @@ async function scrapePscLiveUpdates() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Scrape the 15 most recent updates from keralapsc.gov.in. provide title, full URL, section, and publication date (YYYY-MM-DD). Return as JSON array.`,
+        contents: `Fetch latest 15 updates from keralapsc.gov.in. Provide title, url, section, and date (YYYY-MM-DD). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -70,7 +74,7 @@ async function scrapeCurrentAffairs() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate 10 recent current affairs topics for Kerala PSC in Malayalam. provide id, title, source, and date (YYYY-MM-DD). Return as JSON array.`,
+        contents: `Generate 10 current affairs for Kerala PSC in Malayalam. Provide id, title, source, and date (YYYY-MM-DD). Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -91,7 +95,7 @@ async function scrapeGk() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate 25 diverse GK facts in Malayalam for PSC exams. provide id, fact, and category. Return as JSON array.`,
+        contents: `Generate 25 diverse GK facts in Malayalam for PSC. provide id, fact, and category. Return as JSON array.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -111,7 +115,7 @@ async function scrapeGk() {
 async function generateNewQuestions() {
     const ai = getAi();
     const topics = QUIZ_CATEGORY_TOPICS_ML;
-    const prompt = `Generate a JSON array of 20 unique multiple-choice questions in Malayalam for Kerala PSC. topics: ${topics.join(', ')}. return objects with 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex' (0-3).`;
+    const prompt = `Generate 20 MCQ questions in Malayalam for Kerala PSC. topics: ${topics.join(', ')}. return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', contents: prompt,
@@ -134,7 +138,7 @@ async function generateNewQuestions() {
 
 async function scrapeAmazonBooks() {
     const ai = getAi();
-    const prompt = `Search for top 30 Kerala PSC preparation books on Amazon.in. Return JSON array. fields: id, title, author, amazonLink.`;
+    const prompt = `Search for top 30 PSC preparation books on Amazon.in. Return JSON: id, title, author, amazonLink.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", 
@@ -155,7 +159,13 @@ async function scrapeAmazonBooks() {
     });
     
     const items = JSON.parse(response.text || "[]");
-    return items.map((item: any) => [item.id, item.title, item.author, "", item.amazonLink]);
+    return items.map((item: any) => {
+        let link = item.amazonLink;
+        if (!link.includes('tag=')) {
+            link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
+        }
+        return [item.id, item.title, item.author, "", link];
+    });
 }
 
 export async function runDailyUpdateScrapers() {
@@ -179,7 +189,7 @@ export async function runDailyUpdateScrapers() {
         const newQuestions = await generateNewQuestions();
         await appendSheetData('QuestionBank!A1', newQuestions);
     } catch (e: any) {
-        console.error("Questions failed:", e.message);
+        console.error("Questions generation failed:", e.message);
     }
 }
 
