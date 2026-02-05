@@ -92,7 +92,8 @@ export const getLiveUpdates = () => fetchHub('type=updates', MOCK_PSC_UPDATES);
 export const getCurrentAffairs = () => fetchHub('type=affairs', MOCK_CURRENT_AFFAIRS);
 export const getGk = () => fetchHub('type=gk', MOCK_GK);
 export const getBooks = () => fetchHub('type=books', MOCK_BOOKS_DATA);
-export const getQuestionsForTest = (topic: string, count: number) => fetchHub(`type=questions&topic=${encodeURIComponent(topic)}&count=${count}`, MOCK_QUESTION_BANK.slice(0, count));
+export const getQuestionsForTest = (subject: string, topic: string, count: number) => 
+    fetchHub(`type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`, MOCK_QUESTION_BANK.slice(0, count));
 export const updateExam = (exam: any, token: string | null) => adminReq({ action: 'update-exam', exam }, token);
 export const updateSyllabus = (syllabus: any, token: string | null) => adminReq({ action: 'update-syllabus', syllabus }, token);
 export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);

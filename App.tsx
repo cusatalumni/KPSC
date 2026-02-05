@@ -95,6 +95,7 @@ const App: React.FC = () => {
   useEffect(() => {
     syncStateFromHash();
     window.addEventListener('hashchange', syncStateFromHash);
+    // Corrected: use removeEventListener instead of addEventListener in the cleanup
     return () => window.removeEventListener('hashchange', syncStateFromHash);
   }, [syncStateFromHash]);
 
@@ -149,7 +150,12 @@ const App: React.FC = () => {
             content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT}
             onBack={() => handleNavigate('dashboard')}
             onStartTest={(test: any, examTitle: string) => {
-                setActiveTest({ title: `${examTitle} - ${test.title}`, questionsCount: test.questions, topic: test.topic || 'mixed' });
+                setActiveTest({ 
+                  title: `${examTitle} - ${test.title}`, 
+                  questionsCount: test.questions, 
+                  subject: test.subject || 'mixed', 
+                  topic: test.topic || 'mixed' 
+                });
                 handleNavigate('test');
             }}
             onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
@@ -165,7 +171,12 @@ const App: React.FC = () => {
       case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
       case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={() => handleNavigate('test')} subscriptionStatus={subscriptionStatus} />;
       case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => {
-          setActiveTest({ title: test.title.ml, questionsCount: test.questionsCount, topic: 'mixed' });
+          setActiveTest({ 
+            title: test.title.ml, 
+            questionsCount: test.questionsCount, 
+            subject: 'mixed', 
+            topic: 'mixed' 
+          });
           handleNavigate('test');
       }} />;
       case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;

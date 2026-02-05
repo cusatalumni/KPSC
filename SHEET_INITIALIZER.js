@@ -19,13 +19,13 @@ function initializeDatabase() {
     },
     {
       name: 'Syllabus',
-      headers: ['id', 'exam_id', 'title', 'questions', 'duration', 'topic'],
-      sample: [['ldc_gk_1', 'ldc_exam', 'General Knowledge', '20', '20', 'Subject:GK']]
+      headers: ['id', 'exam_id', 'title', 'questions', 'duration', 'subject', 'topic'],
+      sample: [['ldc_gk_1', 'ldc_exam', 'General Knowledge', '20', '20', 'GK', 'General']]
     },
     {
       name: 'QuestionBank',
       headers: ['id', 'topic', 'question', 'options', 'correctAnswerIndex', 'subject', 'difficulty'],
-      sample: [['q1', 'Subject:GK', 'കേരളത്തിലെ ഏറ്റവും വലിയ നദി?', '["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"]', '0', 'GK', 'Easy']]
+      sample: [['q1', 'History', 'കേരളത്തിലെ ഏറ്റവും വലിയ നദി?', '["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"]', '0', 'GK', 'Easy']]
     },
     {
       name: 'Bookstore',
@@ -59,7 +59,7 @@ function initializeDatabase() {
     if (!sheet) {
       sheet = ss.insertSheet(s.name);
     } else {
-      sheet.clear(); // Clear existing if you want to reset
+      sheet.clear(); 
     }
     
     // Set headers
@@ -77,5 +77,5 @@ function initializeDatabase() {
     sheet.setFrozenRows(1);
   });
 
-  SpreadsheetApp.getUi().alert('Database Initialized Successfully!');
+  SpreadsheetApp.getUi().alert('Database Initialized Successfully with New Structure!');
 }

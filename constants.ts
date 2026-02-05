@@ -80,11 +80,12 @@ export const EXAMS_DATA: Exam[] = [
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ldc_gk', title: 'General Knowledge', questions: 20, duration: 20, topic: 'Subject:GK' },
-    { id: 'ldc_ml', title: 'Malayalam Grammar', questions: 10, duration: 10, topic: 'Topic:Malayalam Grammar' },
-    { id: 'ldc_en', title: 'English Grammar', questions: 10, duration: 10, topic: 'Topic:English Grammar' },
-    { id: 'ldc_ma', title: 'Mental Ability', questions: 10, duration: 15, topic: 'Topic:Mental Ability' },
-    { id: 'ldc_sc', title: 'General Science', questions: 10, duration: 10, topic: 'Subject:Science' },
+    // Fix: Added missing subject property for all LDC practice tests
+    { id: 'ldc_gk', title: 'General Knowledge', questions: 20, duration: 20, subject: 'GK', topic: 'General Knowledge' },
+    { id: 'ldc_ml', title: 'Malayalam Grammar', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Malayalam Grammar' },
+    { id: 'ldc_en', title: 'English Grammar', questions: 10, duration: 10, subject: 'English', topic: 'English Grammar' },
+    { id: 'ldc_ma', title: 'Mental Ability', questions: 10, duration: 15, subject: 'Maths', topic: 'Mental Ability' },
+    { id: 'ldc_sc', title: 'General Science', questions: 10, duration: 10, subject: 'Science', topic: 'General Science' },
   ],
   studyNotes: [{ id: 'sn_kh', title: 'Kerala History' }, { id: 'sn_ic', title: 'Indian Constitution' }],
   previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
@@ -92,10 +93,11 @@ export const LDC_EXAM_CONTENT: ExamPageContent = {
 
 export const TEACHING_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'teach_psy', title: 'Psychology & Pedagogy', questions: 20, duration: 25, topic: 'Topic:Educational Psychology' },
-    { id: 'teach_gk', title: 'General Knowledge', questions: 15, duration: 15, topic: 'Subject:GK' },
-    { id: 'teach_ml', title: 'Malayalam', questions: 10, duration: 10, topic: 'Subject:Malayalam' },
-    { id: 'teach_en', title: 'English', questions: 10, duration: 10, topic: 'Subject:English' },
+    // Fix: Added missing subject property for all Teaching practice tests
+    { id: 'teach_psy', title: 'Psychology & Pedagogy', questions: 20, duration: 25, subject: 'Psychology', topic: 'Educational Psychology' },
+    { id: 'teach_gk', title: 'General Knowledge', questions: 15, duration: 15, subject: 'GK', topic: 'General Knowledge' },
+    { id: 'teach_ml', title: 'Malayalam', questions: 10, duration: 10, subject: 'Malayalam', topic: 'General' },
+    { id: 'teach_en', title: 'English', questions: 10, duration: 10, subject: 'English', topic: 'General' },
   ],
   studyNotes: [{ id: 'sn_psy', title: 'Learning Theories' }],
   previousPapers: [{ id: 'pp_lpup22', title: 'LP/UP 2022 Paper' }]
@@ -103,9 +105,10 @@ export const TEACHING_EXAM_CONTENT: ExamPageContent = {
 
 export const STAFF_NURSE_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'sn_ns', title: 'Nursing Science', questions: 20, duration: 20, topic: 'Topic:Nursing Science' },
-    { id: 'sn_an', title: 'Anatomy', questions: 10, duration: 10, topic: 'Topic:Anatomy' },
-    { id: 'sn_gk', title: 'General Knowledge', questions: 10, duration: 10, topic: 'Subject:GK' },
+    // Fix: Added missing subject property for all Staff Nurse practice tests
+    { id: 'sn_ns', title: 'Nursing Science', questions: 20, duration: 20, subject: 'Nursing', topic: 'Nursing Science' },
+    { id: 'sn_an', title: 'Anatomy', questions: 10, duration: 10, subject: 'Science', topic: 'Anatomy' },
+    { id: 'sn_gk', title: 'General Knowledge', questions: 10, duration: 10, subject: 'GK', topic: 'General Knowledge' },
   ],
   studyNotes: [{ id: 'sn_fn', title: 'Nursing Fundamentals' }],
   previousPapers: [{ id: 'pp_sn23', title: 'Staff Nurse 2023 Paper' }]
@@ -113,9 +116,10 @@ export const STAFF_NURSE_CONTENT: ExamPageContent = {
 
 export const KSEB_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ks_ee', title: 'Electrical Engineering', questions: 20, duration: 20, topic: 'Subject:Technical' },
-    { id: 'ks_em', title: 'Engineering Maths', questions: 10, duration: 15, topic: 'Topic:Engineering Mathematics' },
-    { id: 'ks_gk', title: 'General Knowledge', questions: 10, duration: 10, topic: 'Subject:GK' },
+    // Fix: Added missing subject property for all KSEB practice tests
+    { id: 'ks_ee', title: 'Electrical Engineering', questions: 20, duration: 20, subject: 'Technical', topic: 'Electrical Engineering' },
+    { id: 'ks_em', title: 'Engineering Maths', questions: 10, duration: 15, subject: 'Maths', topic: 'Engineering Mathematics' },
+    { id: 'ks_gk', title: 'General Knowledge', questions: 10, duration: 10, subject: 'GK', topic: 'General Knowledge' },
   ],
   studyNotes: [{ id: 'sn_ps', title: 'Power Systems' }],
   previousPapers: [{ id: 'pp_se22', title: 'Sub Engineer 2022 Paper' }]

@@ -2,7 +2,7 @@
 import { readSheetData } from './_lib/sheets-service.js';
 
 export default async function handler(req: any, res: any) {
-    const { type, topic, count, examId } = req.query;
+    const { type, topic, subject, count, examId } = req.query;
 
     try {
         switch (type) {
@@ -15,34 +15,41 @@ export default async function handler(req: any, res: any) {
                 })));
 
             case 'syllabus':
-                const sRows = await readSheetData('Syllabus!A2:F');
+                const sRows = await readSheetData('Syllabus!A2:G');
                 return res.status(200).json(sRows.filter(r => r[1] === examId).map(r => ({
                     id: r[0], exam_id: r[1], title: r[2], 
                     questions: parseInt(r[3] || '20'), 
                     duration: parseInt(r[4] || '20'), 
-                    topic: r[5]
+                    subject: r[5] || '',
+                    topic: r[6] || ''
                 })));
 
             case 'questions':
-                if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 20;
                 let allQs = [];
                 try {
                     allQs = await readSheetData('QuestionBank!A2:G');
                 } catch (e) { console.error("Question fetch error:", e); }
 
-                const searchTopic = (topic as string).toLowerCase().trim();
-                const cleanTopic = searchTopic.replace(/^(topic|subject):/i, '').trim();
+                const filterSubject = (subject as string || '').toLowerCase().trim();
+                const filterTopic = (topic as string || '').toLowerCase().trim();
 
                 const filtered = allQs.filter(r => {
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    return rowTopic.includes(cleanTopic) || rowSubject.includes(cleanTopic);
+                    
+                    // Strict filtering logic:
+                    // If subject filter is "mixed" or empty, ignore it.
+                    // Same for topic.
+                    const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject.includes(filterSubject);
+                    const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic.includes(filterTopic);
+                    
+                    return isSubjectMatch && isTopicMatch;
                 }).map(r => {
                     let options = [];
                     try {
                         const raw = r[3] || '[]';
-                        options = raw.startsWith('[') ? JSON.parse(raw) : raw.split(',').map((o:any)=>o.trim());
+                        options = raw.startsWith('[') ? JSON.parse(raw) : raw.split('|').map((o:any)=>o.trim());
                     } catch(e) { options = ["A", "B", "C", "D"]; }
                     return { 
                         id: r[0], topic: r[1], question: r[2], options: options, 
@@ -77,6 +84,6 @@ export default async function handler(req: any, res: any) {
         }
     } catch (error: any) {
         console.error("Data API Error:", error.message);
-        return res.status(200).json([]); // Return empty array instead of 500 to keep UI alive
+        return res.status(200).json([]); 
     }
 }

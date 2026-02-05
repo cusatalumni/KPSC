@@ -40,7 +40,6 @@ export default async function handler(req: any, res: any) {
         switch (action) {
             case 'test-connection':
                 try {
-                    // Try to read a small range to confirm credentials work
                     await readSheetData('Exams!A1:A1');
                     return res.status(200).json({ 
                         message: 'Google Sheets Connection Verified! You are ready to manage content.'
@@ -52,82 +51,54 @@ export default async function handler(req: any, res: any) {
 
             case 'export-static':
                 if (!examsPayload || !syllabusPayload) {
-                    throw new Error('Payload missing for export. Please refresh the page and try again.');
+                    throw new Error('Payload missing for export.');
                 }
                 
-                // Write static exams (A to H: id, ml, en, desc_ml, desc_en, cat, level, icon)
                 const eRows = examsPayload.map((e: any) => [
-                    e.id, 
-                    e.title_ml, 
-                    e.title_en || '', 
-                    e.description_ml || '', 
-                    e.description_en || '', 
-                    e.category || 'General', 
-                    e.level || 'Preliminary', 
-                    e.icon_type || 'book'
+                    e.id, e.title_ml, e.title_en || '', e.description_ml || '', 
+                    e.description_en || '', e.category || 'General', e.level || 'Preliminary', e.icon_type || 'book'
                 ]);
                 await clearAndWriteSheetData('Exams!A2:H', eRows);
                 
-                // Write static syllabus (A to F: id, exam_id, title, questions, duration, topic)
+                // Static syllabus (A to G: id, exam_id, title, questions, duration, subject, topic)
                 const sRows = syllabusPayload.map((s: any) => [
-                    s.id, 
-                    s.exam_id, 
-                    s.title, 
-                    s.questions, 
-                    s.duration, 
-                    s.topic
+                    s.id, s.exam_id, s.title, s.questions, s.duration, s.subject || '', s.topic || ''
                 ]);
-                await clearAndWriteSheetData('Syllabus!A2:F', sRows);
+                await clearAndWriteSheetData('Syllabus!A2:G', sRows);
                 
-                return res.status(200).json({ message: 'Default Exam and Syllabus data has been restored to your Google Sheet.' });
+                return res.status(200).json({ message: 'Defaults restored with updated Syllabus structure.' });
 
             case 'run-daily-scraper':
                 await runDailyUpdateScrapers();
-                return res.status(200).json({ message: 'Daily content scraper finished successfully.' });
+                return res.status(200).json({ message: 'Daily content scraper finished.' });
 
             case 'run-book-scraper':
                 await runBookScraper();
-                return res.status(200).json({ message: 'Amazon bookstore sync finished successfully.' });
+                return res.status(200).json({ message: 'Amazon sync finished.' });
 
             case 'update-exam':
                 const examRow = [
-                    exam.id, 
-                    exam.title_ml, 
-                    exam.title_en || '', 
-                    exam.description_ml || '', 
-                    exam.description_en || '', 
-                    exam.category || 'General', 
-                    exam.level || 'Preliminary', 
-                    exam.icon_type || 'book'
+                    exam.id, exam.title_ml, exam.title_en || '', exam.description_ml || '', 
+                    exam.description_en || '', exam.category || 'General', exam.level || 'Preliminary', exam.icon_type || 'book'
                 ];
                 await findAndUpsertRow('Exams', exam.id, examRow);
-                return res.status(200).json({ message: 'Exam information saved.' });
+                return res.status(200).json({ message: 'Exam saved.' });
 
             case 'update-syllabus':
                 const sylRow = [
-                    syllabus.id, 
-                    syllabus.exam_id, 
-                    syllabus.title, 
-                    syllabus.questions, 
-                    syllabus.duration, 
-                    syllabus.topic
+                    syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, 
+                    syllabus.duration, syllabus.subject || '', syllabus.topic || ''
                 ];
                 await findAndUpsertRow('Syllabus', syllabus.id, sylRow);
                 return res.status(200).json({ message: 'Syllabus topic updated.' });
 
             case 'update-book':
-                const bRow = [
-                    book.id || `b_${Date.now()}`, 
-                    book.title, 
-                    book.author || '', 
-                    book.imageUrl || '', 
-                    book.link
-                ];
+                const bRow = [book.id || `b_${Date.now()}`, book.title, book.author || '', book.imageUrl || '', book.link];
                 await findAndUpsertRow('Bookstore', book.id || bRow[0], bRow);
-                return res.status(200).json({ message: 'Book details saved.' });
+                return res.status(200).json({ message: 'Book saved.' });
 
             case 'delete-row':
-                if (!sheet || !id) throw new Error('Target sheet and ID are required.');
+                if (!sheet || !id) throw new Error('Sheet and ID required.');
                 await deleteRowById(sheet, id);
                 return res.status(200).json({ message: `Entry removed from ${sheet}.` });
 
@@ -143,18 +114,14 @@ export default async function handler(req: any, res: any) {
                         return parts;
                     });
                 
-                if (mode === 'append') { 
-                    await appendSheetData(`${sheet}!A1`, csvRows); 
-                } else { 
-                    await clearAndWriteSheetData(`${sheet}!A2`, csvRows); 
-                }
-                return res.status(200).json({ message: 'Bulk data imported successfully.' });
+                if (mode === 'append') { await appendSheetData(`${sheet}!A1`, csvRows); } 
+                else { await clearAndWriteSheetData(`${sheet}!A2`, csvRows); }
+                return res.status(200).json({ message: 'Data imported.' });
 
             default:
                 return res.status(400).json({ message: 'Invalid action.' });
         }
     } catch (error: any) {
-        console.error("Admin API Master Error:", error.message);
         return res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 }
