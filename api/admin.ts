@@ -53,32 +53,37 @@ export default async function handler(req: any, res: any) {
                 if (!examsPayload || !syllabusPayload) {
                     throw new Error('Payload missing for export.');
                 }
-                
                 const eRows = examsPayload.map((e: any) => [
                     e.id, e.title_ml, e.title_en || '', e.description_ml || '', 
                     e.description_en || '', e.category || 'General', e.level || 'Preliminary', e.icon_type || 'book'
                 ]);
                 await clearAndWriteSheetData('Exams!A2:H', eRows);
-                
                 const sRows = syllabusPayload.map((s: any) => [
                     s.id, s.exam_id, s.title, s.questions, s.duration, s.subject || '', s.topic || ''
                 ]);
                 await clearAndWriteSheetData('Syllabus!A2:G', sRows);
-                
                 return res.status(200).json({ message: 'Defaults restored with updated Syllabus structure.' });
 
             case 'run-daily-scraper':
                 try {
-                    await runDailyUpdateScrapers();
-                    return res.status(200).json({ message: 'Daily content scraper finished.' });
+                    const result = await runDailyUpdateScrapers();
+                    if (result.successCount > 0) {
+                        return res.status(200).json({ message: `Scraper finished! Updated ${result.successCount} sections. ${result.errors.length > 0 ? 'Some issues: ' + result.errors.join(', ') : ''}` });
+                    } else {
+                        return res.status(500).json({ message: `Scraper failed to update any section. Check logs.` });
+                    }
                 } catch (e: any) {
-                    return res.status(500).json({ message: `Scraper Error: ${e.message}` });
+                    return res.status(500).json({ message: `Scraper System Error: ${e.message}` });
                 }
 
             case 'run-book-scraper':
                 try {
-                    await runBookScraper();
-                    return res.status(200).json({ message: 'Amazon sync finished successfully!' });
+                    const success = await runBookScraper();
+                    if (success) {
+                        return res.status(200).json({ message: 'Amazon Bookstore Sync successful!' });
+                    } else {
+                        return res.status(500).json({ message: 'Sync finished but no new data found. Sheets not updated to protect existing content.' });
+                    }
                 } catch (e: any) {
                     console.error("Book Scraper API Handler Error:", e.message);
                     return res.status(500).json({ message: `Book Sync Failed: ${e.message}` });
@@ -148,7 +153,6 @@ export default async function handler(req: any, res: any) {
                         }
                         return parts;
                     });
-                
                 if (mode === 'append') { await appendSheetData(`${sheet}!A1`, csvRows); } 
                 else { await clearAndWriteSheetData(`${sheet}!A2`, csvRows); }
                 return res.status(200).json({ message: 'Data imported.' });

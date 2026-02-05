@@ -16,13 +16,17 @@ const QUIZ_CATEGORY_TOPICS_ML = [
     'ഭൂമിശാസ്ത്രം',
 ];
 
+/**
+ * Robust AI initialization.
+ * Checks for API_KEY in multiple common environment variable patterns.
+ */
 function getAi() {
-    const key = process.env.API_KEY;
+    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY || process.env.VITE_API_KEY;
     if (!key) {
-        console.error("CRITICAL: API_KEY is missing from environment variables.");
-        throw new Error("API_KEY missing for Scraper");
+        console.error("ENVIRONMENT ERROR: API_KEY is missing in Vercel/Process env.");
+        throw new Error("API_KEY missing for Scraper. Please check Vercel Environment Variables.");
     }
-    return new GoogleGenAI({ apiKey: key });
+    return new GoogleGenAI({ apiKey: key.trim() });
 }
 
 async function scrapeKpscNotifications() {
@@ -137,12 +141,7 @@ async function generateNewQuestions() {
 
 async function scrapeAmazonBooks() {
     const ai = getAi();
-    // Improved prompt for better search grounding and structured response
-    const prompt = `Use Google Search to find the 25 most popular and latest Kerala PSC preparation books currently listed on Amazon.in. 
-    Focus on Rank Files, Question Banks, and Subject-wise guides from publishers like Talent Academy, Lakshya, and DC Books.
-    For each book, identify its unique ID (use ASIN if possible), full title, author name, and the direct Amazon product link. 
-    Construct the URL format strictly as: https://www.amazon.in/dp/[ASIN]?tag=malayalambooks-21
-    Return the result ONLY as a JSON array of objects.`;
+    const prompt = `Search for top 25 Kerala PSC preparation books on Amazon.in. Return as JSON array of objects with id, title, author, and amazonLink.`;
 
     try {
         const response = await ai.models.generateContent({
@@ -154,47 +153,33 @@ async function scrapeAmazonBooks() {
                 responseSchema: {
                     type: Type.ARRAY, 
                     items: {
-                        type: Type.OBJECT, 
-                        properties: {
-                            id: { type: Type.STRING, description: "ASIN or Unique Identifier" }, 
-                            title: { type: Type.STRING, description: "Full book title" }, 
-                            author: { type: Type.STRING, description: "Author or Publisher" },
-                            amazonLink: { type: Type.STRING, description: "Full Amazon India URL with tag" },
-                        }, 
-                        required: ["id", "title", "author", "amazonLink"]
+                        type: Type.OBJECT, properties: {
+                            id: { type: Type.STRING }, title: { type: Type.STRING }, 
+                            author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
+                        }, required: ["id", "title", "author", "amazonLink"]
                     }
                 }
             }
         });
         
-        let textResponse = response.text || "[]";
+        let rawJson = (response.text || "[]").trim();
+        const items = JSON.parse(rawJson);
         
-        // Basic cleanup in case AI includes Markdown blocks
-        if (textResponse.includes('```json')) {
-            textResponse = textResponse.split('```json')[1].split('```')[0].trim();
-        } else if (textResponse.includes('```')) {
-            textResponse = textResponse.split('```')[1].split('```')[0].trim();
+        if (!Array.isArray(items) || items.length === 0) {
+            console.warn("AI returned zero books. Sync skipped to protect existing data.");
+            return [];
         }
 
-        const items = JSON.parse(textResponse);
-        
         return items.map((item: any) => {
             let link = item.amazonLink || '';
-            // Defensive tag injection if AI forgot it
             if (link.includes('amazon.in') && !link.includes('tag=')) {
                 link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
             }
-            return [
-                item.id || `b_${Math.random().toString(36).substr(2, 9)}`, 
-                item.title, 
-                item.author, 
-                "", // Image URL column (empty to trigger procedural fallback)
-                link
-            ];
+            return [item.id || `b_${Date.now()}`, item.title, item.author, "", link];
         });
     } catch (e: any) {
-        console.error("Scrape Amazon Books logic error:", e.message);
-        throw new Error(`Failed to scrape Amazon: ${e.message}`);
+        console.error("Amazon Scraper failed:", e.message);
+        throw new Error(`Amazon Sync Error: ${e.message}`);
     }
 }
 
@@ -206,33 +191,46 @@ export async function runDailyUpdateScrapers() {
         { name: 'GK', scraper: scrapeGk, range: 'GK!A2:C' },
     ];
 
+    let successCount = 0;
+    let errors = [];
+
     for (const task of tasks) {
         try {
             const newData = await task.scraper();
-            await clearAndWriteSheetData(task.range, newData);
+            if (newData && newData.length > 0) {
+                await clearAndWriteSheetData(task.range, newData);
+                successCount++;
+            } else {
+                console.warn(`Scraper ${task.name} returned no data.`);
+            }
         } catch (e: any) {
-            console.error(`Scraper task ${task.name} failed:`, e.message);
+            console.error(`Task ${task.name} failed:`, e.message);
+            errors.push(`${task.name}: ${e.message}`);
         }
     }
 
     try {
         const newQuestions = await generateNewQuestions();
-        await appendSheetData('QuestionBank!A1', newQuestions);
+        if (newQuestions.length > 0) {
+            await appendSheetData('QuestionBank!A1', newQuestions);
+        }
     } catch (e: any) {
-        console.error("Question generation failed:", e.message);
+        console.error("Question Generation failed:", e.message);
+        errors.push(`Questions: ${e.message}`);
     }
+
+    if (successCount === 0 && errors.length > 0) {
+        throw new Error(`Scraper failed completely. Issues: ${errors.join(', ')}`);
+    }
+
+    return { successCount, totalTasks: tasks.length, errors };
 }
 
 export async function runBookScraper() {
-    try {
-        const newBookData = await scrapeAmazonBooks();
-        if (newBookData && newBookData.length > 0) {
-            await clearAndWriteSheetData('Bookstore!A2:E', newBookData);
-        } else {
-            console.warn("No book data was returned from the scraper.");
-        }
-    } catch (e: any) {
-        console.error("Book Scraper main task failed:", e.message);
-        throw e;
+    const newBookData = await scrapeAmazonBooks();
+    if (newBookData.length > 0) {
+        await clearAndWriteSheetData('Bookstore!A2:E', newBookData);
+        return true;
     }
+    return false;
 }
