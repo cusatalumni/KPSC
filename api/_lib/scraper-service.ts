@@ -17,14 +17,14 @@ const QUIZ_CATEGORY_TOPICS_ML = [
 ];
 
 /**
- * Robust AI initialization.
- * Checks for API_KEY in multiple common environment variable patterns.
+ * Enhanced AI instance creator with strict environment variable checks.
  */
 function getAi() {
-    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY || process.env.VITE_API_KEY;
+    // Check for standard API_KEY or the common GOOGLE_API_KEY fallback
+    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY;
     if (!key) {
-        console.error("ENVIRONMENT ERROR: API_KEY is missing in Vercel/Process env.");
-        throw new Error("API_KEY missing for Scraper. Please check Vercel Environment Variables.");
+        console.error("CRITICAL ERROR: API_KEY is missing in the environment variables.");
+        throw new Error("API_KEY missing for Scraper. Ensure API_KEY is set in Vercel Settings.");
     }
     return new GoogleGenAI({ apiKey: key.trim() });
 }
@@ -33,8 +33,9 @@ async function scrapeKpscNotifications() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Act as a web scraper for keralapsc.gov.in notifications. Extract 10 items. Return as JSON array with 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
+        contents: `Search for the latest job notifications on keralapsc.gov.in. Extract 10 most recent items. Return as JSON array with 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
         config: {
+            tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.ARRAY,
@@ -56,8 +57,9 @@ async function scrapePscLiveUpdates() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Fetch latest 15 updates from keralapsc.gov.in. Provide title, url, section, and date (YYYY-MM-DD). Return as JSON array.`,
+        contents: `Find the 15 latest announcements, rank lists, and shortlists from keralapsc.gov.in. Return as JSON array with 'title', 'url', 'section', and 'published_date' (YYYY-MM-DD).`,
         config: {
+            tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.ARRAY, items: {
@@ -77,8 +79,9 @@ async function scrapeCurrentAffairs() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate 10 current affairs for Kerala PSC in Malayalam. Provide id, title, source, and date (YYYY-MM-DD). Return as JSON array.`,
+        contents: `Identify 10 major news events from the last 7 days relevant to Kerala PSC exams. Provide information in Malayalam. Return JSON array with 'id', 'title', 'source', 'date' (YYYY-MM-DD).`,
         config: {
+            tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.ARRAY, items: {
@@ -98,7 +101,7 @@ async function scrapeGk() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate 25 diverse GK facts in Malayalam for PSC. provide id, fact, and category. Return as JSON array.`,
+        contents: `Generate 25 interesting and important General Knowledge facts in Malayalam for Kerala PSC aspirants. Focus on History, Geography, and Science. Return as JSON array with 'id', 'fact', 'category'.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -118,7 +121,7 @@ async function scrapeGk() {
 async function generateNewQuestions() {
     const ai = getAi();
     const topics = QUIZ_CATEGORY_TOPICS_ML;
-    const prompt = `Generate 20 MCQ questions in Malayalam for Kerala PSC. topics: ${topics.join(', ')}. return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`;
+    const prompt = `Generate 20 high-quality MCQ questions in Malayalam for Kerala PSC. Use current patterns. topics: ${topics.join(', ')}. return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', contents: prompt,
@@ -141,7 +144,7 @@ async function generateNewQuestions() {
 
 async function scrapeAmazonBooks() {
     const ai = getAi();
-    const prompt = `Search for top 25 Kerala PSC preparation books on Amazon.in. Return as JSON array of objects with id, title, author, and amazonLink.`;
+    const prompt = `Search for top 25 Kerala PSC preparation books (Rank Files, Question Banks) on Amazon.in. Return as JSON array of objects with id, title, author, and amazonLink. Only return valid Amazon India product URLs.`;
 
     try {
         const response = await ai.models.generateContent({
@@ -165,17 +168,14 @@ async function scrapeAmazonBooks() {
         let rawJson = (response.text || "[]").trim();
         const items = JSON.parse(rawJson);
         
-        if (!Array.isArray(items) || items.length === 0) {
-            console.warn("AI returned zero books. Sync skipped to protect existing data.");
-            return [];
-        }
+        if (!Array.isArray(items) || items.length === 0) return [];
 
         return items.map((item: any) => {
             let link = item.amazonLink || '';
             if (link.includes('amazon.in') && !link.includes('tag=')) {
                 link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
             }
-            return [item.id || `b_${Date.now()}`, item.title, item.author, "", link];
+            return [item.id || `b_${Date.now()}_${Math.random().toString(36).substr(2,5)}`, item.title, item.author, "", link];
         });
     } catch (e: any) {
         console.error("Amazon Scraper failed:", e.message);
@@ -200,8 +200,6 @@ export async function runDailyUpdateScrapers() {
             if (newData && newData.length > 0) {
                 await clearAndWriteSheetData(task.range, newData);
                 successCount++;
-            } else {
-                console.warn(`Scraper ${task.name} returned no data.`);
             }
         } catch (e: any) {
             console.error(`Task ${task.name} failed:`, e.message);
@@ -211,16 +209,11 @@ export async function runDailyUpdateScrapers() {
 
     try {
         const newQuestions = await generateNewQuestions();
-        if (newQuestions.length > 0) {
+        if (newQuestions && newQuestions.length > 0) {
             await appendSheetData('QuestionBank!A1', newQuestions);
         }
     } catch (e: any) {
         console.error("Question Generation failed:", e.message);
-        errors.push(`Questions: ${e.message}`);
-    }
-
-    if (successCount === 0 && errors.length > 0) {
-        throw new Error(`Scraper failed completely. Issues: ${errors.join(', ')}`);
     }
 
     return { successCount, totalTasks: tasks.length, errors };
@@ -228,7 +221,7 @@ export async function runDailyUpdateScrapers() {
 
 export async function runBookScraper() {
     const newBookData = await scrapeAmazonBooks();
-    if (newBookData.length > 0) {
+    if (newBookData && newBookData.length > 0) {
         await clearAndWriteSheetData('Bookstore!A2:E', newBookData);
         return true;
     }

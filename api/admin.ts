@@ -50,9 +50,7 @@ export default async function handler(req: any, res: any) {
                 }
 
             case 'export-static':
-                if (!examsPayload || !syllabusPayload) {
-                    throw new Error('Payload missing for export.');
-                }
+                if (!examsPayload || !syllabusPayload) throw new Error('Payload missing for export.');
                 const eRows = examsPayload.map((e: any) => [
                     e.id, e.title_ml, e.title_en || '', e.description_ml || '', 
                     e.description_en || '', e.category || 'General', e.level || 'Preliminary', e.icon_type || 'book'
@@ -62,31 +60,27 @@ export default async function handler(req: any, res: any) {
                     s.id, s.exam_id, s.title, s.questions, s.duration, s.subject || '', s.topic || ''
                 ]);
                 await clearAndWriteSheetData('Syllabus!A2:G', sRows);
-                return res.status(200).json({ message: 'Defaults restored with updated Syllabus structure.' });
+                return res.status(200).json({ message: 'Defaults restored!' });
 
             case 'run-daily-scraper':
                 try {
                     const result = await runDailyUpdateScrapers();
                     if (result.successCount > 0) {
-                        return res.status(200).json({ message: `Scraper finished! Updated ${result.successCount} sections. ${result.errors.length > 0 ? 'Some issues: ' + result.errors.join(', ') : ''}` });
+                        return res.status(200).json({ message: `Updated ${result.successCount} of ${result.totalTasks} sections. ${result.errors.length > 0 ? 'Failed: ' + result.errors.join(', ') : ''}` });
                     } else {
-                        return res.status(500).json({ message: `Scraper failed to update any section. Check logs.` });
+                        return res.status(500).json({ message: `Failed to update any section. Issues: ${result.errors.join(', ') || 'No data found'}` });
                     }
                 } catch (e: any) {
-                    return res.status(500).json({ message: `Scraper System Error: ${e.message}` });
+                    return res.status(500).json({ message: `System Error: ${e.message}` });
                 }
 
             case 'run-book-scraper':
                 try {
                     const success = await runBookScraper();
-                    if (success) {
-                        return res.status(200).json({ message: 'Amazon Bookstore Sync successful!' });
-                    } else {
-                        return res.status(500).json({ message: 'Sync finished but no new data found. Sheets not updated to protect existing content.' });
-                    }
+                    if (success) return res.status(200).json({ message: 'Amazon Bookstore Sync successful!' });
+                    return res.status(500).json({ message: 'Sync failed or no new books found.' });
                 } catch (e: any) {
-                    console.error("Book Scraper API Handler Error:", e.message);
-                    return res.status(500).json({ message: `Book Sync Failed: ${e.message}` });
+                    return res.status(500).json({ message: `Book Sync Error: ${e.message}` });
                 }
 
             case 'apply-affiliate-tags':
@@ -101,36 +95,22 @@ export default async function handler(req: any, res: any) {
                     return row;
                 });
                 await clearAndWriteSheetData('Bookstore!A2:E', updatedBooks);
-                return res.status(200).json({ message: 'Affiliate tags applied to all books.' });
+                return res.status(200).json({ message: 'Affiliate tags applied.' });
 
             case 'add-question':
-                const qRow = [
-                    question.id || `q_${Date.now()}`, 
-                    question.topic, 
-                    question.question, 
-                    JSON.stringify(question.options), 
-                    question.correctAnswerIndex, 
-                    question.subject, 
-                    question.difficulty || 'Moderate'
-                ];
+                const qRow = [question.id || `q_${Date.now()}`, question.topic, question.question, JSON.stringify(question.options), question.correctAnswerIndex, question.subject, question.difficulty || 'Moderate'];
                 await appendSheetData('QuestionBank!A1', [qRow]);
-                return res.status(200).json({ message: 'Question added to bank.' });
+                return res.status(200).json({ message: 'Question added.' });
 
             case 'update-exam':
-                const examRow = [
-                    exam.id, exam.title_ml, exam.title_en || '', exam.description_ml || '', 
-                    exam.description_en || '', exam.category || 'General', exam.level || 'Preliminary', exam.icon_type || 'book'
-                ];
+                const examRow = [exam.id, exam.title_ml, exam.title_en || '', exam.description_ml || '', exam.description_en || '', exam.category || 'General', exam.level || 'Preliminary', exam.icon_type || 'book'];
                 await findAndUpsertRow('Exams', exam.id, examRow);
                 return res.status(200).json({ message: 'Exam saved.' });
 
             case 'update-syllabus':
-                const sylRow = [
-                    syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, 
-                    syllabus.duration, syllabus.subject || '', syllabus.topic || ''
-                ];
+                const sylRow = [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject || '', syllabus.topic || ''];
                 await findAndUpsertRow('Syllabus', syllabus.id, sylRow);
-                return res.status(200).json({ message: 'Syllabus topic updated.' });
+                return res.status(200).json({ message: 'Syllabus updated.' });
 
             case 'update-book':
                 const bRow = [book.id || `b_${Date.now()}`, book.title, book.author || '', book.imageUrl || '', book.link];
@@ -138,30 +118,20 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Book saved.' });
 
             case 'delete-row':
-                if (!sheet || !id) throw new Error('Sheet and ID required.');
+                if (!sheet || !id) throw new Error('Params missing.');
                 await deleteRowById(sheet, id);
-                return res.status(200).json({ message: `Entry removed from ${sheet}.` });
+                return res.status(200).json({ message: 'Deleted.' });
 
             case 'csv-update':
-                const csvRows = data.split('\n')
-                    .filter((l:string) => l.trim() !== '')
-                    .map((line: string) => {
-                        const parts = line.split(',').map(p => p.trim());
-                        if (sheet === 'QuestionBank') {
-                            const opts = parts[2] ? JSON.stringify(parts[2].split('|')) : '[]';
-                            return [`q_bulk_${Date.now()}_${Math.random()}`, parts[0], parts[1], opts, parts[3], parts[4], parts[5]];
-                        }
-                        return parts;
-                    });
-                if (mode === 'append') { await appendSheetData(`${sheet}!A1`, csvRows); } 
-                else { await clearAndWriteSheetData(`${sheet}!A2`, csvRows); }
-                return res.status(200).json({ message: 'Data imported.' });
+                const csvRows = data.split('\n').filter((l:string) => l.trim() !== '').map((line: string) => line.split(',').map(p => p.trim()));
+                if (mode === 'append') await appendSheetData(`${sheet}!A1`, csvRows);
+                else await clearAndWriteSheetData(`${sheet}!A2`, csvRows);
+                return res.status(200).json({ message: 'Imported.' });
 
             default:
                 return res.status(400).json({ message: 'Invalid action.' });
         }
     } catch (error: any) {
-        console.error("Admin API error:", error.message);
         return res.status(500).json({ message: error.message || 'Server Error' });
     }
 }

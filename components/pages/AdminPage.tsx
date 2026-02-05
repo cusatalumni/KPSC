@@ -42,7 +42,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [loading, setLoading] = useState(false);
     const [qMode, setQMode] = useState<'single' | 'bulk'>('single');
     
-    // Forms
     const [examForm, setExamForm] = useState({ id: '', title_ml: '', title_en: '', description_ml: '', description_en: '', category: 'General', level: 'Preliminary', icon_type: 'book' });
     const [sylForm, setSylForm] = useState({ id: '', exam_id: '', title: '', questions: 20, duration: 20, subject: '', topic: '' });
     const [qForm, setQForm] = useState({ topic: '', question: '', options: ['', '', '', ''], correctAnswerIndex: 0, subject: '', difficulty: 'Moderate' as any });
@@ -57,30 +56,29 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     useEffect(() => { refresh(); }, [refresh]);
 
-    const handleAction = async (fn: () => Promise<any>, msg: string) => {
+    const handleAction = async (fn: () => Promise<any>) => {
         setStatus("Processing...");
         setLoading(true);
         try { 
             const res = await fn(); 
-            setStatus(msg); 
+            // res is expected to contain a 'message' property from the server
+            setStatus(res.message || "Action completed!"); 
             refresh(); 
         } catch(e:any) { 
             setStatus("Error: " + (e.message || "Unknown error")); 
         } 
         finally { setLoading(false); }
-        setTimeout(() => setStatus(null), 5000);
+        setTimeout(() => setStatus(null), 8000);
     };
 
     const handleRestoreDefaults = async () => {
         if (!confirm("This will overwrite Exams and Syllabus in your sheet with defaults. Continue?")) return;
         const token = await getToken();
-        
         const examsPayload = EXAMS_DATA.map(e => ({
             id: e.id, title_ml: e.title.ml, title_en: e.title.en, 
             description_ml: e.description.ml, description_en: e.description.en,
             category: e.category, level: e.level, icon_type: 'book'
         }));
-
         const syllabusPayload: any[] = [];
         Object.entries(EXAM_CONTENT_MAP).forEach(([examId, content]) => {
             content.practiceTests.forEach(test => {
@@ -91,8 +89,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 });
             });
         });
-
-        handleAction(() => exportStaticExamsToSheet(token, examsPayload, syllabusPayload), "Defaults Restored Successfully!");
+        handleAction(() => exportStaticExamsToSheet(token, examsPayload, syllabusPayload));
     };
 
     const tabBtn = (id: AdminTab, label: string, icon: any) => (
@@ -114,7 +111,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <button onClick={() => handleAction(async () => {
                         const t = await getToken();
                         return testConnection(t);
-                    }, "Google Sheets Connection Verified!")} disabled={loading} className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-xs shadow-md hover:bg-emerald-100 transition">TEST CONNECTION</button>
+                    })} disabled={loading} className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-4 py-2 rounded-lg font-bold text-xs shadow-md hover:bg-emerald-100 transition">TEST CONNECTION</button>
                 </div>
             </div>
 
@@ -123,7 +120,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <ShieldCheckIcon className="h-12 w-12 text-indigo-400" />
                     <h1 className="text-3xl font-black">Admin Control Center</h1>
                 </div>
-                {status && <div className="bg-indigo-500/20 px-6 py-3 rounded-2xl font-bold text-indigo-200 animate-pulse border border-indigo-400/30 max-w-md truncate">{status}</div>}
+                {status && (
+                    <div className="bg-indigo-500/20 px-6 py-3 rounded-2xl font-bold text-indigo-200 animate-fade-in border border-indigo-400/30 max-w-xl">
+                        {status}
+                    </div>
+                )}
             </header>
 
             <div className="flex flex-wrap gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -145,7 +146,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                             <button onClick={async () => {
                                 const t = await getToken();
-                                handleAction(() => triggerDailyScraper(t), "Daily Task Done!");
+                                handleAction(() => triggerDailyScraper(t));
                             }} disabled={loading} className="w-full bg-slate-900 dark:bg-indigo-600 text-white py-5 rounded-2xl font-black hover:scale-[1.02] transition disabled:opacity-50">RUN SCRAPER</button>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-10 rounded-[2rem] shadow-xl text-center border dark:border-slate-800 flex flex-col justify-between">
@@ -156,7 +157,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                             <button onClick={async () => {
                                 const t = await getToken();
-                                handleAction(() => triggerBookScraper(t), "Books Synced!");
+                                handleAction(() => triggerBookScraper(t));
                             }} disabled={loading} className="w-full bg-orange-600 text-white py-5 rounded-2xl font-black hover:scale-[1.02] transition disabled:opacity-50">SYNC BOOKS</button>
                         </div>
                     </div>
@@ -169,13 +170,13 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <form onSubmit={async (e) => { 
                                 e.preventDefault(); 
                                 const t = await getToken();
-                                handleAction(()=>updateExam(examForm, t), "Exam information saved!"); 
+                                handleAction(()=>updateExam(examForm, t)); 
                             }} className="space-y-4">
-                                <input type="text" placeholder="Exam ID (e.g. ldc_2025)" value={examForm.id} onChange={e=>setExamForm({...examForm, id:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required />
-                                <input type="text" placeholder="Title (Malayalam)" value={examForm.title_ml} onChange={e=>setExamForm({...examForm, title_ml:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required />
-                                <input type="text" placeholder="Title (English)" value={examForm.title_en} onChange={e=>setExamForm({...examForm, title_en:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" />
-                                <textarea placeholder="Description (Malayalam)" value={examForm.description_ml} onChange={e=>setExamForm({...examForm, description_ml:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white h-24 outline-none focus:ring-2 ring-indigo-500" />
-                                <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-indigo-700 transition disabled:opacity-50">SAVE EXAM</button>
+                                <input type="text" placeholder="Exam ID (e.g. ldc_2025)" value={examForm.id} onChange={e=>setExamForm({...examForm, id:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
+                                <input type="text" placeholder="Title (Malayalam)" value={examForm.title_ml} onChange={e=>setExamForm({...examForm, title_ml:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
+                                <input type="text" placeholder="Title (English)" value={examForm.title_en} onChange={e=>setExamForm({...examForm, title_en:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" />
+                                <textarea placeholder="Description (Malayalam)" value={examForm.description_ml} onChange={e=>setExamForm({...examForm, description_ml:e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white h-24" />
+                                <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black shadow-lg hover:bg-indigo-700 transition">SAVE EXAM</button>
                             </form>
                         </div>
                         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border dark:border-slate-800 flex flex-col">
@@ -201,7 +202,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             <button onClick={async () => {
                                                 if(!confirm("Delete this exam?")) return;
                                                 const t = await getToken();
-                                                handleAction(()=>deleteExam(ex.id, t), "Exam deleted!");
+                                                handleAction(()=>deleteExam(ex.id, t));
                                             }} className="text-red-500 p-2 hover:bg-red-50 rounded-lg transition"><TrashIcon className="h-5 w-5"/></button>
                                         </div>
                                     </div>
@@ -221,34 +222,34 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             const t = await getToken();
-                            handleAction(() => updateSyllabus(sylForm, t), "Syllabus updated!");
+                            handleAction(() => updateSyllabus(sylForm, t));
                         }} className="space-y-5">
                             <div>
                                 <label className="block text-sm font-bold text-slate-500 mb-2">Target Exam</label>
-                                <select value={sylForm.exam_id} onChange={e => setSylForm({...sylForm, exam_id: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required>
+                                <select value={sylForm.exam_id} onChange={e => setSylForm({...sylForm, exam_id: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required>
                                     <option value="">-- Choose Exam --</option>
                                     {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
                                 </select>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input type="text" placeholder="Topic ID (e.g. ldc_gk_01)" value={sylForm.id} onChange={e => setSylForm({...sylForm, id: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required />
-                                <input type="text" placeholder="Display Title" value={sylForm.title} onChange={e => setSylForm({...sylForm, title: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required />
+                                <input type="text" placeholder="Topic ID (e.g. ldc_gk_01)" value={sylForm.id} onChange={e => setSylForm({...sylForm, id: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
+                                <input type="text" placeholder="Display Title" value={sylForm.title} onChange={e => setSylForm({...sylForm, title: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <input type="number" placeholder="Question Count" value={sylForm.questions} onChange={e => setSylForm({...sylForm, questions: parseInt(e.target.value)})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" />
-                                <input type="number" placeholder="Duration (Mins)" value={sylForm.duration} onChange={e => setSylForm({...sylForm, duration: parseInt(e.target.value)})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" />
+                                <input type="number" placeholder="Question Count" value={sylForm.questions} onChange={e => setSylForm({...sylForm, questions: parseInt(e.target.value)})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" />
+                                <input type="number" placeholder="Duration (Mins)" value={sylForm.duration} onChange={e => setSylForm({...sylForm, duration: parseInt(e.target.value)})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black uppercase text-indigo-500 mb-1">Subject (Col F)</label>
-                                    <input type="text" placeholder="e.g. Reasoning" value={sylForm.subject} onChange={e => setSylForm({...sylForm, subject: e.target.value})} className="w-full p-4 bg-indigo-50/50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required />
+                                    <input type="text" placeholder="e.g. Reasoning" value={sylForm.subject} onChange={e => setSylForm({...sylForm, subject: e.target.value})} className="w-full p-4 bg-indigo-50/50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black uppercase text-teal-500 mb-1">Topic (Col B)</label>
-                                    <input type="text" placeholder="e.g. Mental Ability" value={sylForm.topic} onChange={e => setSylForm({...sylForm, topic: e.target.value})} className="w-full p-4 bg-teal-50/50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white outline-none focus:ring-2 ring-indigo-500" required />
+                                    <input type="text" placeholder="e.g. Mental Ability" value={sylForm.topic} onChange={e => setSylForm({...sylForm, topic: e.target.value})} className="w-full p-4 bg-teal-50/50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
                                 </div>
                             </div>
-                            <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition disabled:opacity-50 uppercase tracking-widest">SAVE TOPIC</button>
+                            <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition uppercase tracking-widest">SAVE TOPIC</button>
                         </form>
                     </div>
                 )}
@@ -263,7 +264,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <button 
                                 onClick={async () => {
                                     const t = await getToken();
-                                    handleAction(() => applyAffiliateTags(t), "All links updated with affiliate tags!");
+                                    handleAction(() => applyAffiliateTags(t));
                                 }}
                                 disabled={loading}
                                 className="bg-emerald-600 text-white px-8 py-4 rounded-xl font-black flex items-center gap-3 hover:bg-emerald-700 transition shadow-lg shadow-emerald-100 disabled:opacity-50"
@@ -282,12 +283,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         <button onClick={async () => {
                                             if(!confirm("Delete this book?")) return;
                                             const t = await getToken();
-                                            handleAction(()=>deleteBook(book.id, t), "Book removed!");
+                                            handleAction(()=>deleteBook(book.id, t));
                                         }} className="absolute -top-2 -right-2 bg-red-500 text-white p-2 rounded-full shadow-xl opacity-0 group-hover:opacity-100 transition-all hover:scale-110"><TrashIcon className="h-3 w-3" /></button>
                                     </div>
                                 ))}
                              </div>
-                             {books.length === 0 && <p className="text-center py-12 text-slate-400 font-medium">No books found. Use Automation tab to sync from Amazon.</p>}
+                             {books.length === 0 && <p className="text-center py-12 text-slate-400">No books found.</p>}
                         </div>
                     </div>
                 )}
@@ -300,7 +301,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <button onClick={() => setQMode('bulk')} className={`px-8 py-2.5 rounded-xl font-black text-sm transition-all ${qMode === 'bulk' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'}`}>BULK IMPORT</button>
                             </div>
                         </div>
-
                         {qMode === 'single' ? (
                             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2rem] shadow-xl border dark:border-slate-800 max-w-2xl mx-auto">
                                 <h3 className="text-2xl font-black mb-8 dark:text-white flex items-center gap-3">
@@ -310,58 +310,40 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <form onSubmit={async (e) => {
                                     e.preventDefault();
                                     const t = await getToken();
-                                    handleAction(() => addQuestion(qForm, t), "Question added to bank!");
+                                    handleAction(() => addQuestion(qForm, t));
                                     setQForm({ topic: '', question: '', options: ['', '', '', ''], correctAnswerIndex: 0, subject: '', difficulty: 'Moderate' });
                                 }} className="space-y-5">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Subject (Col F)</label>
-                                            <input type="text" placeholder="e.g. GK" value={qForm.subject} onChange={e=>setQForm({...qForm, subject: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Topic (Col B)</label>
-                                            <input type="text" placeholder="e.g. History" value={qForm.topic} onChange={e=>setQForm({...qForm, topic: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
-                                        </div>
+                                        <input type="text" placeholder="Subject (Col F)" value={qForm.subject} onChange={e=>setQForm({...qForm, subject: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
+                                        <input type="text" placeholder="Topic (Col B)" value={qForm.topic} onChange={e=>setQForm({...qForm, topic: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Question Text</label>
-                                        <textarea placeholder="Type question here..." value={qForm.question} onChange={e=>setQForm({...qForm, question: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white h-24" required />
-                                    </div>
+                                    <textarea placeholder="Question Text" value={qForm.question} onChange={e=>setQForm({...qForm, question: e.target.value})} className="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white h-24" required />
                                     <div className="space-y-3">
-                                        <label className="block text-xs font-bold text-slate-400 uppercase">Options & Correct Answer</label>
                                         {qForm.options.map((opt, idx) => (
                                             <div key={idx} className="flex items-center gap-3">
-                                                <input type="radio" name="correct" checked={qForm.correctAnswerIndex === idx} onChange={() => setQForm({...qForm, correctAnswerIndex: idx})} className="w-5 h-5 text-indigo-600" />
-                                                <input type="text" placeholder={`Option ${String.fromCharCode(65+idx)}`} value={opt} onChange={e => {
-                                                    const newOpts = [...qForm.options];
-                                                    newOpts[idx] = e.target.value;
-                                                    setQForm({...qForm, options: newOpts});
+                                                <input type="radio" name="correct" checked={qForm.correctAnswerIndex === idx} onChange={() => setQForm({...qForm, correctAnswerIndex: idx})} />
+                                                <input type="text" placeholder={`Option ${idx+1}`} value={opt} onChange={e => {
+                                                    const n = [...qForm.options]; n[idx] = e.target.value; setQForm({...qForm, options: n});
                                                 }} className="flex-1 p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl dark:text-white" required />
                                             </div>
                                         ))}
                                     </div>
-                                    <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition uppercase tracking-widest disabled:opacity-50">ADD TO QUESTION BANK</button>
+                                    <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg">ADD QUESTION</button>
                                 </form>
                             </div>
                         ) : (
                             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2rem] shadow-xl border dark:border-slate-800">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-2xl font-black dark:text-white">Bulk Question Import</h3>
-                                    <div className="text-[10px] bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-4 py-2 rounded-xl font-bold border border-indigo-100 dark:border-indigo-800">
-                                        FORMAT: Topic (Col B), Question, Opt A|Opt B|Opt C|Opt D, CorrectIndex(0-3), Subject (Col F), Difficulty
-                                    </div>
-                                </div>
-                                <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="History, What is the capital of India?, New Delhi|Mumbai|Kolkata|Chennai, 0, GK, Easy" className="w-full h-80 p-6 border dark:border-slate-700 rounded-3xl bg-slate-50 dark:bg-slate-800 font-mono text-xs dark:text-white mb-6 focus:ring-4 ring-indigo-500/10 outline-none" />
+                                <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty" className="w-full h-80 p-6 border dark:border-slate-700 rounded-3xl bg-slate-50 dark:bg-slate-800 font-mono text-xs dark:text-white mb-6" />
                                 <div className="flex gap-4">
                                     <button onClick={async () => {
                                         const t = await getToken();
-                                        handleAction(()=>syncCsvData('QuestionBank', bulkData, t, true), "Questions appended successfully!");
-                                    }} disabled={loading || !bulkData} className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black hover:bg-emerald-700 transition shadow-lg shadow-emerald-100 disabled:opacity-50">APPEND DATA</button>
+                                        handleAction(()=>syncCsvData('QuestionBank', bulkData, t, true));
+                                    }} disabled={loading || !bulkData} className="flex-1 bg-emerald-600 text-white py-5 rounded-2xl font-black">APPEND DATA</button>
                                     <button onClick={async () => {
-                                        if(!confirm("This will WIPE all existing questions in the sheet. Are you sure?")) return;
+                                        if(!confirm("Overwrite entire QuestionBank?")) return;
                                         const t = await getToken();
-                                        handleAction(()=>syncCsvData('QuestionBank', bulkData, t, false), "Database replaced successfully!");
-                                    }} disabled={loading || !bulkData} className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 py-5 rounded-2xl font-black hover:bg-red-500 hover:text-white transition disabled:opacity-50">OVERWRITE DATABASE</button>
+                                        handleAction(()=>syncCsvData('QuestionBank', bulkData, t, false));
+                                    }} disabled={loading || !bulkData} className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 py-5 rounded-2xl font-black">OVERWRITE</button>
                                 </div>
                             </div>
                         )}
