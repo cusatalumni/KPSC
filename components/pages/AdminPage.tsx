@@ -141,7 +141,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <p className="font-black text-red-600 mb-2">നിങ്ങളുടെ Gemini API Key ബ്ലോക്ക് ചെയ്യപ്പെട്ടിരിക്കുന്നു!</p>
                                     <ol className="list-decimal list-inside space-y-1 text-red-700">
                                         <li><b>aistudio.google.com</b> സന്ദർശിച്ച് പുതിയ കീ നിർമ്മിക്കുക.</li>
-                                        <li>Vercel Dashboard -> Settings -> Environment Variables തുറക്കുക.</li>
+                                        <li>Vercel Dashboard → Settings → Environment Variables തുറക്കുക.</li>
                                         <li><b>API_KEY</b> എന്ന പേരിൽ പുതിയ കീ നൽകി സേവ് ചെയ്യുക.</li>
                                         <li>ആപ്പ് ഒന്നുകൂടി <b>Redeploy</b> ചെയ്യുക.</li>
                                     </ol>
