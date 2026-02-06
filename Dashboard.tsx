@@ -1,110 +1,149 @@
 
-import React from 'react';
-import { EXAMS_DATA } from '../constants';
+import React, { useState, useEffect, useMemo, Fragment } from 'react';
 import ExamCard from './ExamCard';
-import NotificationsWidget from './NotificationsWidget';
-import StudyMaterialWidget from './StudyMaterialWidget';
-import Testimonials from './Testimonials';
-import CalendarWidget from './CalendarWidget';
-import QuizHomeWidget from './QuizHomeWidget';
-import PscLiveWidget from './PscLiveWidget';
-import PreviousPapersWidget from './PreviousPapersWidget';
-import CurrentAffairsWidget from './CurrentAffairsWidget';
-import GkWidget from './GkWidget';
-import NewsTicker from './NewsTicker';
-import BookOfTheDayWidget from './BookOfTheDayWidget';
-import type { Exam } from '../types';
-import type { Page } from '../types';
+import { getDetectedExams, getExams } from '../services/pscDataService';
+import type { Exam, Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
-import AdsenseWidget from './AdsenseWidget';
+import NewsTicker from './NewsTicker';
 import HeroSlider from './HeroSlider';
+import AdsenseWidget from './AdsenseWidget';
+import PscLiveWidget from './PscLiveWidget';
+import QuizHomeWidget from './QuizHomeWidget';
+import CurrentAffairsWidget from './CurrentAffairsWidget';
 
-interface DashboardProps {
-  onNavigateToExam: (exam: Exam) => void;
-  onNavigate: (page: Page) => void;
-  onStartStudy: (topic: string) => void;
-}
+const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: (page: Page) => void; onStartStudy: (topic: string) => void; }> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
+  const { t, language } = useTranslation();
+  const [detectedExams, setDetectedExams] = useState<Exam[]>([]);
+  const [allExams, setAllExams] = useState<Exam[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
-  const { language } = useTranslation();
+  useEffect(() => {
+    Promise.all([
+        getDetectedExams(),
+        getExams()
+    ]).then(([detected, exams]) => {
+        setDetectedExams(detected);
+        setAllExams(exams);
+        setLoading(false);
+    }).catch(err => {
+        console.error("Dashboard Load Error:", err);
+        setLoading(false);
+    });
+  }, []);
 
-  const categories = [
-    { 
-      id: 'General', 
-      title: { ml: 'ജനറൽ പരീക്ഷകൾ (General)', en: 'General Examinations' }, 
-      theme: 'indigo',
-      gradient: 'section-gradient-indigo'
-    },
-    { 
-      id: 'Technical', 
-      title: { ml: 'സാങ്കേതിക പരീക്ഷകൾ (Technical)', en: 'Technical & Departmental' }, 
-      theme: 'amber',
-      gradient: 'section-gradient-amber'
-    },
-    { 
-      id: 'Special', 
-      title: { ml: 'പ്രത്യേക മത്സര പരീക്ഷകൾ (Special)', en: 'Special Competitive' }, 
-      theme: 'rose',
-      gradient: 'section-gradient-rose'
+  const categoryThemes: Record<string, 'indigo' | 'amber' | 'rose' | 'emerald' | 'cyan'> = {
+    'General': 'indigo',
+    'Technical': 'amber',
+    'Special': 'rose',
+    'Live': 'rose',
+    'Degree': 'emerald',
+    '10th': 'cyan',
+    'Preliminary': 'indigo'
+  };
+
+  const groupedExams = useMemo(() => {
+    const groups: Record<string, Exam[]> = {};
+    if (detectedExams.length > 0) {
+        groups['Live'] = detectedExams;
     }
-  ];
+    allExams.forEach(exam => {
+        const cat = exam.category || 'General';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(exam);
+    });
+    return groups;
+  }, [detectedExams, allExams]);
+
+  const sortedCategoryIds = useMemo(() => {
+    const priority = ['Live', 'General', 'Technical', 'Special'];
+    const otherCategories = Object.keys(groupedExams).filter(id => !priority.includes(id)).sort();
+    return [...priority.filter(p => groupedExams[p]), ...otherCategories];
+  }, [groupedExams]);
+
+  if (loading) {
+    return (
+        <div className="space-y-12 animate-pulse">
+            <div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>
+            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-full w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>)}
+            </div>
+        </div>
+    );
+  }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       <HeroSlider onNavigate={onNavigate} />
-      
       <NewsTicker />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+        {/* Main Content Area */}
+        <div className="lg:col-span-3 space-y-16">
+          {sortedCategoryIds.map((catId, index) => {
+            const list = groupedExams[catId] || [];
+            const theme = categoryThemes[catId] || 'indigo';
+            const displayTitle = t(`dashboard.examCategories.${catId}`) || catId;
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-12">
-          {categories.map(cat => {
-            const examsInCat = EXAMS_DATA.filter(e => e.category === cat.id);
-            if (examsInCat.length === 0) return null;
-            
             return (
-              <section key={cat.id} className="animate-fade-in-up">
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className={`h-10 w-2 ${cat.gradient} rounded-full shadow-lg`}></div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{cat.title[language]}</h3>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{cat.title[language === 'ml' ? 'en' : 'ml']}</p>
+              <Fragment key={catId}>
+                <section className="animate-fade-in-up">
+                  <div className="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className={`h-8 w-1.5 ${
+                        theme === 'indigo' ? 'bg-indigo-600' : 
+                        theme === 'amber' ? 'bg-amber-600' : 
+                        theme === 'rose' ? 'bg-rose-600' : 
+                        theme === 'emerald' ? 'bg-emerald-600' : 'bg-cyan-600'
+                      } rounded-full`}></div>
+                      <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{displayTitle}</h3>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">{list.length} {t('nav.mockTests')}</span>
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {examsInCat.map((exam) => (
-                    <ExamCard 
-                      key={exam.id} 
-                      exam={exam} 
-                      onNavigate={onNavigateToExam} 
-                      language={language} 
-                      theme={cat.theme as any} 
-                    />
-                  ))}
-                </div>
-              </section>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    {list.map(exam => (
+                        <ExamCard 
+                            key={exam.id} 
+                            exam={exam} 
+                            onNavigate={onNavigateToExam} 
+                            language={language} 
+                            theme={theme as any} 
+                        />
+                    ))}
+                  </div>
+                </section>
+                
+                {/* Insert ad after every 2 categories */}
+                {(index + 1) % 2 === 0 && index !== sortedCategoryIds.length - 1 && (
+                    <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
+                         <AdsenseWidget />
+                    </div>
+                )}
+              </Fragment>
             );
           })}
-          
-          <NotificationsWidget />
+
+          {sortedCategoryIds.length === 0 && (
+              <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                  <p className="text-slate-400 font-bold">{t('error.fetchData')}</p>
+              </div>
+          )}
         </div>
-        
-        <aside className="space-y-8">
-           <BookOfTheDayWidget />
-           <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
-           <GkWidget onNavigate={() => onNavigate('gk')} />
-           <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-           <PreviousPapersWidget onNavigate={() => onNavigate('previous_papers')} />
-           <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
-           <CalendarWidget onNavigate={() => onNavigate('exam_calendar')} />
-           <StudyMaterialWidget onStartStudy={onStartStudy} />
-        </aside>
+
+        {/* Sidebar Widgets Area */}
+        <div className="space-y-8">
+          <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
+          
+          {/* Sidebar Ad Widget */}
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 text-center">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Advertisement</span>
+              <AdsenseWidget />
+          </div>
+          
+          <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
+          <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
+        </div>
       </div>
-      
-      <div className="my-10">
-        <AdsenseWidget />
-      </div>
-      
-      <Testimonials />
     </div>
   );
 };
