@@ -70,9 +70,9 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Defaults restored successfully!' });
 
             case 'apply-affiliate-tags':
-                const books = await readSheetData('Bookstore!A2:E');
+                const allBooks = await readSheetData('Bookstore!A2:E');
                 const tag = 'tag=malayalambooks-21';
-                const updatedBooks = books.map(row => {
+                const updatedBooks = allBooks.map(row => {
                     let link = row[4] || '';
                     if (link && !link.includes(tag)) {
                         link += (link.includes('?') ? '&' : '?') + tag;
@@ -135,6 +135,24 @@ export default async function handler(req: any, res: any) {
                 const sylRow = [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject || '', syllabus.topic || ''];
                 await findAndUpsertRow('Syllabus', syllabus.id, sylRow);
                 return res.status(200).json({ message: 'Syllabus updated.' });
+
+            case 'add-question':
+                const qRow = [
+                  `q_${Date.now()}`,
+                  question.topic,
+                  question.question,
+                  JSON.stringify(question.options),
+                  question.correctAnswerIndex,
+                  question.subject,
+                  question.difficulty
+                ];
+                await appendSheetData('QuestionBank!A1', [qRow]);
+                return res.status(200).json({ message: 'Question added successfully.' });
+
+            case 'update-book':
+                const bRow = [book.id, book.title, book.author, book.imageUrl, book.amazonLink];
+                await findAndUpsertRow('Bookstore', book.id, bRow);
+                return res.status(200).json({ message: 'Book information updated.' });
 
             default:
                 return res.status(400).json({ message: `Invalid action: ${action}` });
