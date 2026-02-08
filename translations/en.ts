@@ -1,8 +1,8 @@
 
 export const translations = {
   app: {
-    title: "PSC Guidance Kerala",
-    subtitle: "Kerala PSC Guru"
+    title: "Kerala PSC Guru",
+    subtitle: "Your AI-Powered Success Guide"
   },
   login: "Login",
   welcome: "Welcome",
