@@ -13,6 +13,16 @@ function initializeDatabase() {
   
   const sheets = [
     {
+      name: 'Settings',
+      headers: ['key', 'value'],
+      sample: [['subscription_model_active', 'true'], ['maintenance_mode', 'false']]
+    },
+    {
+      name: 'StudyMaterialsCache',
+      headers: ['topic', 'content', 'last_updated'],
+      sample: [['Kerala History', '# Kerala History\nSample content...', new Date().toISOString()]]
+    },
+    {
       name: 'Exams',
       headers: ['id', 'title_ml', 'title_en', 'description_ml', 'description_en', 'category', 'level', 'icon_type'],
       sample: [['ldc_exam', 'LDC പരീക്ഷ', 'LDC Exam', 'പത്താം ക്ലാസ്സ് യോഗ്യതയുള്ള പരീക്ഷ.', '10th level exam.', 'General', 'Preliminary', 'book']]
@@ -25,7 +35,7 @@ function initializeDatabase() {
     {
       name: 'QuestionBank',
       headers: ['id', 'topic', 'question', 'options', 'correctAnswerIndex', 'subject', 'difficulty'],
-      sample: [['q1', 'History', 'കേരളത്തിലെ ഏറ്റവും വലിയ നദി?', '["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"]', '0', 'GK', 'Easy']]
+      sample: [['q1', 'History', 'കേരളത്തിലെ ഏറ്റവും വലിയ നദി?', '["പെരിയാർ", "ഭารതപ്പുഴ", "പമ്പ", "ചാലിയാർ"]', '0', 'GK', 'Easy']]
     },
     {
       name: 'Bookstore',
