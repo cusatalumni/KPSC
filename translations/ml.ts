@@ -12,6 +12,7 @@ export const translations = {
   refresh: "പുതുക്കുക",
   search: "തിരയുക",
   date: "തീയതി",
+  of: "ആകെ",
   automated: "Automated",
   automatedMessage: "ഈ വിവരങ്ങൾ ദിവസവും സ്വയം പുതുക്കുന്നു.",
   backToDashboard: "ഡാഷ്ബോർഡിലേക്ക് മടങ്ങുക",
@@ -173,7 +174,7 @@ export const translations = {
   results: {
     title: "പരീക്ഷാഫലം",
     yourScore: "നിങ്ങളുടെ സ്കോർ",
-    summary: "നിങ്ങൾ {{total}} ചോദ്യങ്ങളിൽ {{score}} എണ്ണത്തിന് ശриയുത്തരം നൽകി.",
+    summary: "നിങ്ങൾ {{total}} ചോദ്യങ്ങളിൽ {{score}} എണ്ണത്തിന് ശരിയുത്തരം നൽകി.",
     saveProgress: "നിങ്ങളുടെ പഠന പുരോഗതി സേവ് ചെയ്യാൻ ലോഗിൻ ചെയ്യൂ.",
     feedback: {
       excellent: "വളരെ മികച്ചത്!",

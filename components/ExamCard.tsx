@@ -15,11 +15,11 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate, language, theme =
   const { t } = useTranslation();
   
   const themeClasses = {
-    indigo: 'btn-vibrant-indigo ring-indigo-50 dark:ring-indigo-900/20 hover:shadow-indigo-200/50',
-    amber: 'bg-amber-600 ring-amber-50 dark:ring-amber-900/20 hover:shadow-amber-200/50',
-    rose: 'bg-rose-600 ring-rose-50 dark:ring-rose-900/20 hover:shadow-rose-200/50',
-    emerald: 'bg-emerald-600 ring-emerald-50 dark:ring-emerald-900/20 hover:shadow-emerald-200/50',
-    cyan: 'bg-cyan-600 ring-cyan-50 dark:ring-cyan-900/20 hover:shadow-cyan-200/50'
+    indigo: 'btn-vibrant-indigo shadow-indigo-200/50',
+    amber: 'bg-amber-600 shadow-amber-200/50',
+    rose: 'bg-rose-600 shadow-rose-200/50',
+    emerald: 'bg-emerald-600 shadow-emerald-200/50',
+    cyan: 'bg-cyan-600 shadow-cyan-200/50'
   };
 
   const borderClasses = {
@@ -31,43 +31,41 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate, language, theme =
   };
 
   const iconBgClasses = {
-    indigo: 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400',
-    amber: 'bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-800 text-amber-600 dark:text-amber-400',
-    rose: 'bg-rose-50 dark:bg-rose-950/30 border-rose-100 dark:border-rose-800 text-rose-600 dark:text-rose-400',
-    emerald: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400',
-    cyan: 'bg-cyan-50 dark:bg-cyan-950/30 border-cyan-100 dark:border-cyan-800 text-cyan-600 dark:text-cyan-400'
+    indigo: 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600',
+    amber: 'bg-amber-50 dark:bg-amber-950/30 text-amber-600',
+    rose: 'bg-rose-50 dark:bg-rose-950/30 text-rose-600',
+    emerald: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600',
+    cyan: 'bg-cyan-50 dark:bg-cyan-950/30 text-cyan-600'
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 p-7 rounded-[2.5rem] shadow-xl hover:shadow-2xl hover:-translate-y-2 transform transition-all duration-300 flex flex-col justify-between border-2 ${borderClasses[theme]} relative overflow-hidden group`}>
-      <div className={`absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${themeClasses[theme].split(' ')[0]}`}></div>
-      
+    <div className={`bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-xl hover:shadow-2xl hover:-translate-y-1 transform transition-all duration-300 flex flex-col border-2 ${borderClasses[theme]} relative overflow-hidden group`}>
       <div className="relative z-10 flex-grow">
-        <div className="flex items-start space-x-5">
-          <div className={`p-4 rounded-2xl border-2 ${iconBgClasses[theme]} shadow-inner group-hover:scale-110 transition-transform`}>
+        <div className="flex items-center space-x-4 mb-5">
+          <div className={`p-4 rounded-2xl ${iconBgClasses[theme]} shadow-inner group-hover:scale-110 transition-transform flex-shrink-0`}>
               {exam.icon}
           </div>
-          <div className="flex-1">
-              <div className="flex flex-wrap gap-2 mb-2">
-                 <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">{exam.category}</span>
-                 <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">{exam.level}</span>
+          <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap gap-1.5 mb-1">
+                 <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">{exam.category}</span>
+                 <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">{exam.level}</span>
               </div>
-              <h4 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{exam.title[language]}</h4>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.1em] mt-1">{exam.title[language === 'ml' ? 'en' : 'ml']}</p>
+              <h4 className="text-lg font-black text-slate-800 dark:text-slate-100 leading-tight truncate">{exam.title[language]}</h4>
           </div>
         </div>
         
-        <p className="text-slate-600 dark:text-slate-400 mt-5 text-sm font-medium leading-relaxed line-clamp-2">{exam.description[language]}</p>
+        <p className="text-slate-600 dark:text-slate-400 text-sm font-medium leading-relaxed line-clamp-2 min-h-[2.5rem]">{exam.description[language]}</p>
 
         {/* Syllabus Preview Section */}
         {syllabusPreview.length > 0 && (
-            <div className="mt-6 pt-5 border-t border-slate-50 dark:border-slate-800">
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+            <div className="mt-5 pt-4 border-t border-slate-50 dark:border-slate-800">
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 flex items-center">
+                    <span className="w-1 h-1 bg-indigo-400 rounded-full mr-1.5"></span>
                     {t('dashboard.examCard.syllabusTitle')}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                     {syllabusPreview.map((item, idx) => (
-                        <span key={idx} className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-800/50">
+                        <span key={idx} className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-[9px] font-bold px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-700">
                             {item}
                         </span>
                     ))}
@@ -78,7 +76,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate, language, theme =
       
        <button 
         onClick={() => onNavigate(exam)}
-        className={`mt-8 w-full text-center text-white font-black px-4 py-4 rounded-2xl transition-all duration-300 active:scale-95 shadow-lg ${themeClasses[theme]}`}
+        className={`mt-6 w-full text-center text-white font-black py-4 rounded-xl transition-all duration-300 active:scale-95 shadow-lg text-sm uppercase tracking-widest ${themeClasses[theme]}`}
        >
           {t('start')}
         </button>

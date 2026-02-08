@@ -78,15 +78,15 @@ export default async function handler(req: any, res: any) {
                     if (!r || r.length < 3) return false;
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
+                    
+                    // Unified Filter Logic:
+                    // If filter is 'mixed' or empty, it bypasses that specific field filter.
                     const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject === filterSubject;
                     const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
+                    
                     return isSubjectMatch && isTopicMatch;
                 }).map(r => {
                     let options = smartParseOptions(r[3] || '');
-                    
-                    // We removed the forced padding to 4 options. 
-                    // This allows 2 or 3 options based on actual data.
-
                     return { 
                         id: r[0], 
                         topic: r[1], 
@@ -98,6 +98,7 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
+                // Final randomness and limit
                 return res.status(200).json(filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit));
 
             case 'books':
