@@ -13,6 +13,7 @@ import CurrentAffairsWidget from './CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { NewspaperIcon } from './icons/NewspaperIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
+import { EXAM_CONTENT_MAP } from '../constants';
 
 const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }) => {
     const { t } = useTranslation();
@@ -133,6 +134,22 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     return [...priority.filter(p => groupedExams[p]), ...otherCategories];
   }, [groupedExams]);
 
+  // Helper to get unique subjects for an exam to show on the card
+  const getSyllabusPreview = useCallback((examId: string) => {
+    const content = EXAM_CONTENT_MAP[examId];
+    if (!content) return [];
+    
+    // Get unique subject names from practice tests
+    const subjects = new Set<string>();
+    content.practiceTests.forEach(test => {
+        if (test.subject && test.subject !== 'mixed') {
+            subjects.add(test.subject);
+        }
+    });
+    
+    return Array.from(subjects).slice(0, 4); // Limit to 4 for clean UI
+  }, []);
+
   if (loading) {
     return (
         <div className="space-y-12 animate-pulse">
@@ -190,6 +207,7 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                             onNavigate={onNavigateToExam} 
                             language={language} 
                             theme={theme as any} 
+                            syllabusPreview={getSyllabusPreview(exam.id)}
                         />
                     ))}
                   </div>

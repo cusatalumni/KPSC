@@ -95,6 +95,9 @@ export const translations = {
         subtitle: "The latest updates, refreshed daily.",
         catNo: "Cat No",
         lastDate: "Last Date"
+    },
+    examCard: {
+        syllabusTitle: "Core Subjects:"
     }
   },
   bookOfTheDay: {

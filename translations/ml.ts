@@ -95,6 +95,9 @@ export const translations = {
         subtitle: "ദിവസവും പുതുക്കിയ ഏറ്റവും പുതിയ അപ്‌ഡേറ്റുകൾ",
         catNo: "Cat No",
         lastDate: "Last Date"
+    },
+    examCard: {
+        syllabusTitle: "പ്രധാന വിഷയങ്ങൾ:"
     }
   },
   bookOfTheDay: {
@@ -170,7 +173,7 @@ export const translations = {
   results: {
     title: "പരീക്ഷാഫലം",
     yourScore: "നിങ്ങളുടെ സ്കോർ",
-    summary: "നിങ്ങൾ {{total}} ചോദ്യങ്ങളിൽ {{score}} എണ്ണത്തിന് ശരിയുത്തരം നൽകി.",
+    summary: "നിങ്ങൾ {{total}} ചോദ്യങ്ങളിൽ {{score}} എണ്ണത്തിന് ശриയുത്തരം നൽകി.",
     saveProgress: "നിങ്ങളുടെ പഠന പുരോഗതി സേവ് ചെയ്യാൻ ലോഗിൻ ചെയ്യൂ.",
     feedback: {
       excellent: "വളരെ മികച്ചത്!",
