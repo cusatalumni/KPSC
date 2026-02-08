@@ -80,11 +80,12 @@ export const EXAMS_DATA: Exam[] = [
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ldc_gk', title: 'General Knowledge', questions: 20, duration: 20, topic: 'Subject:GK' },
-    { id: 'ldc_ml', title: 'Malayalam Grammar', questions: 10, duration: 10, topic: 'Topic:Malayalam Grammar' },
-    { id: 'ldc_en', title: 'English Grammar', questions: 10, duration: 10, topic: 'Topic:English Grammar' },
-    { id: 'ldc_ma', title: 'Mental Ability', questions: 10, duration: 15, topic: 'Topic:Mental Ability' },
-    { id: 'ldc_sc', title: 'General Science', questions: 10, duration: 10, topic: 'Subject:Science' },
+    { id: 'ldc_gk', title: 'General Knowledge', questions: 20, duration: 20, subject: 'GK', topic: 'GK' },
+    { id: 'ldc_ml', title: 'Malayalam Grammar', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Malayalam Grammar' },
+    { id: 'ldc_en', title: 'English Grammar', questions: 10, duration: 10, subject: 'English', topic: 'English Grammar' },
+    { id: 'ldc_ma', title: 'Mental Ability', questions: 10, duration: 15, subject: 'Reasoning', topic: 'Mental Ability' },
+    { id: 'ldc_sc', title: 'General Science', questions: 10, duration: 10, subject: 'Science', topic: 'Science' },
+    { id: 'ldc_his', title: 'Indian History', questions: 10, duration: 10, subject: 'History', topic: 'Indian History' },
   ],
   studyNotes: [{ id: 'sn_kh', title: 'Kerala History' }, { id: 'sn_ic', title: 'Indian Constitution' }],
   previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
@@ -92,10 +93,10 @@ export const LDC_EXAM_CONTENT: ExamPageContent = {
 
 export const TEACHING_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'teach_psy', title: 'Psychology & Pedagogy', questions: 20, duration: 25, topic: 'Topic:Educational Psychology' },
-    { id: 'teach_gk', title: 'General Knowledge', questions: 15, duration: 15, topic: 'Subject:GK' },
-    { id: 'teach_ml', title: 'Malayalam', questions: 10, duration: 10, topic: 'Subject:Malayalam' },
-    { id: 'teach_en', title: 'English', questions: 10, duration: 10, topic: 'Subject:English' },
+    { id: 'teach_psy', title: 'Psychology & Pedagogy', questions: 20, duration: 25, subject: 'Psychology', topic: 'Educational Psychology' },
+    { id: 'teach_gk', title: 'General Knowledge', questions: 15, duration: 15, subject: 'GK', topic: 'GK' },
+    { id: 'teach_ml', title: 'Malayalam', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Malayalam Grammar' },
+    { id: 'teach_en', title: 'English', questions: 10, duration: 10, subject: 'English', topic: 'English Grammar' },
   ],
   studyNotes: [{ id: 'sn_psy', title: 'Learning Theories' }],
   previousPapers: [{ id: 'pp_lpup22', title: 'LP/UP 2022 Paper' }]
@@ -103,9 +104,9 @@ export const TEACHING_EXAM_CONTENT: ExamPageContent = {
 
 export const STAFF_NURSE_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'sn_ns', title: 'Nursing Science', questions: 20, duration: 20, topic: 'Topic:Nursing Science' },
-    { id: 'sn_an', title: 'Anatomy', questions: 10, duration: 10, topic: 'Topic:Anatomy' },
-    { id: 'sn_gk', title: 'General Knowledge', questions: 10, duration: 10, topic: 'Subject:GK' },
+    { id: 'sn_ns', title: 'Nursing Science', questions: 20, duration: 20, subject: 'Nursing', topic: 'Nursing Science' },
+    { id: 'sn_an', title: 'Anatomy', questions: 10, duration: 10, subject: 'Science', topic: 'Biology' },
+    { id: 'sn_gk', title: 'General Knowledge', questions: 10, duration: 10, subject: 'GK', topic: 'GK' },
   ],
   studyNotes: [{ id: 'sn_fn', title: 'Nursing Fundamentals' }],
   previousPapers: [{ id: 'pp_sn23', title: 'Staff Nurse 2023 Paper' }]
@@ -113,9 +114,9 @@ export const STAFF_NURSE_CONTENT: ExamPageContent = {
 
 export const KSEB_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ks_ee', title: 'Electrical Engineering', questions: 20, duration: 20, topic: 'Subject:Technical' },
-    { id: 'ks_em', title: 'Engineering Maths', questions: 10, duration: 15, topic: 'Topic:Engineering Mathematics' },
-    { id: 'ks_gk', title: 'General Knowledge', questions: 10, duration: 10, topic: 'Subject:GK' },
+    { id: 'ks_ee', title: 'Electrical Engineering', questions: 20, duration: 20, subject: 'Technical', topic: 'Electrical Engineering' },
+    { id: 'ks_em', title: 'Engineering Maths', questions: 10, duration: 15, subject: 'Engineering Mathematics', topic: 'Calculus' },
+    { id: 'ks_gk', title: 'General Knowledge', questions: 10, duration: 10, subject: 'GK', topic: 'GK' },
   ],
   studyNotes: [{ id: 'sn_ps', title: 'Power Systems' }],
   previousPapers: [{ id: 'pp_se22', title: 'Sub Engineer 2022 Paper' }]
@@ -133,31 +134,10 @@ export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
 };
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
-  // --- GK / HISTORY ---
-  { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'GK', difficulty: 'PSC Level' },
-  { id: 'h2', question: "ഇന്ത്യൻ നാഷണൽ കോൺഗ്രസ് സ്ഥാപിച്ചത് ആര്?", options: ['എ.ഓ. ഹ്യൂം', 'ഗാന്ധിജി', 'നെഹ്‌റു', 'തിലക്'], correctAnswerIndex: 0, topic: 'Indian History', subject: 'GK', difficulty: 'PSC Level' },
-  { id: 'h3', question: "കേരള സിംഹം എന്നറിയപ്പെടുന്നത് ആര്?", options: ['പഴശ്ശിരാജ', 'വേലുത്തമ്പി ദളവ', 'കുഞ്ഞാലി മരക്കാർ', 'അയ്യങ്കാലി'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'GK', difficulty: 'PSC Level' },
-  { id: 'c1', question: "ഇന്ത്യൻ ഭരണഘടനയുടെ ശില്പി?", options: ['ബി.ആർ. അംബേദ്കർ', 'നെഹ്‌റു', 'രാജേന്ദ്ര പ്രസാദ്', 'പട്ടേൽ'], correctAnswerIndex: 0, topic: 'Indian Constitution', subject: 'GK', difficulty: 'Easy' },
-  
-  // --- MALAYALAM ---
-  { id: 'm1', question: "'സന്ധ്യാവന്ദനം' പിരിച്ചെഴുതുക?", options: ['സന്ധ്യ + വന്ദനം', 'സന്ധി + വന്ദനം', 'സന്ധ്യ + അവന്ദനം', 'സന്ധ്യ + വന്നനം'], correctAnswerIndex: 0, topic: 'Malayalam Grammar', subject: 'Malayalam', difficulty: 'PSC Level' },
-  { id: 'm2', question: "'അനുജൻ' എന്ന വാക്കിന്റെ സ്ത്രീലിംഗ രൂപം?", options: ['അനുജത്തി', 'അനുജ', 'അനുജി', 'പെങ്ങളുട്ടി'], correctAnswerIndex: 0, topic: 'Malayalam Grammar', subject: 'Malayalam', difficulty: 'Easy' },
-  
-  // --- ENGLISH ---
-  { id: 'e1', question: "Antonym of 'Abundant'?", options: ['Scarce', 'Rich', 'Full', 'Plenty'], correctAnswerIndex: 0, topic: 'English Vocabulary', subject: 'English', difficulty: 'PSC Level' },
-  { id: 'e2', question: "He is ______ M.A holder.", options: ['a', 'an', 'the', 'no article'], correctAnswerIndex: 1, topic: 'English Grammar', subject: 'English', difficulty: 'Easy' },
-  
-  // --- MATHS ---
-  { id: 'ma1', question: "2, 4, 8, 16, ___ അടുത്ത സംഖ്യ ഏത്?", options: ['32', '24', '20', '64'], correctAnswerIndex: 0, topic: 'Mental Ability', subject: 'Maths', difficulty: 'Easy' },
-  { id: 'ma2', question: "ഒരു ക്ലോക്കിൽ 3 മണി ആകുമ്പോൾ മിനിറ്റ് സൂചിയും മണിക്കൂർ സൂചിയും തമ്മിലുള്ള കോണളവ്?", options: ['90 ഡിഗ്രി', '180 ഡിഗ്രി', '45 ഡിഗ്രി', '60 ഡിഗ്രി'], correctAnswerIndex: 0, topic: 'Mental Ability', subject: 'Maths', difficulty: 'PSC Level' },
-  
-  // --- SCIENCE ---
-  { id: 's1', question: "മനുഷ്യ ശരീരത്തിലെ ഏറ്റവും വലിയ ഗ്രന്ഥി?", options: ['കരൾ', 'ആമാശയം', 'ആഗ്നേയഗ്രന്ഥി', 'തൈറോയ്ഡ്'], correctAnswerIndex: 0, topic: 'Biology', subject: 'Science', difficulty: 'PSC Level' },
-  { id: 's2', question: "വെള്ളത്തിന്റെ തിളനില എത്ര?", options: ['100 ഡിഗ്രി സെൽഷ്യസ്', '0 ഡിഗ്രി സെൽഷ്യസ്', '50 ഡിഗ്രി സെൽഷ്യസ്', '200 ഡിഗ്രി സെൽഷ്യസ്'], correctAnswerIndex: 0, topic: 'Physics', subject: 'Science', difficulty: 'Easy' },
-
-  // --- TECHNICAL ---
-  { id: 't1', question: "What is the unit of electric current?", options: ['Ampere', 'Volt', 'Ohm', 'Watt'], correctAnswerIndex: 0, topic: 'Electrical Basics', subject: 'Technical', difficulty: 'PSC Level' },
-  { id: 't2', question: "Integral of sin(x) dx is?", options: ['-cos(x)', 'cos(x)', 'tan(x)', 'sec(x)'], correctAnswerIndex: 0, topic: 'Engineering Mathematics', subject: 'Technical', difficulty: 'PSC Level' }
+  // Mock data should follow the Subject-Topic structure
+  { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'Kerala', difficulty: 'PSC Level' },
+  { id: 'h2', question: "ഇന്ത്യൻ നാഷണൽ കോൺഗ്രസ് സ്ഥാപിച്ചത് ആര്?", options: ['എ.ഓ. ഹ്യൂം', 'ഗാന്ധിജി', 'നെഹ്‌റു', 'തിലക്'], correctAnswerIndex: 0, topic: 'Indian History', subject: 'History', difficulty: 'PSC Level' },
+  { id: 'ma1', question: "2, 4, 8, 16, ___ അടുത്ത സംഖ്യ ഏത്?", options: ['32', '24', '20', '64'], correctAnswerIndex: 0, topic: 'Mental Ability', subject: 'Reasoning', difficulty: 'Easy' },
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
@@ -207,22 +187,10 @@ export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
     duration: 75,
     negativeMarking: 0.33,
     isPro: false
-  },
-  {
-    id: 'mt_mixed_01',
-    examId: 'ldc_lgs',
-    title: { ml: 'Full Mock Test (Mixed)', en: 'Full Mock Test (Mixed)' },
-    description: { ml: 'എല്ലാ വിഷയങ്ങളും ഉൾപ്പെടുത്തിയ മാതൃകാ പരീക്ഷ.', en: 'Mock test covering all major subjects.' },
-    questionsCount: 50,
-    duration: 45,
-    negativeMarking: 0.33,
-    isPro: false
   }
 ];
 
 export const MOCK_TESTS_DATA = LOCK_MOCK_TESTS_DATA;
-
-// Standard mock responses for widgets
 export const MOCK_NOTIFICATIONS: Notification[] = [{ id: '1', title: 'LDC - Various Departments', categoryNumber: '207/2025', lastDate: '25-09-2025', link: '#' }];
 export const MOCK_PSC_UPDATES: PscUpdateItem[] = [{ title: 'RANK LIST - LDC ERNAKULAM', url: '#', section: 'Ranked Lists', published_date: '2025-08-20' }];
 export const MOCK_CURRENT_AFFAIRS: CurrentAffairsItem[] = [{ id: '1', title: 'Kerala Budget 2025', source: 'Official', date: '2025-08-15'}];

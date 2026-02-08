@@ -1,8 +1,45 @@
 
 import { readSheetData } from './_lib/sheets-service.js';
 
+/**
+ * Robustly parses options from various string formats.
+ * Handles: ['A', 'B'], "A, B", "A|B", and escaped quotes.
+ */
+const smartParseOptions = (raw: string): string[] => {
+    if (!raw) return [];
+    let clean = raw.trim();
+    
+    // 1. Handle array-like strings with quotes: ['Opt 1', 'Opt 2']
+    if (clean.startsWith('[') && clean.endsWith(']')) {
+        try {
+            // Standard JSON try
+            const parsed = JSON.parse(clean.replace(/'/g, '"'));
+            if (Array.isArray(parsed)) return parsed.map(s => String(s).trim());
+        } catch (e) {
+            // Manual cleanup if JSON.parse fails due to complex quotes
+            let content = clean.substring(1, clean.length - 1);
+            const matches = content.match(/(".*?"|'.*?'|[^,]+)/g);
+            if (matches) {
+                return matches.map(m => m.trim().replace(/^['"]|['"]$/g, '').trim());
+            }
+        }
+    }
+
+    // 2. Try Pipe Separation (Highest reliability for PSC data)
+    if (clean.includes('|')) {
+        return clean.split('|').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
+    }
+
+    // 3. Try basic comma separation
+    if (clean.includes(',')) {
+        return clean.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
+    }
+
+    return [clean];
+};
+
 export default async function handler(req: any, res: any) {
-    const { type, topic, count, examId } = req.query;
+    const { type, topic, subject, count, examId } = req.query;
 
     try {
         switch (type) {
@@ -15,38 +52,51 @@ export default async function handler(req: any, res: any) {
                 })));
 
             case 'syllabus':
-                const sRows = await readSheetData('Syllabus!A2:F');
+                const sRows = await readSheetData('Syllabus!A2:G');
                 return res.status(200).json(sRows.filter(r => r[1] === examId).map(r => ({
                     id: r[0], exam_id: r[1], title: r[2], 
                     questions: parseInt(r[3] || '20'), 
                     duration: parseInt(r[4] || '20'), 
-                    topic: r[5]
+                    subject: r[5] || '',
+                    topic: r[6] || ''
                 })));
 
             case 'questions':
-                if (!topic) return res.status(400).json({ error: 'Topic required' });
                 const qLimit = parseInt(count as string) || 20;
                 let allQs = [];
                 try {
                     allQs = await readSheetData('QuestionBank!A2:G');
-                } catch (e) { console.error("Question fetch error:", e); }
+                } catch (e) { 
+                    console.error("Question fetch error:", e); 
+                    return res.status(200).json([]);
+                }
 
-                const searchTopic = (topic as string).toLowerCase().trim();
-                const cleanTopic = searchTopic.replace(/^(topic|subject):/i, '').trim();
+                const filterSubject = (subject as string || '').toLowerCase().trim();
+                const filterTopic = (topic as string || '').toLowerCase().trim();
 
                 const filtered = allQs.filter(r => {
+                    if (!r || r.length < 3) return false;
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (r[5] || '').toLowerCase().trim();
-                    return rowTopic.includes(cleanTopic) || rowSubject.includes(cleanTopic);
+                    const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject === filterSubject;
+                    const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
+                    return isSubjectMatch && isTopicMatch;
                 }).map(r => {
-                    let options = [];
-                    try {
-                        const raw = r[3] || '[]';
-                        options = raw.startsWith('[') ? JSON.parse(raw) : raw.split(',').map((o:any)=>o.trim());
-                    } catch(e) { options = ["A", "B", "C", "D"]; }
+                    let options = smartParseOptions(r[3] || '');
+                    
+                    // Pad to 4 options to ensure UI consistency
+                    while (options.length < 4) {
+                        options.push(`Option ${String.fromCharCode(65 + options.length)}`);
+                    }
+
                     return { 
-                        id: r[0], topic: r[1], question: r[2], options: options, 
-                        correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6] 
+                        id: r[0], 
+                        topic: r[1], 
+                        question: r[2], 
+                        options: options.slice(0, 4), 
+                        correctAnswerIndex: parseInt(String(r[4] || '0').trim()), 
+                        subject: r[5], 
+                        difficulty: r[6] 
                     };
                 });
                 
@@ -77,6 +127,6 @@ export default async function handler(req: any, res: any) {
         }
     } catch (error: any) {
         console.error("Data API Error:", error.message);
-        return res.status(200).json([]); // Return empty array instead of 500 to keep UI alive
+        return res.status(200).json([]); 
     }
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getLiveUpdates } from '../../services/pscDataService';
 import type { PscUpdateItem } from '../../types';
@@ -72,14 +73,14 @@ const PscLiveUpdatesPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             ) : (
                 <div className="space-y-4">
                     {updates.map((item, index) => (
-                        <a href={`/go?url=${encodeURIComponent(item.url)}`} key={index} className="block bg-white p-5 rounded-xl shadow-md border border-slate-200 hover:shadow-lg hover:border-indigo-300 transition-all duration-300">
+                        <a href={`#external_viewer?url=${encodeURIComponent(item.url)}`} key={index} className="block bg-white dark:bg-slate-900 p-5 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:border-indigo-300 transition-all duration-300">
                             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
                                 <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${getSectionChipClass(item.section)}`}>
                                     {item.section}
                                 </span>
                                 <p className="text-sm text-slate-500 font-medium whitespace-nowrap">{t('date')}: {item.published_date}</p>
                             </div>
-                            <h3 className="text-lg font-semibold text-slate-800 group-hover:text-indigo-600">{item.title}</h3>
+                            <h3 className="text-lg font-semibold text-slate-800 dark:text-white group-hover:text-indigo-600">{item.title}</h3>
                         </a>
                     ))}
                 </div>
