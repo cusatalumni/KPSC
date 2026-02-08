@@ -32,8 +32,6 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
             return mockData;
         }
         const data = await res.json();
-        // If data is an empty array but we expected content, we might still fallback to mock for safety
-        // But for questions, we want to know if it's really empty.
         return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
     } catch (e) {
         console.error("Fetch Hub Error:", e);
@@ -70,6 +68,9 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
     return (data && data.length > 0) ? data : (EXAM_CONTENT_MAP[examId]?.practiceTests || []);
 };
 
+export const getSettings = () => fetchHub('type=settings', { subscription_model_active: 'true' });
+export const updateSetting = (key: string, value: string, token: string | null) => adminReq({ action: 'update-setting', setting: { key, value } }, token);
+
 export const saveTestResult = (resultData: any) => adminReq({ action: 'save-result', resultData });
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);
 export const triggerBookScraper = (token: string | null) => adminReq({ action: 'run-book-scraper' }, token);
@@ -88,8 +89,6 @@ export const getQuestionsForTest = async (subject: string, topic: string, count:
         const res = await fetch(`/api/data?type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`);
         if (!res.ok) return MOCK_QUESTION_BANK.slice(0, count);
         const data = await res.json();
-        // If API returns no questions, we fallback to mock only if explicitly needed, 
-        // otherwise we show empty to help debug Sheet connection.
         if (!data || data.length === 0) {
             console.warn("No questions returned from Sheet. Check if QuestionBank tab has data.");
             return MOCK_QUESTION_BANK.slice(0, count);
@@ -109,18 +108,17 @@ export const exportStaticExamsToSheet = (token: string | null, examsPayload: any
 
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
     try {
-        const response = await fetch('/api/ai', {
+        const response = await fetch('/api/study-material', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: `Generate detailed study notes in Malayalam for: "${topic}".`,
-                model: 'gemini-3-flash-preview',
-            }),
+            body: JSON.stringify({ topic }),
         });
         const data = await response.json();
-        return { notes: data.text || 'വിവരങ്ങൾ ലഭ്യമല്ല.' };
-    } catch (error) {
-        return { notes: "തകരാർ സംഭവിച്ചു." };
+        if (data.error) throw new Error(data.error);
+        return { notes: data.notes || 'വിവരങ്ങൾ ലഭ്യമല്ല.' };
+    } catch (error: any) {
+        console.error("Service Error fetching study material:", error.message);
+        return { notes: "ക്ഷമിക്കണം, ഈ വിഷയം ഇപ്പോൾ ലഭ്യമാക്കാൻ സാധിക്കുന്നില്ല." };
     }
 };
 

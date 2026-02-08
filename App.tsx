@@ -26,9 +26,10 @@ import SitemapPage from './components/pages/SitemapPage';
 import ExternalViewerPage from './components/pages/ExternalViewerPage';
 import LoadingScreen from './components/LoadingScreen';
 import AdsenseWidget from './components/AdsenseWidget';
-import type { Exam, SubscriptionStatus, ActiveTest, Page } from './types';
+import type { Exam, SubscriptionStatus, ActiveTest, Page, QuizQuestion, UserAnswers } from './types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
+import { getSettings } from './services/pscDataService';
 import { useTranslation } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
 
@@ -37,16 +38,28 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
-  const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any } | null>(null);
+  const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any; questions?: QuizQuestion[]; answers?: UserAnswers } | null>(null);
   const [activeStudyTopic, setActiveStudyTopic] = useState<string | null>(null);
   const [externalUrl, setExternalUrl] = useState<string | null>(null);
+  const [settings, setSettings] = useState<any>({});
   
   const { user, isSignedIn } = useUser();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { theme } = useTheme();
 
   useEffect(() => {
-      const timer = setTimeout(() => setIsAppLoading(false), 2500);
+      const init = async () => {
+          try {
+              const s = await getSettings();
+              setSettings(s);
+          } catch (e) {
+              console.error("Failed to load settings:", e);
+          } finally {
+              setIsAppLoading(false);
+          }
+      };
+      
+      const timer = setTimeout(init, 2000);
       return () => clearTimeout(timer);
   }, []);
 
@@ -92,11 +105,8 @@ const App: React.FC = () => {
         setSelectedExam(null);
     }
 
-    // Reconstruction logic for Test Page from URL parts
-    // #test/[type]/[id_or_subject]/[topic]/[count]/[title]
     if (targetPage === 'test') {
         if (id === 'mock' && parts[2]) {
-            // Mock Test by ID
             const mockTest = MOCK_TESTS_DATA.find(mt => mt.id === parts[2]);
             if (mockTest) {
                 setActiveTest({
@@ -110,7 +120,6 @@ const App: React.FC = () => {
                 });
             }
         } else if (id && parts[2]) {
-            // Subject/Topic Quiz
             setActiveTest({
                 title: decodeURIComponent(parts[4] || parts[2]),
                 subject: decodeURIComponent(id),
@@ -147,12 +156,18 @@ const App: React.FC = () => {
   }, [syncStateFromHash]);
 
   useEffect(() => {
+    // If master switch is OFF, everyone is PRO
+    if (settings.subscription_model_active === 'false') {
+        setSubscriptionStatus('pro');
+        return;
+    }
+
     if (isSignedIn && user?.id) {
       setSubscriptionStatus(subscriptionService.getSubscriptionStatus(user.id));
     } else {
       setSubscriptionStatus('free');
     }
-  }, [user, isSignedIn]);
+  }, [user, isSignedIn, settings]);
 
   const handleNavigate = (page: string) => {
     window.location.hash = page.startsWith('#') ? page : `#${page}`;
@@ -167,7 +182,10 @@ const App: React.FC = () => {
           <TestPage 
             activeTest={activeTest} 
             subscriptionStatus={subscriptionStatus} 
-            onTestComplete={(score, total, stats) => { setTestResult({ score, total, stats }); handleNavigate('results'); }} 
+            onTestComplete={(score, total, stats, qs, ans) => { 
+                setTestResult({ score, total, stats, questions: qs, answers: ans }); 
+                handleNavigate('results'); 
+            }} 
             onBack={() => window.history.back()} 
             onNavigateToUpgrade={() => handleNavigate('upgrade')} 
           />
@@ -178,7 +196,16 @@ const App: React.FC = () => {
           </div>
         );
       case 'results':
-        return testResult ? <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} onBackToPrevious={() => handleNavigate('dashboard')} /> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+        return testResult ? (
+            <TestResultPage 
+                score={testResult.score} 
+                total={testResult.total} 
+                stats={testResult.stats} 
+                questions={testResult.questions}
+                answers={testResult.answers}
+                onBackToPrevious={() => handleNavigate('dashboard')} 
+            />
+        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
       case 'exam_details':
         return selectedExam ? (
           <ExamPage 
@@ -198,7 +225,16 @@ const App: React.FC = () => {
       case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
       case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
       case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
-      case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={(cat) => handleNavigate(`test/${cat.id}/mixed/20/${encodeURIComponent(cat.title.ml)}`)} subscriptionStatus={subscriptionStatus} />;
+      case 'quiz_home': return (
+        <QuizHomePage 
+            onBack={() => handleNavigate('dashboard')} 
+            onStartQuiz={(cat) => {
+                const subject = cat.id.split('_')[0]; 
+                handleNavigate(`test/${subject}/mixed/15/${encodeURIComponent(cat.title.ml)}`);
+            }} 
+            subscriptionStatus={subscriptionStatus} 
+        />
+      );
       case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => handleNavigate(`test/mock/${test.id}`)} />;
       case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
       case 'previous_papers': return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
@@ -215,7 +251,6 @@ const App: React.FC = () => {
   
   if (isAppLoading) return <LoadingScreen />;
 
-  // Only hide Header/Footer for external content viewer to maximize viewing area
   const isFullPage = currentPage === 'external_viewer';
 
   return (

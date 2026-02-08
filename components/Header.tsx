@@ -13,6 +13,8 @@ import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { Bars3Icon } from './icons/Bars3Icon';
 import { XMarkIcon } from './icons/XMarkIcon';
+import { subscriptionService } from '../services/subscriptionService';
+import { getSettings } from '../services/pscDataService';
 
 interface HeaderProps {
     onNavigate: (page: Page) => void;
@@ -23,9 +25,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSubActive, setIsSubActive] = useState(true);
   const { isLoaded, isSignedIn, user } = useUser();
   const isAdmin = user?.publicMetadata?.role === 'admin';
   const navRef = useRef<HTMLElement>(null);
+  
+  useEffect(() => {
+    getSettings().then(s => setIsSubActive(s.subscription_model_active === 'true'));
+  }, []);
+
+  const isPro = isSignedIn && user?.id ? subscriptionService.getSubscriptionStatus(user.id) === 'pro' : false;
 
   const toggleLanguage = () => {
     setLanguage(language === 'ml' ? 'en' : 'ml');
@@ -33,7 +42,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   
   const handleNavClick = (page: Page) => {
     onNavigate(page);
-    // Use a small timeout to ensure the UI doesn't collapse before the event finishes
     setTimeout(() => {
         setOpenDropdown(null);
         setIsMenuOpen(false);
@@ -42,7 +50,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Use 'click' instead of 'mousedown' to avoid unmounting buttons before their click fires
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
         setOpenDropdown(null);
       }
@@ -60,7 +67,19 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
       return <div className="h-10 w-24 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse"></div>;
     }
     if (isSignedIn) {
-      return <UserButton afterSignOutUrl="/" />;
+      return (
+        <div className="flex items-center space-x-3">
+          {!isPro && isSubActive && (
+            <button 
+                onClick={() => handleNavClick('upgrade')}
+                className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black px-4 py-2 rounded-xl shadow-lg hover:scale-105 transition-all text-xs"
+            >
+                <span>{t('goPro')}</span>
+            </button>
+          )}
+          <UserButton afterSignOutUrl="/" />
+        </div>
+      );
     }
     return (
       <SignInButton mode="modal">
@@ -130,6 +149,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 )}
               </div>
             ))}
+            {isSubActive && (
+              <button 
+                  onClick={() => handleNavClick('upgrade')} 
+                  className="text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-black text-sm uppercase tracking-wider transition duration-200"
+              >
+                  {t('nav.pricing')}
+              </button>
+            )}
             {isAdmin && (
                 <button onClick={() => handleNavClick('admin_panel')} className={adminButtonClasses}>
                     <ShieldCheckIcon className="h-5 w-5" />
@@ -192,6 +219,11 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
                 )}
               </div>
             ))}
+            {isSubActive && (
+              <button onClick={() => handleNavClick('upgrade')} className="w-full text-left px-4 py-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 font-black text-sm uppercase tracking-wider">
+                {t('nav.pricing')}
+              </button>
+            )}
             {isAdmin && (
                <button onClick={() => handleNavClick('admin_panel')} className="w-full text-left px-4 py-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-black text-sm uppercase tracking-wider mt-4">
                   ADMIN PANEL

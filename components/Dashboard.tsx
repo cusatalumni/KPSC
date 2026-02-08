@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, Fragment, useCallback } from 'react';
 import ExamCard from './ExamCard';
-import { getDetectedExams, getExams, getGk, getCurrentAffairs } from '../services/pscDataService';
+import { getDetectedExams, getExams, getGk, getCurrentAffairs, getSettings } from '../services/pscDataService';
 import type { Exam, Page, GkItem, CurrentAffairsItem } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import NewsTicker from './NewsTicker';
@@ -13,7 +13,10 @@ import CurrentAffairsWidget from './CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { NewspaperIcon } from './icons/NewspaperIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
+import { StarIcon } from './icons/StarIcon';
 import { EXAM_CONTENT_MAP } from '../constants';
+import { subscriptionService } from '../services/subscriptionService';
+import { useUser } from '@clerk/clerk-react';
 
 const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }) => {
     const { t } = useTranslation();
@@ -85,6 +88,41 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
     );
 };
 
+const SubscriptionWidget: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNavigate }) => {
+    const { t } = useTranslation();
+    const { user, isSignedIn } = useUser();
+    const [isActive, setIsActive] = useState(true);
+
+    useEffect(() => {
+        getSettings().then(s => setIsActive(s.subscription_model_active === 'true'));
+    }, []);
+
+    if (!isActive) return null;
+
+    const status = isSignedIn && user?.id ? subscriptionService.getSubscriptionStatus(user.id) : 'free';
+
+    return (
+        <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+            <div className="relative z-10">
+                <div className="flex items-center space-x-3 mb-4">
+                    <StarIcon className="h-6 w-6 text-amber-400" />
+                    <h4 className="font-black uppercase tracking-widest text-xs">{t('subscriptions.title')}</h4>
+                </div>
+                <p className="text-sm font-bold opacity-90 mb-6 leading-relaxed">
+                    {status === 'pro' ? t('subscriptions.pro') : t('subscriptions.subtitle')}
+                </p>
+                <button 
+                    onClick={() => onNavigate('upgrade')}
+                    className="w-full bg-white text-indigo-600 font-black py-3 rounded-xl hover:bg-slate-100 transition-all active:scale-95 text-xs shadow-lg"
+                >
+                    {status === 'pro' ? t('subscriptions.manage') : t('subscriptions.upgradeNow')}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: (page: Page) => void; onStartStudy: (topic: string) => void; }> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
   const { t, language } = useTranslation();
   const [detectedExams, setDetectedExams] = useState<Exam[]>([]);
@@ -134,20 +172,16 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     return [...priority.filter(p => groupedExams[p]), ...otherCategories];
   }, [groupedExams]);
 
-  // Helper to get unique subjects for an exam to show on the card
   const getSyllabusPreview = useCallback((examId: string) => {
     const content = EXAM_CONTENT_MAP[examId];
     if (!content) return [];
-    
-    // Get unique subject names from practice tests
     const subjects = new Set<string>();
     content.practiceTests.forEach(test => {
         if (test.subject && test.subject !== 'mixed') {
             subjects.add(test.subject);
         }
     });
-    
-    return Array.from(subjects).slice(0, 4); // Limit to 4 for clean UI
+    return Array.from(subjects).slice(0, 4);
   }, []);
 
   if (loading) {
@@ -164,7 +198,6 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
 
   return (
     <div className="space-y-10">
-      {/* Top Layer: Clean Header with Hero & Daily Pulse */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           <div className="lg:col-span-2">
               <HeroSlider onNavigate={onNavigate} />
@@ -177,7 +210,6 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
       <NewsTicker />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-        {/* Main Content Area */}
         <div className="lg:col-span-3 space-y-16">
           {sortedCategoryIds.map((catId, index) => {
             const list = groupedExams[catId] || [];
@@ -213,7 +245,6 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                   </div>
                 </section>
                 
-                {/* Insert ad after every 2 categories */}
                 {(index + 1) % 2 === 0 && index !== sortedCategoryIds.length - 1 && (
                     <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
                          <AdsenseWidget />
@@ -222,16 +253,10 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
               </Fragment>
             );
           })}
-
-          {sortedCategoryIds.length === 0 && (
-              <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-                  <p className="text-slate-400 font-bold">{t('error.fetchData')}</p>
-              </div>
-          )}
         </div>
 
-        {/* Sidebar Widgets Area */}
         <div className="space-y-8">
+          <SubscriptionWidget onNavigate={onNavigate} />
           <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
           
           <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 text-center">

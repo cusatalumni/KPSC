@@ -46,7 +46,7 @@ export default async function handler(req: any, res: any) {
 
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
 
-    const { action, sheet, id, exam, syllabus, book, question, data, mode, resultData, examsPayload, syllabusPayload } = req.body;
+    const { action, sheet, id, exam, syllabus, book, question, data, mode, resultData, examsPayload, syllabusPayload, setting } = req.body;
 
     // Save result (public action)
     if (action === 'save-result') {
@@ -69,6 +69,11 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
+            case 'update-setting':
+                if (!setting || !setting.key) throw new Error('Setting key missing');
+                await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
+                return res.status(200).json({ message: `Setting ${setting.key} updated.` });
+
             case 'test-connection':
                 await readSheetData('Exams!A1:A1');
                 return res.status(200).json({ message: 'Google Sheets Connection Verified!' });

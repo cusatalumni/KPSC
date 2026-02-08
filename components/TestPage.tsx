@@ -9,7 +9,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 interface TestPageProps {
   activeTest: ActiveTest;
   subscriptionStatus: SubscriptionStatus;
-  onTestComplete: (score: number, total: number, stats?: any) => void;
+  onTestComplete: (score: number, total: number, stats: any, questions: QuizQuestion[], answers: UserAnswers) => void;
   onBack: () => void;
   onNavigateToUpgrade: () => void;
 }
@@ -23,9 +23,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(activeTest.questionsCount * 60);
   
-  // To track last click time for double click logic if browser support varies
-  const lastClickTime = useRef<number>(0);
-
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -54,7 +51,13 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
       }
     });
 
-    onTestComplete(parseFloat(score.toFixed(2)), questions.length, { correct, wrong, skipped: questions.length - (correct + wrong) });
+    onTestComplete(
+        parseFloat(score.toFixed(2)), 
+        questions.length, 
+        { correct, wrong, skipped: questions.length - (correct + wrong) },
+        questions,
+        answers
+    );
   }, [questions, answers, onTestComplete, activeTest]);
 
   useEffect(() => {
@@ -96,7 +99,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
 
   const handleOptionDoubleClick = (idx: number) => {
     selectOption(idx);
-    // Auto-advance to next question after a small delay for feedback
     setTimeout(() => {
         if (currentIndex < questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
@@ -129,7 +131,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col">
       <div className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-[2rem] shadow-2xl border dark:border-slate-800 flex flex-col h-full overflow-hidden">
-        {/* Compact Header */}
         <div className="flex justify-between items-center mb-4 border-b pb-4 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-lg">{currentIndex + 1}</div>
@@ -146,12 +147,10 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
           </div>
         </div>
 
-        {/* Question Area - Flex Grow but scrollable if text is massive */}
         <div className="mb-6 flex-shrink-0">
             <h1 className="text-lg md:text-xl font-black dark:text-white leading-snug">{q.question}</h1>
         </div>
 
-        {/* Options Area - Grid layout to save space */}
         <div className="grid grid-cols-1 gap-2 flex-grow overflow-y-auto pr-1">
           {q.options.map((opt, idx) => (
             <button 
@@ -173,14 +172,12 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
                     {String.fromCharCode(65+idx)}
                 </span>
                 <span className="text-sm md:text-base leading-tight flex-1">{opt}</span>
-                {/* Visual hint for double click selection */}
                 <div className="opacity-0 group-hover:opacity-100 text-[8px] font-black text-slate-300 uppercase tracking-tighter hidden md:block">Double-click to select & next</div>
               </div>
             </button>
           ))}
         </div>
 
-        {/* Compact Footer */}
         <div className="flex justify-between mt-4 pt-4 border-t dark:border-slate-800 flex-shrink-0">
           <button 
             onClick={() => setCurrentIndex(c => Math.max(0, c-1))} 

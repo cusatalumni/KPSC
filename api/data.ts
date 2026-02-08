@@ -32,6 +32,14 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (type) {
+            case 'settings':
+                const settingsRows = await readSheetData('Settings!A2:B');
+                const settings = settingsRows.reduce((acc: any, curr: any) => {
+                    acc[curr[0]] = curr[1];
+                    return acc;
+                }, {});
+                return res.status(200).json(settings);
+
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
                 return res.status(200).json(eRows.map(r => ({
@@ -54,7 +62,6 @@ export default async function handler(req: any, res: any) {
                 const qLimit = parseInt(count as string) || 20;
                 let allQs = [];
                 try {
-                    // Fetch all questions to allow better random mixing
                     allQs = await readSheetData('QuestionBank!A2:G');
                 } catch (e) { 
                     console.error("Sheets Read Error:", e);
@@ -73,8 +80,6 @@ export default async function handler(req: any, res: any) {
                     const rowTopic = (r[1] || '').toLowerCase().trim();
                     const rowSubject = (rowTopic.includes('ldc') || rowTopic.includes('lgs')) ? 'mixed' : (r[5] || '').toLowerCase().trim();
                     
-                    // Improved Wildcard Logic: 
-                    // If filter is 'mixed' or empty, we accept any row.
                     const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject.includes(filterSubject);
                     const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic.includes(filterTopic);
                     
@@ -92,7 +97,6 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
-                // Shuffle and limit
                 const finalQuestions = filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit);
                 return res.status(200).json(finalQuestions);
 
