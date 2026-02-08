@@ -41,7 +41,6 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
     const { action, sheet, id, data, mode, resultData, setting, question } = req.body;
 
-    // save-result is public
     if (action === 'save-result') {
         try {
             const row = [resultData.id || `res_${Date.now()}`, resultData.userId || 'guest', resultData.userEmail || 'guest@example.com', resultData.testTitle, resultData.score, resultData.total, new Date().toISOString()];
@@ -55,23 +54,30 @@ export default async function handler(req: any, res: any) {
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 
-    // Verify Admin for all other actions
-    try { 
-        await verifyAdmin(req); 
-    } catch (e: any) { 
-        return res.status(401).json({ message: e.message }); 
-    }
+    try { await verifyAdmin(req); } catch (e: any) { return res.status(401).json({ message: e.message }); }
 
     try {
         switch (action) {
             case 'test-connection':
+                let sheetsOk = false;
+                let supabaseOk = false;
+                try {
+                    const testRead = await readSheetData('Settings!A1:B2');
+                    sheetsOk = testRead.length > 0;
+                } catch (e) { console.error("Sheet Test Failed", e); }
+                try {
+                    if (supabase) {
+                        const { error } = await supabase.from('settings').select('key').limit(1);
+                        supabaseOk = !error;
+                    }
+                } catch (e) { console.error("Supabase Test Failed", e); }
+                
                 return res.status(200).json({ 
-                    message: 'Verified', 
-                    status: { sheets: !!process.env.SPREADSHEET_ID, supabase: !!supabase } 
+                    message: (sheetsOk && supabaseOk) ? 'All systems operational' : 'Partial connection error', 
+                    status: { sheets: sheetsOk, supabase: supabaseOk } 
                 });
 
             case 'update-setting':
-                if (!setting || !setting.key) return res.status(400).json({ message: 'Setting key missing' });
                 await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
                 if (supabase) await upsertSupabaseData('settings', [{ key: String(setting.key), value: String(setting.value) }]);
                 return res.status(200).json({ message: 'Setting updated' });
@@ -97,21 +103,17 @@ export default async function handler(req: any, res: any) {
                         let optsRaw = (parts[3] || '').trim().replace(/^\[|\]$/g, '');
                         let opts = optsRaw.includes('|') ? optsRaw.split('|').map(o => o.trim()) : optsRaw.split(',').map(o => o.trim());
                         if (opts.length < 2) opts = ["A", "B", "C", "D"];
-                        const cleanId = parts[0] || `q_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
-                        return [cleanId, parts[1] || 'General', parts[2] || '', JSON.stringify(opts), parts[4] || '0', parts[5] || 'GK', parts[6] || 'Moderate'];
+                        return [parts[0] || `q_${Date.now()}_${Math.random().toString(36).substr(2,5)}`, parts[1] || 'General', parts[2] || '', JSON.stringify(opts), parts[4] || '0', parts[5] || 'GK', parts[6] || 'Moderate'];
                     }
                     if (currentSheet === 'syllabus') {
                         const examId = parts[1] || 'general';
                         const topic = parts[6] || parts[2] || 'general';
-                        const cleanId = parts[0] || `syl_${slugify(examId)}_${slugify(topic)}`;
-                        return [cleanId, examId, parts[2] || topic, parts[3] || '20', parts[4] || '20', parts[5] || 'General', topic];
+                        return [parts[0] || `syl_${slugify(examId)}_${slugify(topic)}`, examId, parts[2] || topic, parts[3] || '20', parts[4] || '20', parts[5] || 'General', topic];
                     }
                     return parts;
-                }).filter((r: any) => r !== null);
-
+                });
                 if (mode === 'append') await appendSheetData(`${sheet}!A1`, sheetRows);
                 else await clearAndWriteSheetData(`${sheet}!A2:G`, sheetRows);
-
                 if (supabase) {
                     const supabaseRows = sheetRows.map(r => {
                         if (currentSheet === 'questionbank') return { id: String(r[0]), topic: String(r[1]), question: String(r[2]), options: JSON.parse(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: String(r[5]), difficulty: String(r[6]) };
