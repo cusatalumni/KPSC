@@ -42,7 +42,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [loading, setLoading] = useState(false);
     const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
     
-    // Form States
     const [bulkData, setBulkData] = useState('');
     const [syllabusBulkData, setSyllabusBulkData] = useState('');
     const [newQ, setNewQ] = useState<Partial<QuizQuestion>>({
@@ -66,8 +65,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (settings && settings.subscription_model_active !== undefined) {
                 setIsSubscriptionActive(settings.subscription_model_active === 'true');
             }
-        } catch (err) { console.error("Admin Refresh Failed:", err); } 
-        finally { if (!isSilent) setLoading(false); }
+        } catch (err) { 
+            console.error("Admin Refresh Failed:", err); 
+            setStatus("Data Load Error: Check DB Connections");
+            setIsError(true);
+        } finally { if (!isSilent) setLoading(false); }
     }, [getToken]);
 
     useEffect(() => { refresh(); }, [refresh]);
@@ -94,24 +96,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } finally { setLoading(false); }
     };
 
-    const toggleSubscriptionModel = async () => {
-        const newVal = !isSubscriptionActive;
-        const token = await getToken();
-        setIsSubscriptionActive(newVal);
-        try {
-            await updateSetting('subscription_model_active', String(newVal), token);
-            setStatus(`Subscription Paywall: ${newVal ? 'ENABLED' : 'DISABLED'}`);
-        } catch (e: any) {
-            setIsSubscriptionActive(!newVal);
-            setStatus("Toggle Failed: " + e.message);
-            setIsError(true);
-        }
-    };
-
     const handleSingleQuestion = async (e: React.FormEvent) => {
         e.preventDefault();
         const token = await getToken();
-        handleAction(() => addQuestion(newQ, token));
+        await handleAction(() => addQuestion(newQ, token));
         setNewQ({ question: '', topic: '', subject: 'GK', difficulty: 'Moderate', options: ['', '', '', ''], correctAnswerIndex: 0 });
     };
 
@@ -149,13 +137,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
             </div>
 
-            <header className="bg-slate-900 p-8 rounded-[2rem] text-white flex items-center justify-between shadow-xl border-b-4 border-indigo-500">
+            <header className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-xl border-b-4 border-indigo-500 flex justify-between items-center">
                 <div className="flex items-center space-x-4">
                     <ShieldCheckIcon className="h-10 w-10 text-indigo-400" />
                     <h1 className="text-2xl font-black uppercase tracking-tight">Admin Center</h1>
-                </div>
-                <div className="hidden md:block text-right">
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Management Console</p>
                 </div>
             </header>
 
@@ -177,142 +162,128 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <main className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800 min-h-[500px]">
                 {activeTab === 'automation' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 dark:bg-slate-800/50 space-y-4">
-                            <RssIcon className="h-8 w-8 text-indigo-600" />
-                            <h3 className="font-black uppercase text-xs">Daily Content</h3>
-                            <p className="text-[10px] text-slate-500">Scrape notifications, affairs, and generate questions.</p>
-                            <button onClick={async () => handleAction(async () => triggerDailyScraper(await getToken()))} disabled={loading} className="w-full btn-vibrant-indigo text-white py-3 rounded-xl font-black text-[10px]">RUN SCRAPER</button>
+                        <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 dark:bg-slate-800/50 space-y-4 text-center">
+                            <RssIcon className="h-10 w-10 text-indigo-600 mx-auto" />
+                            <h3 className="font-black uppercase text-xs tracking-widest">Daily Refresh</h3>
+                            <button onClick={async () => handleAction(async () => triggerDailyScraper(await getToken()))} disabled={loading} className="w-full btn-vibrant-indigo text-white py-4 rounded-xl font-black text-[10px]">RUN SCRAPER</button>
                         </div>
-                        <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 dark:bg-slate-800/50 space-y-4">
-                            <BookOpenIcon className="h-8 w-8 text-emerald-600" />
-                            <h3 className="font-black uppercase text-xs">Amazon Bookstore</h3>
-                            <p className="text-[10px] text-slate-500">Sync latest PSC books from Amazon.</p>
-                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} disabled={loading} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-black text-[10px]">SYNC BOOKS</button>
+                        <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 dark:bg-slate-800/50 space-y-4 text-center">
+                            <BookOpenIcon className="h-10 w-10 text-emerald-600 mx-auto" />
+                            <h3 className="font-black uppercase text-xs tracking-widest">Book Sync</h3>
+                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} disabled={loading} className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black text-[10px]">SYNC AMAZON</button>
                         </div>
-                        <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 dark:bg-slate-800/50 space-y-4">
-                            <ArrowPathIcon className="h-8 w-8 text-red-600" />
-                            <h3 className="font-black uppercase text-xs">AI Cache</h3>
-                            <p className="text-[10px] text-slate-500">Reset generated study notes.</p>
-                            <button onClick={async () => handleAction(async () => clearStudyCache(await getToken()))} disabled={loading} className="w-full bg-red-600 text-white py-3 rounded-xl font-black text-[10px]">CLEAR CACHE</button>
+                        <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50 dark:bg-slate-800/50 space-y-4 text-center">
+                            <ArrowPathIcon className="h-10 w-10 text-red-600 mx-auto" />
+                            <h3 className="font-black uppercase text-xs tracking-widest">AI Reset</h3>
+                            <button onClick={async () => handleAction(async () => clearStudyCache(await getToken()))} disabled={loading} className="w-full bg-red-600 text-white py-4 rounded-xl font-black text-[10px]">CLEAR CACHE</button>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'exams' && (
                     <div className="space-y-6">
-                        <h3 className="text-xl font-black">Manage Exams</h3>
+                        <h3 className="text-xl font-black">Registered Exams</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {exams.length > 0 ? exams.map(ex => (
-                                <div key={ex.id} className="flex items-center justify-between p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/30">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="bg-white p-2 rounded-lg">{ex.icon}</div>
-                                        <div>
-                                            <p className="font-black text-xs">{ex.title.ml}</p>
-                                            <p className="text-[9px] text-slate-400 uppercase">{ex.category} • {ex.level}</p>
-                                        </div>
+                            {exams.map(ex => (
+                                <div key={ex.id} className="flex items-center justify-between p-5 border rounded-3xl bg-slate-50 dark:bg-slate-800/30">
+                                    <div>
+                                        <p className="font-black text-sm">{ex.title.ml}</p>
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold">{ex.id}</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Delete Exam?")) handleAction(async () => deleteBook(ex.id, await getToken())) }} className="text-red-500 p-2"><TrashIcon className="h-5 w-5" /></button>
+                                    <button onClick={async () => { if(confirm("Delete?")) handleAction(async () => deleteBook(ex.id, await getToken())) }} className="text-red-500 hover:bg-red-50 p-3 rounded-full transition-colors"><TrashIcon className="h-5 w-5" /></button>
                                 </div>
-                            )) : <p className="text-slate-400 text-xs italic">No exams found in database.</p>}
+                            ))}
                         </div>
-                    </div>
-                )}
-
-                {activeTab === 'syllabus' && (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center border-b pb-4">
-                            <h3 className="text-xl font-black">Syllabus Import</h3>
-                            <select 
-                                value={selectedExamId} 
-                                onChange={e => setSelectedExamId(e.target.value)}
-                                className="p-2 border rounded-xl text-xs font-bold bg-slate-50 outline-none"
-                            >
-                                <option value="">Select Exam</option>
-                                {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
-                            </select>
-                        </div>
-                        <textarea 
-                            value={syllabusBulkData} 
-                            onChange={e => setSyllabusBulkData(e.target.value)} 
-                            placeholder="ID, ExamID, Title, Questions, Duration, Subject, Topic" 
-                            className="w-full h-40 p-4 border dark:border-slate-700 rounded-2xl font-mono text-xs bg-slate-50 dark:bg-slate-800"
-                        />
-                        <div className="flex gap-4">
-                            <button onClick={async () => handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), true))} className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-black text-xs">APPEND CSV</button>
-                            <button onClick={async () => { if(confirm("Overwrite all?")) handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), false)) }} className="flex-1 bg-slate-200 text-slate-600 py-3 rounded-xl font-black text-xs">REPLACE ALL</button>
-                        </div>
-                        {selectedExamId && (
-                            <div className="mt-8 space-y-2">
-                                <p className="font-black text-xs uppercase text-slate-400 mb-3 tracking-widest">Current Items:</p>
-                                {syllabusItems.length > 0 ? syllabusItems.map(s => (
-                                    <div key={s.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 border rounded-xl text-[10px] font-bold">
-                                        <span>{s.title} • {s.topic} ({s.questions} Qs)</span>
-                                        <button onClick={async () => { if(confirm("Delete Syllabus Item?")) handleAction(async () => deleteBook(s.id, await getToken())) }} className="text-red-500"><TrashIcon className="h-4 w-4" /></button>
-                                    </div>
-                                )) : <p className="text-slate-400 text-[10px] italic">No syllabus items for this exam.</p>}
-                            </div>
-                        )}
                     </div>
                 )}
 
                 {activeTab === 'questions' && (
                     <div className="space-y-10">
-                        <section className="space-y-4">
-                            <h3 className="text-lg font-black border-b pb-2">Single Question Entry</h3>
-                            <form onSubmit={handleSingleQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input value={newQ.topic} onChange={e => setNewQ({...newQ, topic: e.target.value})} placeholder="Topic (e.g. Kerala History)" className="p-3 border rounded-xl text-sm font-bold bg-slate-50" required />
-                                <input value={newQ.subject} onChange={e => setNewQ({...newQ, subject: e.target.value})} placeholder="Subject (e.g. GK)" className="p-3 border rounded-xl text-sm font-bold bg-slate-50" required />
-                                <textarea value={newQ.question} onChange={e => setNewQ({...newQ, question: e.target.value})} placeholder="Question Text" className="p-3 border rounded-xl text-sm font-bold md:col-span-2 bg-slate-50" required />
+                        <section className="bg-slate-50 dark:bg-slate-800/20 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+                            <h3 className="text-lg font-black mb-6">Add New Question</h3>
+                            <form onSubmit={handleSingleQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <input value={newQ.topic} onChange={e => setNewQ({...newQ, topic: e.target.value})} placeholder="Topic (LDC, History etc)" className="p-4 border rounded-2xl text-sm font-bold bg-white" required />
+                                <input value={newQ.subject} onChange={e => setNewQ({...newQ, subject: e.target.value})} placeholder="Subject (GK, Math etc)" className="p-4 border rounded-2xl text-sm font-bold bg-white" required />
+                                <textarea value={newQ.question} onChange={e => setNewQ({...newQ, question: e.target.value})} placeholder="Question in Malayalam" className="p-4 border rounded-2xl text-sm font-bold md:col-span-2 bg-white" rows={3} required />
                                 {newQ.options?.map((opt, i) => (
-                                    <div key={i} className="flex items-center space-x-2">
-                                        <input value={opt} onChange={e => { const o = [...(newQ.options || [])]; o[i] = e.target.value; setNewQ({...newQ, options: o})}} placeholder={`Option ${i+1}`} className="flex-1 p-3 border rounded-xl text-sm font-bold bg-slate-50" required />
-                                        <input type="radio" name="correct" checked={newQ.correctAnswerIndex === i} onChange={() => setNewQ({...newQ, correctAnswerIndex: i})} />
+                                    <div key={i} className="flex items-center space-x-3 bg-white p-3 border rounded-2xl">
+                                        <span className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-lg text-xs font-black">{i+1}</span>
+                                        <input value={opt} onChange={e => { const o = [...(newQ.options || [])]; o[i] = e.target.value; setNewQ({...newQ, options: o})}} placeholder={`Option ${i+1}`} className="flex-1 text-sm font-bold outline-none" required />
+                                        <input type="radio" name="correct" checked={newQ.correctAnswerIndex === i} onChange={() => setNewQ({...newQ, correctAnswerIndex: i})} className="w-5 h-5 accent-indigo-600 cursor-pointer" />
                                     </div>
                                 ))}
-                                <button type="submit" disabled={loading} className="md:col-span-2 btn-vibrant-indigo text-white py-4 rounded-xl font-black shadow-lg">SAVE QUESTION</button>
+                                <button type="submit" disabled={loading} className="md:col-span-2 btn-vibrant-indigo text-white py-5 rounded-2xl font-black shadow-xl tracking-widest text-xs">SAVE TO DATABASE</button>
                             </form>
                         </section>
-
-                        <section className="space-y-4 border-t pt-8">
-                            <h3 className="text-lg font-black">Bulk Import (CSV)</h3>
-                            <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="ID, Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty" className="w-full h-40 p-4 border dark:border-slate-700 rounded-2xl font-mono text-xs bg-slate-50" />
-                            <button onClick={async () => handleAction(async () => syncCsvData('QuestionBank', bulkData, await getToken(), true))} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-black text-xs shadow-md">APPEND QUESTIONS</button>
+                        <section className="pt-8 border-t dark:border-slate-800">
+                            <h3 className="text-lg font-black mb-4 uppercase text-slate-400 text-[10px] tracking-widest">Bulk Import Questions</h3>
+                            <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="ID, Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty" className="w-full h-48 p-6 border dark:border-slate-700 rounded-[2rem] font-mono text-xs bg-slate-50" />
+                            <button onClick={async () => handleAction(async () => syncCsvData('QuestionBank', bulkData, await getToken(), true))} className="w-full mt-4 bg-emerald-600 text-white py-4 rounded-xl font-black text-xs shadow-lg">APPEND CSV DATA</button>
                         </section>
                     </div>
                 )}
 
                 {activeTab === 'bookstore' && (
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center border-b pb-4">
-                            <h3 className="text-xl font-black">Bookstore Management</h3>
-                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} className="text-[10px] bg-emerald-600 text-white px-4 py-2 rounded-xl font-black shadow-md">RE-SYNC FROM AMAZON</button>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-black">Books in Store</h3>
+                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} className="text-[10px] bg-emerald-600 text-white px-5 py-2 rounded-xl font-black shadow-md uppercase tracking-widest">Refresh from Amazon</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {books.length > 0 ? books.map(b => (
-                                <div key={b.id} className="flex items-center p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/30">
+                            {books.map(b => (
+                                <div key={b.id} className="flex items-center p-5 border rounded-3xl bg-slate-50 dark:bg-slate-800/30 group hover:border-emerald-400 transition-colors">
                                     <div className="flex-1 min-w-0 pr-2">
-                                        <p className="font-black text-xs truncate">{b.title}</p>
-                                        <p className="text-[9px] text-slate-400 truncate">{b.author}</p>
+                                        <p className="font-black text-xs truncate text-slate-800 dark:text-white">{b.title}</p>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase">{b.author}</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Delete Book?")) handleAction(async () => deleteBook(b.id, await getToken())) }} className="text-red-500 p-2"><TrashIcon className="h-5 w-5" /></button>
+                                    <button onClick={async () => { if(confirm("Delete?")) handleAction(async () => deleteBook(b.id, await getToken())) }} className="text-red-500 opacity-0 group-hover:opacity-100 p-2 rounded-full hover:bg-red-50 transition-all"><TrashIcon className="h-5 w-5" /></button>
                                 </div>
-                            )) : <p className="text-slate-400 text-xs italic">No books in database.</p>}
+                            ))}
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'subscriptions' && (
-                    <div className="max-w-md mx-auto py-10 space-y-8 text-center">
-                        <div className={`p-10 rounded-[3rem] border-2 shadow-2xl transition-all ${isSubscriptionActive ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
-                            <StarIcon className={`h-20 w-20 mx-auto mb-6 ${isSubscriptionActive ? 'text-indigo-600' : 'text-slate-300'}`} />
-                            <h3 className="text-3xl font-black mb-3">Premium Control</h3>
-                            <p className="text-sm text-slate-500 mb-8 leading-relaxed">Toggle the paywall. If disabled, everyone gets PRO features for free.</p>
+                    <div className="max-w-md mx-auto py-16 text-center space-y-8">
+                        <div className={`p-12 rounded-[4rem] border-4 transition-all shadow-2xl ${isSubscriptionActive ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
+                            <StarIcon className={`h-24 w-24 mx-auto mb-8 ${isSubscriptionActive ? 'text-indigo-600' : 'text-slate-300'}`} />
+                            <h3 className="text-3xl font-black mb-4 tracking-tight">App Paywall</h3>
+                            <p className="text-sm text-slate-500 mb-10 leading-relaxed">Toggle between Free Mode (everyone is Pro) and Subscription Mode (Clerk based).</p>
                             <button 
-                                onClick={toggleSubscriptionModel}
-                                className={`w-full py-5 rounded-2xl font-black text-xs tracking-widest uppercase transition-all shadow-xl ${isSubscriptionActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-white'}`}
+                                onClick={async () => {
+                                    const newVal = !isSubscriptionActive;
+                                    const token = await getToken();
+                                    handleAction(() => updateSetting('subscription_model_active', String(newVal), token));
+                                }}
+                                className={`w-full py-5 rounded-3xl font-black text-xs tracking-[0.2em] uppercase transition-all shadow-xl ${isSubscriptionActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-white'}`}
                             >
-                                {isSubscriptionActive ? 'Switch to FREE Mode' : 'Switch to PREMIUM Mode'}
+                                {isSubscriptionActive ? 'Switch to FREE MODE' : 'Enable Paywall'}
                             </button>
+                        </div>
+                    </div>
+                )}
+                
+                {activeTab === 'syllabus' && (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-black">Syllabus Mapping</h3>
+                            <select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="p-3 border rounded-2xl text-xs font-black bg-slate-50 outline-none uppercase tracking-widest shadow-sm">
+                                <option value="">Select Target Exam</option>
+                                {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
+                            </select>
+                        </div>
+                        <textarea value={syllabusBulkData} onChange={e => setSyllabusBulkData(e.target.value)} placeholder="ID, ExamID, Title, QCount, Duration, Subject, Topic" className="w-full h-48 p-6 border dark:border-slate-700 rounded-[2.5rem] font-mono text-xs bg-slate-50" />
+                        <div className="flex gap-4">
+                            <button onClick={async () => handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), true))} className="flex-1 btn-vibrant-indigo text-white py-4 rounded-xl font-black text-xs">APPEND CSV</button>
+                            <button onClick={async () => { if(confirm("Replace all?")) handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), false)) }} className="flex-1 bg-slate-200 text-slate-600 py-4 rounded-xl font-black text-xs">REPLACE ALL</button>
+                        </div>
+                        <div className="grid gap-3 mt-8">
+                            {syllabusItems.map(s => (
+                                <div key={s.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border rounded-2xl shadow-sm text-[10px] font-bold">
+                                    <span className="text-slate-700 dark:text-slate-300 uppercase tracking-tight">{s.title} • {s.topic} ({s.questions} Qs)</span>
+                                    <button onClick={async () => { if(confirm("Delete item?")) handleAction(async () => deleteBook(s.id, await getToken())) }} className="text-red-400 p-2"><TrashIcon className="h-4 w-4" /></button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
