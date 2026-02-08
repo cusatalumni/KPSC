@@ -2,44 +2,37 @@
 import { readSheetData } from './_lib/sheets-service.js';
 
 /**
- * Robustly parses options from various string formats like:
- * ['A', 'B', 'C', 'D'] OR "A,B,C,D" OR "A|B|C|D"
+ * Robustly parses options from various string formats.
+ * Handles: ['A', 'B'], "A, B", "A|B", and escaped quotes.
  */
 const smartParseOptions = (raw: string): string[] => {
     if (!raw) return [];
     let clean = raw.trim();
     
-    // 1. Try cleaning single quotes if it looks like an array string ['...', '...']
+    // 1. Handle array-like strings with quotes: ['Opt 1', 'Opt 2']
     if (clean.startsWith('[') && clean.endsWith(']')) {
-        // Remove brackets
-        let content = clean.substring(1, clean.length - 1);
-        
-        // Split by comma followed by quotes to handle content that might contain internal commas
-        // This handles: 'Option 1', 'Option 2', 'Option 3', 'Option 4'
-        const parts = content.match(/('([^']*)'|"([^"]*)")/g);
-        if (parts && parts.length >= 2) {
-            return parts.map(p => p.substring(1, p.length - 1).trim());
+        try {
+            // Standard JSON try
+            const parsed = JSON.parse(clean.replace(/'/g, '"'));
+            if (Array.isArray(parsed)) return parsed.map(s => String(s).trim());
+        } catch (e) {
+            // Manual cleanup if JSON.parse fails due to complex quotes
+            let content = clean.substring(1, clean.length - 1);
+            const matches = content.match(/(".*?"|'.*?'|[^,]+)/g);
+            if (matches) {
+                return matches.map(m => m.trim().replace(/^['"]|['"]$/g, '').trim());
+            }
         }
-        
-        // Fallback for simple comma split inside brackets
-        return content.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
     }
 
-    // 2. Try Standard JSON parsing
-    try {
-        return JSON.parse(clean);
-    } catch (e) {
-        // Silently proceed to other formats
-    }
-
-    // 3. Try Pipe Separation
+    // 2. Try Pipe Separation (Highest reliability for PSC data)
     if (clean.includes('|')) {
-        return clean.split('|').map(s => s.trim());
+        return clean.split('|').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
     }
 
-    // 4. Try basic comma separation
+    // 3. Try basic comma separation
     if (clean.includes(',')) {
-        return clean.split(',').map(s => s.trim());
+        return clean.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
     }
 
     return [clean];
@@ -101,7 +94,7 @@ export default async function handler(req: any, res: any) {
                         topic: r[1], 
                         question: r[2], 
                         options: options.slice(0, 4), 
-                        correctAnswerIndex: parseInt(r[4] || '0'), 
+                        correctAnswerIndex: parseInt(String(r[4] || '0').trim()), 
                         subject: r[5], 
                         difficulty: r[6] 
                     };
