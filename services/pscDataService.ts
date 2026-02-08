@@ -10,6 +10,10 @@ import { LightBulbIcon } from '../components/icons/LightBulbIcon';
 import { StarIcon } from '../components/icons/StarIcon';
 import { GlobeAltIcon } from '../components/icons/GlobeAltIcon';
 
+// Simple Cache implementation
+const cache: Record<string, { data: any, timestamp: number }> = {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 const getIcon = (type: string) => {
     const icons: Record<string, any> = {
         'book': BookOpenIcon,
@@ -24,7 +28,14 @@ const getIcon = (type: string) => {
     return React.createElement(IconComp, { className: "h-8 w-8 text-indigo-500" });
 };
 
-const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
+const fetchHub = async <T>(params: string, mockData: T, bypassCache: boolean = false): Promise<T> => {
+    const cacheKey = params;
+    const now = Date.now();
+
+    if (!bypassCache && cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_DURATION)) {
+        return cache[cacheKey].data;
+    }
+
     try {
         const res = await fetch(`/api/data?${params}`);
         if (!res.ok) {
@@ -32,7 +43,11 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
             return mockData;
         }
         const data = await res.json();
-        return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
+        const result = (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
+        
+        // Update cache
+        cache[cacheKey] = { data: result, timestamp: now };
+        return result;
     } catch (e) {
         console.error("Fetch Hub Error:", e);
         return mockData;
@@ -42,11 +57,16 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
 const adminReq = async (body: any, token: string | null = null) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    
     const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body) });
     if (!res.ok) {
         const err = await res.json().catch(() => ({ message: 'Request Failed' }));
         throw new Error(err.message || `Error ${res.status}`);
     }
+
+    // Invalidate all related caches on any admin write action
+    Object.keys(cache).forEach(key => delete cache[key]);
+    
     return await res.json();
 };
 
@@ -68,10 +88,16 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
     return (data && data.length > 0) ? data : (EXAM_CONTENT_MAP[examId]?.practiceTests || []);
 };
 
-export const getSettings = () => fetchHub('type=settings', { subscription_model_active: 'true' });
-export const updateSetting = (key: string, value: string, token: string | null) => adminReq({ action: 'update-setting', setting: { key, value } }, token);
-export const clearStudyCache = (token: string | null) => adminReq({ action: 'clear-study-cache' }, token);
+export const getSettings = (bypass: boolean = false) => fetchHub('type=settings', { subscription_model_active: 'true' }, bypass);
 
+export const updateSetting = async (key: string, value: string, token: string | null) => {
+    const res = await adminReq({ action: 'update-setting', setting: { key, value } }, token);
+    // Explicitly update cache for settings
+    delete cache['type=settings'];
+    return res;
+};
+
+export const clearStudyCache = (token: string | null) => adminReq({ action: 'clear-study-cache' }, token);
 export const saveTestResult = (resultData: any) => adminReq({ action: 'save-result', resultData });
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);
 export const triggerBookScraper = (token: string | null) => adminReq({ action: 'run-book-scraper' }, token);
@@ -91,7 +117,6 @@ export const getQuestionsForTest = async (subject: string, topic: string, count:
         if (!res.ok) return MOCK_QUESTION_BANK.slice(0, count);
         const data = await res.json();
         if (!data || data.length === 0) {
-            console.warn("No questions returned from Sheet. Check if QuestionBank tab has data.");
             return MOCK_QUESTION_BANK.slice(0, count);
         }
         return data;
@@ -118,7 +143,6 @@ export const getStudyMaterial = async (topic: string): Promise<{ notes: string }
         if (data.error) throw new Error(data.error);
         return { notes: data.notes || 'വിവരങ്ങൾ ലഭ്യമല്ല.' };
     } catch (error: any) {
-        console.error("Service Error fetching study material:", error.message);
         return { notes: "ക്ഷമിക്കണം, ഈ വിഷയം ഇപ്പോൾ ലഭ്യമാക്കാൻ സാധിക്കുന്നില്ല." };
     }
 };

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
@@ -50,6 +50,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [bulkData, setBulkData] = useState('');
     const [loading, setLoading] = useState(false);
     const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
+    const isUpdatingSetting = useRef(false);
     
     // Single Question Form State
     const [qForm, setQForm] = useState({
@@ -61,10 +62,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         difficulty: 'Moderate'
     });
 
-    const refresh = useCallback(async () => {
+    const refresh = useCallback(async (isSilent = false) => {
+        if (isUpdatingSetting.current) return;
+        
         try {
-            setLoading(true);
-            const [e, b, settings] = await Promise.all([getExams(), getBooks(), getSettings()]);
+            if (!isSilent) setLoading(true);
+            const [e, b, settings] = await Promise.all([getExams(), getBooks(), getSettings(true)]);
             setExams(e);
             setBooks(b);
             if (settings && settings.subscription_model_active !== undefined) {
@@ -72,7 +75,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
             
             const allSyllabus: PracticeTest[] = [];
-            for (const ex of e) {
+            for (const ex of e.slice(0, 5)) { // Limit initial syllabus load for quota safety
                 const s = await getExamSyllabus(ex.id);
                 allSyllabus.push(...s);
             }
@@ -80,13 +83,13 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         } catch (err) { 
             console.error(err); 
         } finally {
-            setLoading(false);
+            if (!isSilent) setLoading(false);
         }
     }, []);
 
     useEffect(() => { refresh(); }, [refresh]);
 
-    const handleAction = async (fn: () => Promise<any>) => {
+    const handleAction = async (fn: () => Promise<any>, shouldRefresh: boolean = true) => {
         setStatus("Processing Task... Please wait.");
         setIsError(false);
         setLoading(true);
@@ -97,7 +100,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             if (res.result?.errors?.length > 0) {
                 setStatus(prev => prev + " (Note: " + res.result.errors.join(', ') + ")");
             }
-            refresh(); 
+            if (shouldRefresh) {
+                // Short delay before refresh to allow Sheets consistency
+                setTimeout(() => refresh(true), 1500); 
+            }
         } catch(e:any) { 
             setStatus(e.message || "Action failed."); 
             setIsError(true);
@@ -110,18 +116,24 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const toggleSubscriptionModel = async () => {
         const newVal = !isSubscriptionActive;
         const token = await getToken();
-        // Immediately update UI for better feedback
-        setIsSubscriptionActive(newVal);
+        
+        setIsSubscriptionActive(newVal); // Optimistic UI update
+        isUpdatingSetting.current = true;
+        
         try {
-            await handleAction(() => updateSetting('subscription_model_active', String(newVal), token));
-        } catch (e) {
-            // Revert on error
-            setIsSubscriptionActive(!newVal);
+            await updateSetting('subscription_model_active', String(newVal), token);
+            setStatus(`Subscription Model ${newVal ? 'Enabled' : 'Disabled'}`);
+        } catch (e: any) {
+            setIsSubscriptionActive(!newVal); // Revert on actual error
+            setStatus("Failed to update setting: " + e.message);
+            setIsError(true);
+        } finally {
+            isUpdatingSetting.current = false;
         }
     };
 
     const handleClearStudyCache = async () => {
-        if (!confirm("Are you sure? This will delete all cached AI study materials. Future requests will trigger new AI generations which may increase API costs.")) return;
+        if (!confirm("Are you sure? This will delete all cached AI study materials.")) return;
         const token = await getToken();
         handleAction(() => clearStudyCache(token));
     };
