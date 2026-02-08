@@ -3,60 +3,48 @@ import { google } from 'googleapis';
 
 declare var process: any;
 
-/**
- * Sanitizes the private key for Vercel/Serverless usage.
- * Essential for resolving "Could not load credentials" errors.
- */
-const getSanitizedKey = (key: string | undefined): string | undefined => {
+const formatPrivateKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
-    let sanitized = key.trim();
-    
-    // 1. Remove wrapping quotes (very common in Vercel UI)
-    if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
-        sanitized = sanitized.substring(1, sanitized.length - 1);
+    let cleaned = key.trim();
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+        cleaned = cleaned.substring(1, cleaned.length - 1);
+    } else if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+        cleaned = cleaned.substring(1, cleaned.length - 1);
     }
-    
-    // 2. Fix the escaped newline problem
-    sanitized = sanitized.replace(/\\n/g, '\n');
-    
-    // 3. Ensure the PEM structure is valid
-    if (!sanitized.includes('-----BEGIN PRIVATE KEY-----')) {
-        sanitized = `-----BEGIN PRIVATE KEY-----\n${sanitized}\n-----END PRIVATE KEY-----`;
-    }
-    
-    return sanitized;
+    // Vercel handles escaped newlines differently; replace literal '\n'
+    return cleaned.replace(/\\n/g, '\n');
 };
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-    if (!id) throw new Error('SPREADSHEET_ID is missing in Vercel settings.');
+    if (!id) throw new Error('SPREADSHEET_ID is missing.');
     return id.trim().replace(/['"]/g, '');
 };
 
 async function getSheetsClient() {
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim().replace(/['"]/g, '');
-    const rawKey = process.env.GOOGLE_PRIVATE_KEY;
-    const privateKey = getSanitizedKey(rawKey);
+    const privateKey = formatPrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
     if (!clientEmail || !privateKey) {
-        throw new Error('Google Credentials (EMAIL or PRIVATE_KEY) are missing.');
+        throw new Error('GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY not found in environment.');
     }
 
     try {
-        // Use GoogleAuth with direct credential injection - most reliable for serverless
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: clientEmail,
-                private_key: privateKey,
-            },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
-
-        const authClient = await auth.getClient();
-        return google.sheets({ version: 'v4', auth: authClient as any });
+        // Use JWT for explicit authentication - this avoids looking for local json files
+        const auth = new google.auth.JWT(
+            clientEmail,
+            undefined,
+            privateKey,
+            ['https://www.googleapis.com/auth/spreadsheets']
+        );
+        
+        // This force-triggers authentication to ensure credentials are valid early on
+        await auth.authorize();
+        
+        return google.sheets({ version: 'v4', auth });
     } catch (e: any) {
-        console.error("Critical Sheets Auth Failure:", e.message);
-        throw new Error(`Authentication failed. Check your Vercel Environment Variables: ${e.message}`);
+        console.error("Critical Sheets Auth Error:", e.message);
+        throw new Error(`Authentication Failed: ${e.message}`);
     }
 }
 
@@ -66,9 +54,9 @@ export const readSheetData = async (range: string) => {
         const sheets = await getSheetsClient();
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         return response.data.values || [];
-    } catch (e: any) {
-        console.error(`Read error on range ${range}:`, e.message);
-        throw e;
+    } catch (error: any) {
+        console.error(`Read Error on ${range}:`, error.message);
+        throw error;
     }
 };
 
@@ -83,9 +71,9 @@ export const appendSheetData = async (range: string, values: any[][]) => {
             valueInputOption: 'USER_ENTERED',
             requestBody: { values },
         });
-    } catch (e: any) {
-        console.error(`Append error on range ${range}:`, e.message);
-        throw e;
+    } catch (error: any) {
+        console.error(`Append Error:`, error.message);
+        throw error;
     }
 };
 
@@ -102,9 +90,9 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
                 requestBody: { values },
             });
         }
-    } catch (e: any) {
-        console.error(`Write error on range ${range}:`, e.message);
-        throw e;
+    } catch (error: any) {
+        console.error(`Clear/Write Error:`, error.message);
+        throw error;
     }
 };
 
@@ -131,9 +119,9 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
                 requestBody: { values: [newRowData] },
             });
         }
-    } catch (e: any) {
-        console.error(`Upsert error on ${sheetName}:`, e.message);
-        throw e;
+    } catch (error: any) {
+        console.error(`Upsert Error:`, error.message);
+        throw error;
     }
 };
 
@@ -144,7 +132,7 @@ export const deleteRowById = async (sheetName: string, id: string) => {
         const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
         const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
         const sheetId = sheet?.properties?.sheetId;
-        if (sheetId === undefined) throw new Error(`Tab "${sheetName}" not found.`);
+        if (sheetId === undefined) throw new Error(`Sheet tab "${sheetName}" not found.`);
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
@@ -167,8 +155,8 @@ export const deleteRowById = async (sheetName: string, id: string) => {
                 }]
             }
         });
-    } catch (e: any) {
-        console.error(`Delete error on ${sheetName}:`, e.message);
-        throw e;
+    } catch (error: any) {
+        console.error(`Delete Error:`, error.message);
+        throw error;
     }
 };

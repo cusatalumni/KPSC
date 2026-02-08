@@ -62,16 +62,8 @@ const ExamPage: React.FC<{
                         <div>
                             <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg">{test.title}</h3>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{test.questions} {t('questions')} • {test.duration} {t('minutes')}</p>
-                            <p className="text-[9px] text-slate-500 font-mono mt-1 opacity-60">
-                                {test.subject && `Subject: ${test.subject}`} {test.topic && ` | Topic: ${test.topic}`}
-                            </p>
                         </div>
-                        <button onClick={() => onStartTest({ 
-                            title: test.title, 
-                            questions: test.questions, 
-                            subject: test.subject,
-                            topic: test.topic 
-                        }, exam.title.ml)} className="btn-vibrant-indigo text-white font-black px-6 py-3 rounded-xl shadow-sm">{t('start')}</button>
+                        <button onClick={() => onStartTest({ title: test.title, questions: test.questions, topic: test.topic }, exam.title.ml)} className="btn-vibrant-indigo text-white font-black px-6 py-3 rounded-xl shadow-sm">{t('start')}</button>
                     </div>
                 ))}
             </div>

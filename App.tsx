@@ -44,27 +44,22 @@ const App: React.FC = () => {
   const { theme } = useTheme();
 
   useEffect(() => {
-      // Simulate app loading with quotes
-      const timer = setTimeout(() => setIsAppLoading(false), 2500);
+      // Show splash for at least 2 seconds for branding
+      const timer = setTimeout(() => setIsAppLoading(false), 2000);
       return () => clearTimeout(timer);
   }, []);
 
   const syncStateFromHash = useCallback(() => {
-    const rawHash = window.location.hash || '#dashboard';
-    const hash = rawHash.replace(/^#\/?/, '');
-    
-    if (!hash || hash === '' || hash === 'dashboard') {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) {
         setCurrentPage('dashboard');
-        setSelectedExam(null);
-        window.scrollTo(0, 0);
         return;
     }
 
     const parts = hash.split('/');
-    const pageName = parts[0] as Page;
+    const page = parts[0] as Page;
     const id = parts[1];
     
-    // Explicit list of all available routes
     const validPages: Page[] = [
       'dashboard', 'exam_details', 'test', 'results', 'bookstore', 
       'about', 'privacy', 'terms', 'disclosure', 'exam_calendar', 
@@ -73,129 +68,119 @@ const App: React.FC = () => {
       'study_material', 'sitemap'
     ];
 
-    const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
+    const targetPage = validPages.includes(page) ? page : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
         const exam = EXAMS_DATA.find(e => e.id === id);
         if (exam) setSelectedExam(exam);
-    } else {
+    } else if (targetPage !== 'exam_details') {
         setSelectedExam(null);
     }
     
     if (targetPage === 'study_material' && id) {
         setActiveStudyTopic(decodeURIComponent(id));
-    } else {
+    } else if (targetPage !== 'study_material') {
         setActiveStudyTopic(null);
     }
 
+    if (targetPage !== 'test' && targetPage !== 'results') {
+        setActiveTest(null);
+        setTestResult(null);
+    }
+
     setCurrentPage(targetPage);
-    window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
     syncStateFromHash();
     window.addEventListener('hashchange', syncStateFromHash);
-    // Corrected: use removeEventListener instead of addEventListener in the cleanup
     return () => window.removeEventListener('hashchange', syncStateFromHash);
   }, [syncStateFromHash]);
 
   useEffect(() => {
     if (isSignedIn && user?.id) {
-      setSubscriptionStatus(subscriptionService.getSubscriptionStatus(user.id));
+      const status = subscriptionService.getSubscriptionStatus(user.id);
+      setSubscriptionStatus(status);
     } else {
       setSubscriptionStatus('free');
     }
   }, [user, isSignedIn]);
 
-  const handleNavigate = (page: string) => {
-    // Force cleaning the target page string
-    const target = page.startsWith('#') ? page : `#${page}`;
-    if (window.location.hash === target) {
-        syncStateFromHash(); // Manually sync if the hash doesn't change
-    } else {
-        window.location.hash = target;
-    }
+  const handleNavigate = (page: Page) => {
+    window.location.hash = page;
+    window.scrollTo(0, 0);
   };
+
+  const handleNavigateToExam = (exam: Exam) => {
+    window.location.hash = `exam_details/${exam.id}`;
+  };
+
+  const handleStartPracticeTest = (test: { title: string, questions: number, topic?: string }, examTitle: string) => {
+    setActiveTest({ 
+        title: `${examTitle} - ${test.title}`, 
+        questionsCount: test.questions,
+        topic: test.topic || 'mixed',
+        isPro: false
+    });
+    setCurrentPage('test');
+  };
+
+  const handleFinishTest = (score: number, total: number, stats?: any) => {
+    setTestResult({ score, total, stats });
+    setCurrentPage('results');
+  };
+  
+  const handleStartStudyMaterial = (topic: string) => {
+    window.location.hash = `study_material/${encodeURIComponent(topic)}`;
+  };
+
+  const handleBackToPreviousPage = () => {
+    window.history.back();
+  }
 
   const renderContent = () => {
     switch(currentPage) {
       case 'test':
-        return activeTest ? (
-          <TestPage 
-            activeTest={activeTest}
-            subscriptionStatus={subscriptionStatus}
-            onTestComplete={(score, total, stats) => {
-                setTestResult({ score, total, stats });
-                handleNavigate('results');
-            }} 
-            onBack={() => window.history.back()}
-            onNavigateToUpgrade={() => handleNavigate('upgrade')}
-          />
-        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
-
+        if (!activeTest) return null;
+        return <TestPage 
+                  activeTest={activeTest}
+                  subscriptionStatus={subscriptionStatus}
+                  onTestComplete={handleFinishTest} 
+                  onBack={handleBackToPreviousPage}
+                  onNavigateToUpgrade={() => handleNavigate('upgrade')}
+                />;
       case 'results':
-        return testResult ? (
-          <TestResultPage 
-            score={testResult.score} 
-            total={testResult.total} 
-            stats={testResult.stats}
-            onBackToPrevious={() => handleNavigate('dashboard')} 
-          />
-        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
-
+        if (!testResult) return null;
+        return <TestResultPage 
+                  score={testResult.score} 
+                  total={testResult.total} 
+                  stats={testResult.stats}
+                  onBackToPrevious={handleBackToPreviousPage} 
+                />;
       case 'exam_details':
-        return selectedExam ? (
-          <ExamPage 
+        if (!selectedExam) return null;
+         const examContent = EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT;
+         return <ExamPage 
             exam={selectedExam} 
-            content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT}
+            content={examContent}
             onBack={() => handleNavigate('dashboard')}
-            onStartTest={(test: any, examTitle: string) => {
-                setActiveTest({ 
-                  title: `${examTitle} - ${test.title}`, 
-                  questionsCount: test.questions, 
-                  subject: test.subject || 'mixed', 
-                  topic: test.topic || 'mixed' 
-                });
-                handleNavigate('test');
-            }}
-            onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
+            onStartTest={handleStartPracticeTest}
+            onStartStudy={handleStartStudyMaterial}
             onNavigate={handleNavigate}
-          />
-        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
-
-      case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
-      case 'about': return <AboutUsPage onBack={() => handleNavigate('dashboard')} />;
-      case 'privacy': return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
-      case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
-      case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
-      case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
-      case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={() => handleNavigate('test')} subscriptionStatus={subscriptionStatus} />;
-      case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => {
-          setActiveTest({ 
-            title: test.title.ml, 
-            questionsCount: test.questionsCount, 
-            subject: 'mixed', 
-            topic: 'mixed' 
-          });
-          handleNavigate('test');
-      }} />;
-      case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
-      case 'previous_papers': return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
-      case 'current_affairs': return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
-      case 'gk': return <GkPage onBack={() => handleNavigate('dashboard')} />;
-      case 'admin_panel': return <AdminPage onBack={() => handleNavigate('dashboard')} />;
-      case 'sitemap': return <SitemapPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate as any} />;
+          />;
+      case 'bookstore':
+        return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
+      case 'admin_panel':
+        return <AdminPage onBack={() => handleNavigate('dashboard')} />;
       case 'study_material':
-        return activeStudyTopic ? (
-            <StudyMaterialPage topic={activeStudyTopic} onBack={() => window.history.back()} />
-        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
-      
+        if (!activeStudyTopic) return null;
+        return <StudyMaterialPage topic={activeStudyTopic} onBack={handleBackToPreviousPage} />;
       case 'dashboard':
       default:
         return <Dashboard 
-                  onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} 
+                  onNavigateToExam={handleNavigateToExam} 
                   onNavigate={handleNavigate}
-                  onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
+                  onStartStudy={handleStartStudyMaterial}
                 />;
     }
   }
@@ -205,12 +190,12 @@ const App: React.FC = () => {
   const isTestPage = currentPage === 'test';
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
-      {!isTestPage && <Header onNavigate={handleNavigate as any} />}
-      <main key={currentPage} className="flex-grow container mx-auto px-4 py-8">
+    <div className={`min-h-screen transition-colors duration-500 flex flex-col ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+      {!isTestPage && <Header onNavigate={handleNavigate} />}
+      <main className={`flex-grow container mx-auto px-4 py-8`}>
         {renderContent()}
       </main>
-      {!isTestPage && <Footer onNavigate={handleNavigate as any}/>}
+      {!isTestPage && <Footer onNavigate={handleNavigate}/>}
     </div>
   );
 };
