@@ -84,16 +84,14 @@ export default async function handler(req: any, res: any) {
                 }).map(r => {
                     let options = smartParseOptions(r[3] || '');
                     
-                    // Pad to 4 options to ensure UI consistency
-                    while (options.length < 4) {
-                        options.push(`Option ${String.fromCharCode(65 + options.length)}`);
-                    }
+                    // We removed the forced padding to 4 options. 
+                    // This allows 2 or 3 options based on actual data.
 
                     return { 
                         id: r[0], 
                         topic: r[1], 
                         question: r[2], 
-                        options: options.slice(0, 4), 
+                        options: options, 
                         correctAnswerIndex: parseInt(String(r[4] || '0').trim()), 
                         subject: r[5], 
                         difficulty: r[6] 

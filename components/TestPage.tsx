@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import type { QuizQuestion, UserAnswers, SubscriptionStatus, ActiveTest } from '../types';
 import { getQuestionsForTest } from '../services/pscDataService';
 import Modal from './Modal';
@@ -22,6 +22,16 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const [answers, setAnswers] = useState<UserAnswers>({});
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(activeTest.questionsCount * 60);
+
+  // Function to shuffle an array
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   const handleSubmit = useCallback(() => {
     let score = 0;
@@ -58,7 +68,23 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   useEffect(() => {
     getQuestionsForTest(activeTest.subject, activeTest.topic, activeTest.questionsCount)
       .then(data => {
-        setQuestions(data);
+        // Process questions to shuffle options and fix the correctAnswerIndex
+        const processed = data.map(q => {
+           // 1. Identify the correct answer text before shuffling
+           const correctText = q.options[q.correctAnswerIndex];
+           // 2. Shuffle the options
+           const shuffledOptions = shuffleArray(q.options);
+           // 3. Find the new index of the correct answer text
+           const newCorrectIndex = shuffledOptions.indexOf(correctText);
+           
+           return {
+             ...q,
+             options: shuffledOptions,
+             correctAnswerIndex: newCorrectIndex === -1 ? q.correctAnswerIndex : newCorrectIndex
+           };
+        });
+        
+        setQuestions(processed);
         setLoading(false);
       });
   }, [activeTest]);
