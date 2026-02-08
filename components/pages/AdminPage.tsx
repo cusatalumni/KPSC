@@ -18,7 +18,9 @@ import {
     addQuestion,
     getExamSyllabus,
     getSettings,
-    updateSetting
+    updateSetting,
+    applyAffiliateTags,
+    clearStudyCache
 } from '../../services/pscDataService';
 import { RssIcon } from '../icons/RssIcon';
 import { TrashIcon } from '../icons/TrashIcon';
@@ -65,7 +67,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const [e, b, settings] = await Promise.all([getExams(), getBooks(), getSettings()]);
             setExams(e);
             setBooks(b);
-            setIsSubscriptionActive(settings.subscription_model_active === 'true');
+            if (settings && settings.subscription_model_active !== undefined) {
+                setIsSubscriptionActive(settings.subscription_model_active === 'true');
+            }
             
             const allSyllabus: PracticeTest[] = [];
             for (const ex of e) {
@@ -106,7 +110,20 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const toggleSubscriptionModel = async () => {
         const newVal = !isSubscriptionActive;
         const token = await getToken();
-        handleAction(() => updateSetting('subscription_model_active', String(newVal), token));
+        // Immediately update UI for better feedback
+        setIsSubscriptionActive(newVal);
+        try {
+            await handleAction(() => updateSetting('subscription_model_active', String(newVal), token));
+        } catch (e) {
+            // Revert on error
+            setIsSubscriptionActive(!newVal);
+        }
+    };
+
+    const handleClearStudyCache = async () => {
+        if (!confirm("Are you sure? This will delete all cached AI study materials. Future requests will trigger new AI generations which may increase API costs.")) return;
+        const token = await getToken();
+        handleAction(() => clearStudyCache(token));
     };
 
     const handleAddSingleQuestion = async () => {
@@ -219,7 +236,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         {/* Master Subscription Switch */}
                         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border-2 border-indigo-100 dark:border-slate-800 flex items-center justify-between">
                             <div className="flex items-center space-x-6">
-                                <div className={`p-5 rounded-2xl ${isSubscriptionActive ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                <div className={`p-5 rounded-2xl ${isSubscriptionActive ? 'bg-indigo-600 text-white shadow-indigo-500/20 shadow-lg' : 'bg-slate-200 text-slate-500'}`}>
                                     <StarIcon className="h-8 w-8" />
                                 </div>
                                 <div>
@@ -236,7 +253,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-xl text-center border dark:border-slate-800 flex flex-col justify-between group hover:border-indigo-400 transition-all">
                                 <div>
                                     <RssIcon className="h-12 w-12 text-indigo-500 mx-auto mb-6" />
@@ -258,6 +275,17 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const t = await getToken();
                                     handleAction(() => triggerBookScraper(t));
                                 }} disabled={loading} className="w-full bg-orange-600 text-white py-5 rounded-2xl font-black transition disabled:opacity-50 active:scale-95 shadow-lg">SYNC BOOKS</button>
+                            </div>
+                            {/* Hard Refresh / Cache Clear Button */}
+                            <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-xl text-center border dark:border-slate-800 flex flex-col justify-between group hover:border-red-400 transition-all">
+                                <div>
+                                    <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-2xl w-fit mx-auto mb-6">
+                                        <ArrowPathIcon className="h-12 w-12 text-red-600" />
+                                    </div>
+                                    <h3 className="text-2xl font-black mb-4 dark:text-white uppercase tracking-tight">Hard Refresh</h3>
+                                    <p className="text-slate-500 mb-8 text-sm leading-relaxed">Wipes the entire AI Study Materials cache. Forces Gemini to re-generate content.</p>
+                                </div>
+                                <button onClick={handleClearStudyCache} disabled={loading} className="w-full bg-red-600 text-white py-5 rounded-2xl font-black transition disabled:opacity-50 active:scale-95 shadow-lg uppercase tracking-widest">Clear AI Cache</button>
                             </div>
                         </div>
                     </div>
@@ -444,7 +472,23 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'bookstore' && (
                     <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border dark:border-slate-800 overflow-hidden">
-                         <h3 className="text-xl font-black dark:text-white uppercase mb-6">Manage Bookstore</h3>
+                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8">
+                             <div>
+                                 <h3 className="text-xl font-black dark:text-white uppercase mb-1">Manage Bookstore</h3>
+                                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-relaxed">Add Affiliate tags to all Amazon links in the database.</p>
+                             </div>
+                             <button 
+                                onClick={async () => {
+                                    const t = await getToken();
+                                    handleAction(() => applyAffiliateTags(t));
+                                }}
+                                disabled={loading}
+                                className="bg-amber-500 text-white font-black px-6 py-3 rounded-2xl shadow-lg hover:bg-amber-600 transition-all active:scale-95 disabled:opacity-50 text-xs uppercase tracking-widest flex items-center space-x-2"
+                             >
+                                 <ArrowPathIcon className="h-4 w-4" />
+                                 <span>Sync Affiliate Links</span>
+                             </button>
+                         </div>
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                              {books.map(b => (
                                  <div key={b.id} className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 flex flex-col justify-between group">
@@ -456,8 +500,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                          <button onClick={() => handleDeleteBook(b.id)} className="text-red-400 hover:text-red-600 p-2"><TrashIcon className="h-5 w-5" /></button>
                                      </div>
                                      <div className="mt-auto flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-slate-400 border-t dark:border-slate-700 pt-4">
-                                         <span>ID: {b.id.substring(0, 10)}...</span>
-                                         <a href={b.amazonLink} target="_blank" className="text-indigo-500 hover:underline">Link</a>
+                                         <span className="truncate max-w-[150px]">ID: {b.id}</span>
+                                         <a href={b.amazonLink} target="_blank" className="text-indigo-500 hover:underline font-black">Open Link</a>
                                      </div>
                                  </div>
                              ))}

@@ -70,6 +70,7 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
 
 export const getSettings = () => fetchHub('type=settings', { subscription_model_active: 'true' });
 export const updateSetting = (key: string, value: string, token: string | null) => adminReq({ action: 'update-setting', setting: { key, value } }, token);
+export const clearStudyCache = (token: string | null) => adminReq({ action: 'clear-study-cache' }, token);
 
 export const saveTestResult = (resultData: any) => adminReq({ action: 'save-result', resultData });
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);

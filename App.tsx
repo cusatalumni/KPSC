@@ -34,6 +34,7 @@ import { useTranslation } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
 
 const App: React.FC = () => {
+  const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
@@ -42,11 +43,10 @@ const App: React.FC = () => {
   const [activeStudyTopic, setActiveStudyTopic] = useState<string | null>(null);
   const [externalUrl, setExternalUrl] = useState<string | null>(null);
   const [settings, setSettings] = useState<any>({});
-  
-  const { user, isSignedIn } = useUser();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { theme } = useTheme();
 
+  // Unified Initialization Logic
   useEffect(() => {
       const init = async () => {
           try {
@@ -55,13 +55,15 @@ const App: React.FC = () => {
           } catch (e) {
               console.error("Failed to load settings:", e);
           } finally {
-              setIsAppLoading(false);
+              // Only stop loading if Clerk is also ready
+              if (clerkLoaded) {
+                setIsAppLoading(false);
+              }
           }
       };
       
-      const timer = setTimeout(init, 2000);
-      return () => clearTimeout(timer);
-  }, []);
+      init();
+  }, [clerkLoaded]);
 
   const syncStateFromHash = useCallback(() => {
     const rawHash = window.location.hash || '#dashboard';

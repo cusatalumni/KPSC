@@ -74,6 +74,10 @@ export default async function handler(req: any, res: any) {
                 await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
                 return res.status(200).json({ message: `Setting ${setting.key} updated.` });
 
+            case 'clear-study-cache':
+                await clearAndWriteSheetData('StudyMaterialsCache!A2:C', []);
+                return res.status(200).json({ message: 'Study material cache cleared successfully.' });
+
             case 'test-connection':
                 await readSheetData('Exams!A1:A1');
                 return res.status(200).json({ message: 'Google Sheets Connection Verified!' });

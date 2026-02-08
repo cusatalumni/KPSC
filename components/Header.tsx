@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SignInButton, UserButton, useUser } from '@clerk/clerk-react';
 import { NAV_STRUCTURE } from '../constants';
 import { LogoIcon } from './icons/LogoIcon';
@@ -26,15 +26,26 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSubActive, setIsSubActive] = useState(true);
+  
   const { isLoaded, isSignedIn, user } = useUser();
-  const isAdmin = user?.publicMetadata?.role === 'admin';
   const navRef = useRef<HTMLElement>(null);
   
-  useEffect(() => {
-    getSettings().then(s => setIsSubActive(s.subscription_model_active === 'true'));
-  }, []);
+  // Memoized Admin check to react instantly to user metadata changes
+  const isAdmin = useMemo(() => {
+    return user?.publicMetadata?.role === 'admin';
+  }, [user]);
 
-  const isPro = isSignedIn && user?.id ? subscriptionService.getSubscriptionStatus(user.id) === 'pro' : false;
+  useEffect(() => {
+    getSettings().then(s => {
+        if (s && s.subscription_model_active !== undefined) {
+            setIsSubActive(s.subscription_model_active === 'true');
+        }
+    }).catch(() => setIsSubActive(true));
+  }, [isSignedIn]);
+
+  const isPro = useMemo(() => {
+    return isSignedIn && user?.id ? subscriptionService.getSubscriptionStatus(user.id) === 'pro' : false;
+  }, [isSignedIn, user?.id]);
 
   const toggleLanguage = () => {
     setLanguage(language === 'ml' ? 'en' : 'ml');
@@ -63,27 +74,31 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const adminButtonClasses = "flex items-center space-x-2 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-black transition duration-200 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800";
 
   const renderAuthControls = () => {
+    // While loading, show a skeleton or placeholder to prevent button "grey-out" hang
     if (!isLoaded) {
-      return <div className="h-10 w-24 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse"></div>;
+      return <div className="h-10 w-24 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>;
     }
+
     if (isSignedIn) {
       return (
         <div className="flex items-center space-x-3">
+          {/* Show Go Pro button if user is NOT pro AND subscription model is active */}
           {!isPro && isSubActive && (
             <button 
                 onClick={() => handleNavClick('upgrade')}
-                className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black px-4 py-2 rounded-xl shadow-lg hover:scale-105 transition-all text-xs"
+                className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-white font-black px-4 py-2 rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.4)] hover:scale-105 transition-all text-xs border border-white/20"
             >
-                <span>{t('goPro')}</span>
+                <span className="drop-shadow-sm">{t('goPro')}</span>
             </button>
           )}
           <UserButton afterSignOutUrl="/" />
         </div>
       );
     }
+
     return (
       <SignInButton mode="modal">
-        <button className="bg-indigo-600 text-white font-black px-6 py-2.5 rounded-full shadow-lg hover:scale-105 transition duration-300 whitespace-nowrap">
+        <button className="bg-indigo-600 text-white font-black px-6 py-2.5 rounded-full shadow-lg hover:scale-105 transition duration-300 whitespace-nowrap active:scale-95">
           {t('login')}
         </button>
       </SignInButton>
@@ -152,7 +167,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             {isSubActive && (
               <button 
                   onClick={() => handleNavClick('upgrade')} 
-                  className="text-slate-600 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-black text-sm uppercase tracking-wider transition duration-200"
+                  className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-black text-sm uppercase tracking-wider transition duration-200"
               >
                   {t('nav.pricing')}
               </button>
@@ -192,6 +207,14 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
       {isMenuOpen && (
         <div className="lg:hidden bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 animate-fade-in px-4 pb-8 overflow-y-auto max-h-[80vh]">
           <div className="flex flex-col space-y-2 mt-4">
+            {!isPro && isSubActive && isSignedIn && (
+                <button 
+                    onClick={() => handleNavClick('upgrade')}
+                    className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black py-4 rounded-xl shadow-lg mb-4 text-center uppercase tracking-widest text-sm"
+                >
+                    {t('goPro')}
+                </button>
+            )}
             {NAV_STRUCTURE.map((link: NavLink) => (
               <div key={link.nameKey} className="flex flex-col">
                 {link.children ? (
@@ -220,7 +243,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
               </div>
             ))}
             {isSubActive && (
-              <button onClick={() => handleNavClick('upgrade')} className="w-full text-left px-4 py-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 font-black text-sm uppercase tracking-wider">
+              <button onClick={() => handleNavClick('upgrade')} className="w-full text-left px-4 py-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 text-amber-600 dark:text-amber-400 font-black text-sm uppercase tracking-wider">
                 {t('nav.pricing')}
               </button>
             )}

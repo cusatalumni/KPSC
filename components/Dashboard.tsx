@@ -14,6 +14,7 @@ import { LightBulbIcon } from './icons/LightBulbIcon';
 import { NewspaperIcon } from './icons/NewspaperIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
 import { StarIcon } from './icons/StarIcon';
+import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { EXAM_CONTENT_MAP } from '../constants';
 import { subscriptionService } from '../services/subscriptionService';
 import { useUser } from '@clerk/clerk-react';
@@ -102,19 +103,38 @@ const SubscriptionWidget: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNav
     const status = isSignedIn && user?.id ? subscriptionService.getSubscriptionStatus(user.id) : 'free';
 
     return (
-        <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+        <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group border border-white/10">
+            <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
             <div className="relative z-10">
-                <div className="flex items-center space-x-3 mb-4">
-                    <StarIcon className="h-6 w-6 text-amber-400" />
-                    <h4 className="font-black uppercase tracking-widest text-xs">{t('subscriptions.title')}</h4>
+                <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-amber-400 p-2 rounded-xl shadow-lg shadow-amber-500/20">
+                        <StarIcon className="h-5 w-5 text-indigo-900" />
+                    </div>
+                    <h4 className="font-black uppercase tracking-widest text-[10px] drop-shadow-sm">{t('subscriptions.title')}</h4>
                 </div>
-                <p className="text-sm font-bold opacity-90 mb-6 leading-relaxed">
+                
+                <h3 className="text-2xl font-black mb-2 text-amber-400 tracking-tight">Premium Membership</h3>
+                <p className="text-xs font-bold opacity-70 mb-6 leading-relaxed">
                     {status === 'pro' ? t('subscriptions.pro') : t('subscriptions.subtitle')}
                 </p>
+
+                <div className="space-y-3 mb-8">
+                    {[
+                        "Unlock 500+ Mock Tests",
+                        "AI Study Notes Access",
+                        "Ad-free Experience",
+                        "Rank Predictor Access"
+                    ].map((feat, i) => (
+                        <div key={i} className="flex items-center space-x-2">
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-400" />
+                            <span className="text-[11px] font-bold opacity-90">{feat}</span>
+                        </div>
+                    ))}
+                </div>
+
                 <button 
                     onClick={() => onNavigate('upgrade')}
-                    className="w-full bg-white text-indigo-600 font-black py-3 rounded-xl hover:bg-slate-100 transition-all active:scale-95 text-xs shadow-lg"
+                    className="w-full bg-white text-indigo-900 font-black py-4 rounded-2xl hover:bg-amber-400 hover:text-indigo-950 transition-all active:scale-95 text-xs shadow-xl uppercase tracking-widest"
                 >
                     {status === 'pro' ? t('subscriptions.manage') : t('subscriptions.upgradeNow')}
                 </button>
