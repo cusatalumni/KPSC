@@ -14,6 +14,8 @@ interface TestPageProps {
   onNavigateToUpgrade: () => void;
 }
 
+const QUESTION_TIME_LIMIT = 25; // 25 seconds per question
+
 const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onTestComplete, onBack, onNavigateToUpgrade }) => {
   const { t } = useTranslation();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -22,6 +24,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const [answers, setAnswers] = useState<UserAnswers>({});
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(activeTest.questionsCount * 60);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(QUESTION_TIME_LIMIT);
   
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
@@ -60,15 +63,48 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     );
   }, [questions, answers, onTestComplete, activeTest]);
 
+  // Overall Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { clearInterval(timer); handleSubmit(); return 0; }
+        if (prev <= 1) { 
+            clearInterval(timer); 
+            handleSubmit(); 
+            return 0; 
+        }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
   }, [handleSubmit]);
+
+  // Question Timer
+  useEffect(() => {
+    if (loading || questions.length === 0 || isSubmitModalOpen) return;
+
+    const qTimer = setInterval(() => {
+        setQuestionTimeLeft(prev => {
+            if (prev <= 1) {
+                // Auto move to next on timeout or submit if last
+                if (currentIndex < questions.length - 1) {
+                    setCurrentIndex(c => c + 1);
+                    return QUESTION_TIME_LIMIT;
+                } else {
+                    clearInterval(qTimer);
+                    setIsSubmitModalOpen(true);
+                    return 0;
+                }
+            }
+            return prev - 1;
+        });
+    }, 1000);
+    return () => clearInterval(qTimer);
+  }, [currentIndex, questions.length, loading, isSubmitModalOpen]);
+
+  // Reset Question Timer when currentIndex changes manually
+  useEffect(() => {
+    setQuestionTimeLeft(QUESTION_TIME_LIMIT);
+  }, [currentIndex]);
 
   useEffect(() => {
     getQuestionsForTest(activeTest.subject, activeTest.topic, activeTest.questionsCount)
@@ -79,8 +115,9 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
             return;
         }
         const processed = data.map(q => {
-           const correctText = q.options[q.correctAnswerIndex];
-           const shuffledOptions = shuffleArray(q.options);
+           const opts = (Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : [])) as string[];
+           const correctText = opts[q.correctAnswerIndex];
+           const shuffledOptions = shuffleArray(opts);
            const newCorrectIndex = shuffledOptions.indexOf(correctText);
            return {
              ...q,
@@ -88,7 +125,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
              correctAnswerIndex: newCorrectIndex === -1 ? q.correctAnswerIndex : newCorrectIndex
            };
         });
-        setQuestions(processed);
+        setQuestions(processed as QuizQuestion[]);
         setLoading(false);
       });
   }, [activeTest]);
@@ -127,6 +164,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
 
   const q = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
+  const isUrgent = questionTimeLeft <= 5;
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col">
@@ -136,9 +174,16 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
             <div className="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-lg">{currentIndex + 1}</div>
             <div>
                 <h2 className="text-lg font-black dark:text-white leading-none mb-1 line-clamp-1">{activeTest.title}</h2>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                    {t('test.question')} {currentIndex + 1} {t('of')} {questions.length}
-                </p>
+                <div className="flex items-center space-x-2">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        {t('test.question')} {currentIndex + 1} {t('of')} {questions.length}
+                    </p>
+                    <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                    <span className={`text-[9px] font-black uppercase flex items-center ${isUrgent ? 'text-red-500 animate-pulse' : 'text-indigo-500'}`}>
+                        {isUrgent && <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>}
+                        Q-Time: {questionTimeLeft}s
+                    </span>
+                </div>
             </div>
           </div>
           <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center space-x-2 font-mono font-bold dark:text-white border border-slate-200 dark:border-slate-700 shadow-inner">

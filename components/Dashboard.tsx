@@ -33,7 +33,7 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
             ].sort(() => 0.5 - Math.random());
             setItems(combined);
             setLoading(false);
-        });
+        }).catch(() => setLoading(false));
     }, []);
 
     useEffect(() => {
@@ -95,7 +95,11 @@ const SubscriptionWidget: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNav
     const [isActive, setIsActive] = useState(true);
 
     useEffect(() => {
-        getSettings().then(s => setIsActive(s.subscription_model_active === 'true'));
+        getSettings().then(s => {
+            if (s && s.subscription_model_active !== undefined) {
+                setIsActive(s.subscription_model_active === 'true');
+            }
+        }).catch(() => setIsActive(true)); // Fallback to active on error
     }, []);
 
     if (!isActive) return null;

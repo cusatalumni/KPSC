@@ -30,7 +30,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const { isLoaded, isSignedIn, user } = useUser();
   const navRef = useRef<HTMLElement>(null);
   
-  // Memoized Admin check to react instantly to user metadata changes
   const isAdmin = useMemo(() => {
     return user?.publicMetadata?.role === 'admin';
   }, [user]);
@@ -74,7 +73,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const adminButtonClasses = "flex items-center space-x-2 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-black transition duration-200 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800";
 
   const renderAuthControls = () => {
-    // While loading, show a skeleton or placeholder to prevent button "grey-out" hang
     if (!isLoaded) {
       return <div className="h-10 w-24 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>;
     }
@@ -82,7 +80,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     if (isSignedIn) {
       return (
         <div className="flex items-center space-x-3">
-          {/* Show Go Pro button if user is NOT pro AND subscription model is active */}
           {!isPro && isSubActive && (
             <button 
                 onClick={() => handleNavClick('upgrade')}
