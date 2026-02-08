@@ -27,10 +27,16 @@ const getIcon = (type: string) => {
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
         const res = await fetch(`/api/data?${params}`);
-        if (!res.ok) return mockData;
+        if (!res.ok) {
+            console.warn(`API responded with ${res.status} for ${params}`);
+            return mockData;
+        }
         const data = await res.json();
+        // If data is an empty array but we expected content, we might still fallback to mock for safety
+        // But for questions, we want to know if it's really empty.
         return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
     } catch (e) {
+        console.error("Fetch Hub Error:", e);
         return mockData;
     }
 };
@@ -76,8 +82,24 @@ export const getLiveUpdates = () => fetchHub('type=updates', MOCK_PSC_UPDATES);
 export const getCurrentAffairs = () => fetchHub('type=affairs', MOCK_CURRENT_AFFAIRS);
 export const getGk = () => fetchHub('type=gk', MOCK_GK);
 export const getBooks = () => fetchHub('type=books', MOCK_BOOKS_DATA);
-export const getQuestionsForTest = (subject: string, topic: string, count: number) => 
-    fetchHub(`type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`, MOCK_QUESTION_BANK.slice(0, count));
+
+export const getQuestionsForTest = async (subject: string, topic: string, count: number): Promise<QuizQuestion[]> => {
+    try {
+        const res = await fetch(`/api/data?type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`);
+        if (!res.ok) return MOCK_QUESTION_BANK.slice(0, count);
+        const data = await res.json();
+        // If API returns no questions, we fallback to mock only if explicitly needed, 
+        // otherwise we show empty to help debug Sheet connection.
+        if (!data || data.length === 0) {
+            console.warn("No questions returned from Sheet. Check if QuestionBank tab has data.");
+            return MOCK_QUESTION_BANK.slice(0, count);
+        }
+        return data;
+    } catch (e) {
+        return MOCK_QUESTION_BANK.slice(0, count);
+    }
+};
+
 export const updateExam = (exam: any, token: string | null) => adminReq({ action: 'update-exam', exam }, token);
 export const updateSyllabus = (syllabus: any, token: string | null) => adminReq({ action: 'update-syllabus', syllabus }, token);
 export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);

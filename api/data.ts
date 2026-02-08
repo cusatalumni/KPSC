@@ -3,20 +3,16 @@ import { readSheetData } from './_lib/sheets-service.js';
 
 /**
  * Robustly parses options from various string formats.
- * Handles: ['A', 'B'], "A, B", "A|B", and escaped quotes.
  */
 const smartParseOptions = (raw: string): string[] => {
     if (!raw) return [];
     let clean = raw.trim();
     
-    // 1. Handle array-like strings with quotes: ['Opt 1', 'Opt 2']
     if (clean.startsWith('[') && clean.endsWith(']')) {
         try {
-            // Standard JSON try
             const parsed = JSON.parse(clean.replace(/'/g, '"'));
             if (Array.isArray(parsed)) return parsed.map(s => String(s).trim());
         } catch (e) {
-            // Manual cleanup if JSON.parse fails due to complex quotes
             let content = clean.substring(1, clean.length - 1);
             const matches = content.match(/(".*?"|'.*?'|[^,]+)/g);
             if (matches) {
@@ -25,15 +21,8 @@ const smartParseOptions = (raw: string): string[] => {
         }
     }
 
-    // 2. Try Pipe Separation (Highest reliability for PSC data)
-    if (clean.includes('|')) {
-        return clean.split('|').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
-    }
-
-    // 3. Try basic comma separation
-    if (clean.includes(',')) {
-        return clean.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
-    }
+    if (clean.includes('|')) return clean.split('|').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
+    if (clean.includes(',')) return clean.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
 
     return [clean];
 };
@@ -65,9 +54,14 @@ export default async function handler(req: any, res: any) {
                 const qLimit = parseInt(count as string) || 20;
                 let allQs = [];
                 try {
+                    // Fetch all questions to allow better random mixing
                     allQs = await readSheetData('QuestionBank!A2:G');
                 } catch (e) { 
-                    console.error("Question fetch error:", e); 
+                    console.error("Sheets Read Error:", e);
+                    return res.status(500).json({ error: "Could not read from QuestionBank sheet." });
+                }
+
+                if (!allQs || allQs.length === 0) {
                     return res.status(200).json([]);
                 }
 
@@ -77,12 +71,12 @@ export default async function handler(req: any, res: any) {
                 const filtered = allQs.filter(r => {
                     if (!r || r.length < 3) return false;
                     const rowTopic = (r[1] || '').toLowerCase().trim();
-                    const rowSubject = (r[5] || '').toLowerCase().trim();
+                    const rowSubject = (rowTopic.includes('ldc') || rowTopic.includes('lgs')) ? 'mixed' : (r[5] || '').toLowerCase().trim();
                     
-                    // Unified Filter Logic:
-                    // If filter is 'mixed' or empty, it bypasses that specific field filter.
-                    const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject === filterSubject;
-                    const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic === filterTopic;
+                    // Improved Wildcard Logic: 
+                    // If filter is 'mixed' or empty, we accept any row.
+                    const isSubjectMatch = !filterSubject || filterSubject === 'mixed' || rowSubject.includes(filterSubject);
+                    const isTopicMatch = !filterTopic || filterTopic === 'mixed' || rowTopic.includes(filterTopic);
                     
                     return isSubjectMatch && isTopicMatch;
                 }).map(r => {
@@ -98,8 +92,9 @@ export default async function handler(req: any, res: any) {
                     };
                 });
                 
-                // Final randomness and limit
-                return res.status(200).json(filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit));
+                // Shuffle and limit
+                const finalQuestions = filtered.sort(() => 0.5 - Math.random()).slice(0, qLimit);
+                return res.status(200).json(finalQuestions);
 
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
@@ -126,6 +121,6 @@ export default async function handler(req: any, res: any) {
         }
     } catch (error: any) {
         console.error("Data API Error:", error.message);
-        return res.status(200).json([]); 
+        return res.status(500).json({ error: error.message }); 
     }
 }

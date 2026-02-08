@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ArrowsPointingOutIcon } from '../icons/ArrowsPointingOutIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -12,8 +12,17 @@ interface ExternalViewerPageProps {
 const ExternalViewerPage: React.FC<ExternalViewerPageProps> = ({ url, onBack }) => {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
     
-    // Extract hostname for display
+    // Check if the URL is known to block iframes
+    const isRestricted = url.includes('keralapsc.gov.in') || url.includes('thulasi.keralapsc.gov.in');
+
+    useEffect(() => {
+        if (isRestricted) {
+            setIsLoading(false);
+        }
+    }, [isRestricted]);
+
     const getHostName = (urlStr: string) => {
         try {
             return new URL(urlStr).hostname;
@@ -45,42 +54,54 @@ const ExternalViewerPage: React.FC<ExternalViewerPageProps> = ({ url, onBack }) 
                         href={url} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-black px-4 py-2 rounded-xl text-xs uppercase tracking-widest hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all border border-indigo-100 dark:border-indigo-800"
+                        className="flex items-center space-x-2 bg-indigo-600 text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg"
                     >
                         <ArrowsPointingOutIcon className="h-4 w-4" />
-                        <span>Open Full Screen</span>
+                        <span>Open in New Tab</span>
                     </a>
                 </div>
             </div>
 
             {/* Content Area */}
             <div className="flex-grow relative bg-white overflow-hidden">
-                {isLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-900 z-20">
-                        <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                        <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Loading external content...</p>
+                {isRestricted ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-10 text-center">
+                        <div className="max-w-md bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-2xl border border-indigo-100 dark:border-indigo-800">
+                            <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-4M17 16l4-4m0 0l-4-4m4 4H7" />
+                                </svg>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-4">External Site Redirect</h2>
+                            <p className="text-slate-500 font-medium mb-8 leading-relaxed">
+                                സുരക്ഷാ കാരണങ്ങളാൽ കേരള PSC വെബ്‌സൈറ്റ് ഈ ആപ്പിനുള്ളിൽ നേരിട്ട് കാണാൻ കഴിയില്ല. താഴെ കാണുന്ന ബട്ടണിൽ ക്ലിക്ക് ചെയ്ത് വെബ്‌സൈറ്റ് പുതിയ ടാബിൽ തുറക്കുക.
+                            </p>
+                            <a 
+                                href={url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-block w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-indigo-700 transition-all active:scale-95"
+                            >
+                                വെബ്‌സൈറ്റ് സന്ദർശിക്കുക
+                            </a>
+                        </div>
                     </div>
-                )}
-                
-                {/* 
-                  Note: Many sites block framing via X-Frame-Options or CSP.
-                  If a site blocks framing, it will appear empty or show an error.
-                  The "Open Full Screen" button above is the mandatory fallback.
-                */}
-                <iframe 
-                    src={url} 
-                    className="w-full h-full border-none"
-                    onLoad={() => setIsLoading(false)}
-                    title="External Content Viewer"
-                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-                />
-
-                {/* Bottom Helper for failed loads */}
-                {!isLoading && (
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-800/90 backdrop-blur text-white px-6 py-2 rounded-full text-xs font-bold opacity-0 hover:opacity-100 transition-opacity flex items-center space-x-3 pointer-events-none sm:pointer-events-auto">
-                        <span>Content not loading correctly?</span>
-                        <a href={url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline pointer-events-auto">Click here to open in new window</a>
-                    </div>
+                ) : (
+                    <>
+                        {isLoading && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-900 z-20">
+                                <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Loading content...</p>
+                            </div>
+                        )}
+                        <iframe 
+                            src={url} 
+                            className="w-full h-full border-none"
+                            onLoad={() => setIsLoading(false)}
+                            title="External Content Viewer"
+                            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                        />
+                    </>
                 )}
             </div>
         </div>
