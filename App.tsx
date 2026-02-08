@@ -27,7 +27,7 @@ import ExternalViewerPage from './components/pages/ExternalViewerPage';
 import LoadingScreen from './components/LoadingScreen';
 import AdsenseWidget from './components/AdsenseWidget';
 import type { Exam, SubscriptionStatus, ActiveTest, Page } from './types';
-import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT } from './constants'; 
+import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { useTranslation } from './contexts/LanguageContext';
 import { useTheme } from './contexts/ThemeContext';
@@ -54,13 +54,11 @@ const App: React.FC = () => {
     const rawHash = window.location.hash || '#dashboard';
     const [hashPath, hashQuery] = rawHash.replace(/^#\/?/, '').split('?');
     
-    // Handle special /go style URLs if they hit the app root
     const searchParams = new URLSearchParams(window.location.search);
     const urlFromSearch = searchParams.get('url');
     if (urlFromSearch) {
         setExternalUrl(urlFromSearch);
         setCurrentPage('external_viewer');
-        // Clear search to prevent reload loop
         window.history.replaceState({}, '', window.location.pathname + window.location.hash);
         return;
     }
@@ -68,6 +66,7 @@ const App: React.FC = () => {
     if (!hashPath || hashPath === '' || hashPath === 'dashboard') {
         setCurrentPage('dashboard');
         setSelectedExam(null);
+        setActiveTest(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
@@ -91,6 +90,37 @@ const App: React.FC = () => {
         if (exam) setSelectedExam(exam);
     } else {
         setSelectedExam(null);
+    }
+
+    // Reconstruction logic for Test Page from URL parts
+    // #test/[type]/[id_or_subject]/[topic]/[count]/[title]
+    if (targetPage === 'test') {
+        if (id === 'mock' && parts[2]) {
+            // Mock Test by ID
+            const mockTest = MOCK_TESTS_DATA.find(mt => mt.id === parts[2]);
+            if (mockTest) {
+                setActiveTest({
+                    title: mockTest.title.ml,
+                    questionsCount: mockTest.questionsCount,
+                    subject: 'mixed',
+                    topic: 'mixed',
+                    negativeMarking: mockTest.negativeMarking,
+                    isPro: mockTest.isPro,
+                    examId: mockTest.examId
+                });
+            }
+        } else if (id && parts[2]) {
+            // Subject/Topic Quiz
+            setActiveTest({
+                title: decodeURIComponent(parts[4] || parts[2]),
+                subject: decodeURIComponent(id),
+                topic: decodeURIComponent(parts[2]),
+                questionsCount: parseInt(parts[3] || '20'),
+                negativeMarking: 0.33
+            });
+        }
+    } else if (targetPage !== 'results') {
+        setActiveTest(null);
     }
     
     if (targetPage === 'study_material' && id) {
@@ -134,13 +164,33 @@ const App: React.FC = () => {
         return externalUrl ? <ExternalViewerPage url={externalUrl} onBack={() => window.history.back()} /> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
       case 'test':
         return activeTest ? (
-          <TestPage activeTest={activeTest} subscriptionStatus={subscriptionStatus} onTestComplete={(score, total, stats) => { setTestResult({ score, total, stats }); handleNavigate('results'); }} onBack={() => window.history.back()} onNavigateToUpgrade={() => handleNavigate('upgrade')} />
-        ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+          <TestPage 
+            activeTest={activeTest} 
+            subscriptionStatus={subscriptionStatus} 
+            onTestComplete={(score, total, stats) => { setTestResult({ score, total, stats }); handleNavigate('results'); }} 
+            onBack={() => window.history.back()} 
+            onNavigateToUpgrade={() => handleNavigate('upgrade')} 
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+            <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 font-bold text-slate-500">Preparing Quiz...</p>
+          </div>
+        );
       case 'results':
         return testResult ? <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} onBackToPrevious={() => handleNavigate('dashboard')} /> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
       case 'exam_details':
         return selectedExam ? (
-          <ExamPage exam={selectedExam} content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} onBack={() => handleNavigate('dashboard')} onStartTest={(test: any, examTitle: string) => { setActiveTest({ title: `${examTitle} - ${test.title}`, questionsCount: test.questions, subject: test.subject || 'mixed', topic: test.topic || 'mixed' }); handleNavigate('test'); }} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} onNavigate={handleNavigate} />
+          <ExamPage 
+            exam={selectedExam} 
+            content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} 
+            onBack={() => handleNavigate('dashboard')} 
+            onStartTest={(test: any, examTitle: string) => { 
+                handleNavigate(`test/${test.subject || 'mixed'}/${test.topic || 'mixed'}/${test.questions || 20}/${encodeURIComponent(test.title)}`); 
+            }} 
+            onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} 
+            onNavigate={handleNavigate} 
+          />
         ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={t => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
       case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
       case 'about': return <AboutUsPage onBack={() => handleNavigate('dashboard')} />;
@@ -148,8 +198,8 @@ const App: React.FC = () => {
       case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
       case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
       case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
-      case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={() => handleNavigate('test')} subscriptionStatus={subscriptionStatus} />;
-      case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => { setActiveTest({ title: test.title.ml, questionsCount: test.questionsCount, subject: 'mixed', topic: 'mixed' }); handleNavigate('test'); }} />;
+      case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={(cat) => handleNavigate(`test/${cat.id}/mixed/20/${encodeURIComponent(cat.title.ml)}`)} subscriptionStatus={subscriptionStatus} />;
+      case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(test) => handleNavigate(`test/mock/${test.id}`)} />;
       case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
       case 'previous_papers': return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
       case 'current_affairs': return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
@@ -165,7 +215,8 @@ const App: React.FC = () => {
   
   if (isAppLoading) return <LoadingScreen />;
 
-  const isFullPage = ['test', 'external_viewer'].includes(currentPage);
+  // Only hide Header/Footer for external content viewer to maximize viewing area
+  const isFullPage = currentPage === 'external_viewer';
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors duration-500 ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>

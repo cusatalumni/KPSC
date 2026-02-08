@@ -134,7 +134,6 @@ export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
 };
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
-  // Mock data should follow the Subject-Topic structure
   { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'Kerala', difficulty: 'PSC Level' },
   { id: 'h2', question: "ഇന്ത്യൻ നാഷണൽ കോൺഗ്രസ് സ്ഥാപിച്ചത് ആര്?", options: ['എ.ഓ. ഹ്യൂം', 'ഗാന്ധിജി', 'നെഹ്‌റു', 'തിലക്'], correctAnswerIndex: 0, topic: 'Indian History', subject: 'History', difficulty: 'PSC Level' },
   { id: 'ma1', question: "2, 4, 8, 16, ___ അടുത്ത സംഖ്യ ഏത്?", options: ['32', '24', '20', '64'], correctAnswerIndex: 0, topic: 'Mental Ability', subject: 'Reasoning', difficulty: 'Easy' },
@@ -179,6 +178,46 @@ export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
     isPro: false
   },
   {
+    id: 'mt_degree_01',
+    examId: 'degree_prelims',
+    title: { ml: 'Degree Level Model 01', en: 'Degree Level Model 01' },
+    description: { ml: 'ബിരുദതല പരീക്ഷകൾക്കായുള്ള പ്രത്യേക മോക്ക് ടെസ്റ്റ്.', en: 'Special mock test for degree level exams.' },
+    questionsCount: 100,
+    duration: 90,
+    negativeMarking: 0.33,
+    isPro: true
+  },
+  {
+    id: 'mt_plus2_01',
+    examId: 'plus_two_prelims',
+    title: { ml: 'Plus Two Prelims Model', en: 'Plus Two Prelims Model' },
+    description: { ml: 'സി.പി.ഒ / എക്സൈസ് പരീക്ഷകൾക്കായുള്ള പരിശീലനം.', en: 'Practice for CPO / Excise exams.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
+    id: 'mt_veo_01',
+    examId: 'veo_exam',
+    title: { ml: 'VEO Main Exam Mock', en: 'VEO Main Exam Mock' },
+    description: { ml: 'വി.ഇ.ഒ മെയിൻ പരീക്ഷയ്ക്കായുള്ള മോക്ക് ടെസ്റ്റ്.', en: 'Mock test for VEO main exam.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
+    id: 'mt_fire_01',
+    examId: 'fireman_exam',
+    title: { ml: 'Fireman/Woman Mock', en: 'Fireman/Woman Mock' },
+    description: { ml: 'ഫയർമാൻ പരീക്ഷയ്ക്കായുള്ള കായിക/മാനസിക ചോദ്യങ്ങൾ.', en: 'Special questions for Fireman exam.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: false
+  },
+  {
     id: 'mt_lpup_01',
     examId: 'lp_up_assistant',
     title: { ml: 'LP/UP Assistant Mock', en: 'LP/UP Assistant Mock' },
@@ -187,6 +226,26 @@ export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
     duration: 75,
     negativeMarking: 0.33,
     isPro: false
+  },
+  {
+    id: 'mt_nurse_01',
+    examId: 'staff_nurse',
+    title: { ml: 'Staff Nurse Gr II Mock', en: 'Staff Nurse Gr II Mock' },
+    description: { ml: 'നഴ്സിംഗ് വിഷയങ്ങൾ ഉൾപ്പെടുത്തിയ മോക്ക് ടെസ്റ്റ്.', en: 'Mock test for Staff Nurse post.' },
+    questionsCount: 100,
+    duration: 90,
+    negativeMarking: 0.33,
+    isPro: true
+  },
+  {
+    id: 'mt_kseb_01',
+    examId: 'kseb_sub_eng',
+    title: { ml: 'KSEB Sub Engineer Mock', en: 'KSEB Sub Engineer Mock' },
+    description: { ml: 'ഇലക്ട്രിക്കൽ എൻജിനീയറിംഗ് മോക്ക് ടെസ്റ്റ്.', en: 'Electrical engineering mock test.' },
+    questionsCount: 100,
+    duration: 75,
+    negativeMarking: 0.33,
+    isPro: true
   }
 ];
 
