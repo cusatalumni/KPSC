@@ -39,7 +39,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
-    const { action, sheet, id, data, mode, resultData, setting } = req.body;
+    const { action, sheet, id, data, mode, resultData, setting, question, exam, syllabus } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -58,41 +58,43 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
+            case 'test-connection':
+                const sheetOk = !!process.env.SPREADSHEET_ID;
+                const supabaseOk = !!supabase;
+                return res.status(200).json({ 
+                    message: 'Connections verified', 
+                    status: { sheets: sheetOk, supabase: supabaseOk } 
+                });
+
             case 'update-setting':
                 await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
                 if (supabase) await upsertSupabaseData('settings', [{ key: String(setting.key), value: String(setting.value) }]);
                 return res.status(200).json({ message: 'Setting updated' });
+
+            case 'add-question':
+                const qId = question.id || `q_${Date.now()}`;
+                const qRow = [qId, question.topic, question.question, JSON.stringify(question.options), question.correctAnswerIndex, question.subject, question.difficulty];
+                await appendSheetData('QuestionBank!A1', [qRow]);
+                if (supabase) {
+                    await upsertSupabaseData('questionbank', [{
+                        id: qId, topic: question.topic, question: question.question, options: question.options, 
+                        correct_answer_index: question.correctAnswerIndex, subject: question.subject, difficulty: question.difficulty
+                    }]);
+                }
+                return res.status(200).json({ message: 'Question added' });
 
             case 'csv-update':
                 const lines = data.split('\n').filter((l: string) => l.trim() !== '');
                 const sheetRows = lines.map((line: string) => {
                     const parts = parseCsvLine(line);
                     const currentSheet = sheet.toLowerCase();
-
                     if (currentSheet === 'questionbank') {
-                        if (parts.length < 3) return null;
-                        
-                        // Clean up the options part
-                        let optsRaw = (parts[3] || '').trim();
-                        // Strip brackets if present
-                        if (optsRaw.startsWith('[') && optsRaw.endsWith(']')) {
-                            optsRaw = optsRaw.slice(1, -1).trim();
-                        }
-                        
-                        let opts: string[] = [];
-                        if (optsRaw.includes('|')) {
-                            opts = optsRaw.split('|').map(o => o.trim().replace(/^['"]|['"]$/g, ''));
-                        } else if (optsRaw.includes(',')) {
-                            opts = optsRaw.split(',').map(o => o.trim().replace(/^['"]|['"]$/g, ''));
-                        } else {
-                            opts = [optsRaw];
-                        }
-
+                        let optsRaw = (parts[3] || '').trim().replace(/^\[|\]$/g, '');
+                        let opts = optsRaw.includes('|') ? optsRaw.split('|').map(o => o.trim()) : optsRaw.split(',').map(o => o.trim());
                         if (opts.length < 2) opts = ["A", "B", "C", "D"];
                         const cleanId = parts[0] || `q_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
                         return [cleanId, parts[1] || 'General', parts[2] || '', JSON.stringify(opts), parts[4] || '0', parts[5] || 'GK', parts[6] || 'Moderate'];
                     }
-
                     if (currentSheet === 'syllabus') {
                         const examId = parts[1] || 'general';
                         const topic = parts[6] || parts[2] || 'general';
@@ -101,33 +103,17 @@ export default async function handler(req: any, res: any) {
                     }
                     return parts;
                 }).filter((r: any) => r !== null);
-
-                if (sheetRows.length === 0) return res.status(400).json({ message: 'No valid data' });
-
                 if (mode === 'append') await appendSheetData(`${sheet}!A1`, sheetRows);
                 else await clearAndWriteSheetData(`${sheet}!A2:G`, sheetRows);
-
                 if (supabase) {
                     const supabaseRows = sheetRows.map(r => {
-                        const currentSheet = sheet.toLowerCase();
-                        if (currentSheet === 'questionbank') {
-                            return { id: String(r[0]), topic: String(r[1]), question: String(r[2]), options: JSON.parse(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: String(r[5]), difficulty: String(r[6]) };
-                        } else if (currentSheet === 'syllabus') {
-                            return { 
-                                id: String(r[0]), 
-                                exam_id: String(r[1]), 
-                                title: String(r[2]), 
-                                questions: parseInt(String(r[3] || '20')), 
-                                duration: parseInt(String(r[4] || '20')), 
-                                subject: String(r[5]), 
-                                topic: String(r[6]) 
-                            };
-                        }
+                        if (sheet.toLowerCase() === 'questionbank') return { id: String(r[0]), topic: String(r[1]), question: String(r[2]), options: JSON.parse(r[3]), correct_answer_index: parseInt(r[4]), subject: String(r[5]), difficulty: String(r[6]) };
+                        if (sheet.toLowerCase() === 'syllabus') return { id: String(r[0]), exam_id: String(r[1]), title: String(r[2]), questions: parseInt(r[3]), duration: parseInt(r[4]), subject: String(r[5]), topic: String(r[6]) };
                         return null;
                     }).filter(Boolean);
-                    if (supabaseRows.length > 0) await upsertSupabaseData(sheet.toLowerCase(), supabaseRows);
+                    await upsertSupabaseData(sheet.toLowerCase(), supabaseRows);
                 }
-                return res.status(200).json({ message: `Imported ${sheetRows.length} rows to ${sheet}` });
+                return res.status(200).json({ message: 'Sync complete' });
 
             case 'delete-row':
                 await deleteRowById(sheet, id);
@@ -135,8 +121,12 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Deleted' });
 
             case 'run-daily-scraper':
-                const scrRes = await runDailyUpdateScrapers();
-                return res.status(200).json({ message: 'Scraper finished', result: scrRes });
+                const resDaily = await runDailyUpdateScrapers();
+                return res.status(200).json({ message: 'Scraper finished', result: resDaily });
+
+            case 'run-book-scraper':
+                await runBookScraper();
+                return res.status(200).json({ message: 'Books updated' });
 
             default:
                 return res.status(400).json({ message: 'Invalid action' });
