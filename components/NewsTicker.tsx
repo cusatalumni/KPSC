@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { getNotifications } from '../services/pscDataService';
 import type { Notification } from '../types';
@@ -47,7 +48,7 @@ const NewsTicker: React.FC = () => {
                 <div className="ticker-move">
                     {tickerContent.map((item, index) => (
                         <a 
-                            href={`/go?url=${encodeURIComponent(item.link)}`} 
+                            href={`#external_viewer?url=${encodeURIComponent(item.link)}`} 
                             key={`${item.id}-${index}`} 
                             className="mx-6 text-slate-200 hover:text-white font-medium transition-colors whitespace-nowrap"
                         >

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getGk } from '../../services/pscDataService';
 import type { GkItem } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
@@ -74,8 +74,17 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         fetchItems();
     }, [fetchItems]);
 
-    const carouselItems = items.slice(0, 5);
-    const gridItems = items.slice(5);
+    // Pick 5 random items for the carousel, others stay in grid
+    const { carouselItems, gridItems } = useMemo(() => {
+        if (items.length <= 5) return { carouselItems: items, gridItems: [] };
+        
+        const shuffled = [...items].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 5);
+        const selectedIds = new Set(selected.map(i => i.id));
+        const remaining = items.filter(i => !selectedIds.has(i.id));
+        
+        return { carouselItems: selected, gridItems: remaining };
+    }, [items]);
 
     return (
         <div className="animate-fade-in max-w-7xl mx-auto px-4 pb-20">
@@ -93,7 +102,7 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="text-center text-red-500 bg-red-50 p-12 rounded-[2.5rem] border border-red-100 font-bold">{error}</div>
             ) : (
                 <div className="space-y-16">
-                    {/* Top Row Carousel */}
+                    {/* Top Row Carousel - Now Random 5 */}
                     {carouselItems.length > 0 && <GkCarousel items={carouselItems} />}
 
                     {/* Horizontal Ad after Carousel */}
@@ -107,7 +116,7 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl">
                                 <LightBulbIcon className="h-8 w-8 text-yellow-500" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">More Facts</h2>
+                            <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Comprehensive GK Facts</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {gridItems.map((item, index) => (
