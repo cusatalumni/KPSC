@@ -44,7 +44,7 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
     const current = items[currentIndex];
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-pointer hover:border-indigo-400 transition-all" 
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-pointer hover:border-indigo-400 transition-all h-full flex flex-col" 
              onClick={() => onNavigate(current.type === 'gk' ? 'gk' : 'current_affairs')}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-[5rem] -mr-10 -mt-10"></div>
             
@@ -64,19 +64,19 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
                 </div>
             </div>
 
-            <div className="min-h-[80px] animate-fade-in flex flex-col justify-center">
-                <h4 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">
+            <div className="flex-grow flex flex-col justify-center">
+                <h4 className="text-xl font-bold text-slate-800 dark:text-white leading-tight animate-fade-in">
                     {current.type === 'gk' ? current.data.fact : current.data.title}
                 </h4>
                 {current.type === 'news' && (
-                    <p className="text-[10px] font-black text-teal-600 uppercase mt-2">{current.data.source} • {current.data.date}</p>
+                    <p className="text-[10px] font-black text-teal-600 uppercase mt-3">{current.data.source} • {current.data.date}</p>
                 )}
                 {current.type === 'gk' && (
-                    <p className="text-[10px] font-black text-yellow-600 uppercase mt-2">{current.data.category}</p>
+                    <p className="text-[10px] font-black text-yellow-600 uppercase mt-3">{current.data.category}</p>
                 )}
             </div>
 
-            <div className="mt-4 flex items-center text-indigo-600 font-black text-[10px] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
+            <div className="mt-6 flex items-center text-indigo-600 font-black text-[10px] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
                 <span>Read More</span>
                 <ChevronRightIcon className="h-3 w-3 ml-1" />
             </div>
@@ -147,16 +147,13 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
 
   return (
     <div className="space-y-10">
-      {/* Top Layer: Hero & Daily Pulse Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          <div className="xl:col-span-3">
+      {/* Top Layer: Clean Header with Hero & Daily Pulse */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+          <div className="lg:col-span-2">
               <HeroSlider onNavigate={onNavigate} />
           </div>
-          <div className="flex flex-col justify-between space-y-6">
+          <div className="h-full">
               <DailyPulse onNavigate={onNavigate} />
-              <div className="hidden xl:block">
-                  <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-              </div>
           </div>
       </div>
 
@@ -217,9 +214,7 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
 
         {/* Sidebar Widgets Area */}
         <div className="space-y-8">
-          <div className="xl:hidden">
-            <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-          </div>
+          <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
           
           <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 text-center">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Advertisement</span>
@@ -227,9 +222,7 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
           </div>
           
           <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
-          <div className="hidden lg:block">
-              <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
-          </div>
+          <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
         </div>
       </div>
     </div>

@@ -7,6 +7,51 @@ import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
 import AdsenseWidget from '../AdsenseWidget';
 
+const NewsCarousel: React.FC<{ items: CurrentAffairsItem[] }> = ({ items }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (items.length <= 1) return;
+        const timer = setInterval(() => {
+            setCurrentIndex(prev => (prev + 1) % items.length);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, [items]);
+
+    const item = items[currentIndex];
+
+    return (
+        <div className="bg-gradient-to-br from-teal-500 to-emerald-600 p-10 md:p-16 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+            
+            <div className="relative z-10 space-y-6">
+                <div className="flex items-center space-x-3">
+                    <span className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/30">Breaking Update</span>
+                    <div className="flex space-x-1">
+                        {items.map((_, i) => (
+                            <div key={i} className={`h-1 rounded-full transition-all ${i === currentIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/30'}`}></div>
+                        ))}
+                    </div>
+                </div>
+                <h2 className="text-3xl md:text-5xl font-black leading-tight drop-shadow-lg animate-fade-in h-[140px] md:h-auto overflow-hidden">
+                    {item.title}
+                </h2>
+                <div className="flex items-center space-x-6 pt-6 border-t border-white/20">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Source</p>
+                        <p className="font-bold">{item.source}</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Published</p>
+                        <p className="font-bold">{item.date}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
     const [items, setItems] = useState<CurrentAffairsItem[]>([]);
@@ -31,22 +76,15 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         fetchItems();
     }, [fetchItems]);
 
+    const carouselItems = items.slice(0, 5);
+    const gridItems = items.slice(5);
+
     return (
         <div className="animate-fade-in max-w-7xl mx-auto px-4 pb-20">
-            <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-black hover:underline mb-10 group">
+            <button onClick={onBack} className="flex items-center space-x-2 text-indigo-600 font-black hover:underline mb-8 group">
                 <ChevronLeftIcon className="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" />
                 <span>{t('backToDashboard')}</span>
             </button>
-
-            <header className="mb-12 text-center">
-                <div className="bg-teal-50 dark:bg-teal-950/30 w-20 h-20 rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <NewspaperIcon className="h-10 w-10 text-teal-600" />
-                </div>
-                <h1 className="text-5xl font-black text-slate-800 dark:text-white tracking-tight">
-                {t('currentAffairs.title')}
-                </h1>
-                <p className="text-xl text-slate-500 font-medium mt-4 max-w-2xl mx-auto">{t('currentAffairs.subtitle')}</p>
-            </header>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -56,29 +94,53 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             ) : error ? (
                 <div className="text-center text-red-500 bg-red-50 p-12 rounded-[2.5rem] border border-red-100 font-bold">{error}</div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {items.map((item) => (
-                        <div key={item.id} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
-                            <div>
-                                <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-teal-600 transition-colors">{item.title}</h3>
-                                <div className="mt-8 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-5">
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('currentAffairs.source')}</span>
-                                        <span className="font-black text-teal-600 text-xs tracking-tight">{item.source}</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('date')}</span>
-                                        <span className="block font-bold text-slate-500 text-xs">{item.date}</span>
-                                    </div>
-                                </div>
+                <div className="space-y-16">
+                    {/* Top Row Carousel */}
+                    {carouselItems.length > 0 && <NewsCarousel items={carouselItems} />}
+
+                    {/* Ad Widget after Carousel */}
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                        <AdsenseWidget />
+                    </div>
+
+                    {/* Remaining Grid */}
+                    <div>
+                        <div className="flex items-center space-x-4 mb-8">
+                            <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-2xl">
+                                <NewspaperIcon className="h-8 w-8 text-teal-600" />
                             </div>
+                            <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">More Current Affairs</h2>
                         </div>
-                    ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {gridItems.map((item, index) => (
+                                <React.Fragment key={item.id}>
+                                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+                                        <div>
+                                            <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-teal-600 transition-colors line-clamp-3">{item.title}</h3>
+                                            <div className="mt-8 flex items-center justify-between border-t border-slate-50 dark:border-slate-800 pt-5">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('currentAffairs.source')}</span>
+                                                    <span className="font-black text-teal-600 text-xs tracking-tight">{item.source}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('date')}</span>
+                                                    <span className="block font-bold text-slate-500 text-xs">{item.date}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* In-feed Ad every 6 items */}
+                                    {(index + 1) % 6 === 0 && (
+                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-md">
+                                            <AdsenseWidget />
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
-             <div className="mt-16">
-                <AdsenseWidget />
-            </div>
         </div>
     );
 };
