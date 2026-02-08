@@ -1,35 +1,36 @@
+
 import type { SubscriptionStatus } from '../types';
 
 /**
- * SubscriptionService Simulation
+ * SubscriptionService
  * ------------------------------
- * This service simulates managing user subscription status. It uses sessionStorage
- * to persist the "pro" status for a given user ID. In a real-world application,
- * this service would interact with your backend API, which would in turn verify
- * subscription status with a payment provider like Stripe or Razorpay.
- *
- * - `getSubscriptionStatus(userId)`: Checks if a user has a "pro" subscription.
- * - `upgradeToPro(userId)`: Simulates a subscription upgrade for the user.
+ * Manages user subscription status using localStorage for persistence across sessions
+ * and immediate state retrieval for the UI.
  */
 
-const getSubscriptionKey = (userId: string) => `kerala_psc_guru_subscription_${userId}`;
+const getSubscriptionKey = (userId: string) => `kpsc_pro_status_${userId}`;
 
 class SubscriptionService {
   
   getSubscriptionStatus(userId: string): SubscriptionStatus {
-    const status = sessionStorage.getItem(getSubscriptionKey(userId));
-    if (status === 'pro') {
-      return 'pro';
-    }
-    return 'free';
+    if (!userId) return 'free';
+    const status = localStorage.getItem(getSubscriptionKey(userId));
+    return status === 'pro' ? 'pro' : 'free';
   }
 
   upgradeToPro(userId: string): void {
     if (userId) {
-      sessionStorage.setItem(getSubscriptionKey(userId), 'pro');
+      localStorage.setItem(getSubscriptionKey(userId), 'pro');
+      // Trigger a custom event to notify App component if needed
+      window.dispatchEvent(new Event('subscription_updated'));
+    }
+  }
+
+  clearSubscription(userId: string): void {
+    if (userId) {
+      localStorage.removeItem(getSubscriptionKey(userId));
     }
   }
 }
 
-// Export a singleton instance of the service
 export const subscriptionService = new SubscriptionService();

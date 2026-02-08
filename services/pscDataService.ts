@@ -10,9 +10,6 @@ import { LightBulbIcon } from '../components/icons/LightBulbIcon';
 import { StarIcon } from '../components/icons/StarIcon';
 import { GlobeAltIcon } from '../components/icons/GlobeAltIcon';
 
-// Smart Cache with Session Storage persistence
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-
 const getIcon = (type: string) => {
     const icons: Record<string, any> = {
         'book': BookOpenIcon,
@@ -23,70 +20,46 @@ const getIcon = (type: string) => {
         'star': StarIcon,
         'globe': GlobeAltIcon
     };
-    const IconComp = icons[type] || BookOpenIcon;
+    const IconComp = icons[type?.toLowerCase()] || BookOpenIcon;
     return React.createElement(IconComp, { className: "h-8 w-8 text-indigo-500" });
 };
 
-const getCache = (key: string) => {
-    try {
-        const cached = sessionStorage.getItem(`psc_cache_${key}`);
-        if (!cached) return null;
-        const { data, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION) return data;
-    } catch (e) { return null; }
-    return null;
-};
-
-const setCache = (key: string, data: any) => {
-    try {
-        sessionStorage.setItem(`psc_cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
-    } catch (e) {}
-};
-
-const fetchHub = async <T>(params: string, mockData: T, bypassCache: boolean = false): Promise<T> => {
-    if (!bypassCache) {
-        const cached = getCache(params);
-        if (cached) return cached;
-    }
-
+const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
         const res = await fetch(`/api/data?${params}`);
         if (!res.ok) return mockData;
         const data = await res.json();
-        const result = (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
-        setCache(params, result);
-        return result;
-    } catch (e) {
-        return mockData;
-    }
+        return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
+    } catch (e) { return mockData; }
 };
 
 const adminReq = async (body: any, token: string | null = null) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    
     const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body) });
     if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'Request Failed' }));
+        const err = await res.json().catch(() => ({ message: 'API Request Failed' }));
         throw new Error(err.message || `Error ${res.status}`);
     }
-
-    // Invalidate session cache on write
-    sessionStorage.clear();
     return await res.json();
 };
 
 export const getExams = async (): Promise<Exam[]> => {
-    const raw = await fetchHub('type=exams', []);
-    if (!raw || raw.length === 0) return EXAMS_DATA;
-    return raw.map((e: any) => ({
-        id: e.id,
-        title: { ml: e.title_ml, en: e.title_en || e.title_ml },
-        description: { ml: e.description_ml, en: e.description_en || e.description_ml },
-        category: e.category,
-        level: e.level,
-        icon: getIcon(e.icon_type)
-    }));
+    try {
+        const res = await fetch('/api/data?type=exams');
+        const raw = await res.json();
+        if (Array.isArray(raw) && raw.length > 0) {
+            return raw.map((e: any) => ({
+                id: e.id,
+                title: { ml: e.title_ml, en: e.title_en || e.title_ml },
+                description: { ml: e.description_ml, en: e.description_en || e.description_ml },
+                category: e.category || 'General',
+                level: e.level || 'Preliminary',
+                icon: getIcon(e.icon_type)
+            }));
+        }
+    } catch (e) {}
+    return EXAMS_DATA;
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
@@ -95,23 +68,10 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
 };
 
 export const getSettings = async (bypass: boolean = false) => {
-    // Aggressive retry for settings to ensure Pro button visibility
-    const s = await fetchHub('type=settings', { subscription_model_active: 'true' }, bypass);
-    const finalSettings = (s && typeof s === 'object') ? s : { subscription_model_active: 'true' };
-    // Force a local backup in case API fails next time
-    localStorage.setItem('psc_app_settings', JSON.stringify(finalSettings));
-    return finalSettings;
+    return await fetchHub('type=settings', { subscription_model_active: 'true' });
 };
 
 export const updateSetting = async (key: string, value: string, token: string | null) => {
-    // Update local storage immediately for UI stability
-    const current = JSON.parse(localStorage.getItem('psc_app_settings') || '{}');
-    current[key] = value;
-    localStorage.setItem('psc_app_settings', JSON.stringify(current));
-    
-    // Clear cache immediately
-    sessionStorage.removeItem('psc_cache_type=settings');
-    
     return await adminReq({ action: 'update-setting', setting: { key, value } }, token);
 };
 
@@ -119,9 +79,7 @@ export const clearStudyCache = (token: string | null) => adminReq({ action: 'cle
 export const saveTestResult = (resultData: any) => adminReq({ action: 'save-result', resultData });
 export const triggerDailyScraper = (token: string | null) => adminReq({ action: 'run-daily-scraper' }, token);
 export const triggerBookScraper = (token: string | null) => adminReq({ action: 'run-book-scraper' }, token);
-export const applyAffiliateTags = (token: string | null) => adminReq({ action: 'apply-affiliate-tags' }, token);
 export const deleteBook = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Bookstore', id }, token);
-export const updateBook = (book: any, token: string | null) => adminReq({ action: 'update-book', book }, token);
 export const addQuestion = (question: any, token: string | null) => adminReq({ action: 'add-question', question }, token);
 export const getNotifications = () => fetchHub('type=notifications', MOCK_NOTIFICATIONS);
 export const getLiveUpdates = () => fetchHub('type=updates', MOCK_PSC_UPDATES);
@@ -135,17 +93,11 @@ export const getQuestionsForTest = async (subject: string, topic: string, count:
         if (!res.ok) return MOCK_QUESTION_BANK.slice(0, count);
         const data = await res.json();
         return (data && data.length > 0) ? data : MOCK_QUESTION_BANK.slice(0, count);
-    } catch (e) {
-        return MOCK_QUESTION_BANK.slice(0, count);
-    }
+    } catch (e) { return MOCK_QUESTION_BANK.slice(0, count); }
 };
 
-export const updateExam = (exam: any, token: string | null) => adminReq({ action: 'update-exam', exam }, token);
-export const updateSyllabus = (syllabus: any, token: string | null) => adminReq({ action: 'update-syllabus', syllabus }, token);
-export const deleteExam = (id: string, token: string | null) => adminReq({ action: 'delete-row', sheet: 'Exams', id }, token);
 export const syncCsvData = (sheet: string, data: string, t: string | null, isAppend: boolean = false) => adminReq({ action: 'csv-update', sheet, data, mode: isAppend ? 'append' : 'replace' }, t);
 export const testConnection = (token: string | null) => adminReq({ action: 'test-connection' }, token);
-export const exportStaticExamsToSheet = (token: string | null, examsPayload: any[], syllabusPayload: any[]) => adminReq({ action: 'export-static', examsPayload, syllabusPayload }, token);
 
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
     try {

@@ -6,10 +6,8 @@ declare var process: any;
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
 function getAi() {
-    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY || process.env.VITE_API_KEY;
-    if (!key) {
-        throw new Error("API_KEY missing. Please add it to Vercel Environment Variables.");
-    }
+    const key = process.env.API_KEY || process.env.GOOGLE_API_KEY;
+    if (!key) throw new Error("API_KEY missing.");
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
@@ -17,7 +15,7 @@ async function scrapeKpscNotifications() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Search for 10 latest job notifications on keralapsc.gov.in (2024-2025). Return as JSON array with 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
+        contents: `Research 10 latest job notifications from keralapsc.gov.in (2024-2025). Return as JSON array with 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
         config: {
             tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
@@ -33,15 +31,14 @@ async function scrapeKpscNotifications() {
             }
         }
     });
-    const data = JSON.parse(response.text || "[]");
-    return data.map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
+    return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
 }
 
 async function scrapePscLiveUpdates() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Find 10 latest announcements (rank lists/exam dates) from keralapsc.gov.in. Return as JSON array with 'title', 'url', 'section', and 'published_date'.`,
+        contents: `Find 10 latest announcements (rank lists/exam dates) from keralapsc.gov.in official announcements page. Return as JSON array with 'title', 'url', 'section', and 'published_date'.`,
         config: {
             tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
@@ -55,15 +52,14 @@ async function scrapePscLiveUpdates() {
             }
         }
     });
-    const data = JSON.parse(response.text || "[]");
-    return data.map((item: any) => [item.title, item.url, item.section, item.published_date]);
+    return JSON.parse(response.text || "[]").map((item: any) => [item.title, item.url, item.section, item.published_date]);
 }
 
 async function scrapeCurrentAffairs() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Research 15 important Malayalam news items for Kerala PSC from the last 7 days. Return as JSON array with 'id', 'title', 'source', 'date'.`,
+        contents: `Research 15 important Malayalam news items suitable for Kerala PSC exams from this week. Return as JSON array with 'id', 'title', 'source', 'date'.`,
         config: {
             tools: [{ googleSearch: {} }],
             responseMimeType: "application/json",
@@ -77,15 +73,14 @@ async function scrapeCurrentAffairs() {
             }
         }
     });
-    const data = JSON.parse(response.text || "[]");
-    return data.map((item: any) => [item.id, item.title, item.source, item.date]);
+    return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.source, item.date]);
 }
 
 async function scrapeGk() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Provide 20 GK facts for Kerala PSC in Malayalam. Return as JSON array with 'id', 'fact', 'category'.`,
+        contents: `Generate 20 high-quality GK facts about Kerala Geography and History in Malayalam for PSC students. Return as JSON array with 'id', 'fact', 'category'.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -98,15 +93,14 @@ async function scrapeGk() {
             }
         }
     });
-    const data = JSON.parse(response.text || "[]");
-    return data.map((item: any) => [item.id, item.fact, item.category]);
+    return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.fact, item.category]);
 }
 
 async function generateNewQuestions() {
     const ai = getAi();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview', 
-        contents: `Generate 15 MCQ questions in Malayalam for Kerala PSC. Return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`,
+        contents: `Generate 15 MCQ questions in Malayalam about Indian Constitution and Kerala Renaissance. Return 'id', 'topic', 'question', 'options' (array of 4), 'correctAnswerIndex'.`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -120,8 +114,7 @@ async function generateNewQuestions() {
             }
         }
     });
-    const data = JSON.parse(response.text || "[]");
-    return data.map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'Mixed', 'Moderate']);
+    return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'Mixed', 'Moderate']);
 }
 
 export async function runDailyUpdateScrapers() {
@@ -132,72 +125,47 @@ export async function runDailyUpdateScrapers() {
         { name: 'GK', scraper: scrapeGk, range: 'GK!A2:C' },
         { name: 'Questions', scraper: generateNewQuestions, range: 'QuestionBank!A1', isAppend: true }
     ];
-
     const results = await Promise.allSettled(tasks.map(async (t) => {
-        try {
-            const data = await t.scraper();
-            if (data && data.length > 0) {
-                if (t.isAppend) {
-                    await appendSheetData(t.range, data);
-                } else {
-                    await clearAndWriteSheetData(t.range, data);
-                }
-                return t.name;
-            }
-            throw new Error("No data returned");
-        } catch (err: any) {
-            console.error(`Scraper Task ${t.name} failed:`, err.message);
-            throw err;
+        const data = await t.scraper();
+        if (data?.length) {
+            if (t.isAppend) await appendSheetData(t.range, data);
+            else await clearAndWriteSheetData(t.range, data);
+            return t.name;
         }
+        throw new Error("Empty data");
     }));
-
-    const success = results.filter(r => r.status === 'fulfilled').map(r => (r as any).value);
-    const errors = results.filter(r => r.status === 'rejected').map((r, i) => `${tasks[i].name}: ${(r as any).reason.message}`);
-
     return { 
-        successCount: success.length, 
-        totalTasks: tasks.length, 
-        success, 
-        errors 
+        success: results.filter(r => r.status === 'fulfilled').map(r => (r as any).value),
+        errors: results.filter(r => r.status === 'rejected').map((r, i) => `${tasks[i].name}: ${(r as any).reason.message}`)
     };
 }
 
 export async function runBookScraper() {
-    try {
-        const ai = getAi();
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview", 
-            contents: `Search for top 15 Kerala PSC books on Amazon.in. Return JSON array with 'id', 'title', 'author', 'amazonLink'.`,
-            config: {
-                tools: [{ googleSearch: {} }],
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY, 
-                    items: {
-                        type: Type.OBJECT, properties: {
-                            id: { type: Type.STRING }, title: { type: Type.STRING }, 
-                            author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
-                        }, required: ["id", "title", "author", "amazonLink"]
-                    }
+    const ai = getAi();
+    const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview", 
+        contents: `Search for top 15 latest Kerala PSC rank files on Amazon.in. Return JSON array with 'id', 'title', 'author', 'amazonLink'.`,
+        config: {
+            tools: [{ googleSearch: {} }],
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY, items: {
+                    type: Type.OBJECT, properties: {
+                        id: { type: Type.STRING }, title: { type: Type.STRING }, author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
+                    }, required: ["id", "title", "author", "amazonLink"]
                 }
             }
-        });
-        
-        const items = JSON.parse(response.text || "[]");
-        if (items.length > 0) {
-            const rows = items.map((item: any) => {
-                let link = item.amazonLink || '';
-                if (link.includes('amazon.in') && !link.includes('tag=')) {
-                    link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
-                }
-                return [item.id || `b_${Date.now()}`, item.title, item.author, "", link];
-            });
-            await clearAndWriteSheetData('Bookstore!A2:E', rows);
-            return true;
         }
-        return false;
-    } catch (e: any) {
-        console.error("Book Scraper Failed:", e.message);
-        throw new Error(`Book Sync failed: ${e.message}`);
+    });
+    const items = JSON.parse(response.text || "[]");
+    if (items.length) {
+        const rows = items.map((item: any) => {
+            let link = item.amazonLink || '';
+            if (link.includes('amazon.in') && !link.includes('tag=')) link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
+            return [item.id || `b_${Date.now()}`, item.title, item.author, "", link];
+        });
+        await clearAndWriteSheetData('Bookstore!A2:E', rows);
+        return true;
     }
+    return false;
 }
