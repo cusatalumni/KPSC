@@ -25,7 +25,6 @@ import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import SitemapPage from './components/pages/SitemapPage';
 import ExternalViewerPage from './components/pages/ExternalViewerPage';
 import LoadingScreen from './components/LoadingScreen';
-import AdsenseWidget from './components/AdsenseWidget';
 import type { Exam, SubscriptionStatus, ActiveTest, Page, QuizQuestion, UserAnswers } from './types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
@@ -47,7 +46,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
       const init = async () => {
-          // Safety timeout: Load app anyway after 5 seconds
           const timer = setTimeout(() => {
               if (isAppLoading) setIsAppLoading(false);
           }, 5000);
@@ -75,6 +73,8 @@ const App: React.FC = () => {
         setCurrentPage('dashboard');
         setSelectedExam(null);
         setActiveTest(null);
+        setActiveStudyTopic(null);
+        setExternalUrl(null);
         return;
     }
 
@@ -96,9 +96,19 @@ const App: React.FC = () => {
         const exam = EXAMS_DATA.find(e => e.id === id);
         if (exam) setSelectedExam(exam);
     }
+
     if (targetPage === 'test' && id === 'mock' && parts[2]) {
         const mt = MOCK_TESTS_DATA.find(m => m.id === parts[2]);
         if (mt) setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed' });
+    }
+
+    if (targetPage === 'study_material' && id) {
+        setActiveStudyTopic(decodeURIComponent(id));
+    }
+
+    if (targetPage === 'external_viewer' && hashQuery) {
+        const urlParams = new URLSearchParams(hashQuery);
+        setExternalUrl(urlParams.get('url'));
     }
 
     setCurrentPage(targetPage);
@@ -148,6 +158,14 @@ const App: React.FC = () => {
             case 'current_affairs': return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
             case 'gk': return <GkPage onBack={() => handleNavigate('dashboard')} />;
             case 'upgrade': return <UpgradePage onBack={() => window.history.back()} onUpgrade={() => {}} />;
+            case 'study_material': return <StudyMaterialPage topic={activeStudyTopic || 'General Study'} onBack={() => handleNavigate('dashboard')} />;
+            case 'external_viewer': return <ExternalViewerPage url={externalUrl || ''} onBack={() => handleNavigate('dashboard')} />;
+            case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
+            case 'sitemap': return <SitemapPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate as any} />;
+            case 'about': return <AboutUsPage onBack={() => handleNavigate('dashboard')} />;
+            case 'privacy': return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
+            case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
+            case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
             default: return <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
           }
         })()}
