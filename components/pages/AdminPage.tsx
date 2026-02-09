@@ -26,6 +26,7 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { ArrowPathIcon } from '../icons/ArrowPathIcon';
 import { StarIcon } from '../icons/StarIcon';
 import { XMarkIcon } from '../icons/XMarkIcon';
+import { PencilSquareIcon } from '../icons/PencilSquareIcon';
 import type { Book, Exam, PracticeTest, QuizQuestion } from '../../types';
 
 type AdminTab = 'automation' | 'exams' | 'syllabus' | 'questions' | 'bookstore' | 'subscriptions';
@@ -45,8 +46,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
     const [dataSource, setDataSource] = useState<'Database' | 'Static Fallback'>('Static Fallback');
     
-    // UI Helpers
-    const subjects = useMemo(() => ['GK', 'Malayalam', 'English', 'Mental Ability', 'General Science', 'Indian History', 'Kerala History', 'Indian Geography', 'Current Affairs', 'Nursing', 'Engineering'], []);
+    // Smart Selectors Data
+    const subjectsList = useMemo(() => ['GK', 'Malayalam', 'English', 'Mental Ability', 'General Science', 'Indian History', 'Kerala History', 'Indian Geography', 'Current Affairs', 'Nursing', 'Engineering'], []);
+    const examTopics = useMemo(() => exams.map(e => e.title.ml), [exams]);
 
     // Form States
     const [bulkData, setBulkData] = useState('');
@@ -60,24 +62,21 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             if (!isSilent) setLoading(true);
             const token = await getToken();
-            
             try {
                 const conn = await testConnection(token);
                 if (conn && conn.status) setDbStatus(conn.status);
                 if (conn && conn.details) setDbDetails(conn.details);
-            } catch (e: any) { console.error("Conn check failed"); }
-
+            } catch (e: any) { console.error("Status check failed"); }
             const examResult = await getExams();
             setExams(examResult.exams);
             setDataSource(examResult.source === 'database' ? 'Database' : 'Static Fallback');
-
             const [b, settings] = await Promise.all([getBooks(), getSettings(true)]);
             setBooks(b);
             if (settings && settings.subscription_model_active !== undefined) {
                 setIsSubscriptionActive(settings.subscription_model_active === 'true');
             }
         } catch (err: any) { 
-            setStatus("Infrastructure Error: " + err.message);
+            setStatus("Portal Error: " + err.message);
             setIsError(true);
         } finally { if (!isSilent) setLoading(false); }
     }, [getToken]);
@@ -91,7 +90,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, [selectedExamId]);
 
     const handleAction = async (fn: () => Promise<any>, shouldRefresh: boolean = true) => {
-        setStatus("Deploying task to cloud environment...");
+        setStatus("Deploying request to cloud handlers...");
         setIsError(false);
         setLoading(true);
         try { 
@@ -123,31 +122,32 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-12 pb-32 px-4 animate-fade-in text-slate-800 dark:text-slate-100">
-            {/* Top Stats Bar */}
+            {/* System Monitor */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl flex items-center space-x-5">
-                    <div className={`w-4 h-4 rounded-full ${dbStatus.sheets ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`}></div>
+                    <div className={`w-4 h-4 rounded-full ${dbStatus.sheets ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`}></div>
                     <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sheets Sync</p>
-                        <p className="text-sm font-black uppercase">{dbStatus.sheets ? 'Active' : 'Offline'}</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cloud Sheets</p>
+                        <p className="text-sm font-black uppercase">{dbStatus.sheets ? 'Synchronized' : 'Offline'}</p>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl flex items-center space-x-5">
-                    <div className={`w-4 h-4 rounded-full ${dbStatus.supabase ? 'bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-slate-700'}`}></div>
+                    {/* Changed color from indigo to emerald for "Connected" */}
+                    <div className={`w-4 h-4 rounded-full ${dbStatus.supabase ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-slate-700'}`}></div>
                     <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Supabase DB</p>
-                        <p className="text-sm font-black uppercase">{dbStatus.supabase ? 'Connected' : 'Unlinked'}</p>
+                        <p className="text-sm font-black uppercase">{dbStatus.supabase ? 'ACTIVE' : 'Unlinked'}</p>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl flex items-center space-x-5">
-                    <div className="bg-amber-500 w-4 h-4 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>
+                    <div className={`w-4 h-4 rounded-full ${dataSource === 'Database' ? 'bg-indigo-600' : 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'}`}></div>
                     <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Primary Source</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">App Engine</p>
                         <p className="text-sm font-black uppercase">{dataSource}</p>
                     </div>
                 </div>
                 <button onClick={onBack} className="bg-indigo-600 text-white p-6 rounded-[2rem] shadow-2xl flex items-center justify-between group hover:bg-indigo-500 transition-all">
-                    <span className="font-black text-sm uppercase tracking-widest ml-2">Main Menu</span>
+                    <span className="font-black text-sm uppercase tracking-widest ml-2">Dashboard</span>
                     <ChevronLeftIcon className="h-6 w-6 transform group-hover:-translate-x-2 transition-transform" />
                 </button>
             </div>
@@ -166,22 +166,22 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             <div className="flex flex-wrap gap-4 scrollbar-hide pb-2">
                 {tabBtn('automation', 'Cloud Automation', RssIcon)}
-                {tabBtn('exams', 'Managed Exams', AcademicCapIcon)}
+                {tabBtn('exams', 'Exams Index', AcademicCapIcon)}
                 {tabBtn('syllabus', 'Course Sprints', ClipboardListIcon)}
-                {tabBtn('questions', 'Q-Bank Control', PlusIcon)}
-                {tabBtn('bookstore', 'Amazon Affiliate', BookOpenIcon)}
-                {tabBtn('subscriptions', 'Access Logic', StarIcon)}
+                {tabBtn('questions', 'Q-Bank Injector', PlusIcon)}
+                {tabBtn('bookstore', 'Amazon Store', BookOpenIcon)}
+                {tabBtn('subscriptions', 'Access Control', StarIcon)}
             </div>
 
-            <main className="bg-white dark:bg-slate-950 p-1 md:p-10 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 min-h-[600px]">
+            <main className="bg-white dark:bg-slate-950 p-2 md:p-10 rounded-[3.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 min-h-[600px]">
                 {activeTab === 'automation' && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
-                            { icon: RssIcon, color: 'bg-indigo-600', title: 'Daily Pulse', desc: 'Sync KPSC notifications, current affairs, and GK facts automatically.', action: () => triggerDailyScraper },
-                            { icon: BookOpenIcon, color: 'bg-emerald-600', title: 'Inventory Sync', desc: 'Fetch top rank files from Amazon. Ensure API_KEY is set.', action: () => triggerBookScraper },
-                            { icon: ArrowPathIcon, color: 'bg-rose-600', title: 'Flush AI Cache', desc: 'Purge all cached AI study notes to force new generation.', action: () => clearStudyCache }
+                            { icon: RssIcon, color: 'bg-indigo-600', title: 'Global Sync', desc: 'Sync KPSC notifications, news and generate AI questions.', action: () => triggerDailyScraper },
+                            { icon: BookOpenIcon, color: 'bg-emerald-600', title: 'Catalog Sync', desc: 'Fetch top Kerala PSC rank files from Amazon catalog.', action: () => triggerBookScraper },
+                            { icon: ArrowPathIcon, color: 'bg-rose-600', title: 'Flush AI Cache', desc: 'Purge cached study materials to force new AI generation.', action: () => clearStudyCache }
                         ].map((card, i) => (
-                            <div key={i} className="bg-slate-50 dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 group hover:border-indigo-500 transition-all flex flex-col">
+                            <div key={i} className="bg-slate-50 dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 group hover:border-indigo-500 transition-all flex flex-col items-center text-center">
                                 <div className={`${card.color} w-20 h-20 rounded-3xl flex items-center justify-center mb-8 shadow-2xl group-hover:scale-110 transition-transform`}>
                                     <card.icon className="h-10 w-10 text-white" />
                                 </div>
@@ -197,7 +197,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="space-y-10">
                         <div className="flex justify-between items-center px-4">
                              <h3 className="text-3xl font-black tracking-tighter uppercase">Registry of Exams</h3>
-                             <span className="bg-indigo-50 dark:bg-indigo-900/30 px-6 py-2 rounded-full border border-indigo-100 dark:border-indigo-800 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em]">{exams.length} Managed Items</span>
+                             <span className="bg-indigo-50 dark:bg-indigo-900/30 px-6 py-2 rounded-full border border-indigo-100 dark:border-indigo-800 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.3em]">{exams.length} Items</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
                             {exams.map(ex => (
@@ -210,7 +210,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         </div>
                                     </div>
                                     <button 
-                                        onClick={async () => { if(confirm("Confirm deletion? This will break linked syllabus SPRINTS.")) handleAction(async () => deleteBook(ex.id, await getToken())) }} 
+                                        onClick={async () => { if(confirm("Discard entry?")) handleAction(async () => deleteBook(ex.id, await getToken())) }} 
                                         disabled={dataSource === 'Static Fallback'}
                                         className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 p-4 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
                                     >
@@ -224,74 +224,71 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'questions' && (
                     <div className="space-y-20 px-4">
-                        <section className="bg-slate-950 p-12 rounded-[4rem] border border-white/5 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+                        {/* MANUAL ENTRY - LIGHT THEME FOCUS */}
+                        <section className="bg-slate-50 p-8 md:p-14 rounded-[4rem] border-2 border-slate-100 shadow-2xl relative overflow-hidden text-slate-900">
+                            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
                             <div className="flex items-center space-x-5 mb-12 relative z-10">
-                                <div className="bg-indigo-600 p-4 rounded-2xl shadow-2xl"><PlusIcon className="h-8 w-8 text-white" /></div>
-                                <h3 className="text-3xl font-black text-white uppercase tracking-tight">Manual Question Injection</h3>
+                                <div className="bg-indigo-600 p-4 rounded-2xl shadow-2xl shadow-indigo-600/20"><PlusIcon className="h-8 w-8 text-white" /></div>
+                                <div>
+                                    <h3 className="text-3xl font-black uppercase tracking-tight">Manual Injection</h3>
+                                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">Direct Database Entry</p>
+                                </div>
                             </div>
+                            
                             <form onSubmit={handleSingleQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Target Exam (Topic Context)</label>
-                                    <div className="flex space-x-2">
-                                        <select 
-                                            value={newQ.topic} 
-                                            onChange={e => setNewQ({...newQ, topic: e.target.value})} 
-                                            className="flex-1 p-6 rounded-2xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all text-sm"
-                                        >
-                                            <option value="" className="bg-slate-900">Select Existing Exam</option>
-                                            {/* Fix: Changed "ex.id" to "e.id" to match the variable name in the map function */}
-                                            {exams.map(e => <option key={e.id} value={e.id} className="bg-slate-900">{e.title.ml}</option>)}
-                                        </select>
-                                        <input 
-                                            placeholder="OR New Entry..." 
-                                            onChange={e => setNewQ({...newQ, topic: e.target.value})}
-                                            className="w-1/2 p-6 rounded-2xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all text-sm"
-                                        />
-                                    </div>
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Exam / Topic (Selection or New)</label>
+                                    <input 
+                                        list="exam-topics"
+                                        value={newQ.topic} 
+                                        onChange={e => setNewQ({...newQ, topic: e.target.value})} 
+                                        placeholder="Pick or type exam name..."
+                                        className="w-full p-6 rounded-[1.5rem] bg-white border-2 border-slate-200 font-bold outline-none focus:border-indigo-500 transition-all shadow-sm"
+                                        required
+                                    />
+                                    <datalist id="exam-topics">
+                                        {examTopics.map((t, idx) => <option key={idx} value={t} />)}
+                                    </datalist>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Academic Subject Area</label>
-                                    <div className="flex space-x-2">
-                                        <select 
-                                            value={newQ.subject} 
-                                            onChange={e => setNewQ({...newQ, subject: e.target.value})} 
-                                            className="flex-1 p-6 rounded-2xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all text-sm"
-                                        >
-                                            {subjects.map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
-                                        </select>
-                                        <input 
-                                            placeholder="OR New Subject..." 
-                                            onChange={e => setNewQ({...newQ, subject: e.target.value})}
-                                            className="w-1/2 p-6 rounded-2xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-indigo-500 transition-all text-sm"
-                                        />
-                                    </div>
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Area</label>
+                                    <input 
+                                        list="subject-areas"
+                                        value={newQ.subject} 
+                                        onChange={e => setNewQ({...newQ, subject: e.target.value})} 
+                                        placeholder="Pick or type subject..."
+                                        className="w-full p-6 rounded-[1.5rem] bg-white border-2 border-slate-200 font-bold outline-none focus:border-indigo-500 transition-all shadow-sm"
+                                        required
+                                    />
+                                    <datalist id="subject-areas">
+                                        {subjectsList.map(s => <option key={s} value={s} />)}
+                                    </datalist>
                                 </div>
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Question Body</label>
-                                    <textarea value={newQ.question} onChange={e => setNewQ({...newQ, question: e.target.value})} placeholder="Body of the question in Malayalam..." className="w-full p-8 border border-white/10 rounded-[2.5rem] bg-white/5 text-white font-bold outline-none focus:border-indigo-500 transition-all shadow-inner h-40" required />
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Question Body (Malayalam)</label>
+                                    <textarea value={newQ.question} onChange={e => setNewQ({...newQ, question: e.target.value})} placeholder="Body of the question..." className="w-full p-8 border-2 border-slate-200 rounded-[2.5rem] bg-white font-bold outline-none focus:border-indigo-500 transition-all shadow-sm h-40" required />
                                 </div>
                                 {newQ.options?.map((opt, i) => (
-                                    <div key={i} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 flex items-center space-x-6 hover:border-indigo-500/50 transition-all group">
-                                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white shadow-xl">{String.fromCharCode(65+i)}</div>
-                                        <input value={opt} onChange={e => { const o = [...(newQ.options || [])]; o[i] = e.target.value; setNewQ({...newQ, options: o})}} placeholder={`Choice ${i+1}`} className="flex-1 bg-transparent border-none outline-none text-white font-bold text-sm placeholder-white/20" required />
-                                        <input type="radio" name="manual_correct" checked={newQ.correctAnswerIndex === i} onChange={() => setNewQ({...newQ, correctAnswerIndex: i})} className="w-7 h-7 accent-indigo-500 cursor-pointer" />
+                                    <div key={i} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center space-x-6 hover:border-indigo-500/50 transition-all group shadow-sm">
+                                        <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">{String.fromCharCode(65+i)}</div>
+                                        <input value={opt} onChange={e => { const o = [...(newQ.options || [])]; o[i] = e.target.value; setNewQ({...newQ, options: o})}} placeholder={`Enter choice ${i+1}`} className="flex-1 bg-transparent border-none outline-none font-bold text-sm" required />
+                                        <input type="radio" name="correct_idx" checked={newQ.correctAnswerIndex === i} onChange={() => setNewQ({...newQ, correctAnswerIndex: i})} className="w-8 h-8 accent-indigo-500 cursor-pointer" />
                                     </div>
                                 ))}
                                 <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Detailed Explanation (Optional)</label>
-                                    <textarea value={newQ.explanation} onChange={e => setNewQ({...newQ, explanation: e.target.value})} placeholder="Explain why the chosen answer is correct..." className="w-full p-6 border border-white/10 rounded-[2rem] bg-white/5 text-white font-bold outline-none focus:border-indigo-500 transition-all shadow-inner text-xs" rows={3} />
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Explanation / Hint (Optional)</label>
+                                    <textarea value={newQ.explanation} onChange={e => setNewQ({...newQ, explanation: e.target.value})} placeholder="Explain why this answer is correct..." className="w-full p-6 border-2 border-slate-200 rounded-[2rem] bg-white font-bold outline-none focus:border-indigo-500 transition-all shadow-sm text-xs" rows={3} />
                                 </div>
-                                <button type="submit" disabled={loading || dataSource === 'Static Fallback'} className="md:col-span-2 bg-indigo-600 hover:bg-indigo-500 text-white py-8 rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 disabled:opacity-50">Upload to Database</button>
+                                <button type="submit" disabled={loading || dataSource === 'Static Fallback'} className="md:col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white py-8 rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 disabled:opacity-50 mt-4 shadow-indigo-600/20">Commit to Cloud</button>
                             </form>
                         </section>
                         
-                        <section className="pt-20 border-t-2 border-slate-50 dark:border-slate-900">
+                        <section className="pt-20 border-t-2 border-slate-100 dark:border-slate-800">
                              <div className="mb-10">
-                                <h3 className="text-xl font-black uppercase tracking-widest mb-2">Bulk Repository Sync</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Supports CSV formatting only</p>
+                                <h3 className="text-xl font-black uppercase tracking-widest mb-2">Bulk Sync Repository</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">CSV Format: ID, Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty, Explanation</p>
                              </div>
-                             <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="FORMAT: ID(Numeric), Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty, Explanation" className="w-full h-80 p-10 border border-slate-100 dark:border-slate-800 rounded-[4rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
+                             <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="Paste CSV lines here..." className="w-full h-80 p-10 border border-slate-200 dark:border-slate-800 rounded-[4rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
                              <button onClick={async () => handleAction(async () => syncCsvData('QuestionBank', bulkData, await getToken(), true))} disabled={dataSource === 'Static Fallback'} className="w-full mt-10 bg-emerald-600 hover:bg-emerald-500 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl transition-all">Start Batch Deployment</button>
                         </section>
                     </div>
@@ -301,11 +298,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="space-y-12 px-4">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-100 dark:border-slate-800 pb-10">
                             <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tighter">Course Sprites</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Topic and Syllabus Architecture</p>
+                                <h3 className="text-3xl font-black uppercase tracking-tighter">Instructional Sprites</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Global Syllabus Mapping</p>
                             </div>
                             <select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full md:w-auto p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 font-black text-xs uppercase tracking-widest outline-none shadow-inner cursor-pointer focus:border-indigo-500 transition-all">
-                                <option value="">Select Target Sprint</option>
+                                <option value="">Select Target exam</option>
                                 {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
                             </select>
                         </div>
@@ -314,7 +311,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <textarea value={syllabusBulkData} onChange={e => setSyllabusBulkData(e.target.value)} placeholder="FORMAT: ID(Numeric), ExamID, Title, QCount, Duration, Subject, Topic" className="w-full h-72 p-10 border border-slate-100 dark:border-slate-800 rounded-[3.5rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <button onClick={async () => handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), true))} disabled={dataSource === 'Static Fallback'} className="bg-indigo-600 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 transition-all">Append to sprint</button>
-                                <button onClick={async () => { if(confirm("Complete mapping reset? All old syllabus for this view will be erased.")) handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), false)) }} disabled={dataSource === 'Static Fallback'} className="bg-slate-800 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-slate-700 transition-all">Wipe and overwrite global</button>
+                                <button onClick={async () => { if(confirm("Wipe all previous syllabus for this view?")) handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), false)) }} disabled={dataSource === 'Static Fallback'} className="bg-slate-800 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-slate-700 transition-all">Overwrite global</button>
                             </div>
                         </div>
 
@@ -325,16 +322,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         <p className="font-black text-sm truncate uppercase tracking-tighter">{s.title}</p>
                                         <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">{s.topic} • {s.questions} Qs</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Remove this sprite from the syllabus?")) handleAction(async () => deleteBook(s.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
+                                    <button onClick={async () => { if(confirm("Detach from syllabus?")) handleAction(async () => deleteBook(s.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
                                 </div>
                             ))}
                         </div>
-                        {syllabusItems.length === 0 && selectedExamId && (
-                            <div className="text-center py-20 border-2 border-dashed border-slate-100 dark:border-slate-900 rounded-[3rem]">
-                                <ClipboardListIcon className="h-16 w-16 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
-                                <p className="text-sm font-black text-slate-300 uppercase tracking-[0.3em]">No sprint mapped for this exam</p>
-                            </div>
-                        )}
                     </div>
                 )}
                 
@@ -342,19 +333,19 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="space-y-10 px-4">
                         <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-10">
                             <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tighter">Marketplace Inventory</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Amazon.in Affiliate Channel</p>
+                                <h3 className="text-3xl font-black uppercase tracking-tighter">Marketplace Hub</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Amazon Affiliate Channel</p>
                             </div>
-                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} disabled={dataSource === 'Static Fallback'} className="bg-emerald-600 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all text-[11px]">Sync Cloud Catalog</button>
+                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} disabled={dataSource === 'Static Fallback'} className="bg-emerald-600 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all text-[11px]">Sync Cloud Store</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {books.map(b => (
                                 <div key={b.id} className="p-7 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between group hover:border-emerald-500 transition-all shadow-sm">
                                     <div className="min-w-0 pr-6">
-                                        <p className="font-black text-sm truncate">{b.title}</p>
-                                        <p className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-tighter italic">{b.author || 'Catalog generic'}</p>
+                                        <p className="font-black text-sm truncate uppercase tracking-tighter leading-none mb-2">{b.title}</p>
+                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest italic">{b.author || 'Catalog generic'}</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Discard from inventory?")) handleAction(async () => deleteBook(b.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
+                                    <button onClick={async () => { if(confirm("Remove from store?")) handleAction(async () => deleteBook(b.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
                                 </div>
                             ))}
                         </div>
@@ -368,7 +359,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <StarIcon className="h-16 w-16 mx-auto" />
                             </div>
                             <h3 className="text-5xl font-black mb-8 tracking-tighter uppercase">Access Wall</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-16 leading-relaxed font-bold max-w-sm mx-auto uppercase tracking-tighter">Toggle global monetization strategy. Disabling the paywall grants PRO features to every authenticated user bypass-mode.</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-16 leading-relaxed font-bold max-w-sm mx-auto uppercase tracking-widest">Toggle global monetization strategy. Disabling the wall grants PRO features to all authenticated users.</p>
                             <button 
                                 onClick={async () => {
                                     const newVal = !isSubscriptionActive;
@@ -376,9 +367,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     handleAction(() => updateSetting('subscription_model_active', String(newVal), token));
                                 }}
                                 disabled={dataSource === 'Static Fallback'}
-                                className={`w-full py-8 rounded-[2.5rem] font-black text-xs tracking-[0.4em] uppercase transition-all duration-500 shadow-2xl active:scale-95 disabled:opacity-50 ${isSubscriptionActive ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}
+                                className={`w-full py-8 rounded-[2.5rem] font-black text-xs tracking-[0.4em] uppercase transition-all duration-500 shadow-2xl active:scale-95 disabled:opacity-50 ${isSubscriptionActive ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-950 text-white'}`}
                             >
-                                {isSubscriptionActive ? 'Kill Paywall (Free Mode)' : 'Initiate Monetization SPRINTS'}
+                                {isSubscriptionActive ? 'Suspend Paywall' : 'Initiate PRO Layer'}
                             </button>
                         </div>
                     </div>

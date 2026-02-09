@@ -4,14 +4,6 @@ import { findAndUpsertRow, deleteRowById, appendSheetData, clearAndWriteSheetDat
 import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
-function slugify(text: string): string {
-    return text.toString().toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^\w\u0d00-\u0d7f]+/g, '')
-        .replace(/--+/g, '_')
-        .trim();
-}
-
 function parseCsvLine(line: string): string[] {
     const result: string[] = [];
     let currentField = '';
@@ -39,7 +31,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, sheet, id, data, mode, resultData, setting, question, exam } = req.body;
+    const { action, sheet, id, data, mode, resultData, setting, question, exam, syllabus } = req.body;
 
     // save-result is public
     if (action === 'save-result') {
@@ -68,12 +60,10 @@ export default async function handler(req: any, res: any) {
             case 'test-connection':
                 let sheetsStatus = { ok: false, error: null as string | null };
                 let supabaseStatus = { ok: false, error: null as string | null };
-                
                 try {
                     await readSheetData('Settings!A1:B2');
                     sheetsStatus.ok = true;
                 } catch (e: any) { sheetsStatus.error = e.message; }
-                
                 try {
                     if (supabase) {
                         const { error } = await supabase.from('settings').select('key').limit(1);
@@ -81,7 +71,6 @@ export default async function handler(req: any, res: any) {
                         supabaseStatus.ok = true;
                     } else { supabaseStatus.error = "Supabase env missing"; }
                 } catch (e: any) { supabaseStatus.error = e.message; }
-                
                 return res.status(200).json({ 
                     status: { sheets: sheetsStatus.ok, supabase: supabaseStatus.ok },
                     details: { sheets: sheetsStatus.error, supabase: supabaseStatus.error }
@@ -101,17 +90,35 @@ export default async function handler(req: any, res: any) {
                 }]);
                 return res.status(200).json({ message: 'Exam configuration updated' });
 
+            case 'update-syllabus':
+                const sylRow = [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic];
+                await findAndUpsertRow('Syllabus', String(syllabus.id), sylRow);
+                if (supabase) await upsertSupabaseData('syllabus', [{
+                    id: syllabus.id, exam_id: syllabus.exam_id, title: syllabus.title, questions: parseInt(syllabus.questions),
+                    duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic
+                }]);
+                return res.status(200).json({ message: 'Syllabus item updated' });
+
             case 'add-question':
-                // Use numeric-only ID for bigint columns
-                const qId = question.id || Date.now();
+                // Strictly numeric ID for BigInt columns
+                const qId = parseInt(question.id) || Date.now();
                 const qRow = [qId, question.topic, question.question, JSON.stringify(question.options), question.correctAnswerIndex, question.subject, question.difficulty, question.explanation || ''];
                 await appendSheetData('QuestionBank!A1', [qRow]);
                 if (supabase) {
-                    await upsertSupabaseData('questionbank', [{
+                    // We construct the object carefully. If 'explanation' column is missing, the whole object might fail in some Supabase versions.
+                    const payload: any = {
                         id: qId, topic: question.topic, question: question.question, options: question.options, 
-                        correct_answer_index: question.correctAnswerIndex, subject: question.subject, difficulty: question.difficulty,
-                        explanation: question.explanation || ''
-                    }]);
+                        correct_answer_index: parseInt(question.correctAnswerIndex), subject: question.subject, difficulty: question.difficulty
+                    };
+                    if (question.explanation) payload.explanation = question.explanation;
+                    
+                    const { error } = await supabase.from('questionbank').upsert([payload]);
+                    if (error) {
+                        if (error.message.includes('explanation')) {
+                           throw new Error("Supabase Column Missing: Please add 'explanation' column (text) to your 'questionbank' table.");
+                        }
+                        throw error;
+                    }
                 }
                 return res.status(200).json({ message: 'Question committed successfully' });
 
@@ -126,15 +133,13 @@ export default async function handler(req: any, res: any) {
                         let optsRaw = (parts[3] || '').trim().replace(/^\[|\]$/g, '');
                         let opts = optsRaw.includes('|') ? optsRaw.split('|').map(o => o.trim()) : optsRaw.split(',').map(o => o.trim());
                         if (opts.length < 2) opts = ["A", "B", "C", "D"];
-                        // Use unique numeric ID
                         const rowId = parseInt(parts[0]) || (Date.now() + index);
                         return [rowId, parts[1] || 'General', parts[2] || '', JSON.stringify(opts), parts[4] || '0', parts[5] || 'GK', parts[6] || 'Moderate', parts[7] || ''];
                     }
                     if (currentSheet === 'syllabus') {
                         const examId = parts[1] || 'general';
-                        const topic = parts[6] || parts[2] || 'general';
                         const rowId = parseInt(parts[0]) || (Date.now() + index + 1000);
-                        return [rowId, examId, parts[2] || topic, parts[3] || '20', parts[4] || '20', parts[5] || 'General', topic];
+                        return [rowId, examId, parts[2] || 'Topic', parts[3] || '20', parts[4] || '20', parts[5] || 'General', parts[6] || 'General'];
                     }
                     return parts;
                 });
@@ -148,7 +153,7 @@ export default async function handler(req: any, res: any) {
                         if (currentSheet === 'syllabus') return { id: r[0], exam_id: String(r[1]), title: String(r[2]), questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: String(r[5]), topic: String(r[6]) };
                         return null;
                     }).filter(Boolean);
-                    if (supabaseRows.length > 0) await upsertSupabaseData(currentSheet, supabaseRows);
+                    if (supabaseRows.length > 0) await upsertSupabaseData(currentSheet, supabaseRows as any[]);
                 }
                 return res.status(200).json({ message: 'Sync Success' });
 

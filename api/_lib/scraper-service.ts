@@ -7,7 +7,9 @@ const AFFILIATE_TAG = 'tag=malayalambooks-21';
 
 function getAi() {
     const key = process.env.API_KEY || process.env.GOOGLE_API_KEY;
-    if (!key) throw new Error("API_KEY missing in server environment variables.");
+    if (!key || key.trim() === "") {
+        throw new Error("API_KEY missing: Please add your Gemini API Key to Vercel environment variables as 'API_KEY'.");
+    }
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
@@ -33,7 +35,10 @@ async function scrapeKpscNotifications() {
             }
         });
         return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
-    } catch (e) { console.error("Notification Scrape Failed:", e); return []; }
+    } catch (e: any) { 
+        console.error("Notification Scrape Failed:", e.message); 
+        throw e;
+    }
 }
 
 async function scrapePscLiveUpdates() {
@@ -56,7 +61,7 @@ async function scrapePscLiveUpdates() {
             }
         });
         return JSON.parse(response.text || "[]").map((item: any) => [item.title, item.url, item.section, item.published_date]);
-    } catch (e) { return []; }
+    } catch (e: any) { throw e; }
 }
 
 async function scrapeCurrentAffairs() {
@@ -79,7 +84,7 @@ async function scrapeCurrentAffairs() {
             }
         });
         return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.source, item.date]);
-    } catch (e) { return []; }
+    } catch (e: any) { throw e; }
 }
 
 async function scrapeGk() {
@@ -101,7 +106,7 @@ async function scrapeGk() {
             }
         });
         return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.fact, item.category]);
-    } catch (e) { return []; }
+    } catch (e: any) { throw e; }
 }
 
 async function generateNewQuestions() {
@@ -124,7 +129,7 @@ async function generateNewQuestions() {
             }
         });
         return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', '']);
-    } catch (e) { return []; }
+    } catch (e: any) { throw e; }
 }
 
 export async function runDailyUpdateScrapers() {
@@ -136,13 +141,18 @@ export async function runDailyUpdateScrapers() {
         { name: 'Questions', scraper: generateNewQuestions, range: 'QuestionBank!A1', isAppend: true }
     ];
     const results = await Promise.allSettled(tasks.map(async (t) => {
-        const data = await t.scraper();
-        if (data && data.length > 0) {
-            if (t.isAppend) await appendSheetData(t.range, data);
-            else await clearAndWriteSheetData(t.range, data);
-            return t.name;
+        try {
+            const data = await t.scraper();
+            if (data && data.length > 0) {
+                if (t.isAppend) await appendSheetData(t.range, data);
+                else await clearAndWriteSheetData(t.range, data);
+                return t.name;
+            }
+            return null;
+        } catch (e: any) {
+            console.error(`Task ${t.name} failed:`, e.message);
+            throw e;
         }
-        return null;
     }));
     return { 
         success: results.filter(r => r.status === 'fulfilled' && (r as any).value).map(r => (r as any).value),
