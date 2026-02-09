@@ -28,7 +28,7 @@ import LoadingScreen from './components/LoadingScreen';
 import type { Exam, SubscriptionStatus, ActiveTest, Page, QuizQuestion, UserAnswers } from './types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
-import { getSettings } from './services/pscDataService';
+import { getSettings, getExamById } from './services/pscDataService';
 import { useTheme } from './contexts/ThemeContext';
 
 const App: React.FC = () => {
@@ -65,7 +65,7 @@ const App: React.FC = () => {
       init();
   }, [clerkLoaded]);
 
-  const syncStateFromHash = useCallback(() => {
+  const syncStateFromHash = useCallback(async () => {
     const rawHash = window.location.hash || '#dashboard';
     const [hashPath, hashQuery] = rawHash.replace(/^#\/?/, '').split('?');
     
@@ -93,8 +93,15 @@ const App: React.FC = () => {
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
-        const exam = EXAMS_DATA.find(e => e.id === id);
-        if (exam) setSelectedExam(exam);
+        // Fix: Use the service to find the exam instead of just static data
+        const exam = await getExamById(id);
+        if (exam) {
+            setSelectedExam(exam);
+        } else {
+            // Fallback to dashboard if exam not found
+            window.location.hash = '#dashboard';
+            return;
+        }
     }
 
     if (targetPage === 'test' && id === 'mock' && parts[2]) {
@@ -148,7 +155,7 @@ const App: React.FC = () => {
         {(() => {
           switch(currentPage) {
             case 'admin_panel': return <AdminPage onBack={() => handleNavigate('dashboard')} />;
-            case 'exam_details': return selectedExam ? <ExamPage exam={selectedExam} content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} onBack={() => handleNavigate('dashboard')} onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} onStartStudy={()=>{}} onNavigate={handleNavigate}/> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={()=>{}} />;
+            case 'exam_details': return selectedExam ? <ExamPage exam={selectedExam} content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} onBack={() => handleNavigate('dashboard')} onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} onStartStudy={()=>{}} onNavigate={handleNavigate}/> : <div className="flex items-center justify-center min-h-[50vh]"><div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
             case 'test': return activeTest ? <TestPage activeTest={activeTest} subscriptionStatus={subscriptionStatus} onTestComplete={(s, t, st, q, a) => { setTestResult({ score: s, total: t, stats: st, questions: q, answers: a }); handleNavigate('results'); }} onBack={() => window.history.back()} onNavigateToUpgrade={() => handleNavigate('upgrade')} /> : <div className="p-20 text-center">Loading...</div>;
             case 'results': return testResult ? <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} questions={testResult.questions} answers={testResult.answers} onBackToPrevious={() => handleNavigate('dashboard')} /> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={()=>{}} />;
             case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;

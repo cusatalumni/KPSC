@@ -24,7 +24,12 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
     // Ensure all data objects are clean and formatted correctly for Supabase
     const cleanData = data.map(item => {
         const entry: any = { ...item };
-        // Convert any empty strings to null for numeric/json columns if necessary
+        
+        // Safety for numeric columns: empty strings should be null or 0
+        if (entry.correct_answer_index === "") entry.correct_answer_index = 0;
+        if (entry.questions === "") entry.questions = 0;
+        if (entry.duration === "") entry.duration = 0;
+        
         return entry;
     });
 
@@ -33,8 +38,8 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         .upsert(cleanData, { onConflict });
 
     if (error) {
-        console.error(`Supabase Upsert Error (${table}):`, error.message, error.details);
-        throw new Error(`Supabase Sync Failed: ${error.message} (${error.details || 'Check column types'})`);
+        console.error(`Supabase Upsert Failure [${table}]:`, error);
+        throw new Error(`DB Error: ${error.message} (Details: ${error.details || 'Check CSV types'})`);
     }
     return result;
 }

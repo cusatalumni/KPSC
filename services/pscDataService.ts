@@ -63,7 +63,7 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
             if (Array.isArray(raw) && raw.length > 0) {
                 return {
                     exams: raw.map((e: any) => ({
-                        id: e.id,
+                        id: String(e.id),
                         title: { ml: e.title_ml, en: e.title_en || e.title_ml },
                         description: { ml: e.description_ml, en: e.description_en || e.description_ml },
                         category: e.category || 'General',
@@ -76,6 +76,20 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
         }
     } catch (e) {}
     return { exams: EXAMS_DATA, source: 'static' };
+};
+
+export const getExamById = async (id: string): Promise<Exam | null> => {
+    // 1. Check static constants
+    const staticExam = EXAMS_DATA.find(e => String(e.id) === String(id));
+    if (staticExam) return staticExam;
+
+    // 2. Fetch from DB
+    try {
+        const { exams } = await getExams();
+        return exams.find(e => String(e.id) === String(id)) || null;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {

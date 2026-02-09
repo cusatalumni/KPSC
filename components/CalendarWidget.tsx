@@ -12,7 +12,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ onNavigate }) => {
         <CalendarDaysIcon className="h-7 w-7 text-teal-500" />
         <h4 className="text-xl font-bold text-slate-800">പരീക്ഷാ കലണ്ടർ</h4>
       </div>
-      <p className="text-slate-600 mb-4">സെപ്റ്റംബർ, ഒക്ടോബർ 2025 മാസങ്ങളിലെ ഏറ്റവും പുതിയ പരീക്ഷാ ഷെഡ്യൂളുകൾ കാണുക.</p>
+      <p className="text-slate-600 mb-4">ഫെബ്രുവരി , മാർച്ച്  2026 മാസങ്ങളിലെ ഏറ്റവും പുതിയ പരീക്ഷാ ഷെഡ്യൂളുകൾ കാണുക.</p>
       <button 
         onClick={onNavigate} 
         className="w-full text-center bg-teal-50 text-teal-700 font-semibold px-4 py-2 rounded-lg hover:bg-teal-100 transition duration-200"

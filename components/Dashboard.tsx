@@ -12,12 +12,6 @@ import QuizHomeWidget from './QuizHomeWidget';
 import CurrentAffairsWidget from './CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { NewspaperIcon } from './icons/NewspaperIcon';
-import { ChevronRightIcon } from './icons/ChevronRightIcon';
-import { StarIcon } from './icons/StarIcon';
-import { CheckCircleIcon } from './icons/CheckCircleIcon';
-import { EXAM_CONTENT_MAP } from '../constants';
-import { subscriptionService } from '../services/subscriptionService';
-import { useUser } from '@clerk/clerk-react';
 
 const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }) => {
     const { t } = useTranslation();
@@ -45,14 +39,12 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
     }, [items]);
 
     if (loading || items.length === 0) return null;
-
     const current = items[currentIndex];
 
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-xl relative overflow-hidden group cursor-pointer hover:border-indigo-400 transition-all h-full flex flex-col" 
              onClick={() => onNavigate(current.type === 'gk' ? 'gk' : 'current_affairs')}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-[5rem] -mr-10 -mt-10"></div>
-            
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-xl ${current.type === 'gk' ? 'bg-yellow-100 text-yellow-600' : 'bg-teal-100 text-teal-600'}`}>
@@ -62,86 +54,9 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
                         {current.type === 'gk' ? 'Daily Fact' : 'Current Affair'}
                     </span>
                 </div>
-                <div className="flex space-x-1">
-                    {items.map((_, i) => (
-                        <div key={i} className={`h-1 rounded-full transition-all ${i === currentIndex ? 'w-4 bg-indigo-500' : 'w-1 bg-slate-200'}`}></div>
-                    ))}
-                </div>
             </div>
-
             <div className="flex-grow flex flex-col justify-center">
-                <h4 className="text-xl font-bold text-slate-800 dark:text-white leading-tight animate-fade-in">
-                    {current.type === 'gk' ? current.data.fact : current.data.title}
-                </h4>
-                {current.type === 'news' && (
-                    <p className="text-[10px] font-black text-teal-600 uppercase mt-3">{current.data.source} • {current.data.date}</p>
-                )}
-                {current.type === 'gk' && (
-                    <p className="text-[10px] font-black text-yellow-600 uppercase mt-3">{current.data.category}</p>
-                )}
-            </div>
-
-            <div className="mt-6 flex items-center text-indigo-600 font-black text-[10px] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
-                <span>Read More</span>
-                <ChevronRightIcon className="h-3 w-3 ml-1" />
-            </div>
-        </div>
-    );
-};
-
-const SubscriptionWidget: React.FC<{ onNavigate: (p: Page) => void }> = ({ onNavigate }) => {
-    const { t } = useTranslation();
-    const { user, isSignedIn } = useUser();
-    const [isActive, setIsActive] = useState(true);
-
-    useEffect(() => {
-        getSettings().then(s => {
-            if (s && s.subscription_model_active !== undefined) {
-                setIsActive(s.subscription_model_active === 'true');
-            }
-        }).catch(() => setIsActive(true)); // Fallback to active on error
-    }, []);
-
-    if (!isActive) return null;
-
-    const status = isSignedIn && user?.id ? subscriptionService.getSubscriptionStatus(user.id) : 'free';
-
-    return (
-        <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group border border-white/10">
-            <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-            <div className="relative z-10">
-                <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-amber-400 p-2 rounded-xl shadow-lg shadow-amber-500/20">
-                        <StarIcon className="h-5 w-5 text-indigo-900" />
-                    </div>
-                    <h4 className="font-black uppercase tracking-widest text-[10px] drop-shadow-sm">{t('subscriptions.title')}</h4>
-                </div>
-                
-                <h3 className="text-2xl font-black mb-2 text-amber-400 tracking-tight">Premium Membership</h3>
-                <p className="text-xs font-bold opacity-70 mb-6 leading-relaxed">
-                    {status === 'pro' ? t('subscriptions.pro') : t('subscriptions.subtitle')}
-                </p>
-
-                <div className="space-y-3 mb-8">
-                    {[
-                        "Unlock 500+ Mock Tests",
-                        "AI Study Notes Access",
-                        "Ad-free Experience",
-                        "Rank Predictor Access"
-                    ].map((feat, i) => (
-                        <div key={i} className="flex items-center space-x-2">
-                            <CheckCircleIcon className="h-4 w-4 text-emerald-400" />
-                            <span className="text-[11px] font-bold opacity-90">{feat}</span>
-                        </div>
-                    ))}
-                </div>
-
-                <button 
-                    onClick={() => onNavigate('upgrade')}
-                    className="w-full bg-white text-indigo-900 font-black py-4 rounded-2xl hover:bg-amber-400 hover:text-indigo-950 transition-all active:scale-95 text-xs shadow-xl uppercase tracking-widest"
-                >
-                    {status === 'pro' ? t('subscriptions.manage') : t('subscriptions.upgradeNow')}
-                </button>
+                <h4 className="text-xl font-bold text-slate-800 dark:text-white leading-tight animate-fade-in">{current.type === 'gk' ? current.data.fact : current.data.title}</h4>
             </div>
         </div>
     );
@@ -153,36 +68,15 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
   const [allExams, setAllExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fix: getExams returns an object with 'exams' property. Accessing it correctly.
   useEffect(() => {
-    Promise.all([
-        getDetectedExams(),
-        getExams()
-    ]).then(([detected, examsResult]) => {
-        setDetectedExams(detected);
-        setAllExams(examsResult.exams);
-        setLoading(false);
-    }).catch(err => {
-        console.error("Dashboard Load Error:", err);
-        setLoading(false);
-    });
+    Promise.all([getDetectedExams(), getExams()]).then(([detected, examsResult]) => {
+        setDetectedExams(detected); setAllExams(examsResult.exams); setLoading(false);
+    }).catch(err => { console.error(err); setLoading(false); });
   }, []);
-
-  const categoryThemes: Record<string, 'indigo' | 'amber' | 'rose' | 'emerald' | 'cyan'> = {
-    'General': 'indigo',
-    'Technical': 'amber',
-    'Special': 'rose',
-    'Live': 'rose',
-    'Degree': 'emerald',
-    '10th': 'cyan',
-    'Preliminary': 'indigo'
-  };
 
   const groupedExams = useMemo(() => {
     const groups: Record<string, Exam[]> = {};
-    if (detectedExams.length > 0) {
-        groups['Live'] = detectedExams;
-    }
+    if (detectedExams.length > 0) groups['Live'] = detectedExams;
     allExams.forEach(exam => {
         const cat = exam.category || 'General';
         if (!groups[cat]) groups[cat] = [];
@@ -193,99 +87,44 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
 
   const sortedCategoryIds = useMemo(() => {
     const priority = ['Live', 'General', 'Technical', 'Special'];
-    const otherCategories = Object.keys(groupedExams).filter(id => !priority.includes(id)).sort();
-    return [...priority.filter(p => groupedExams[p]), ...otherCategories];
+    const others = Object.keys(groupedExams).filter(id => !priority.includes(id)).sort();
+    return [...priority.filter(p => groupedExams[p]), ...others];
   }, [groupedExams]);
 
-  const getSyllabusPreview = useCallback((examId: string) => {
-    const content = EXAM_CONTENT_MAP[examId];
-    if (!content) return [];
-    const subjects = new Set<string>();
-    content.practiceTests.forEach(test => {
-        if (test.subject && test.subject !== 'mixed') {
-            subjects.add(test.subject);
-        }
-    });
-    return Array.from(subjects).slice(0, 4);
-  }, []);
-
-  if (loading) {
-    return (
-        <div className="space-y-12 animate-pulse">
-            <div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>
-            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-full w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>)}
-            </div>
-        </div>
-    );
-  }
+  if (loading) return <div className="space-y-12 animate-pulse"><div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div></div>;
 
   return (
     <div className="space-y-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          <div className="lg:col-span-2">
-              <HeroSlider onNavigate={onNavigate} />
-          </div>
-          <div className="h-full">
-              <DailyPulse onNavigate={onNavigate} />
-          </div>
+          <div className="lg:col-span-2"><HeroSlider onNavigate={onNavigate} /></div>
+          <div className="h-full"><DailyPulse onNavigate={onNavigate} /></div>
       </div>
-
       <NewsTicker />
-      
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
         <div className="lg:col-span-3 space-y-16">
-          {sortedCategoryIds.map((catId, index) => {
-            const list = groupedExams[catId] || [];
-            const theme = categoryThemes[catId] || 'indigo';
-            const displayTitle = t(`dashboard.examCategories.${catId}`) || catId;
-
-            return (
-              <Fragment key={catId}>
-                <section className="animate-fade-in-up">
-                  <div className="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
-                    <div className="flex items-center space-x-4">
-                      <div className={`h-8 w-1.5 ${
-                        theme === 'indigo' ? 'bg-indigo-600' : 
-                        theme === 'amber' ? 'bg-amber-600' : 
-                        theme === 'rose' ? 'bg-rose-600' : 
-                        theme === 'emerald' ? 'bg-emerald-600' : 'bg-cyan-600'
-                      } rounded-full`}></div>
-                      <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{displayTitle}</h3>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-800">{list.length} {t('nav.mockTests')}</span>
+          {sortedCategoryIds.map((catId) => (
+              <section key={catId} className="animate-fade-in-up">
+                  <div className="flex items-center space-x-4 mb-8 border-b dark:border-slate-800 pb-4">
+                    <div className="h-8 w-1.5 bg-indigo-600 rounded-full"></div>
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{t(`dashboard.examCategories.${catId}`) || catId}</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                    {list.map(exam => (
-                        <ExamCard 
-                            key={exam.id} 
-                            exam={exam} 
-                            onNavigate={onNavigateToExam} 
-                            language={language} 
-                            theme={theme as any} 
-                            syllabusPreview={getSyllabusPreview(exam.id)}
-                        />
+                    {(groupedExams[catId] || []).map((exam, idx) => (
+                        <Fragment key={exam.id}>
+                            <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
+                            {/* Ad after every 7 items */}
+                            {(idx + 1) % 7 === 0 && <div className="sm:col-span-2"><AdsenseWidget /></div>}
+                        </Fragment>
                     ))}
-                    {/* Insert ad card after every group if list is long enough, or every 4 categories */}
-                    {(index + 1) % 2 === 0 && (
-                        <div className="hidden sm:block">
-                            <AdsenseWidget />
-                        </div>
-                    )}
                   </div>
-                </section>
-              </Fragment>
-            );
-          })}
+              </section>
+          ))}
         </div>
-
         <div className="space-y-8">
-          <SubscriptionWidget onNavigate={onNavigate} />
           <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-          <AdsenseWidget />
           <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
           <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
+          <AdsenseWidget />
         </div>
       </div>
     </div>
