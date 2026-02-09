@@ -266,14 +266,14 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                             syllabusPreview={getSyllabusPreview(exam.id)}
                         />
                     ))}
+                    {/* Insert ad card after every group if list is long enough, or every 4 categories */}
+                    {(index + 1) % 2 === 0 && (
+                        <div className="hidden sm:block">
+                            <AdsenseWidget />
+                        </div>
+                    )}
                   </div>
                 </section>
-                
-                {(index + 1) % 2 === 0 && index !== sortedCategoryIds.length - 1 && (
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
-                         <AdsenseWidget />
-                    </div>
-                )}
               </Fragment>
             );
           })}
@@ -282,12 +282,7 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
         <div className="space-y-8">
           <SubscriptionWidget onNavigate={onNavigate} />
           <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-          
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 text-center">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Advertisement</span>
-              <AdsenseWidget />
-          </div>
-          
+          <AdsenseWidget />
           <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
           <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
         </div>

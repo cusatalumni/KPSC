@@ -104,13 +104,8 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="text-center text-red-500 bg-red-50 p-12 rounded-[2.5rem] border border-red-100 font-bold">{error}</div>
             ) : (
                 <div className="space-y-16">
-                    {/* Top Row Carousel - Now Random 5 */}
+                    {/* Top Row Carousel */}
                     {carouselItems.length > 0 && <NewsCarousel items={carouselItems} />}
-
-                    {/* Ad Widget after Carousel */}
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
-                        <AdsenseWidget />
-                    </div>
 
                     {/* Remaining Grid */}
                     <div>
@@ -138,11 +133,9 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             </div>
                                         </div>
                                     </div>
-                                    {/* In-feed Ad every 6 items */}
-                                    {(index + 1) % 6 === 0 && (
-                                        <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-md">
-                                            <AdsenseWidget />
-                                        </div>
+                                    {/* In-feed Ad as a grid card rather than spanning all columns */}
+                                    {(index + 1) % 5 === 0 && (
+                                        <AdsenseWidget />
                                     )}
                                 </React.Fragment>
                             ))}
