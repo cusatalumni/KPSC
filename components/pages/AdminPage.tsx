@@ -25,7 +25,6 @@ import { PlusIcon } from '../icons/PlusIcon';
 import { ArrowPathIcon } from '../icons/ArrowPathIcon';
 import { StarIcon } from '../icons/StarIcon';
 import { XMarkIcon } from '../icons/XMarkIcon';
-import { PencilSquareIcon } from '../icons/PencilSquareIcon';
 import { BellIcon } from '../icons/BellIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
@@ -93,16 +92,25 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setStatus("Deploying request to cloud handlers...");
         setIsError(false);
         setLoading(true);
+        
+        // Add a safeguard timeout for the UI
+        const uiTimeout = setTimeout(() => {
+            if (loading) {
+                setLoading(false);
+                setStatus("Request is taking longer than expected. Please check your tabs in 1 minute.");
+            }
+        }, 15000);
+
         try { 
             const res = await fn(); 
+            clearTimeout(uiTimeout);
             setStatus(res.message || "Operation successful!"); 
             if (shouldRefresh) await refresh(true); 
         } catch(e:any) { 
+            clearTimeout(uiTimeout);
             let msg = e.message;
             if (msg.includes('row-level security')) {
                 msg = "Supabase Access Denied: Go to Database > Policies and disable RLS for this table.";
-            } else if (msg.includes('id" does not exist')) {
-                msg = "Schema Mismatch: Supabase expects 'id' but we used 'key'. Update your Settings table primary key.";
             }
             setStatus("Execution Error: " + msg); 
             setIsError(true);
@@ -176,11 +184,14 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className={`p-8 rounded-[2.5rem] border-2 shadow-2xl animate-fade-in flex items-center justify-between ${isError ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-200' : 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50 text-indigo-800 dark:text-indigo-200'}`}>
                     <div className="flex items-center space-x-6">
                         <div className={`w-4 h-4 rounded-full ${isError ? 'bg-red-500' : 'bg-indigo-500'} animate-pulse`}></div>
-                        <p className="font-black text-xs uppercase tracking-widest leading-relaxed max-w-[80%]">{status}</p>
+                        <p className="font-black text-xs uppercase tracking-widest leading-relaxed max-w-[70%]">{status}</p>
                     </div>
-                    <button onClick={() => setStatus(null)} className="p-2 hover:bg-black/5 rounded-full transition-all">
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
+                    <div className="flex items-center space-x-2">
+                        <button onClick={() => { setLoading(false); setStatus(null); }} className="px-4 py-2 bg-black/10 rounded-lg text-[10px] font-black uppercase">Force Reset</button>
+                        <button onClick={() => setStatus(null)} className="p-2 hover:bg-black/5 rounded-full transition-all">
+                            <XMarkIcon className="h-6 w-6" />
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -224,7 +235,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             disabled={loading} 
                                             className="bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50"
                                         >
-                                            {loading ? 'Processing...' : 'Start Protocol'}
+                                            {loading ? 'Wait...' : 'Start'}
                                         </button>
                                     </div>
                                 </div>
@@ -233,6 +244,96 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                 )}
 
+                {activeTab === 'questions' && (
+                    <div className="space-y-20 px-4">
+                        <section className="bg-slate-50 p-8 md:p-14 rounded-[4rem] border-2 border-slate-100 shadow-2xl relative overflow-hidden text-slate-900">
+                            <div className="flex items-center space-x-5 mb-12 relative z-10">
+                                <div className="bg-indigo-600 p-4 rounded-2xl shadow-2xl shadow-indigo-600/20"><PlusIcon className="h-8 w-8 text-white" /></div>
+                                <div>
+                                    <h3 className="text-3xl font-black uppercase tracking-tight">Manual Injection</h3>
+                                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">Direct Database Entry</p>
+                                </div>
+                            </div>
+                            
+                            <form onSubmit={handleSingleQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
+                                <div className="space-y-3">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Exam / Topic</label>
+                                    <input list="exam-topics" value={newQ.topic} onChange={e => setNewQ({...newQ, topic: e.target.value})} placeholder="Pick or type exam name..." className="w-full p-6 rounded-[1.5rem] bg-white border-2 border-slate-200 font-bold outline-none focus:border-indigo-500 transition-all shadow-sm" required />
+                                    <datalist id="exam-topics">{examTopics.map((t, idx) => <option key={idx} value={t} />)}</datalist>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Area</label>
+                                    <input list="subject-areas" value={newQ.subject} onChange={e => setNewQ({...newQ, subject: e.target.value})} placeholder="Pick or type subject..." className="w-full p-6 rounded-[1.5rem] bg-white border-2 border-slate-200 font-bold outline-none focus:border-indigo-500 transition-all shadow-sm" required />
+                                    <datalist id="subject-areas">{subjectsList.map(s => <option key={s} value={s} />)}</datalist>
+                                </div>
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Question Body (Malayalam)</label>
+                                    <textarea value={newQ.question} onChange={e => setNewQ({...newQ, question: e.target.value})} placeholder="Body of the question..." className="w-full p-8 border-2 border-slate-200 rounded-[2.5rem] bg-white font-bold outline-none focus:border-indigo-500 transition-all shadow-sm h-40" required />
+                                </div>
+                                {newQ.options?.map((opt, i) => (
+                                    <div key={i} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center space-x-6 group shadow-sm">
+                                        <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">{String.fromCharCode(65+i)}</div>
+                                        <input value={opt} onChange={e => { const o = [...(newQ.options || [])]; o[i] = e.target.value; setNewQ({...newQ, options: o})}} placeholder={`Enter choice ${i+1}`} className="flex-1 bg-transparent border-none outline-none font-bold text-sm" required />
+                                        <input type="radio" name="correct_idx" checked={newQ.correctAnswerIndex === i} onChange={() => setNewQ({...newQ, correctAnswerIndex: i})} className="w-8 h-8 accent-indigo-500 cursor-pointer" />
+                                    </div>
+                                ))}
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Explanation (Optional)</label>
+                                    <textarea value={newQ.explanation} onChange={e => setNewQ({...newQ, explanation: e.target.value})} placeholder="Explain why this answer is correct..." className="w-full p-6 border-2 border-slate-200 rounded-[2rem] bg-white font-bold outline-none focus:border-indigo-500 transition-all shadow-sm text-xs" rows={3} />
+                                </div>
+                                <button type="submit" disabled={loading} className="md:col-span-2 bg-indigo-600 text-white py-8 rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 disabled:opacity-50">Commit to Cloud</button>
+                            </form>
+                        </section>
+
+                        <section className="pt-20 border-t-2 border-slate-100 dark:border-slate-800">
+                             <div className="mb-10">
+                                <h3 className="text-xl font-black uppercase tracking-widest mb-2">Bulk Sync Question Bank</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">CSV FORMAT: ID, Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty, Explanation</p>
+                             </div>
+                             <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="Paste CSV lines here..." className="w-full h-80 p-10 border border-slate-200 dark:border-slate-800 rounded-[4rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
+                             <button onClick={async () => handleAction(async () => syncCsvData('QuestionBank', bulkData, await getToken(), true))} disabled={loading} className="w-full mt-10 bg-emerald-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl transition-all">Start Batch Deployment</button>
+                        </section>
+                    </div>
+                )}
+
+                {activeTab === 'syllabus' && (
+                    <div className="space-y-12 px-4">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-100 dark:border-slate-800 pb-10">
+                            <div>
+                                <h3 className="text-3xl font-black uppercase tracking-tighter">Syllabus Sprites</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Topic Mapping & Mock Config</p>
+                            </div>
+                            <select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full md:w-auto p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 font-black text-xs uppercase tracking-widest outline-none shadow-inner cursor-pointer focus:border-indigo-500 transition-all">
+                                <option value="">Select Target Exam</option>
+                                {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="mb-4">
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">CSV FORMAT: ID, ExamID, Title, QCount, Duration, Subject, Topic</p>
+                                <textarea value={syllabusBulkData} onChange={e => setSyllabusBulkData(e.target.value)} placeholder="ID, ExamID, Title, 20, 20, Subject, Topic" className="w-full h-64 p-10 border border-slate-100 dark:border-slate-800 rounded-[3.5rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <button onClick={async () => handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), true))} disabled={loading} className="bg-indigo-600 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl">Append to Sprint</button>
+                                <button onClick={async () => { if(confirm("Overwrite entire syllabus for this exam?")) handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), false)) }} disabled={loading} className="bg-slate-800 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl">Overwrite Global</button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10">
+                            {syllabusItems.map(s => (
+                                <div key={s.id} className="p-7 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-indigo-500 transition-all flex items-center justify-between">
+                                    <div className="min-w-0 pr-4">
+                                        <p className="font-black text-sm truncate uppercase tracking-tighter">{s.title}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">{s.topic} • {s.questions} Qs</p>
+                                    </div>
+                                    <button onClick={async () => { if(confirm("Detach?")) handleAction(async () => deleteBook(s.id, await getToken())) }} disabled={loading} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
                 {activeTab === 'exams' && (
                     <div className="space-y-10">
                         <div className="flex justify-between items-center px-4">
@@ -249,107 +350,13 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             <p className="text-[10px] font-black text-slate-400 uppercase mt-2 tracking-widest">{ex.id} • {ex.category}</p>
                                         </div>
                                     </div>
-                                    <button 
-                                        onClick={async () => { if(confirm("Discard entry?")) handleAction(async () => deleteBook(ex.id, await getToken())) }} 
-                                        disabled={dataSource === 'Static Fallback'}
-                                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 p-4 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                        <TrashIcon className="h-6 w-6" />
-                                    </button>
+                                    <button onClick={async () => { if(confirm("Discard entry?")) handleAction(async () => deleteBook(ex.id, await getToken())) }} disabled={loading} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 p-4 rounded-2xl transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
                                 </div>
                             ))}
                         </div>
                     </div>
                 )}
 
-                {activeTab === 'questions' && (
-                    <div className="space-y-20 px-4">
-                        <section className="bg-slate-50 p-8 md:p-14 rounded-[4rem] border-2 border-slate-100 shadow-2xl relative overflow-hidden text-slate-900">
-                            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
-                            <div className="flex items-center space-x-5 mb-12 relative z-10">
-                                <div className="bg-indigo-600 p-4 rounded-2xl shadow-2xl shadow-indigo-600/20"><PlusIcon className="h-8 w-8 text-white" /></div>
-                                <div>
-                                    <h3 className="text-3xl font-black uppercase tracking-tight">Manual Injection</h3>
-                                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mt-1">Direct Database Entry</p>
-                                </div>
-                            </div>
-                            
-                            <form onSubmit={handleSingleQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Exam / Topic</label>
-                                    <input 
-                                        list="exam-topics"
-                                        value={newQ.topic} 
-                                        onChange={e => setNewQ({...newQ, topic: e.target.value})} 
-                                        placeholder="Pick or type exam name..."
-                                        className="w-full p-6 rounded-[1.5rem] bg-white border-2 border-slate-200 font-bold outline-none focus:border-indigo-500 transition-all shadow-sm"
-                                        required
-                                    />
-                                    <datalist id="exam-topics">
-                                        {examTopics.map((t, idx) => <option key={idx} value={t} />)}
-                                    </datalist>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Area</label>
-                                    <input 
-                                        list="subject-areas"
-                                        value={newQ.subject} 
-                                        onChange={e => setNewQ({...newQ, subject: e.target.value})} 
-                                        placeholder="Pick or type subject..."
-                                        className="w-full p-6 rounded-[1.5rem] bg-white border-2 border-slate-200 font-bold outline-none focus:border-indigo-500 transition-all shadow-sm"
-                                        required
-                                    />
-                                    <datalist id="subject-areas">
-                                        {subjectsList.map(s => <option key={s} value={s} />)}
-                                    </datalist>
-                                </div>
-                                <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Question Body (Malayalam)</label>
-                                    <textarea value={newQ.question} onChange={e => setNewQ({...newQ, question: e.target.value})} placeholder="Body of the question..." className="w-full p-8 border-2 border-slate-200 rounded-[2.5rem] bg-white font-bold outline-none focus:border-indigo-500 transition-all shadow-sm h-40" required />
-                                </div>
-                                {newQ.options?.map((opt, i) => (
-                                    <div key={i} className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 flex items-center space-x-6 hover:border-indigo-500/50 transition-all group shadow-sm">
-                                        <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg">{String.fromCharCode(65+i)}</div>
-                                        <input value={opt} onChange={e => { const o = [...(newQ.options || [])]; o[i] = e.target.value; setNewQ({...newQ, options: o})}} placeholder={`Enter choice ${i+1}`} className="flex-1 bg-transparent border-none outline-none font-bold text-sm" required />
-                                        <input type="radio" name="correct_idx" checked={newQ.correctAnswerIndex === i} onChange={() => setNewQ({...newQ, correctAnswerIndex: i})} className="w-8 h-8 accent-indigo-500 cursor-pointer" />
-                                    </div>
-                                ))}
-                                <div className="md:col-span-2 space-y-3">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Explanation / Hint (Optional)</label>
-                                    <textarea value={newQ.explanation} onChange={e => setNewQ({...newQ, explanation: e.target.value})} placeholder="Explain why this answer is correct..." className="w-full p-6 border-2 border-slate-200 rounded-[2rem] bg-white font-bold outline-none focus:border-indigo-500 transition-all shadow-sm text-xs" rows={3} />
-                                </div>
-                                <button type="submit" disabled={loading || dataSource === 'Static Fallback'} className="md:col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white py-8 rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 disabled:opacity-50 mt-4 shadow-indigo-600/20">Commit to Cloud</button>
-                            </form>
-                        </section>
-                    </div>
-                )}
-
-                {activeTab === 'syllabus' && (
-                    <div className="space-y-12 px-4">
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-8 border-b border-slate-100 dark:border-slate-800 pb-10">
-                            <div>
-                                <h3 className="text-3xl font-black uppercase tracking-tighter">Instructional Sprites</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Global Syllabus Mapping</p>
-                            </div>
-                            <select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full md:w-auto p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 font-black text-xs uppercase tracking-widest outline-none shadow-inner cursor-pointer focus:border-indigo-500 transition-all">
-                                <option value="">Select Target exam</option>
-                                {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
-                            </select>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {syllabusItems.map(s => (
-                                <div key={s.id} className="p-7 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-indigo-500 transition-all flex items-center justify-between">
-                                    <div className="min-w-0 pr-4">
-                                        <p className="font-black text-sm truncate uppercase tracking-tighter">{s.title}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">{s.topic} • {s.questions} Qs</p>
-                                    </div>
-                                    <button onClick={async () => { if(confirm("Detach?")) handleAction(async () => deleteBook(s.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                
                 {activeTab === 'bookstore' && (
                     <div className="space-y-10 px-4">
                         <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-10">
@@ -366,7 +373,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         <p className="font-black text-sm truncate uppercase tracking-tighter leading-none mb-2">{b.title}</p>
                                         <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest italic">{b.author || 'Catalog generic'}</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Remove?")) handleAction(async () => deleteBook(b.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
+                                    <button onClick={async () => { if(confirm("Remove?")) handleAction(async () => deleteBook(b.id, await getToken())) }} disabled={loading} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
                                 </div>
                             ))}
                         </div>
@@ -387,7 +394,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     const token = await getToken();
                                     handleAction(() => updateSetting('subscription_model_active', String(newVal), token));
                                 }}
-                                disabled={dataSource === 'Static Fallback'}
+                                disabled={loading}
                                 className={`w-full py-8 rounded-[2.5rem] font-black text-xs tracking-[0.4em] uppercase transition-all duration-500 shadow-2xl active:scale-95 disabled:opacity-50 ${isSubscriptionActive ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-950 text-white'}`}
                             >
                                 {isSubscriptionActive ? 'Suspend Paywall' : 'Initiate PRO Layer'}
