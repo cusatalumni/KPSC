@@ -12,17 +12,28 @@ import {
 } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
+/**
+ * Robust CSV parser that handles quotes and delimiters correctly
+ */
 function parseCsvLine(line: string): string[] {
     const result: string[] = [];
     let currentField = '';
     let inQuotes = false;
     for (let i = 0; i < line.length; i++) {
         const char = line[i];
-        if (char === '"') inQuotes = !inQuotes;
-        else if (char === ',' && !inQuotes) {
+        if (char === '"') {
+            if (inQuotes && line[i+1] === '"') { // Handle escaped quotes ""
+                currentField += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
             result.push(currentField.trim());
             currentField = '';
-        } else currentField += char;
+        } else {
+            currentField += char;
+        }
     }
     result.push(currentField.trim());
     return result.map(f => f.replace(/^['"]|['"]$/g, '').trim());
@@ -41,6 +52,7 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     const { action, sheet, id, data, mode, resultData, setting, question, exam, syllabus } = req.body;
 
+    // Public action
     if (action === 'save-result') {
         try {
             const resultId = resultData.id || Date.now();
@@ -55,6 +67,7 @@ export default async function handler(req: any, res: any) {
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 
+    // Secure Admin actions
     try { await verifyAdmin(req); } catch (e: any) { return res.status(401).json({ error: e.message || 'Unauthorized Access' }); }
 
     try {
@@ -63,19 +76,19 @@ export default async function handler(req: any, res: any) {
                 let sS = { ok: false, error: null as string | null };
                 let sbS = { ok: false, error: null as string | null };
                 try { await readSheetData('Settings!A1:B2'); sS.ok = true; } catch (e: any) { sS.error = e.message; }
-                try { if (supabase) { const { error } = await supabase.from('settings').select('key').limit(1); if (error) throw error; sbS.ok = true; } else { sbS.error = "Supabase env missing"; } } catch (e: any) { sbS.error = e.message; }
+                try { 
+                    if (supabase) { 
+                        const { error } = await supabase.from('settings').select('key').limit(1); 
+                        if (error) throw error; 
+                        sbS.ok = true; 
+                    } else { sbS.error = "Supabase env missing"; } 
+                } catch (e: any) { sbS.error = e.message; }
                 return res.status(200).json({ status: { sheets: sS.ok, supabase: sbS.ok }, details: { sheets: sS.error, supabase: sbS.error } });
 
             case 'update-setting':
                 await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
                 if (supabase) await upsertSupabaseData('settings', [{ key: String(setting.key), value: String(setting.value) }], 'key');
                 return res.status(200).json({ message: 'Setting updated' });
-
-            case 'update-exam':
-                const examRow = [exam.id, exam.title_ml, exam.title_en, exam.description_ml, exam.description_en, exam.category, exam.level, exam.icon_type];
-                await findAndUpsertRow('Exams', exam.id, examRow);
-                if (supabase) await upsertSupabaseData('exams', [{ id: exam.id, title_ml: exam.title_ml, title_en: exam.title_en, description_ml: exam.description_ml, description_en: exam.description_en, category: exam.category, level: exam.level, icon_type: exam.icon_type }]);
-                return res.status(200).json({ message: 'Exam updated' });
 
             case 'add-question':
                 const qId = parseInt(question.id) || Date.now();
@@ -103,9 +116,8 @@ export default async function handler(req: any, res: any) {
                         return [rowId, parts[1] || 'General', parts[2] || '', JSON.stringify(opts), parts[4] || '0', parts[5] || 'GK', parts[6] || 'Moderate', parts[7] || ''];
                     }
                     if (currentSheet === 'syllabus') {
-                        const examId = parts[1] || 'general';
                         const rowId = parseInt(parts[0]) || (Date.now() + index + 1000);
-                        return [rowId, examId, parts[2] || 'Topic', parts[3] || '20', parts[4] || '20', parts[5] || 'General', parts[6] || 'General'];
+                        return [rowId, parts[1] || 'general', parts[2] || 'Topic', parts[3] || '20', parts[4] || '20', parts[5] || 'General', parts[6] || 'General'];
                     }
                     return parts;
                 });
@@ -117,8 +129,10 @@ export default async function handler(req: any, res: any) {
                 if (supabase) {
                     const sbTable = currentSheet === 'questionbank' ? 'questionbank' : currentSheet;
                     const supabaseRows = sheetRows.map(r => {
-                        if (currentSheet === 'questionbank') return { id: parseInt(r[0]), topic: String(r[1]), question: String(r[2]), options: JSON.parse(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: String(r[5]), difficulty: String(r[6]), explanation: String(r[7] || '') };
-                        if (currentSheet === 'syllabus') return { id: parseInt(r[0]), exam_id: String(r[1]), title: String(r[2]), questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: String(r[5]), topic: String(r[6]) };
+                        try {
+                            if (currentSheet === 'questionbank') return { id: parseInt(String(r[0])), topic: String(r[1]), question: String(r[2]), options: JSON.parse(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: String(r[5]), difficulty: String(r[6]), explanation: String(r[7] || '') };
+                            if (currentSheet === 'syllabus') return { id: parseInt(String(r[0])), exam_id: String(r[1]), title: String(r[2]), questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: String(r[5]), topic: String(r[6]) };
+                        } catch(e) { console.error("Row parse failed", r); }
                         return null;
                     }).filter(Boolean);
                     
@@ -147,5 +161,8 @@ export default async function handler(req: any, res: any) {
 
             default: return res.status(400).json({ error: 'Invalid action' });
         }
-    } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    } catch (e: any) { 
+        console.error("Admin API Error:", e.message);
+        return res.status(500).json({ error: e.message }); 
+    }
 }
