@@ -93,12 +93,12 @@ const App: React.FC = () => {
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
-        // Fix: Use the service to find the exam instead of just static data
+        // Fix: Robust ID matching to prevent loop
         const exam = await getExamById(id);
         if (exam) {
             setSelectedExam(exam);
         } else {
-            // Fallback to dashboard if exam not found
+            console.warn(`Exam with ID ${id} not found.`);
             window.location.hash = '#dashboard';
             return;
         }
