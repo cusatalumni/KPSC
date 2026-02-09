@@ -78,7 +78,10 @@ export default async function handler(req: any, res: any) {
 
             case 'update-setting':
                 await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
-                if (supabase) await upsertSupabaseData('settings', [{ key: String(setting.key), value: String(setting.value) }]);
+                if (supabase) {
+                    // Settings uses 'key' as identifier, not 'id'
+                    await upsertSupabaseData('settings', [{ key: String(setting.key), value: String(setting.value) }], 'key');
+                }
                 return res.status(200).json({ message: 'Setting updated' });
 
             case 'update-exam':
@@ -105,7 +108,6 @@ export default async function handler(req: any, res: any) {
                 const qRow = [qId, question.topic, question.question, JSON.stringify(question.options), question.correctAnswerIndex, question.subject, question.difficulty, question.explanation || ''];
                 await appendSheetData('QuestionBank!A1', [qRow]);
                 if (supabase) {
-                    // We construct the object carefully. If 'explanation' column is missing, the whole object might fail in some Supabase versions.
                     const payload: any = {
                         id: qId, topic: question.topic, question: question.question, options: question.options, 
                         correct_answer_index: parseInt(question.correctAnswerIndex), subject: question.subject, difficulty: question.difficulty
@@ -114,6 +116,9 @@ export default async function handler(req: any, res: any) {
                     
                     const { error } = await supabase.from('questionbank').upsert([payload]);
                     if (error) {
+                        if (error.message.includes('row-level security policy')) {
+                           throw new Error("Supabase Permission Denied: Please go to Supabase Dashboard > Database > Policies and enable 'Insert' permission for the 'questionbank' table.");
+                        }
                         if (error.message.includes('explanation')) {
                            throw new Error("Supabase Column Missing: Please add 'explanation' column (text) to your 'questionbank' table.");
                         }
@@ -153,7 +158,13 @@ export default async function handler(req: any, res: any) {
                         if (currentSheet === 'syllabus') return { id: r[0], exam_id: String(r[1]), title: String(r[2]), questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: String(r[5]), topic: String(r[6]) };
                         return null;
                     }).filter(Boolean);
-                    if (supabaseRows.length > 0) await upsertSupabaseData(currentSheet, supabaseRows as any[]);
+                    if (supabaseRows.length > 0) {
+                        try {
+                           await upsertSupabaseData(currentSheet, supabaseRows as any[]);
+                        } catch (e: any) {
+                           console.warn("Supabase Sync Partial Failure:", e.message);
+                        }
+                    }
                 }
                 return res.status(200).json({ message: 'Sync Success' });
 

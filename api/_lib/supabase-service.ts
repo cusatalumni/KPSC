@@ -10,13 +10,14 @@ export const supabase = (supabaseUrl && supabaseKey)
 
 /**
  * Bulk insert or update data into Supabase
+ * @param onConflict The column name to check for conflicts (defaults to 'id')
  */
-export async function upsertSupabaseData(table: string, data: any[]) {
+export async function upsertSupabaseData(table: string, data: any[], onConflict: string = 'id') {
     if (!supabase) return null;
     
     const { data: result, error } = await supabase
         .from(table)
-        .upsert(data, { onConflict: 'id' });
+        .upsert(data, { onConflict });
 
     if (error) {
         console.error(`Supabase Upsert Error (${table}):`, error.message);
