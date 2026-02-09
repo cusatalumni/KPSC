@@ -14,23 +14,24 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0776870820469795" crossorigin="anonymous"></script>
 
     <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=INR"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=INR" crossorigin="anonymous"></script>
 
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.3.1",
-        "react/": "https://esm.sh/react@18.3.1/",
-        "react-dom": "https://esm.sh/react-dom@18.3.1",
-        "react-dom/": "https://esm.sh/react-dom@18.3.1/",
-        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-        "@google/genai": "https://esm.sh/@google/genai@1.39.0",
-        "googleapis": "https://esm.sh/googleapis@171.0.0",
-        "@clerk/backend": "https://esm.sh/@clerk/backend@2.29.7",
-        "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.21.0"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.39.0",
+    "googleapis": "https://esm.sh/googleapis@171.0.0",
+    "@clerk/backend": "https://esm.sh/@clerk/backend@2.29.7",
+    "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.21.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.3"
+  }
+}
+</script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -51,12 +52,13 @@
     <script>
       window.process = window.process || { env: {} };
       window.onerror = function(msg, url, line, col, error) {
-        console.error("Global Error Caught: ", msg);
+        console.error("Global Error Caught: ", msg, " at ", url, ":", line);
         const root = document.getElementById('root');
         if (root && root.innerHTML === "") {
-          root.innerHTML = '<div style="padding: 20px; color: #ef4444; font-family: sans-serif;">' +
-            '<h2 style="font-weight: bold;">Application Load Error</h2>' +
-            '<p>' + msg + '</p>' +
+          root.innerHTML = '<div style="padding: 20px; color: #ef4444; font-family: sans-serif; text-align: center;">' +
+            '<h2 style="font-weight: bold; font-size: 24px;">Application Load Error</h2>' +
+            '<p style="margin-top: 10px; opacity: 0.8;">' + msg + '</p>' +
+            '<button onclick="window.location.reload()" style="margin-top: 20px; background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold;">Retry Loading</button>' +
             '</div>';
         }
         return false;

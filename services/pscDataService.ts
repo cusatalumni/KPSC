@@ -36,30 +36,46 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
 const adminReq = async (body: any, token: string | null = null) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    
     const res = await fetch('/api/admin', { method: 'POST', headers, body: JSON.stringify(body) });
+    const isJson = res.headers.get('content-type')?.includes('application/json');
+    
     if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: 'API Request Failed' }));
-        throw new Error(err.message || `Error ${res.status}`);
+        let message = `Server Error ${res.status}`;
+        if (isJson) {
+            const err = await res.json();
+            message = err.error || err.message || message;
+        } else {
+            const text = await res.text();
+            if (text.length < 100) message = text;
+        }
+        throw new Error(message);
     }
-    return await res.json();
+    
+    return isJson ? await res.json() : { message: 'Success' };
 };
 
-export const getExams = async (): Promise<Exam[]> => {
+export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
     try {
         const res = await fetch('/api/data?type=exams');
-        const raw = await res.json();
-        if (Array.isArray(raw) && raw.length > 0) {
-            return raw.map((e: any) => ({
-                id: e.id,
-                title: { ml: e.title_ml, en: e.title_en || e.title_ml },
-                description: { ml: e.description_ml, en: e.description_en || e.description_ml },
-                category: e.category || 'General',
-                level: e.level || 'Preliminary',
-                icon: getIcon(e.icon_type)
-            }));
+        if (res.ok) {
+            const raw = await res.json();
+            if (Array.isArray(raw) && raw.length > 0) {
+                return {
+                    exams: raw.map((e: any) => ({
+                        id: e.id,
+                        title: { ml: e.title_ml, en: e.title_en || e.title_ml },
+                        description: { ml: e.description_ml, en: e.description_en || e.description_ml },
+                        category: e.category || 'General',
+                        level: e.level || 'Preliminary',
+                        icon: getIcon(e.icon_type)
+                    })),
+                    source: 'database'
+                };
+            }
         }
     } catch (e) {}
-    return EXAMS_DATA;
+    return { exams: EXAMS_DATA, source: 'static' };
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {

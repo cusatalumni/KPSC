@@ -31,16 +31,17 @@ function parseCsvLine(line: string): string[] {
 export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
         const authHeader = req.headers.authorization;
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ message: 'Unauthorized' });
+        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
         try {
             const result = await runDailyUpdateScrapers();
             return res.status(200).json({ message: 'Cron Success', result });
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 
-    if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     const { action, sheet, id, data, mode, resultData, setting, question } = req.body;
 
+    // save-result is public
     if (action === 'save-result') {
         try {
             const row = [resultData.id || `res_${Date.now()}`, resultData.userId || 'guest', resultData.userEmail || 'guest@example.com', resultData.testTitle, resultData.score, resultData.total, new Date().toISOString()];
@@ -54,27 +55,42 @@ export default async function handler(req: any, res: any) {
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 
-    try { await verifyAdmin(req); } catch (e: any) { return res.status(401).json({ message: e.message }); }
+    // Security Check for Admin actions
+    try { 
+        await verifyAdmin(req); 
+    } catch (e: any) { 
+        return res.status(401).json({ error: e.message || 'Unauthorized Access' }); 
+    }
 
     try {
         switch (action) {
             case 'test-connection':
-                let sheetsOk = false;
-                let supabaseOk = false;
+                let sheetsStatus = { ok: false, error: null as string | null };
+                let supabaseStatus = { ok: false, error: null as string | null };
+                
                 try {
                     const testRead = await readSheetData('Settings!A1:B2');
-                    sheetsOk = testRead.length > 0;
-                } catch (e) { console.error("Sheet Test Failed", e); }
+                    sheetsStatus.ok = true;
+                } catch (e: any) { 
+                    sheetsStatus.error = e.message; 
+                }
+                
                 try {
                     if (supabase) {
                         const { error } = await supabase.from('settings').select('key').limit(1);
-                        supabaseOk = !error;
+                        if (error) throw error;
+                        supabaseStatus.ok = true;
+                    } else {
+                        supabaseStatus.error = "Supabase environment variables missing";
                     }
-                } catch (e) { console.error("Supabase Test Failed", e); }
+                } catch (e: any) { 
+                    supabaseStatus.error = e.message; 
+                }
                 
                 return res.status(200).json({ 
-                    message: (sheetsOk && supabaseOk) ? 'All systems operational' : 'Partial connection error', 
-                    status: { sheets: sheetsOk, supabase: supabaseOk } 
+                    message: (sheetsStatus.ok) ? 'Connection test complete' : 'Primary database (Sheets) is disconnected', 
+                    status: { sheets: sheetsStatus.ok, supabase: supabaseStatus.ok },
+                    details: { sheets: sheetsStatus.error, supabase: supabaseStatus.error }
                 });
 
             case 'update-setting':
@@ -96,7 +112,9 @@ export default async function handler(req: any, res: any) {
 
             case 'csv-update':
                 const currentSheet = (sheet || '').toLowerCase();
-                const lines = data.split('\n').filter((l: string) => l.trim() !== '');
+                const lines = (data || '').split('\n').filter((l: string) => l.trim() !== '');
+                if (!lines.length) return res.status(400).json({ error: 'No data provided' });
+
                 const sheetRows = lines.map((line: string) => {
                     const parts = parseCsvLine(line);
                     if (currentSheet === 'questionbank') {
@@ -112,8 +130,10 @@ export default async function handler(req: any, res: any) {
                     }
                     return parts;
                 });
+
                 if (mode === 'append') await appendSheetData(`${sheet}!A1`, sheetRows);
                 else await clearAndWriteSheetData(`${sheet}!A2:G`, sheetRows);
+
                 if (supabase) {
                     const supabaseRows = sheetRows.map(r => {
                         if (currentSheet === 'questionbank') return { id: String(r[0]), topic: String(r[1]), question: String(r[2]), options: JSON.parse(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: String(r[5]), difficulty: String(r[6]) };
@@ -122,7 +142,7 @@ export default async function handler(req: any, res: any) {
                     }).filter(Boolean);
                     if (supabaseRows.length > 0) await upsertSupabaseData(currentSheet, supabaseRows);
                 }
-                return res.status(200).json({ message: 'Sync complete' });
+                return res.status(200).json({ message: 'Database Sync Success' });
 
             case 'delete-row':
                 await deleteRowById(sheet, id);
@@ -131,7 +151,7 @@ export default async function handler(req: any, res: any) {
 
             case 'run-daily-scraper':
                 const resDaily = await runDailyUpdateScrapers();
-                return res.status(200).json({ message: 'Scraper finished', result: resDaily });
+                return res.status(200).json({ message: 'Automation finished', result: resDaily });
 
             case 'run-book-scraper':
                 await runBookScraper();
@@ -139,10 +159,13 @@ export default async function handler(req: any, res: any) {
 
             case 'clear-study-cache':
                 await clearAndWriteSheetData('StudyMaterialsCache!A2:C', []);
-                return res.status(200).json({ message: 'Cache cleared' });
+                return res.status(200).json({ message: 'AI Cache cleared' });
 
             default:
-                return res.status(400).json({ message: 'Invalid action' });
+                return res.status(400).json({ error: 'Invalid action' });
         }
-    } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    } catch (e: any) { 
+        console.error(`Admin API Error [${action}]:`, e.message);
+        return res.status(500).json({ error: e.message || 'Internal Server Error' }); 
+    }
 }

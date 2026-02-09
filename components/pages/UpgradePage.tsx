@@ -76,10 +76,6 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                   <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">അഭിനന്ദനങ്ങൾ!</h1>
                   <p className="text-slate-500 dark:text-slate-400 font-bold text-lg max-w-sm mx-auto">നിങ്ങൾ ഇപ്പോൾ ഒരു PSC GURU PRO അംഗമാണ്. എല്ലാ പ്രീമിയം ഫീച്ചറുകളും അൺലോക്ക് ചെയ്തിരിക്കുന്നു.</p>
               </div>
-              <div className="flex items-center space-x-3 text-indigo-600 font-black animate-pulse uppercase tracking-[0.2em] text-xs bg-indigo-50 dark:bg-indigo-900/20 px-6 py-3 rounded-full">
-                  <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
-                  <span>Setting up your pro dashboard</span>
-              </div>
           </div>
       );
   }
@@ -172,9 +168,9 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                 </div>
             </div>
             
-            <div className="bg-white/5 p-12 md:p-20 flex flex-col items-center justify-center text-center border-l border-white/5">
+            <div className="bg-slate-900 p-12 md:p-20 flex flex-col items-center justify-center text-center border-l border-white/5">
                 <div className="w-full max-w-sm space-y-10">
-                    <div className="bg-slate-900 border-2 border-indigo-500/30 p-12 rounded-[3.5rem] shadow-2xl relative">
+                    <div className="bg-slate-950 border-2 border-indigo-500/30 p-12 rounded-[3.5rem] shadow-2xl relative">
                         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-xl">Best Value</div>
                         <p className="text-indigo-300 font-black text-xs uppercase tracking-[0.3em] mb-4">Annual Pass</p>
                         <h2 className="text-7xl font-black text-white my-4 tracking-tighter">₹499</h2>
@@ -207,20 +203,12 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                                     <span className="text-xs uppercase tracking-widest">Processing Secure Payment...</span>
                                 </div>
                             )}
-                            <div className="flex items-center justify-center space-x-4 opacity-40">
-                                <ShieldCheckIcon className="h-12 w-12 text-slate-400" />
-                                <div className="text-left">
-                                    <p className="text-[10px] text-white font-black uppercase tracking-widest">SSL Encrypted</p>
-                                    <p className="text-[9px] text-slate-400 font-bold uppercase">Industry Standard Security</p>
-                                </div>
-                            </div>
                         </div>
                     )}
                 </div>
             </div>
         </div>
       </div>
-      <p className="text-center text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-12 opacity-50">Kerala PSC Guru Premium Experience • 2025</p>
     </div>
   );
 };

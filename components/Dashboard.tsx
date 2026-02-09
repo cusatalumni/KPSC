@@ -153,13 +153,14 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
   const [allExams, setAllExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fix: getExams returns an object with 'exams' property. Accessing it correctly.
   useEffect(() => {
     Promise.all([
         getDetectedExams(),
         getExams()
-    ]).then(([detected, exams]) => {
+    ]).then(([detected, examsResult]) => {
         setDetectedExams(detected);
-        setAllExams(exams);
+        setAllExams(examsResult.exams);
         setLoading(false);
     }).catch(err => {
         console.error("Dashboard Load Error:", err);
