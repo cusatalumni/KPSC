@@ -4,7 +4,6 @@ import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { 
-    triggerDailyScraper, 
     triggerBookScraper, 
     getBooks, 
     deleteBook, 
@@ -27,6 +26,9 @@ import { ArrowPathIcon } from '../icons/ArrowPathIcon';
 import { StarIcon } from '../icons/StarIcon';
 import { XMarkIcon } from '../icons/XMarkIcon';
 import { PencilSquareIcon } from '../icons/PencilSquareIcon';
+import { BellIcon } from '../icons/BellIcon';
+import { NewspaperIcon } from '../icons/NewspaperIcon';
+import { LightBulbIcon } from '../icons/LightBulbIcon';
 import type { Book, Exam, PracticeTest, QuizQuestion } from '../../types';
 
 type AdminTab = 'automation' | 'exams' | 'syllabus' | 'questions' | 'bookstore' | 'subscriptions';
@@ -46,11 +48,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
     const [dataSource, setDataSource] = useState<'Database' | 'Static Fallback'>('Static Fallback');
     
-    // Smart Selectors Data
     const subjectsList = useMemo(() => ['GK', 'Malayalam', 'English', 'Mental Ability', 'General Science', 'Indian History', 'Kerala History', 'Indian Geography', 'Current Affairs', 'Nursing', 'Engineering'], []);
     const examTopics = useMemo(() => exams.map(e => e.title.ml), [exams]);
 
-    // Form States
     const [bulkData, setBulkData] = useState('');
     const [syllabusBulkData, setSyllabusBulkData] = useState('');
     const [newQ, setNewQ] = useState<Partial<QuizQuestion>>({
@@ -98,9 +98,30 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             setStatus(res.message || "Operation successful!"); 
             if (shouldRefresh) await refresh(true); 
         } catch(e:any) { 
-            setStatus("Execution Error: " + e.message); 
+            let msg = e.message;
+            if (msg.includes('row-level security')) {
+                msg = "Supabase Access Denied: Go to Database > Policies and disable RLS for this table.";
+            } else if (msg.includes('id" does not exist')) {
+                msg = "Schema Mismatch: Supabase expects 'id' but we used 'key'. Update your Settings table primary key.";
+            }
+            setStatus("Execution Error: " + msg); 
             setIsError(true);
-        } finally { setLoading(false); }
+        } finally { 
+            setLoading(false); 
+        }
+    };
+
+    const runIndividualScraper = async (action: string) => {
+        const token = await getToken();
+        await handleAction(async () => {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ action })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            return await res.json();
+        });
     };
 
     const handleSingleQuestion = async (e: React.FormEvent) => {
@@ -132,7 +153,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl flex items-center space-x-5">
-                    {/* Changed color from indigo to emerald for "Connected" */}
                     <div className={`w-4 h-4 rounded-full ${dbStatus.supabase ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-slate-700'}`}></div>
                     <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Supabase DB</p>
@@ -156,7 +176,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className={`p-8 rounded-[2.5rem] border-2 shadow-2xl animate-fade-in flex items-center justify-between ${isError ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-200' : 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/50 text-indigo-800 dark:text-indigo-200'}`}>
                     <div className="flex items-center space-x-6">
                         <div className={`w-4 h-4 rounded-full ${isError ? 'bg-red-500' : 'bg-indigo-500'} animate-pulse`}></div>
-                        <p className="font-black text-xs uppercase tracking-widest">{status}</p>
+                        <p className="font-black text-xs uppercase tracking-widest leading-relaxed max-w-[80%]">{status}</p>
                     </div>
                     <button onClick={() => setStatus(null)} className="p-2 hover:bg-black/5 rounded-full transition-all">
                         <XMarkIcon className="h-6 w-6" />
@@ -165,31 +185,51 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             )}
 
             <div className="flex flex-wrap gap-4 scrollbar-hide pb-2">
-                {tabBtn('automation', 'Cloud Automation', RssIcon)}
+                {tabBtn('automation', 'Protocols', RssIcon)}
                 {tabBtn('exams', 'Exams Index', AcademicCapIcon)}
-                {tabBtn('syllabus', 'Course Sprints', ClipboardListIcon)}
-                {tabBtn('questions', 'Q-Bank Injector', PlusIcon)}
+                {tabBtn('syllabus', 'Sprints', ClipboardListIcon)}
+                {tabBtn('questions', 'Q-Injector', PlusIcon)}
                 {tabBtn('bookstore', 'Amazon Store', BookOpenIcon)}
-                {tabBtn('subscriptions', 'Access Control', StarIcon)}
+                {tabBtn('subscriptions', 'Access Wall', StarIcon)}
             </div>
 
             <main className="bg-white dark:bg-slate-950 p-2 md:p-10 rounded-[3.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 min-h-[600px]">
                 {activeTab === 'automation' && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[
-                            { icon: RssIcon, color: 'bg-indigo-600', title: 'Global Sync', desc: 'Sync KPSC notifications, news and generate AI questions.', action: () => triggerDailyScraper },
-                            { icon: BookOpenIcon, color: 'bg-emerald-600', title: 'Catalog Sync', desc: 'Fetch top Kerala PSC rank files from Amazon catalog.', action: () => triggerBookScraper },
-                            { icon: ArrowPathIcon, color: 'bg-rose-600', title: 'Flush AI Cache', desc: 'Purge cached study materials to force new AI generation.', action: () => clearStudyCache }
-                        ].map((card, i) => (
-                            <div key={i} className="bg-slate-50 dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 group hover:border-indigo-500 transition-all flex flex-col items-center text-center">
-                                <div className={`${card.color} w-20 h-20 rounded-3xl flex items-center justify-center mb-8 shadow-2xl group-hover:scale-110 transition-transform`}>
-                                    <card.icon className="h-10 w-10 text-white" />
-                                </div>
-                                <h3 className="font-black text-lg uppercase tracking-widest mb-3">{card.title}</h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-bold leading-relaxed mb-10 uppercase tracking-tighter">{card.desc}</p>
-                                <button onClick={async () => handleAction(async () => card.action()(await getToken()))} disabled={loading} className={`${card.color} w-full text-white py-5 rounded-2xl font-black text-[10px] tracking-[0.3em] shadow-xl uppercase mt-auto hover:brightness-110 active:scale-95 transition-all`}>Execute Protocol</button>
+                    <div className="space-y-12">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/10 p-10 rounded-[3rem] border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-2xl font-black uppercase tracking-tighter">Granular Sync Protocols</h3>
+                                <p className="text-sm font-bold text-slate-500 mt-2">Run tasks one by one to prevent server timeouts.</p>
                             </div>
-                        ))}
+                            <button onClick={async () => handleAction(async () => clearStudyCache(await getToken()))} className="bg-rose-100 text-rose-700 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Flush AI Cache</button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[
+                                { icon: BellIcon, color: 'bg-indigo-600', title: 'Notifications', action: 'run-scraper-notifications' },
+                                { icon: RssIcon, color: 'bg-indigo-500', title: 'PSC Live Feed', action: 'run-scraper-updates' },
+                                { icon: NewspaperIcon, color: 'bg-teal-600', title: 'Current Affairs', action: 'run-scraper-affairs' },
+                                { icon: LightBulbIcon, color: 'bg-amber-500', title: 'Daily GK Facts', action: 'run-scraper-gk' },
+                                { icon: PlusIcon, color: 'bg-indigo-700', title: 'AI Question Gen', action: 'run-scraper-questions' },
+                                { icon: BookOpenIcon, color: 'bg-emerald-600', title: 'Amazon Books', action: 'run-book-scraper' }
+                            ].map((card, i) => (
+                                <div key={i} className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 flex items-center space-x-6 group hover:border-indigo-500 transition-all">
+                                    <div className={`${card.color} w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform`}>
+                                        <card.icon className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-black text-sm uppercase tracking-widest mb-3">{card.title}</p>
+                                        <button 
+                                            onClick={() => runIndividualScraper(card.action)} 
+                                            disabled={loading} 
+                                            className="bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50"
+                                        >
+                                            {loading ? 'Processing...' : 'Start Protocol'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
@@ -224,7 +264,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'questions' && (
                     <div className="space-y-20 px-4">
-                        {/* MANUAL ENTRY - LIGHT THEME FOCUS */}
                         <section className="bg-slate-50 p-8 md:p-14 rounded-[4rem] border-2 border-slate-100 shadow-2xl relative overflow-hidden text-slate-900">
                             <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
                             <div className="flex items-center space-x-5 mb-12 relative z-10">
@@ -237,7 +276,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             
                             <form onSubmit={handleSingleQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
                                 <div className="space-y-3">
-                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Exam / Topic (Selection or New)</label>
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Exam / Topic</label>
                                     <input 
                                         list="exam-topics"
                                         value={newQ.topic} 
@@ -282,15 +321,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <button type="submit" disabled={loading || dataSource === 'Static Fallback'} className="md:col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white py-8 rounded-[2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 disabled:opacity-50 mt-4 shadow-indigo-600/20">Commit to Cloud</button>
                             </form>
                         </section>
-                        
-                        <section className="pt-20 border-t-2 border-slate-100 dark:border-slate-800">
-                             <div className="mb-10">
-                                <h3 className="text-xl font-black uppercase tracking-widest mb-2">Bulk Sync Repository</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">CSV Format: ID, Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty, Explanation</p>
-                             </div>
-                             <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="Paste CSV lines here..." className="w-full h-80 p-10 border border-slate-200 dark:border-slate-800 rounded-[4rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
-                             <button onClick={async () => handleAction(async () => syncCsvData('QuestionBank', bulkData, await getToken(), true))} disabled={dataSource === 'Static Fallback'} className="w-full mt-10 bg-emerald-600 hover:bg-emerald-500 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-2xl transition-all">Start Batch Deployment</button>
-                        </section>
                     </div>
                 )}
 
@@ -306,23 +336,14 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
                             </select>
                         </div>
-
-                        <div className="space-y-10">
-                            <textarea value={syllabusBulkData} onChange={e => setSyllabusBulkData(e.target.value)} placeholder="FORMAT: ID(Numeric), ExamID, Title, QCount, Duration, Subject, Topic" className="w-full h-72 p-10 border border-slate-100 dark:border-slate-800 rounded-[3.5rem] font-mono text-[11px] bg-slate-50 dark:bg-slate-900 outline-none focus:border-indigo-500 transition-all shadow-inner" />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <button onClick={async () => handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), true))} disabled={dataSource === 'Static Fallback'} className="bg-indigo-600 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 transition-all">Append to sprint</button>
-                                <button onClick={async () => { if(confirm("Wipe all previous syllabus for this view?")) handleAction(async () => syncCsvData('Syllabus', syllabusBulkData, await getToken(), false)) }} disabled={dataSource === 'Static Fallback'} className="bg-slate-800 text-white py-6 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-slate-700 transition-all">Overwrite global</button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {syllabusItems.map(s => (
                                 <div key={s.id} className="p-7 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-indigo-500 transition-all flex items-center justify-between">
                                     <div className="min-w-0 pr-4">
                                         <p className="font-black text-sm truncate uppercase tracking-tighter">{s.title}</p>
                                         <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">{s.topic} • {s.questions} Qs</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Detach from syllabus?")) handleAction(async () => deleteBook(s.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
+                                    <button onClick={async () => { if(confirm("Detach?")) handleAction(async () => deleteBook(s.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
                                 </div>
                             ))}
                         </div>
@@ -336,7 +357,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <h3 className="text-3xl font-black uppercase tracking-tighter">Marketplace Hub</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Amazon Affiliate Channel</p>
                             </div>
-                            <button onClick={async () => handleAction(async () => triggerBookScraper(await getToken()))} disabled={dataSource === 'Static Fallback'} className="bg-emerald-600 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all text-[11px]">Sync Cloud Store</button>
+                            <button onClick={() => runIndividualScraper('run-book-scraper')} disabled={loading} className="bg-emerald-600 text-white px-8 py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all text-[11px]">Sync Cloud Store</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {books.map(b => (
@@ -345,7 +366,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         <p className="font-black text-sm truncate uppercase tracking-tighter leading-none mb-2">{b.title}</p>
                                         <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest italic">{b.author || 'Catalog generic'}</p>
                                     </div>
-                                    <button onClick={async () => { if(confirm("Remove from store?")) handleAction(async () => deleteBook(b.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
+                                    <button onClick={async () => { if(confirm("Remove?")) handleAction(async () => deleteBook(b.id, await getToken())) }} disabled={dataSource === 'Static Fallback'} className="text-red-500 p-4 rounded-2xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-6 w-6" /></button>
                                 </div>
                             ))}
                         </div>
@@ -359,7 +380,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <StarIcon className="h-16 w-16 mx-auto" />
                             </div>
                             <h3 className="text-5xl font-black mb-8 tracking-tighter uppercase">Access Wall</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-16 leading-relaxed font-bold max-w-sm mx-auto uppercase tracking-widest">Toggle global monetization strategy. Disabling the wall grants PRO features to all authenticated users.</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-16 leading-relaxed font-bold max-w-sm mx-auto uppercase tracking-widest">Disable the paywall to grant PRO features to all authenticated users instantly.</p>
                             <button 
                                 onClick={async () => {
                                     const newVal = !isSubscriptionActive;

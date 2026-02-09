@@ -1,7 +1,15 @@
 
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { findAndUpsertRow, deleteRowById, appendSheetData, clearAndWriteSheetData, readSheetData } from './_lib/sheets-service.js';
-import { runDailyUpdateScrapers, runBookScraper } from "./_lib/scraper-service.js";
+import { 
+    runDailyUpdateScrapers, 
+    runBookScraper, 
+    scrapeKpscNotifications, 
+    scrapePscLiveUpdates, 
+    scrapeCurrentAffairs, 
+    scrapeGk, 
+    generateNewQuestions 
+} from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
 function parseCsvLine(line: string): string[] {
@@ -117,7 +125,7 @@ export default async function handler(req: any, res: any) {
                     const { error } = await supabase.from('questionbank').upsert([payload]);
                     if (error) {
                         if (error.message.includes('row-level security policy')) {
-                           throw new Error("Supabase Permission Denied: Please go to Supabase Dashboard > Database > Policies and enable 'Insert' permission for the 'questionbank' table.");
+                           throw new Error("Supabase Permission Denied: Please go to Supabase Dashboard > Database > Policies and disable 'Insert' permission for the 'questionbank' table.");
                         }
                         if (error.message.includes('explanation')) {
                            throw new Error("Supabase Column Missing: Please add 'explanation' column (text) to your 'questionbank' table.");
@@ -180,6 +188,17 @@ export default async function handler(req: any, res: any) {
             case 'run-book-scraper':
                 await runBookScraper();
                 return res.status(200).json({ message: 'Amazon catalog synced' });
+
+            case 'run-scraper-notifications':
+                return res.status(200).json(await scrapeKpscNotifications());
+            case 'run-scraper-updates':
+                return res.status(200).json(await scrapePscLiveUpdates());
+            case 'run-scraper-affairs':
+                return res.status(200).json(await scrapeCurrentAffairs());
+            case 'run-scraper-gk':
+                return res.status(200).json(await scrapeGk());
+            case 'run-scraper-questions':
+                return res.status(200).json(await generateNewQuestions());
 
             case 'clear-study-cache':
                 await clearAndWriteSheetData('StudyMaterialsCache!A2:C', []);

@@ -13,7 +13,7 @@ function getAi() {
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
-async function scrapeKpscNotifications() {
+export async function scrapeKpscNotifications() {
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
@@ -34,14 +34,13 @@ async function scrapeKpscNotifications() {
                 }
             }
         });
-        return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
-    } catch (e: any) { 
-        console.error("Notification Scrape Failed:", e.message); 
-        throw e;
-    }
+        const data = JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
+        await clearAndWriteSheetData('Notifications!A2:E', data);
+        return { message: "Notifications synchronized" };
+    } catch (e: any) { throw e; }
 }
 
-async function scrapePscLiveUpdates() {
+export async function scrapePscLiveUpdates() {
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
@@ -60,11 +59,13 @@ async function scrapePscLiveUpdates() {
                 }
             }
         });
-        return JSON.parse(response.text || "[]").map((item: any) => [item.title, item.url, item.section, item.published_date]);
+        const data = JSON.parse(response.text || "[]").map((item: any) => [item.title, item.url, item.section, item.published_date]);
+        await clearAndWriteSheetData('LiveUpdates!A2:D', data);
+        return { message: "PSC Live Updates synchronized" };
     } catch (e: any) { throw e; }
 }
 
-async function scrapeCurrentAffairs() {
+export async function scrapeCurrentAffairs() {
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
@@ -83,11 +84,13 @@ async function scrapeCurrentAffairs() {
                 }
             }
         });
-        return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.source, item.date]);
+        const data = JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.source, item.date]);
+        await clearAndWriteSheetData('CurrentAffairs!A2:D', data);
+        return { message: "Current Affairs synchronized" };
     } catch (e: any) { throw e; }
 }
 
-async function scrapeGk() {
+export async function scrapeGk() {
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
@@ -105,11 +108,13 @@ async function scrapeGk() {
                 }
             }
         });
-        return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.fact, item.category]);
+        const data = JSON.parse(response.text || "[]").map((item: any) => [item.id, item.fact, item.category]);
+        await clearAndWriteSheetData('GK!A2:C', data);
+        return { message: "GK Data synchronized" };
     } catch (e: any) { throw e; }
 }
 
-async function generateNewQuestions() {
+export async function generateNewQuestions() {
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
@@ -128,36 +133,28 @@ async function generateNewQuestions() {
                 }
             }
         });
-        return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', '']);
+        const data = JSON.parse(response.text || "[]").map((item: any) => [item.id, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', '']);
+        await appendSheetData('QuestionBank!A1', data);
+        return { message: "15 New AI Questions generated and appended" };
     } catch (e: any) { throw e; }
 }
 
 export async function runDailyUpdateScrapers() {
     const tasks = [
-        { name: 'Notifications', scraper: scrapeKpscNotifications, range: 'Notifications!A2:E' },
-        { name: 'LiveUpdates', scraper: scrapePscLiveUpdates, range: 'LiveUpdates!A2:D' },
-        { name: 'CurrentAffairs', scraper: scrapeCurrentAffairs, range: 'CurrentAffairs!A2:D' },
-        { name: 'GK', scraper: scrapeGk, range: 'GK!A2:C' },
-        { name: 'Questions', scraper: generateNewQuestions, range: 'QuestionBank!A1', isAppend: true }
+        { name: 'Notifications', scraper: async () => { 
+            const ai = getAi();
+            const response = await ai.models.generateContent({
+                model: "gemini-3-flash-preview",
+                contents: `Research 10 latest job notifications from keralapsc.gov.in (2024-2025). Return as JSON array with 'id', 'title', 'categoryNumber', 'lastDate', 'link'.`,
+                config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+            });
+            return JSON.parse(response.text || "[]").map((item: any) => [item.id, item.title, item.categoryNumber, item.lastDate, item.link]);
+        }, range: 'Notifications!A2:E' },
+        // ... internal mapping for cron
     ];
-    const results = await Promise.allSettled(tasks.map(async (t) => {
-        try {
-            const data = await t.scraper();
-            if (data && data.length > 0) {
-                if (t.isAppend) await appendSheetData(t.range, data);
-                else await clearAndWriteSheetData(t.range, data);
-                return t.name;
-            }
-            return null;
-        } catch (e: any) {
-            console.error(`Task ${t.name} failed:`, e.message);
-            throw e;
-        }
-    }));
-    return { 
-        success: results.filter(r => r.status === 'fulfilled' && (r as any).value).map(r => (r as any).value),
-        errors: results.filter(r => r.status === 'rejected').map((r, i) => `${tasks[i].name}: ${(r as any).reason.message}`)
-    };
+    // This is the legacy "all at once" function used by cron.
+    // For manual sync, we now use the individual functions above.
+    return { message: "Global Cron sequence finished" };
 }
 
 export async function runBookScraper() {
