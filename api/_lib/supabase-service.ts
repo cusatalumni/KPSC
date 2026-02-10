@@ -26,10 +26,10 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         const entry: any = { ...item };
         
         // Safety for numeric columns: empty strings should be null or 0
-        // Updated to use camelCase to match the actual database schema headers
-        if (entry.correctAnswerIndex === "") entry.correctAnswerIndex = 0;
-        if (entry.questions === "") entry.questions = 0;
-        if (entry.duration === "") entry.duration = 0;
+        // Aligned with the provided snake_case schema headers
+        if (entry.correct_answer_index === "" || entry.correct_answer_index === undefined) entry.correct_answer_index = 0;
+        if (entry.questions === "" || entry.questions === undefined) entry.questions = 0;
+        if (entry.duration === "" || entry.duration === undefined) entry.duration = 0;
         
         return entry;
     });

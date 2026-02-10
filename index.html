@@ -25,10 +25,10 @@
     "react-dom/": "https://esm.sh/react-dom@18.3.1/",
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
     "@google/genai": "https://esm.sh/@google/genai@1.39.0",
-    "googleapis": "https://esm.sh/googleapis@171.0.0",
     "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.21.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.4",
-    "@clerk/backend": "https://esm.sh/@clerk/backend@^2.30.1"
+    "@clerk/backend": "https://esm.sh/@clerk/backend@^2.30.1",
+    "googleapis": "https://esm.sh/googleapis@^171.4.0"
   }
 }
 </script>
@@ -58,7 +58,7 @@
           root.innerHTML = '<div style="padding: 20px; color: #ef4444; font-family: sans-serif; text-align: center;">' +
             '<h2 style="font-weight: bold; font-size: 24px;">Application Load Error</h2>' +
             '<p style="margin-top: 10px; opacity: 0.8;">' + (msg || "Internal Script Error") + '</p>' +
-            '<button onclick="window.location.reload()" style="margin-top: 20px; background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold;">Retry Loading</button>' +
+            '<button onClick="window.location.reload()" style="margin-top: 20px; background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold;">Retry Loading</button>' +
             '</div>';
         }
         return false;

@@ -53,14 +53,14 @@ export default async function handler(req: any, res: any) {
                 if (!error && data?.length) {
                     const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20);
                     return res.status(200).json(shuffled.map(q => ({
-                        ...q, options: smartParseOptions(q.options), correctAnswerIndex: q.correctAnswerIndex
+                        ...q, options: smartParseOptions(q.options), correctAnswerIndex: q.correct_answer_index
                     })));
                 }
             } else if (sbTable === 'settings') {
                 const { data, error } = await query;
                 if (!error && data?.length) return res.status(200).json(data.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc; }, {}));
             } else if (sbTable === 'syllabus' && examId) {
-                const { data, error } = await query.eq('examId', examId);
+                const { data, error } = await query.eq('exam_id', examId);
                 if (!error && data?.length) return res.status(200).json(data);
             } else {
                 const { data, error } = await query.limit(100);
@@ -74,7 +74,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(sRows.reduce((acc: any, curr: any) => { acc[curr[0]] = curr[1]; return acc; }, {}));
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
-                return res.status(200).json(eRows.filter(r => r[0]).map(r => ({ id: String(r[0]), titleMl: r[1], titleEn: r[2], descriptionMl: r[3], category: r[5], level: r[6], iconType: r[7] })));
+                return res.status(200).json(eRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] })));
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
                 return res.status(200).json(bRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));
@@ -90,7 +90,7 @@ export default async function handler(req: any, res: any) {
             case 'syllabus':
                 const sylRows = await readSheetData('Syllabus!A2:G');
                 const filtered = examId ? sylRows.filter(r => String(r[1]) === String(examId)) : sylRows;
-                return res.status(200).json(filtered.filter(r => r[0]).map(r => ({ id: r[0], examId: r[1], title: r[2], questions: parseInt(r[3]), duration: parseInt(r[4]), subject: r[5], topic: r[6] })));
+                return res.status(200).json(filtered.filter(r => r[0]).map(r => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3]), duration: parseInt(r[4]), subject: r[5], topic: r[6] })));
             case 'questions':
                 const allQs = await readSheetData('QuestionBank!A2:G');
                 const filteredQs = allQs.filter(r => {

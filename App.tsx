@@ -81,24 +81,18 @@ const App: React.FC = () => {
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
-        if (!selectedExam || String(selectedExam.id) !== String(id)) {
+        if (!selectedExam || String(selectedExam.id).trim() !== String(id).trim()) {
             setIsExamLoading(true);
             const exam = await getExamById(id);
             if (exam) {
                 setSelectedExam(exam);
             } else {
-                console.warn(`Exam with ID ${id} not found, redirecting...`);
                 window.location.hash = '#dashboard';
                 setIsExamLoading(false);
                 return;
             }
             setIsExamLoading(false);
         }
-    }
-
-    if (targetPage === 'test' && id === 'mock' && parts[2]) {
-        const mt = MOCK_TESTS_DATA.find(m => String(m.id) === String(parts[2]));
-        if (mt) setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed' });
     }
 
     if (targetPage === 'study_material' && id) {

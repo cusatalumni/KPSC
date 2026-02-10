@@ -41,16 +41,16 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
                 examsCache = raw.map((e: any) => ({
                     id: String(e.id),
                     title: { 
-                        ml: e.titleMl || e.title_ml, 
-                        en: e.titleEn || e.title_en || e.titleMl || e.title_ml 
+                        ml: e.title_ml || e.titleMl, 
+                        en: e.title_en || e.titleEn || e.title_ml || e.titleMl 
                     },
                     description: { 
-                        ml: e.descriptionMl || e.description_ml, 
-                        en: e.descriptionEn || e.description_en || e.descriptionMl || e.description_ml 
+                        ml: e.description_ml || e.descriptionMl, 
+                        en: e.description_en || e.descriptionEn || e.description_ml || e.descriptionMl 
                     },
                     category: e.category || 'General',
                     level: e.level || 'Preliminary',
-                    icon: getIcon(e.iconType || e.icon_type)
+                    icon: getIcon(e.icon_type || e.iconType)
                 }));
                 return { exams: examsCache!, source: 'database' };
             }
@@ -66,10 +66,21 @@ export const getExamById = async (id: string): Promise<Exam | null> => {
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
     const data = await fetchHub(`type=syllabus&examId=${examId}`, []);
-    return (data && data.length > 0) ? data : (EXAM_CONTENT_MAP[examId]?.practiceTests || []);
+    if (data && Array.isArray(data) && data.length > 0) {
+        return data.map((item: any) => ({
+            id: String(item.id),
+            title: item.title,
+            questions: parseInt(item.questions || '20'),
+            duration: parseInt(item.duration || '20'),
+            subject: item.subject,
+            topic: item.topic
+        }));
+    }
+    return (EXAM_CONTENT_MAP[examId]?.practiceTests || []);
 };
 
 export const getSettings = async () => fetchHub('type=settings', { subscription_model_active: 'true' });
+
 export const updateSetting = async (key: string, value: string, token: string | null) => {
     const res = await fetch('/api/admin', {
         method: 'POST',
