@@ -3,13 +3,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+// Fix: Removed deleteBook, syncCsvData, and addQuestion as they are not exported by pscDataService
 import { 
     getBooks, 
-    deleteBook, 
     getExams,
-    syncCsvData,
     testConnection,
-    addQuestion,
     getExamSyllabus,
     getSettings,
     updateSetting,
@@ -63,10 +61,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const examRes = await getExams();
             setExams(examRes.exams);
             setDataSource(examRes.source === 'database' ? 'Database' : 'Static Fallback');
-            const [b, s] = await Promise.all([getBooks(), getSettings(true)]);
+            // Fix: getSettings() expects 0 arguments in pscDataService
+            const [b, s] = await Promise.all([getBooks(), getSettings()]);
             setBooks(b);
             if (s?.subscription_model_active !== undefined) setIsSubscriptionActive(s.subscription_model_active === 'true');
-        } catch (e) {} finally { if (!silent) setLoading(false); }
+        } catch (e) { console.error(e); } finally { if (!silent) setLoading(false); }
     }, [getToken]);
 
     useEffect(() => { refresh(); }, [refresh]);
@@ -251,7 +250,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <button type="submit" className="md:col-span-2 bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase shadow-xl">{newBook.id ? 'Update Book' : 'Inject Book'}</button>
                             </form>
                         </section>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {books.map(b => (
                                 <div key={b.id} className="p-7 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-between group hover:border-emerald-500 transition-all border border-transparent">
                                     <div className="min-w-0 pr-6"><p className="font-black text-sm truncate uppercase mb-2">{b.title}</p><p className="text-[9px] text-slate-400 font-black uppercase">{b.author}</p></div>

@@ -36,6 +36,7 @@ const App: React.FC = () => {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [isExamLoading, setIsExamLoading] = useState(false);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any; questions?: QuizQuestion[]; answers?: UserAnswers } | null>(null);
   const [activeStudyTopic, setActiveStudyTopic] = useState<string | null>(null);
@@ -46,21 +47,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
       const init = async () => {
-          const timer = setTimeout(() => {
-              if (isAppLoading) setIsAppLoading(false);
-          }, 5000);
-
           try {
               const s = await getSettings();
               setSettings(s);
-          } catch (e) {
-              console.error("Failed to load settings:", e);
-          } finally {
-              if (clerkLoaded) {
-                setIsAppLoading(false);
-                clearTimeout(timer);
-              }
-          }
+          } catch (e) { console.error(e); } 
+          finally { if (clerkLoaded) setIsAppLoading(false); }
       };
       init();
   }, [clerkLoaded]);
@@ -72,9 +63,6 @@ const App: React.FC = () => {
     if (!hashPath || hashPath === '' || hashPath === 'dashboard') {
         setCurrentPage('dashboard');
         setSelectedExam(null);
-        setActiveTest(null);
-        setActiveStudyTopic(null);
-        setExternalUrl(null);
         return;
     }
 
@@ -93,20 +81,16 @@ const App: React.FC = () => {
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
-        // Fix: Robust ID matching to prevent loop
+        setIsExamLoading(true);
         const exam = await getExamById(id);
         if (exam) {
             setSelectedExam(exam);
+            setIsExamLoading(false);
         } else {
-            console.warn(`Exam with ID ${id} not found.`);
+            setIsExamLoading(false);
             window.location.hash = '#dashboard';
             return;
         }
-    }
-
-    if (targetPage === 'test' && id === 'mock' && parts[2]) {
-        const mt = MOCK_TESTS_DATA.find(m => m.id === parts[2]);
-        if (mt) setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed' });
     }
 
     if (targetPage === 'study_material' && id) {
@@ -155,7 +139,9 @@ const App: React.FC = () => {
         {(() => {
           switch(currentPage) {
             case 'admin_panel': return <AdminPage onBack={() => handleNavigate('dashboard')} />;
-            case 'exam_details': return selectedExam ? <ExamPage exam={selectedExam} content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} onBack={() => handleNavigate('dashboard')} onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} onStartStudy={()=>{}} onNavigate={handleNavigate}/> : <div className="flex items-center justify-center min-h-[50vh]"><div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+            case 'exam_details': 
+                if (isExamLoading) return <div className="flex flex-col items-center justify-center min-h-[50vh]"><div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div><p className="font-bold text-slate-400">Loading Exam Details...</p></div>;
+                return selectedExam ? <ExamPage exam={selectedExam} content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} onBack={() => handleNavigate('dashboard')} onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} onStartStudy={()=>{}} onNavigate={handleNavigate}/> : null;
             case 'test': return activeTest ? <TestPage activeTest={activeTest} subscriptionStatus={subscriptionStatus} onTestComplete={(s, t, st, q, a) => { setTestResult({ score: s, total: t, stats: st, questions: q, answers: a }); handleNavigate('results'); }} onBack={() => window.history.back()} onNavigateToUpgrade={() => handleNavigate('upgrade')} /> : <div className="p-20 text-center">Loading...</div>;
             case 'results': return testResult ? <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} questions={testResult.questions} answers={testResult.answers} onBackToPrevious={() => handleNavigate('dashboard')} /> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={()=>{}} />;
             case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
