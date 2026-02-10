@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -22,17 +23,17 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
     const cleanData = data.map(item => {
         const entry: any = { ...item };
         
-        // ONLY sanitize numeric fields if they actually belong to the current data object
+        // ONLY sanitize numeric fields if they actually belong to the current data object (the table's schema)
         // This stops errors like "couldnot find correct_answer_index in bookstore"
-        if ('correct_answer_index' in entry) {
+        if (Object.prototype.hasOwnProperty.call(entry, 'correct_answer_index')) {
             if (entry.correct_answer_index === "" || entry.correct_answer_index === undefined) entry.correct_answer_index = 0;
             else entry.correct_answer_index = parseInt(String(entry.correct_answer_index));
         }
-        if ('questions' in entry) {
+        if (Object.prototype.hasOwnProperty.call(entry, 'questions')) {
             if (entry.questions === "" || entry.questions === undefined) entry.questions = 0;
             else entry.questions = parseInt(String(entry.questions));
         }
-        if ('duration' in entry) {
+        if (Object.prototype.hasOwnProperty.call(entry, 'duration')) {
             if (entry.duration === "" || entry.duration === undefined) entry.duration = 0;
             else entry.duration = parseInt(String(entry.duration));
         }

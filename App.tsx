@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -44,6 +45,9 @@ const App: React.FC = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { theme } = useTheme();
 
+  // Reference to avoid loop dependency on syncStateFromHash
+  const currentExamIdRef = useRef<string | null>(null);
+
   useEffect(() => {
       const init = async () => {
           try {
@@ -62,6 +66,7 @@ const App: React.FC = () => {
     if (!hashPath || hashPath === '' || hashPath === 'dashboard') {
         setCurrentPage('dashboard');
         setSelectedExam(null);
+        currentExamIdRef.current = null;
         return;
     }
 
@@ -80,11 +85,14 @@ const App: React.FC = () => {
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
-        if (!selectedExam || String(selectedExam.id).trim() !== String(id).trim()) {
+        const cleanId = String(id).trim();
+        // Check if we are already viewing this exam to prevent reloading loops
+        if (currentExamIdRef.current !== cleanId) {
             setIsExamLoading(true);
             try {
-                const exam = await getExamById(id);
+                const exam = await getExamById(cleanId);
                 if (exam) {
+                    currentExamIdRef.current = cleanId;
                     setSelectedExam(exam);
                 } else {
                     window.location.hash = '#dashboard';
@@ -113,7 +121,7 @@ const App: React.FC = () => {
 
     setCurrentPage(targetPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [selectedExam]);
+  }, []); // No dependencies to avoid recreation loops
 
   useEffect(() => {
     syncStateFromHash();
