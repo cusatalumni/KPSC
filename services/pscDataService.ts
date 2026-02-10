@@ -40,11 +40,17 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
             if (Array.isArray(raw) && raw.length > 0) {
                 examsCache = raw.map((e: any) => ({
                     id: String(e.id),
-                    title: { ml: e.title_ml, en: e.title_en || e.title_ml },
-                    description: { ml: e.description_ml, en: e.description_en || e.description_ml },
+                    title: { 
+                        ml: e.titleMl || e.title_ml, 
+                        en: e.titleEn || e.title_en || e.titleMl || e.title_ml 
+                    },
+                    description: { 
+                        ml: e.descriptionMl || e.description_ml, 
+                        en: e.descriptionEn || e.description_en || e.descriptionMl || e.description_ml 
+                    },
                     category: e.category || 'General',
                     level: e.level || 'Preliminary',
-                    icon: getIcon(e.icon_type)
+                    icon: getIcon(e.iconType || e.icon_type)
                 }));
                 return { exams: examsCache!, source: 'database' };
             }
@@ -55,7 +61,7 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
 
 export const getExamById = async (id: string): Promise<Exam | null> => {
     const { exams } = await getExams();
-    return exams.find(e => String(e.id) === String(id)) || null;
+    return exams.find(e => String(e.id).trim() === String(id).trim()) || null;
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {

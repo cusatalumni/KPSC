@@ -90,44 +90,44 @@ export default async function handler(req: any, res: any) {
                 
                 await Promise.all([
                     upsertSupabaseData('exams', exs.filter(r => r[0]).map(r => ({ 
-                        id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] 
+                        id: String(r[0]), titleMl: r[1], titleEn: r[2], descriptionMl: r[3], descriptionEn: r[4], category: r[5], level: r[6], iconType: r[7] 
                     }))),
                     upsertSupabaseData('settings', snl.filter(r => r[0]).map(r => ({ key: r[0], value: r[1] })), 'key'),
                     upsertSupabaseData('questionbank', qbs.filter(r => r[0] && !isNaN(parseInt(r[0]))).map(r => ({ 
-                        id: parseInt(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6], explanation: r[7] || '' 
+                        id: parseInt(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6], explanation: r[7] || '' 
                     }))),
                     upsertSupabaseData('bookstore', bks.filter(r => r[0]).map(r => ({ 
-                        id: String(r[0]), title: r[1], author: r[2], image_url: r[3], amazon_link: r[4] 
+                        id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] 
                     }))),
                     upsertSupabaseData('syllabus', syls.filter(r => r[0] && !isNaN(parseInt(r[0]))).map(r => ({ 
-                        id: parseInt(r[0]), exam_id: String(r[1]), title: r[2], questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: r[5], topic: r[6] 
+                        id: parseInt(r[0]), examId: String(r[1]), title: r[2], questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: r[5], topic: r[6] 
                     })))
                 ]);
-                return res.status(200).json({ message: 'Cloud Sync Completed' });
+                return res.status(200).json({ message: 'Global Sync Completed (CamelCase Corrected)' });
 
             case 'update-exam':
-                const examRow = [exam.id, exam.title_ml, exam.title_en, exam.description_ml, exam.description_en, exam.category, exam.level, exam.icon_type];
+                const examRow = [exam.id, exam.titleMl, exam.titleEn, exam.descriptionMl, exam.descriptionEn, exam.category, exam.level, exam.iconType];
                 await findAndUpsertRow('Exams', exam.id, examRow);
-                if (supabase) await upsertSupabaseData('exams', [{ id: String(exam.id), title_ml: exam.title_ml, title_en: exam.title_en, description_ml: exam.description_ml, description_en: exam.description_en, category: exam.category, level: exam.level, icon_type: exam.icon_type }]);
+                if (supabase) await upsertSupabaseData('exams', [{ id: String(exam.id), titleMl: exam.titleMl, titleEn: exam.titleEn, descriptionMl: exam.descriptionMl, descriptionEn: exam.descriptionEn, category: exam.category, level: exam.level, iconType: exam.iconType }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'update-book':
                 const bRow = [book.id, book.title, book.author, book.imageUrl, book.amazonLink];
                 await findAndUpsertRow('Bookstore', book.id, bRow);
-                if (supabase) await upsertSupabaseData('bookstore', [{ id: String(book.id), title: book.title, author: book.author, image_url: book.imageUrl, amazon_link: book.amazonLink }]);
+                if (supabase) await upsertSupabaseData('bookstore', [{ id: String(book.id), title: book.title, author: book.author, imageUrl: book.imageUrl, amazonLink: book.amazonLink }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'update-syllabus':
-                const sylRow = [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic];
+                const sylRow = [syllabus.id, syllabus.examId, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic];
                 await findAndUpsertRow('Syllabus', syllabus.id, sylRow);
-                if (supabase) await upsertSupabaseData('syllabus', [{ id: parseInt(syllabus.id), exam_id: String(syllabus.exam_id), title: syllabus.title, questions: parseInt(syllabus.questions), duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic }]);
+                if (supabase) await upsertSupabaseData('syllabus', [{ id: parseInt(syllabus.id), examId: String(syllabus.examId), title: syllabus.title, questions: parseInt(syllabus.questions), duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'add-question':
                 const qId = question.id ? parseInt(question.id) : Date.now();
                 const qRow = [qId, question.topic, question.question, JSON.stringify(smartParseOptions(question.options)), question.correctAnswerIndex, question.subject, question.difficulty, question.explanation || ''];
                 await findAndUpsertRow('QuestionBank', String(qId), qRow);
-                if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: smartParseOptions(question.options), correct_answer_index: parseInt(question.correctAnswerIndex), subject: question.subject, difficulty: question.difficulty, explanation: question.explanation || '' }]);
+                if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: smartParseOptions(question.options), correctAnswerIndex: parseInt(question.correctAnswerIndex), subject: question.subject, difficulty: question.difficulty, explanation: question.explanation || '' }]);
                 return res.status(200).json({ message: 'Saved' });
 
             case 'csv-update':
