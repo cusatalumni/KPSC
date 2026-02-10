@@ -1,4 +1,3 @@
-
 import { readSheetData } from './_lib/sheets-service.js';
 import { supabase } from './_lib/supabase-service.js';
 
@@ -74,19 +73,10 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(sRows.reduce((acc: any, curr: any) => { acc[curr[0]] = curr[1]; return acc; }, {}));
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
-                return res.status(200).json(eRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] })));
+                return res.status(200).json(eRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], category: r[5], level: r[6], icon_type: r[7] })));
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
                 return res.status(200).json(bRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));
-            case 'updates':
-                const uRows = await readSheetData('LiveUpdates!A2:D');
-                return res.status(200).json(uRows.map(r => ({ title: r[0], url: r[1], section: r[2], published_date: r[3] })));
-            case 'affairs':
-                const aRows = await readSheetData('CurrentAffairs!A2:D');
-                return res.status(200).json(aRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], source: r[2], date: r[3] })));
-            case 'gk':
-                const gRows = await readSheetData('GK!A2:C');
-                return res.status(200).json(gRows.filter(r => r[0]).map(r => ({ id: String(r[0]), fact: r[1], category: r[2] })));
             case 'syllabus':
                 const sylRows = await readSheetData('Syllabus!A2:G');
                 const filtered = examId ? sylRows.filter(r => String(r[1]) === String(examId)) : sylRows;
@@ -100,7 +90,7 @@ export default async function handler(req: any, res: any) {
                     const fSub = (subject as string || '').toLowerCase();
                     const fTop = (topic as string || '').toLowerCase();
                     return (!fSub || fSub === 'mixed' || rowSub.includes(fSub)) && (!fTop || fTop === 'mixed' || rowTopic.includes(fTop));
-                }).map(r => ({ id: r[0], topic: r[1], question: r[2], options: smartParseOptions(r[3]), correctAnswerIndex: parseInt(r[4]||'0'), subject: r[5], difficulty: r[6] }));
+                }).map(r => ({ id: r[0], topic: r[1], question: r[2], options: smartParseOptions(r[3]), correct_answer_index: parseInt(r[4]||'0'), subject: r[5], difficulty: r[6] }));
                 return res.status(200).json(filteredQs.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20));
             default:
                 return res.status(200).json(await readSheetData(`${type.charAt(0).toUpperCase() + type.slice(1)}!A2:Z`));

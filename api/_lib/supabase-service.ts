@@ -1,8 +1,6 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
-// Use Service Role Key if available to bypass RLS, otherwise fallback to Anon Key
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 export const supabase = (supabaseUrl && supabaseKey) 
@@ -21,15 +19,23 @@ export const supabase = (supabaseUrl && supabaseKey)
 export async function upsertSupabaseData(table: string, data: any[], onConflict: string = 'id') {
     if (!supabase) return null;
     
-    // Ensure all data objects are clean and formatted correctly for Supabase
     const cleanData = data.map(item => {
         const entry: any = { ...item };
         
-        // Safety for numeric columns: empty strings should be null or 0
-        // Aligned with the provided snake_case schema headers
-        if (entry.correct_answer_index === "" || entry.correct_answer_index === undefined) entry.correct_answer_index = 0;
-        if (entry.questions === "" || entry.questions === undefined) entry.questions = 0;
-        if (entry.duration === "" || entry.duration === undefined) entry.duration = 0;
+        // ONLY sanitize numeric fields if they actually belong to the current data object
+        // This stops errors like "couldnot find correct_answer_index in bookstore"
+        if ('correct_answer_index' in entry) {
+            if (entry.correct_answer_index === "" || entry.correct_answer_index === undefined) entry.correct_answer_index = 0;
+            else entry.correct_answer_index = parseInt(String(entry.correct_answer_index));
+        }
+        if ('questions' in entry) {
+            if (entry.questions === "" || entry.questions === undefined) entry.questions = 0;
+            else entry.questions = parseInt(String(entry.questions));
+        }
+        if ('duration' in entry) {
+            if (entry.duration === "" || entry.duration === undefined) entry.duration = 0;
+            else entry.duration = parseInt(String(entry.duration));
+        }
         
         return entry;
     });
@@ -40,14 +46,11 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
 
     if (error) {
         console.error(`Supabase Upsert Failure [${table}]:`, error);
-        throw new Error(`DB Error: ${error.message} (Details: ${error.details || 'Check CSV types'})`);
+        throw new Error(`DB Error: ${error.message} (Column alignment mismatch)`);
     }
     return result;
 }
 
-/**
- * Delete a row from Supabase
- */
 export async function deleteSupabaseRow(table: string, id: string) {
     if (!supabase) return null;
     const { error } = await supabase.from(table).delete().eq('id', id);

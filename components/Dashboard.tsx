@@ -1,15 +1,14 @@
-
-import React, { useState, useEffect, useMemo, Fragment, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, Fragment } from 'react';
 import ExamCard from './ExamCard';
-import { getDetectedExams, getExams, getGk, getCurrentAffairs, getSettings } from '../services/pscDataService';
-import type { Exam, Page, GkItem, CurrentAffairsItem } from '../types';
+import { getDetectedExams, getExams, getGk, getCurrentAffairs } from '../services/pscDataService';
+import type { Exam, Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import NewsTicker from './NewsTicker';
 import HeroSlider from './HeroSlider';
 import AdsenseWidget from './AdsenseWidget';
 import PscLiveWidget from './PscLiveWidget';
 import QuizHomeWidget from './QuizHomeWidget';
-import CurrentAffairsWidget from './CurrentAffairsWidget';
+import CurrentAffairsWidget from './icons/CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { NewspaperIcon } from './icons/NewspaperIcon';
 
@@ -112,7 +111,6 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                     {(groupedExams[catId] || []).map((exam, idx) => (
                         <Fragment key={exam.id}>
                             <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
-                            {/* Ad after every 7 items */}
                             {(idx + 1) % 7 === 0 && <div className="sm:col-span-2 py-4"><AdsenseWidget /></div>}
                         </Fragment>
                     ))}

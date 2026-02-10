@@ -1,4 +1,3 @@
-
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { findAndUpsertRow, deleteRowById, appendSheetData, clearAndWriteSheetData, readSheetData } from './_lib/sheets-service.js';
 import { 
@@ -106,27 +105,23 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Global Cloud Sync Completed (Schema Verified)' });
 
             case 'update-exam':
-                const examRow = [exam.id, exam.title_ml, exam.title_en, exam.description_ml, exam.description_en, exam.category, exam.level, exam.icon_type];
-                await findAndUpsertRow('Exams', exam.id, examRow);
+                await findAndUpsertRow('Exams', exam.id, [exam.id, exam.title_ml, exam.title_en, exam.description_ml, exam.description_en, exam.category, exam.level, exam.icon_type]);
                 if (supabase) await upsertSupabaseData('exams', [{ id: String(exam.id), title_ml: exam.title_ml, title_en: exam.title_en, description_ml: exam.description_ml, description_en: exam.description_en, category: exam.category, level: exam.level, icon_type: exam.icon_type }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'update-book':
-                const bRow = [book.id, book.title, book.author, book.imageUrl, book.amazonLink];
-                await findAndUpsertRow('Bookstore', book.id, bRow);
+                await findAndUpsertRow('Bookstore', book.id, [book.id, book.title, book.author, book.imageUrl, book.amazonLink]);
                 if (supabase) await upsertSupabaseData('bookstore', [{ id: String(book.id), title: book.title, author: book.author, imageUrl: book.imageUrl, amazonLink: book.amazonLink }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'update-syllabus':
-                const sylRow = [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic];
-                await findAndUpsertRow('Syllabus', syllabus.id, sylRow);
+                await findAndUpsertRow('Syllabus', syllabus.id, [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic]);
                 if (supabase) await upsertSupabaseData('syllabus', [{ id: parseInt(syllabus.id), exam_id: String(syllabus.exam_id), title: syllabus.title, questions: parseInt(syllabus.questions), duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'add-question':
                 const qId = question.id ? parseInt(question.id) : Date.now();
-                const qRow = [qId, question.topic, question.question, JSON.stringify(smartParseOptions(question.options)), question.correct_answer_index, question.subject, question.difficulty];
-                await findAndUpsertRow('QuestionBank', String(qId), qRow);
+                await findAndUpsertRow('QuestionBank', String(qId), [qId, question.topic, question.question, JSON.stringify(smartParseOptions(question.options)), question.correct_answer_index, question.subject, question.difficulty]);
                 if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: smartParseOptions(question.options), correct_answer_index: parseInt(question.correct_answer_index), subject: question.subject, difficulty: question.difficulty }]);
                 return res.status(200).json({ message: 'Saved' });
 
