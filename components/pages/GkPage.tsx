@@ -48,7 +48,7 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 </div>
                                 {/* Ad after every 7 cards */}
-                                {(index + 1) % 7 === 0 && <div className="md:col-span-2 lg:col-span-3"><AdsenseWidget /></div>}
+                                {(index + 1) % 7 === 0 && <div className="md:col-span-2 lg:col-span-3 py-4"><AdsenseWidget /></div>}
                             </Fragment>
                         ))}
                     </div>

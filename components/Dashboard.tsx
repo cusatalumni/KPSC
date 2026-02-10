@@ -113,7 +113,7 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                         <Fragment key={exam.id}>
                             <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
                             {/* Ad after every 7 items */}
-                            {(idx + 1) % 7 === 0 && <div className="sm:col-span-2"><AdsenseWidget /></div>}
+                            {(idx + 1) % 7 === 0 && <div className="sm:col-span-2 py-4"><AdsenseWidget /></div>}
                         </Fragment>
                     ))}
                   </div>
