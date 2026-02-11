@@ -1,4 +1,3 @@
-
 import { readSheetData } from './_lib/sheets-service.js';
 import { supabase } from './_lib/supabase-service.js';
 
@@ -21,10 +20,8 @@ const smartParseOptions = (raw: any): string[] => {
     return [clean];
 };
 
-/**
- * Handles cases where a row might be a single string due to storage corruption
- */
 const smartRowSplitter = (row: any[]): any[] => {
+    if (!row || row.length === 0) return [];
     if (row.length === 1 && String(row[0]).includes(',')) {
         return row[0].split(',').map((s: string) => s.trim().replace(/^['"]|['"]$/g, ''));
     }
@@ -44,13 +41,15 @@ export default async function handler(req: any, res: any) {
         'exams': 'exams',
         'settings': 'settings',
         'gk': 'gk',
-        'syllabus': 'syllabus'
+        'syllabus': 'syllabus',
+        'notifications': 'notifications'
     };
     const sbTable = sbTableMap[tType] || tType;
 
     try {
         if (supabase) {
             let query = supabase.from(sbTable).select('*');
+            
             if (sbTable === 'questionbank') {
                 if (subject && subject !== 'mixed') query = query.or(`subject.ilike.%${subject}%,topic.ilike.%${subject}%`);
                 else if (topic && topic !== 'mixed') query = query.ilike('topic', `%${topic}%`);
@@ -59,6 +58,7 @@ export default async function handler(req: any, res: any) {
                     const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20);
                     return res.status(200).json(shuffled.map(q => ({
                         ...q, 
+                        id: q.id,
                         options: smartParseOptions(q.options), 
                         correctAnswerIndex: q.correct_answer_index || 0,
                         subject: q.subject || 'General',
@@ -68,70 +68,61 @@ export default async function handler(req: any, res: any) {
             } else if (sbTable === 'settings') {
                 const { data, error } = await query;
                 if (!error && data?.length) return res.status(200).json(data.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc; }, {}));
-            } else if (sbTable === 'syllabus' && examId) {
-                const { data, error } = await query.eq('exam_id', examId);
-                if (!error && data?.length) return res.status(200).json(data.map(i => ({ ...i, id: String(i.id) })));
+            } else if (sbTable === 'exams') {
+                const { data, error } = await query;
+                if (!error && data?.length) return res.status(200).json(data.map(e => ({
+                    id: String(e.id),
+                    title_ml: e.title_ml, title_en: e.title_en,
+                    description_ml: e.description_ml, description_en: e.description_en,
+                    category: e.category, level: e.level, icon_type: e.icon_type
+                })));
+            } else if (sbTable === 'syllabus') {
+                if (examId) query = query.eq('exam_id', String(examId));
+                const { data, error } = await query;
+                if (!error && data?.length) return res.status(200).json(data.map(i => ({ 
+                    id: String(i.id), 
+                    exam_id: String(i.exam_id),
+                    title: i.title,
+                    questions: i.questions,
+                    duration: i.duration,
+                    subject: i.subject,
+                    topic: i.topic
+                })));
             } else {
                 const { data, error } = await query.limit(100);
                 if (!error && data?.length) return res.status(200).json(data.map(i => (i.id ? { ...i, id: String(i.id) } : i)));
             }
         }
 
-        // Sheets Fallback
+        // --- SHEETS FALLBACK ---
         switch (tType) {
             case 'settings':
                 const sRows = await readSheetData('Settings!A2:B');
-                return res.status(200).json(sRows.reduce((acc: any, curr: any) => { acc[curr[0]] = curr[1]; return acc; }, {}));
+                return res.status(200).json(sRows.reduce((acc: any, curr: any) => { if(curr[0]) acc[curr[0]] = curr[1]; return acc; }, {}));
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
                 return res.status(200).json(eRows.filter(r => r[0]).map(r => {
                     const cols = smartRowSplitter(r);
-                    return { 
-                        id: String(cols[0]), 
-                        title_ml: cols[1], 
-                        title_en: cols[2], 
-                        description_ml: cols[3], 
-                        description_en: cols[4], 
-                        category: cols[5], 
-                        level: cols[6], 
-                        icon_type: cols[7] 
-                    };
-                }));
-            case 'books':
-                const bRows = await readSheetData('Bookstore!A2:E');
-                return res.status(200).json(bRows.filter(r => r[0]).map(r => {
-                    const cols = smartRowSplitter(r);
-                    return { id: String(cols[0]), title: cols[1], author: cols[2], imageUrl: cols[3], amazonLink: cols[4] };
+                    return { id: String(cols[0]), title_ml: cols[1], title_en: cols[2], description_ml: cols[3], description_en: cols[4], category: cols[5], level: cols[6], icon_type: cols[7] };
                 }));
             case 'syllabus':
                 const sylRows = await readSheetData('Syllabus!A2:G');
                 const filtered = sylRows.filter(r => {
+                    if (!r[0]) return false;
                     const cols = smartRowSplitter(r);
-                    return !examId || String(cols[1]) === String(examId);
+                    return !examId || String(cols[1]).trim() === String(examId).trim();
                 });
-                return res.status(200).json(filtered.filter(r => r[0]).map(r => {
+                return res.status(200).json(filtered.map(r => {
                     const cols = smartRowSplitter(r);
                     return { id: String(cols[0]), exam_id: String(cols[1]), title: cols[2], questions: parseInt(cols[3] || '20'), duration: parseInt(cols[4] || '20'), subject: cols[5], topic: cols[6] };
                 }));
-            case 'questions':
-                const allQs = await readSheetData('QuestionBank!A2:G');
-                const filteredQs = allQs.filter(r => {
-                    if (!r[0]) return false;
-                    const cols = smartRowSplitter(r);
-                    const rowTopic = (cols[1] || '').toLowerCase();
-                    const rowSub = (cols[5] || '').toLowerCase();
-                    const fSub = (subject as string || '').toLowerCase();
-                    const fTop = (topic as string || '').toLowerCase();
-                    return (!fSub || fSub === 'mixed' || rowSub.includes(fSub)) && (!fTop || fTop === 'mixed' || rowTopic.includes(fTop));
-                }).map(r => {
-                    const cols = smartRowSplitter(r);
-                    return { id: cols[0], topic: cols[1], question: cols[2], options: smartParseOptions(cols[3]), correctAnswerIndex: parseInt(cols[4]||'0'), subject: cols[5], difficulty: cols[6] };
-                });
-                return res.status(200).json(filteredQs.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20));
             default:
-                return res.status(200).json(await readSheetData(`${type.charAt(0).toUpperCase() + type.slice(1)}!A2:Z`));
+                const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
+                const genericRows = await readSheetData(`${sheetName}!A2:Z`);
+                return res.status(200).json(genericRows.map(r => smartRowSplitter(r)));
         }
     } catch (error: any) {
+        console.error(`Fetch Failure [${tType}]:`, error.message);
         return res.status(500).json({ error: error.message, type: tType });
     }
 }

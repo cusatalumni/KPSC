@@ -1,6 +1,6 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData, readSheetData } from './sheets-service.js';
+import { upsertSupabaseData } from './supabase-service.js';
 
 declare var process: any;
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
@@ -13,19 +13,24 @@ function getAi() {
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
-/**
- * Helper to get the next numeric ID from a sheet to ensure continuity
- */
+// Simple hash function to create numeric IDs from strings
+function createNumericHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+}
+
 async function getNextId(sheetRange: string, startFrom: number = 1000): Promise<number> {
     try {
         const rows = await readSheetData(sheetRange);
         if (!rows || rows.length === 0) return startFrom;
-        // Parse all IDs and find the max
         const ids = rows.map(r => parseInt(String(r[0]))).filter(id => !isNaN(id));
         return ids.length > 0 ? Math.max(...ids) + 1 : startFrom;
-    } catch (e) {
-        return startFrom;
-    }
+    } catch (e) { return startFrom; }
 }
 
 export async function scrapeKpscNotifications() {
@@ -51,12 +56,13 @@ export async function scrapeKpscNotifications() {
         });
         
         const nextId = await getNextId('Notifications!A2:A');
-        const newData = JSON.parse(response.text || "[]").map((item: any, idx: number) => [
-            String(nextId + idx), item.title, item.categoryNumber, item.lastDate, item.link
-        ]);
+        const items = JSON.parse(response.text || "[]");
+        const sheetData = items.map((item: any, idx: number) => [String(nextId + idx), item.title, item.categoryNumber, item.lastDate, item.link]);
+        const sbData = items.map((item: any, idx: number) => ({ id: String(nextId + idx), title: item.title, categoryNumber: item.categoryNumber, lastDate: item.lastDate, link: item.link }));
         
-        await appendSheetData('Notifications!A1', newData);
-        return { message: `${newData.length} notifications appended.` };
+        await appendSheetData('Notifications!A1', sheetData);
+        await upsertSupabaseData('notifications', sbData);
+        return { message: `${items.length} notifications synced.` };
     } catch (e: any) { throw e; }
 }
 
@@ -79,11 +85,24 @@ export async function scrapePscLiveUpdates() {
                 }
             }
         });
-        const newData = JSON.parse(response.text || "[]").map((item: any) => [item.title, item.url, item.section, item.published_date]);
+        const items = JSON.parse(response.text || "[]");
+        const sheetData = items.map((item: any) => [item.title, item.url, item.section, item.published_date]);
         const existing = await readSheetData('LiveUpdates!A2:D');
-        const combined = [...newData, ...existing].slice(0, 30); // Keep last 30
+        const combined = [...sheetData, ...existing].slice(0, 30);
+        
         await clearAndWriteSheetData('LiveUpdates!A2:D', combined);
-        return { message: "Live Updates synced." };
+        
+        // Generate stable numeric IDs for Supabase from title
+        const sbData = items.map((it: any) => ({
+            id: createNumericHash(it.title),
+            title: it.title,
+            url: it.url,
+            section: it.section,
+            published_date: it.published_date
+        }));
+        
+        await upsertSupabaseData('liveupdates', sbData);
+        return { message: "Live Updates synced to Sheets and Supabase." };
     } catch (e: any) { throw e; }
 }
 
@@ -107,25 +126,22 @@ export async function scrapeCurrentAffairs() {
             }
         });
 
-        // 14-day retention logic
         const existingRows = await readSheetData('CurrentAffairs!A2:D');
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
         const filteredExisting = existingRows.filter(row => {
             const rowDate = new Date(row[3]);
             return !isNaN(rowDate.getTime()) && rowDate >= twoWeeksAgo;
         });
 
         const nextId = await getNextId('CurrentAffairs!A2:A', 5000);
-        const newData = JSON.parse(response.text || "[]").map((item: any, idx: number) => [
-            String(nextId + idx), item.title, item.source, item.date
-        ]);
+        const items = JSON.parse(response.text || "[]");
+        const sheetData = items.map((item: any, idx: number) => [String(nextId + idx), item.title, item.source, item.date]);
+        const sbData = items.map((item: any, idx: number) => ({ id: String(nextId + idx), title: item.title, source: item.source, date: item.date }));
 
-        const finalData = [...newData, ...filteredExisting];
-        await clearAndWriteSheetData('CurrentAffairs!A2:D', finalData);
-        
-        return { message: `Current Affairs: ${newData.length} added, older than 14 days removed.` };
+        await clearAndWriteSheetData('CurrentAffairs!A2:D', [...sheetData, ...filteredExisting]);
+        await upsertSupabaseData('currentaffairs', sbData);
+        return { message: `Current Affairs synced (${items.length} items).` };
     } catch (e: any) { throw e; }
 }
 
@@ -149,12 +165,13 @@ export async function scrapeGk() {
         });
         
         const nextId = await getNextId('GK!A2:A', 8000);
-        const newData = JSON.parse(response.text || "[]").map((item: any, idx: number) => [
-            String(nextId + idx), item.fact, item.category
-        ]);
+        const items = JSON.parse(response.text || "[]");
+        const sheetData = items.map((item: any, idx: number) => [String(nextId + idx), item.fact, item.category]);
+        const sbData = items.map((item: any, idx: number) => ({ id: String(nextId + idx), fact: item.fact, category: item.category }));
         
-        await appendSheetData('GK!A1', newData);
-        return { message: `${newData.length} GK facts appended.` };
+        await appendSheetData('GK!A1', sheetData);
+        await upsertSupabaseData('gk', sbData);
+        return { message: `${items.length} GK facts synced.` };
     } catch (e: any) { throw e; }
 }
 
@@ -180,12 +197,21 @@ export async function generateNewQuestions() {
         });
         
         const nextId = await getNextId('QuestionBank!A2:A', 20000);
-        const newData = JSON.parse(response.text || "[]").map((item: any, idx: number) => [
-            nextId + idx, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', ''
-        ]);
+        const items = JSON.parse(response.text || "[]");
+        const sheetData = items.map((item: any, idx: number) => [nextId + idx, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', '']);
+        const sbData = items.map((item: any, idx: number) => ({ 
+            id: nextId + idx, 
+            topic: item.topic, 
+            question: item.question, 
+            options: item.options, 
+            correct_answer_index: item.correctAnswerIndex,
+            subject: 'General',
+            difficulty: 'Moderate'
+        }));
         
-        await appendSheetData('QuestionBank!A1', newData);
-        return { message: `${newData.length} questions appended.` };
+        await appendSheetData('QuestionBank!A1', sheetData);
+        await upsertSupabaseData('questionbank', sbData);
+        return { message: `${items.length} questions injected.` };
     } catch (e: any) { throw e; }
 }
 
@@ -193,7 +219,7 @@ export async function runDailyUpdateScrapers() {
     await scrapeKpscNotifications();
     await scrapeCurrentAffairs();
     await scrapeGk();
-    return { message: "Sync Finished (Append Mode)." };
+    return { message: "Daily Protocols Finished." };
 }
 
 export async function runBookScraper() {
@@ -217,18 +243,16 @@ export async function runBookScraper() {
     if (items.length) {
         const existing = await readSheetData('Bookstore!A2:E');
         const nextId = await getNextId('Bookstore!A2:A', 3000);
-        
         const newData = items.map((item: any, idx: number) => {
             let link = item.amazonLink || '';
             if (link.includes('amazon.in') && !link.includes('tag=')) link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
             return [String(nextId + idx), item.title, item.author, "", link];
         });
-        
         const existingTitles = new Set(existing.map(r => r[1].toLowerCase()));
         const uniqueNew = newData.filter(r => !existingTitles.has(r[1].toLowerCase()));
-        
         if (uniqueNew.length > 0) {
             await appendSheetData('Bookstore!A1', uniqueNew);
+            await upsertSupabaseData('bookstore', uniqueNew.map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));
         }
         return true;
     }

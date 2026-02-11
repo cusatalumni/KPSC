@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -13,8 +12,7 @@ export const supabase = (supabaseUrl && supabaseKey)
 export async function upsertSupabaseData(table: string, data: any[], onConflict: string = 'id') {
     if (!supabase) return null;
     
-    // questionbank, liveupdates, and results use integer PKs.
-    // Syllabus is now explicitly a text PK table.
+    // Define which tables use numeric (integer) primary keys
     const intIdTables = ['questionbank', 'liveupdates', 'results'];
     const cleanTable = table.toLowerCase();
     
@@ -25,10 +23,11 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
             const parsedId = parseInt(String(entry.id));
             entry.id = isNaN(parsedId) ? (Date.now() + Math.floor(Math.random() * 1000)) : parsedId;
         } else if (entry.id !== undefined) {
-            // Force text for all other tables including syllabus
+            // Exams, Syllabus, Bookstore, Notifications etc. use STRING IDs
             entry.id = String(entry.id).trim();
         }
 
+        // Numeric field sanitization
         if (Object.prototype.hasOwnProperty.call(entry, 'correct_answer_index')) {
             entry.correct_answer_index = parseInt(String(entry.correct_answer_index || '0'));
         }
@@ -44,9 +43,6 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         if (Object.prototype.hasOwnProperty.call(entry, 'total')) {
             entry.total = parseInt(String(entry.total || '0'));
         }
-        if (Object.prototype.hasOwnProperty.call(entry, 'recommend')) {
-            entry.recommend = parseInt(String(entry.recommend || '0'));
-        }
         
         return entry;
     });
@@ -56,8 +52,8 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         .upsert(cleanData, { onConflict });
 
     if (error) {
-        console.error(`Supabase Upsert Failure [${cleanTable}]:`, error);
-        throw new Error(`DB Error: ${error.message}`);
+        console.error(`Supabase Sync Error [${cleanTable}]:`, error.message);
+        throw new Error(`Supabase Error: ${error.message}`);
     }
     return result;
 }

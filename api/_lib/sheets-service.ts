@@ -86,8 +86,8 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
         const rowIndex = rows.findIndex(row => String(row[0]).trim() === String(id).trim());
         
         if (rowIndex !== -1) {
-            // Write to the specific row starting from column A
             const targetRange = `${sheetName}!A${rowIndex + 1}`;
+            // CRITICAL: Must wrap newRowData in another array so it populates multiple columns
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: targetRange,
