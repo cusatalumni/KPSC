@@ -68,8 +68,8 @@ export default async function handler(req: any, res: any) {
             const row = [resultId, resultData.userId || 'guest', resultData.userEmail || 'guest@example.com', resultData.testTitle, resultData.score, resultData.total, new Date().toISOString()];
             await appendSheetData('Results!A1', [row]);
             if (supabase) {
-                await supabase.from('results').upsert([{
-                    id: String(row[0]), user_id: String(row[1]), user_email: String(row[2]), test_title: String(row[3]), score: parseFloat(String(row[4] || '0')), total: parseInt(String(row[5] || '0'))
+                await upsertSupabaseData('results', [{
+                    id: resultId, user_id: String(row[1]), user_email: String(row[2]), test_title: String(row[3]), score: row[4], total: row[5]
                 }]);
             }
             return res.status(200).json({ message: 'Saved' });
@@ -82,7 +82,7 @@ export default async function handler(req: any, res: any) {
             const row = [fId, feedback.userId || 'guest', feedback.needs, feedback.easeInfo, feedback.transact, feedback.appeal, feedback.understand, feedback.recommend, feedback.improvement, new Date().toISOString()];
             await appendSheetData('Feedback!A1', [row]);
             if (supabase) {
-                await supabase.from('feedback').insert([{
+                await upsertSupabaseData('feedback', [{
                     id: String(row[0]),
                     user_id: String(row[1]),
                     q1_needs: feedback.needs,
@@ -90,7 +90,7 @@ export default async function handler(req: any, res: any) {
                     q3_transact: feedback.transact,
                     q4_appeal: feedback.appeal,
                     q5_understand: feedback.understand,
-                    q6_recommend: feedback.recommend,
+                    q6_recommend: parseInt(String(feedback.recommend)),
                     q7_improvement: feedback.improvement
                 }]);
             }
@@ -115,14 +115,14 @@ export default async function handler(req: any, res: any) {
                         id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] 
                     }))),
                     upsertSupabaseData('settings', snl.filter(r => r[0]).map(r => ({ key: r[0], value: r[1] })), 'key'),
-                    upsertSupabaseData('questionbank', qbs.filter(r => r[0] && !isNaN(parseInt(r[0]))).map(r => ({ 
-                        id: parseInt(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correct_answer_index: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6] 
+                    upsertSupabaseData('questionbank', qbs.filter(r => r[0] && !isNaN(parseInt(String(r[0])))).map(r => ({ 
+                        id: r[0], topic: r[1], question: r[2], options: smartParseOptions(r[3]), correct_answer_index: r[4], subject: r[5], difficulty: r[6] 
                     }))),
                     upsertSupabaseData('bookstore', bks.filter(r => r[0]).map(r => ({ 
                         id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] 
                     }))),
-                    upsertSupabaseData('syllabus', syls.filter(r => r[0] && !isNaN(parseInt(r[0]))).map(r => ({ 
-                        id: parseInt(r[0]), exam_id: String(r[1]), title: r[2], questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: r[5], topic: r[6] 
+                    upsertSupabaseData('syllabus', syls.filter(r => r[0] && !isNaN(parseInt(String(r[0])))).map(r => ({ 
+                        id: r[0], exam_id: String(r[1]), title: r[2], questions: r[3], duration: r[4], subject: r[5], topic: r[6] 
                     })))
                 ]);
                 return res.status(200).json({ message: 'Global Cloud Sync Completed (Schema Verified)' });
@@ -139,13 +139,13 @@ export default async function handler(req: any, res: any) {
 
             case 'update-syllabus':
                 await findAndUpsertRow('Syllabus', syllabus.id, [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic]);
-                if (supabase) await upsertSupabaseData('syllabus', [{ id: parseInt(syllabus.id), exam_id: String(syllabus.exam_id), title: syllabus.title, questions: parseInt(syllabus.questions), duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic }]);
+                if (supabase) await upsertSupabaseData('syllabus', [{ id: syllabus.id, exam_id: String(syllabus.exam_id), title: syllabus.title, questions: syllabus.questions, duration: syllabus.duration, subject: syllabus.subject, topic: syllabus.topic }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'add-question':
                 const qId = question.id ? parseInt(question.id) : Date.now();
                 await findAndUpsertRow('QuestionBank', String(qId), [qId, question.topic, question.question, JSON.stringify(smartParseOptions(question.options)), question.correct_answer_index, question.subject, question.difficulty]);
-                if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: smartParseOptions(question.options), correct_answer_index: parseInt(question.correct_answer_index), subject: question.subject, difficulty: question.difficulty }]);
+                if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: smartParseOptions(question.options), correct_answer_index: question.correct_answer_index, subject: question.subject, difficulty: question.difficulty }]);
                 return res.status(200).json({ message: 'Saved' });
 
             case 'csv-update':

@@ -20,11 +20,22 @@ export const supabase = (supabaseUrl && supabaseKey)
 export async function upsertSupabaseData(table: string, data: any[], onConflict: string = 'id') {
     if (!supabase) return null;
     
+    const intIdTables = ['questionbank', 'liveupdates', 'syllabus', 'results'];
+    
     const cleanData = data.map(item => {
         const entry: any = { ...item };
         
-        // ONLY sanitize numeric fields if they actually belong to the current data object (the table's schema)
-        // This stops errors like "couldnot find correct_answer_index in bookstore"
+        // Coerce ID to integer for specific tables
+        if (intIdTables.includes(table.toLowerCase()) && entry.id !== undefined) {
+            entry.id = parseInt(String(entry.id));
+            if (isNaN(entry.id)) {
+                // If not a valid number, fallback to a timestamp to prevent crash, 
+                // though source data should ideally be clean.
+                entry.id = Date.now() + Math.floor(Math.random() * 1000);
+            }
+        }
+
+        // Sanitize numeric fields based on schema
         if (Object.prototype.hasOwnProperty.call(entry, 'correct_answer_index')) {
             if (entry.correct_answer_index === "" || entry.correct_answer_index === undefined) entry.correct_answer_index = 0;
             else entry.correct_answer_index = parseInt(String(entry.correct_answer_index));
@@ -36,6 +47,12 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         if (Object.prototype.hasOwnProperty.call(entry, 'duration')) {
             if (entry.duration === "" || entry.duration === undefined) entry.duration = 0;
             else entry.duration = parseInt(String(entry.duration));
+        }
+        if (Object.prototype.hasOwnProperty.call(entry, 'score')) {
+            entry.score = parseFloat(String(entry.score || '0'));
+        }
+        if (Object.prototype.hasOwnProperty.call(entry, 'total')) {
+            entry.total = parseInt(String(entry.total || '0'));
         }
         
         return entry;
@@ -54,6 +71,8 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
 
 export async function deleteSupabaseRow(table: string, id: string) {
     if (!supabase) return null;
-    const { error } = await supabase.from(table).delete().eq('id', id);
+    const intIdTables = ['questionbank', 'liveupdates', 'syllabus', 'results'];
+    const cleanId = intIdTables.includes(table.toLowerCase()) ? parseInt(id) : id;
+    const { error } = await supabase.from(table).delete().eq('id', cleanId);
     if (error) throw error;
 }

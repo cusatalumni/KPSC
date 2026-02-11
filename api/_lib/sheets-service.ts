@@ -5,25 +5,17 @@ declare var process: any;
 
 /**
  * Sanitizes the private key for Vercel/Serverless usage.
- * Essential for resolving "Could not load credentials" errors.
  */
 const getSanitizedKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     let sanitized = key.trim();
-    
-    // 1. Remove wrapping quotes (very common in Vercel UI)
     if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
         sanitized = sanitized.substring(1, sanitized.length - 1);
     }
-    
-    // 2. Fix the escaped newline problem
     sanitized = sanitized.replace(/\\n/g, '\n');
-    
-    // 3. Ensure the PEM structure is valid
     if (!sanitized.includes('-----BEGIN PRIVATE KEY-----')) {
         sanitized = `-----BEGIN PRIVATE KEY-----\n${sanitized}\n-----END PRIVATE KEY-----`;
     }
-    
     return sanitized;
 };
 
@@ -43,7 +35,6 @@ async function getSheetsClient() {
     }
 
     try {
-        // Use GoogleAuth with direct credential injection - most reliable for serverless
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: clientEmail,
@@ -56,7 +47,7 @@ async function getSheetsClient() {
         return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) {
         console.error("Critical Sheets Auth Failure:", e.message);
-        throw new Error(`Authentication failed. Check your Vercel Environment Variables: ${e.message}`);
+        throw new Error(`Authentication failed: ${e.message}`);
     }
 }
 
@@ -114,9 +105,10 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
         const sheets = await getSheetsClient();
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
-        const rowIndex = rows.findIndex(row => row[0] === id);
+        const rowIndex = rows.findIndex(row => String(row[0]) === String(id));
         
         if (rowIndex !== -1) {
+            // Fix: Update the entire row range (A to Z) instead of just the single ID cell
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${sheetName}!A${rowIndex + 1}`,
@@ -148,7 +140,7 @@ export const deleteRowById = async (sheetName: string, id: string) => {
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
-        const rowIndex = rows.findIndex(row => row[0] === id);
+        const rowIndex = rows.findIndex(row => String(row[0]) === String(id));
         
         if (rowIndex === -1) return;
 
