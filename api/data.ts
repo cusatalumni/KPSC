@@ -73,7 +73,16 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(sRows.reduce((acc: any, curr: any) => { acc[curr[0]] = curr[1]; return acc; }, {}));
             case 'exams':
                 const eRows = await readSheetData('Exams!A2:H');
-                return res.status(200).json(eRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], category: r[5], level: r[6], icon_type: r[7] })));
+                return res.status(200).json(eRows.filter(r => r[0]).map(r => ({ 
+                    id: String(r[0]), 
+                    title_ml: r[1], 
+                    title_en: r[2], 
+                    description_ml: r[3], 
+                    description_en: r[4], 
+                    category: r[5], 
+                    level: r[6], 
+                    icon_type: r[7] 
+                })));
             case 'books':
                 const bRows = await readSheetData('Bookstore!A2:E');
                 return res.status(200).json(bRows.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));

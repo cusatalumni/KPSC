@@ -11,6 +11,7 @@ import { GlobeAltIcon } from '../components/icons/GlobeAltIcon';
 
 // Session cache to prevent redundant API calls and loading loops
 let examsCache: Exam[] | null = null;
+let examsSource: 'database' | 'static' = 'static';
 
 const getIcon = (type: string) => {
     const icons: Record<string, any> = {
@@ -31,7 +32,7 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
 };
 
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
-    if (examsCache) return { exams: examsCache, source: 'database' };
+    if (examsCache) return { exams: examsCache, source: examsSource };
     try {
         const res = await fetch('/api/data?type=exams');
         if (res.ok) {
@@ -51,16 +52,22 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
                     level: e.level || 'Preliminary',
                     icon: getIcon(e.icon_type || e.iconType)
                 }));
+                examsSource = 'database';
                 return { exams: examsCache!, source: 'database' };
             }
         }
     } catch (e) {}
+    
+    // Set cache to static data if DB fails to prevent repeated failed fetches
+    examsCache = EXAMS_DATA;
+    examsSource = 'static';
     return { exams: EXAMS_DATA, source: 'static' };
 };
 
 export const getExamById = async (id: string): Promise<Exam | null> => {
     const { exams } = await getExams();
-    return exams.find(e => String(e.id).trim() === String(id).trim()) || null;
+    const cleanId = String(id).trim().toLowerCase();
+    return exams.find(e => String(e.id).trim().toLowerCase() === cleanId) || null;
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {

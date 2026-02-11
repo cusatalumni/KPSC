@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -85,7 +84,7 @@ const App: React.FC = () => {
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
     
     if (targetPage === 'exam_details' && id) {
-        const cleanId = String(id).trim();
+        const cleanId = String(id).trim().toLowerCase();
         // Check if we are already viewing this exam to prevent reloading loops
         if (currentExamIdRef.current !== cleanId) {
             setIsExamLoading(true);
@@ -95,9 +94,11 @@ const App: React.FC = () => {
                     currentExamIdRef.current = cleanId;
                     setSelectedExam(exam);
                 } else {
+                    console.warn(`Exam with ID ${cleanId} not found.`);
                     window.location.hash = '#dashboard';
                 }
             } catch (e) {
+                console.error("Error loading exam:", e);
                 window.location.hash = '#dashboard';
             } finally {
                 setIsExamLoading(false);
@@ -121,7 +122,7 @@ const App: React.FC = () => {
 
     setCurrentPage(targetPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []); // No dependencies to avoid recreation loops
+  }, []); // Stable dependencies
 
   useEffect(() => {
     syncStateFromHash();
