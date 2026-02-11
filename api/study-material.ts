@@ -11,7 +11,7 @@ export default async function handler(req: any, res: any) {
     try {
         // 1. Check Cache first
         const cacheRows = await readSheetData('StudyMaterialsCache!A2:C');
-        const cachedItem = cacheRows.find((r: any) => r[0].toLowerCase() === topic.toLowerCase());
+        const cachedItem = cacheRows.find((r: any) => String(r[0] || '').toLowerCase() === topic.toLowerCase());
 
         if (cachedItem) {
             console.log(`Cache Hit for topic: ${topic}`);
@@ -35,6 +35,7 @@ export default async function handler(req: any, res: any) {
 
         // 3. Save to Cache for next time
         const timestamp = new Date().toISOString();
+        // findAndUpsertRow correctly maps this array to [Topic, Content, Timestamp] across A, B, C columns.
         await findAndUpsertRow('StudyMaterialsCache', topic, [topic, content, timestamp]);
 
         return res.status(200).json({ notes: content, cached: false });

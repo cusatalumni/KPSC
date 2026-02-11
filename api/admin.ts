@@ -121,8 +121,9 @@ export default async function handler(req: any, res: any) {
                     upsertSupabaseData('bookstore', bks.filter(r => r[0]).map(r => ({ 
                         id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] 
                     }))),
-                    upsertSupabaseData('syllabus', syls.filter(r => r[0] && !isNaN(parseInt(String(r[0])))).map(r => ({ 
-                        id: r[0], exam_id: String(r[1]), title: r[2], questions: r[3], duration: r[4], subject: r[5], topic: r[6] 
+                    // syllabus id is now mapped as string
+                    upsertSupabaseData('syllabus', syls.filter(r => r[0]).map(r => ({ 
+                        id: String(r[0]), exam_id: String(r[1]), title: r[2], questions: r[3], duration: r[4], subject: r[5], topic: r[6] 
                     })))
                 ]);
                 return res.status(200).json({ message: 'Global Cloud Sync Completed (Schema Verified)' });
@@ -139,7 +140,8 @@ export default async function handler(req: any, res: any) {
 
             case 'update-syllabus':
                 await findAndUpsertRow('Syllabus', syllabus.id, [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic]);
-                if (supabase) await upsertSupabaseData('syllabus', [{ id: syllabus.id, exam_id: String(syllabus.exam_id), title: syllabus.title, questions: syllabus.questions, duration: syllabus.duration, subject: syllabus.subject, topic: syllabus.topic }]);
+                // Treated as text ID
+                if (supabase) await upsertSupabaseData('syllabus', [{ id: String(syllabus.id), exam_id: String(syllabus.exam_id), title: syllabus.title, questions: syllabus.questions, duration: syllabus.duration, subject: syllabus.subject, topic: syllabus.topic }]);
                 return res.status(200).json({ message: 'Updated' });
 
             case 'add-question':
@@ -155,7 +157,8 @@ export default async function handler(req: any, res: any) {
                 const rows = lines.map((line: string, index: number) => {
                     const parts = parseCsvLine(line);
                     if (currentSheet === 'questionbank') return [parseInt(parts[0]) || (Date.now() + index), parts[1], parts[2], JSON.stringify(smartParseOptions(parts[3])), parts[4], parts[5], parts[6]];
-                    if (currentSheet === 'syllabus') return [parseInt(parts[0]) || (Date.now() + index + 5000), parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]];
+                    // Syllabus ID as string
+                    if (currentSheet === 'syllabus') return [String(parts[0]) || String(Date.now() + index + 5000), parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]];
                     return parts;
                 });
                 if (mode === 'append') await appendSheetData(`${sheet}!A1`, rows);

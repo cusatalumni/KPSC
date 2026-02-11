@@ -1,11 +1,7 @@
-
 import { google } from 'googleapis';
 
 declare var process: any;
 
-/**
- * Sanitizes the private key for Vercel/Serverless usage.
- */
 const getSanitizedKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     let sanitized = key.trim();
@@ -21,7 +17,7 @@ const getSanitizedKey = (key: string | undefined): string | undefined => {
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-    if (!id) throw new Error('SPREADSHEET_ID is missing in Vercel settings.');
+    if (!id) throw new Error('SPREADSHEET_ID is missing.');
     return id.trim().replace(/['"]/g, '');
 };
 
@@ -30,25 +26,16 @@ async function getSheetsClient() {
     const rawKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKey = getSanitizedKey(rawKey);
 
-    if (!clientEmail || !privateKey) {
-        throw new Error('Google Credentials (EMAIL or PRIVATE_KEY) are missing.');
-    }
+    if (!clientEmail || !privateKey) throw new Error('Google Credentials missing.');
 
     try {
         const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: clientEmail,
-                private_key: privateKey,
-            },
+            credentials: { client_email: clientEmail, private_key: privateKey },
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
-
         const authClient = await auth.getClient();
         return google.sheets({ version: 'v4', auth: authClient as any });
-    } catch (e: any) {
-        console.error("Critical Sheets Auth Failure:", e.message);
-        throw new Error(`Authentication failed: ${e.message}`);
-    }
+    } catch (e: any) { throw new Error(`Auth failed: ${e.message}`); }
 }
 
 export const readSheetData = async (range: string) => {
@@ -57,10 +44,7 @@ export const readSheetData = async (range: string) => {
         const sheets = await getSheetsClient();
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         return response.data.values || [];
-    } catch (e: any) {
-        console.error(`Read error on range ${range}:`, e.message);
-        throw e;
-    }
+    } catch (e: any) { throw e; }
 };
 
 export const appendSheetData = async (range: string, values: any[][]) => {
@@ -74,10 +58,7 @@ export const appendSheetData = async (range: string, values: any[][]) => {
             valueInputOption: 'USER_ENTERED',
             requestBody: { values },
         });
-    } catch (e: any) {
-        console.error(`Append error on range ${range}:`, e.message);
-        throw e;
-    }
+    } catch (e: any) { throw e; }
 };
 
 export const clearAndWriteSheetData = async (range: string, values: any[][]) => {
@@ -93,10 +74,7 @@ export const clearAndWriteSheetData = async (range: string, values: any[][]) => 
                 requestBody: { values },
             });
         }
-    } catch (e: any) {
-        console.error(`Write error on range ${range}:`, e.message);
-        throw e;
-    }
+    } catch (e: any) { throw e; }
 };
 
 export const findAndUpsertRow = async (sheetName: string, id: string, newRowData: any[]) => {
@@ -105,28 +83,21 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
         const sheets = await getSheetsClient();
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
-        const rowIndex = rows.findIndex(row => String(row[0]) === String(id));
+        const rowIndex = rows.findIndex(row => String(row[0]).trim() === String(id).trim());
         
         if (rowIndex !== -1) {
-            // Fix: Update the entire row range (A to Z) instead of just the single ID cell
+            // Write to the specific row starting from column A
+            const targetRange = `${sheetName}!A${rowIndex + 1}`;
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
-                range: `${sheetName}!A${rowIndex + 1}`,
+                range: targetRange,
                 valueInputOption: 'USER_ENTERED',
                 requestBody: { values: [newRowData] },
             });
         } else {
-            await sheets.spreadsheets.values.append({
-                spreadsheetId,
-                range: `${sheetName}!A1`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [newRowData] },
-            });
+            await appendSheetData(`${sheetName}!A1`, [newRowData]);
         }
-    } catch (e: any) {
-        console.error(`Upsert error on ${sheetName}:`, e.message);
-        throw e;
-    }
+    } catch (e: any) { throw e; }
 };
 
 export const deleteRowById = async (sheetName: string, id: string) => {
@@ -140,7 +111,7 @@ export const deleteRowById = async (sheetName: string, id: string) => {
 
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
         const rows = response.data.values || [];
-        const rowIndex = rows.findIndex(row => String(row[0]) === String(id));
+        const rowIndex = rows.findIndex(row => String(row[0]).trim() === String(id).trim());
         
         if (rowIndex === -1) return;
 
@@ -149,18 +120,10 @@ export const deleteRowById = async (sheetName: string, id: string) => {
             requestBody: {
                 requests: [{
                     deleteDimension: {
-                        range: {
-                            sheetId,
-                            dimension: 'ROWS',
-                            startIndex: rowIndex,
-                            endIndex: rowIndex + 1
-                        }
+                        range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 }
                     }
                 }]
             }
         });
-    } catch (e: any) {
-        console.error(`Delete error on ${sheetName}:`, e.message);
-        throw e;
-    }
+    } catch (e: any) { throw e; }
 };
