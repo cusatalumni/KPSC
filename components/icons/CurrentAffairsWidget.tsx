@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getCurrentAffairs } from '../../services/pscDataService';
 import type { CurrentAffairsItem } from '../../types';

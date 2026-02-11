@@ -1,3 +1,4 @@
+
 import { verifyAdmin } from "./_lib/clerk-auth.js";
 import { findAndUpsertRow, deleteRowById, appendSheetData, clearAndWriteSheetData, readSheetData } from './_lib/sheets-service.js';
 import { 
@@ -59,7 +60,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, sheet, id, data, mode, resultData, setting, question, exam, syllabus, book } = req.body;
+    const { action, sheet, id, data, mode, resultData, setting, question, exam, syllabus, book, feedback } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -72,6 +73,28 @@ export default async function handler(req: any, res: any) {
                 }]);
             }
             return res.status(200).json({ message: 'Saved' });
+        } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    }
+
+    if (action === 'submit-feedback') {
+        try {
+            const fId = Date.now();
+            const row = [fId, feedback.userId || 'guest', feedback.needs, feedback.easeInfo, feedback.transact, feedback.appeal, feedback.understand, feedback.recommend, feedback.improvement, new Date().toISOString()];
+            await appendSheetData('Feedback!A1', [row]);
+            if (supabase) {
+                await supabase.from('feedback').insert([{
+                    id: String(row[0]),
+                    user_id: String(row[1]),
+                    q1_needs: feedback.needs,
+                    q2_ease_info: feedback.easeInfo,
+                    q3_transact: feedback.transact,
+                    q4_appeal: feedback.appeal,
+                    q5_understand: feedback.understand,
+                    q6_recommend: feedback.recommend,
+                    q7_improvement: feedback.improvement
+                }]);
+            }
+            return res.status(200).json({ message: 'Feedback Submitted' });
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 

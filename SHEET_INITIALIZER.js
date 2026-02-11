@@ -35,7 +35,7 @@ function initializeDatabase() {
     {
       name: 'QuestionBank',
       headers: ['id', 'topic', 'question', 'options', 'correctAnswerIndex', 'subject', 'difficulty'],
-      sample: [['q1', 'History', 'കേരളത്തിലെ ഏറ്റവും വലിയ നദി?', '["പെരിയാർ", "ഭารതപ്പുഴ", "പമ്പ", "ചാലിയാർ"]', '0', 'GK', 'Easy']]
+      sample: [['q1', 'History', 'കേരളത്തിലെ ഏറ്റവും വലിയ നദി?', '["പെരിയാർ", "ഭാരതപ്പുഴ", "പമ്പ", "ചാലിയാർ"]', '0', 'GK', 'Easy']]
     },
     {
       name: 'Bookstore',
@@ -61,6 +61,11 @@ function initializeDatabase() {
       name: 'GK',
       headers: ['id', 'fact', 'category'],
       sample: [['gk1', 'Periyar is the longest river.', 'Geography']]
+    },
+    {
+      name: 'Feedback',
+      headers: ['id', 'userId', 'q1_needs', 'q2_easeInfo', 'q3_transact', 'q4_appeal', 'q5_understand', 'q6_recommend', 'q7_improvement', 'timestamp'],
+      sample: [['f1', 'guest', 'Very well', 'Extremely easy', 'Very easy', 'Very appealing', 'Extremely easy', '10', 'Great site!', new Date().toISOString()]]
     }
   ];
 

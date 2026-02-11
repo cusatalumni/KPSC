@@ -44,7 +44,8 @@ export const translations = {
     bookstore: "Bookstore",
     examCalendar: "Exam Calendar",
     sitemap: "Sitemap",
-    adminPanel: "Admin Panel"
+    adminPanel: "Admin Panel",
+    feedback: "Feedback"
   },
   sitemap: {
     title: "Sitemap",
@@ -196,5 +197,8 @@ export const translations = {
     recommendedBooks: "Recommended Books",
     topicPractice: "Topic-wise Practice",
     backToDashboard: "Back to Dashboard"
+  },
+  quiz_home: {
+    subtitle: "Select a topic to test your knowledge and see how you rank."
   }
 };

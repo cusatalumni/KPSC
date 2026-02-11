@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -23,6 +24,7 @@ import AdminPage from './components/pages/AdminPage';
 import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import SitemapPage from './components/pages/SitemapPage';
 import ExternalViewerPage from './components/pages/ExternalViewerPage';
+import FeedbackPage from './components/pages/FeedbackPage';
 import LoadingScreen from './components/LoadingScreen';
 import type { Exam, SubscriptionStatus, ActiveTest, Page, QuizQuestion, UserAnswers } from './types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
@@ -78,7 +80,7 @@ const App: React.FC = () => {
       'about', 'privacy', 'terms', 'disclosure', 'exam_calendar', 
       'quiz_home', 'mock_test_home', 'upgrade', 'psc_live_updates', 
       'previous_papers', 'current_affairs', 'gk', 'admin_panel', 
-      'study_material', 'sitemap', 'external_viewer'
+      'study_material', 'sitemap', 'external_viewer', 'feedback'
     ];
 
     const targetPage = validPages.includes(pageName) ? pageName : 'dashboard';
@@ -122,7 +124,7 @@ const App: React.FC = () => {
 
     setCurrentPage(targetPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []); // Stable dependencies
+  }, []); 
 
   useEffect(() => {
     syncStateFromHash();
@@ -173,6 +175,7 @@ const App: React.FC = () => {
             case 'external_viewer': return <ExternalViewerPage url={externalUrl || ''} onBack={() => handleNavigate('dashboard')} />;
             case 'exam_calendar': return <ExamCalendarPage onBack={() => handleNavigate('dashboard')} />;
             case 'sitemap': return <SitemapPage onBack={() => handleNavigate('dashboard')} onNavigate={handleNavigate as any} />;
+            case 'feedback': return <FeedbackPage onBack={() => handleNavigate('dashboard')} />;
             case 'about': return <AboutUsPage onBack={() => handleNavigate('dashboard')} />;
             case 'privacy': return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
             case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;

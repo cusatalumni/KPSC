@@ -19,6 +19,17 @@ export interface Exam {
   level: ExamLevel;
 }
 
+export interface FeedbackData {
+  needs: string;
+  easeInfo: string;
+  transact: string;
+  appeal: string;
+  understand: string;
+  recommend: number;
+  improvement: string;
+  userId?: string;
+}
+
 export interface QuizQuestion {
   id?: string;
   question: string;
@@ -89,7 +100,8 @@ export type Page =
   | 'admin_panel'
   | 'study_material'
   | 'sitemap'
-  | 'external_viewer';
+  | 'external_viewer'
+  | 'feedback';
 
 export interface Notification {
   id: string;

@@ -1,4 +1,5 @@
-import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book, Exam, ExamPageContent, PracticeTest } from '../types';
+
+import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book, Exam, ExamPageContent, PracticeTest, FeedbackData } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA, EXAMS_DATA, EXAM_CONTENT_MAP } from '../constants';
 import React from 'react';
 import { BookOpenIcon } from '../components/icons/BookOpenIcon';
@@ -12,6 +13,7 @@ import { GlobeAltIcon } from '../components/icons/GlobeAltIcon';
 // Session cache to prevent redundant API calls and loading loops
 let examsCache: Exam[] | null = null;
 let examsSource: 'database' | 'static' = 'static';
+let isFetchingExams = false;
 
 const getIcon = (type: string) => {
     const icons: Record<string, any> = {
@@ -33,6 +35,13 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
 
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
     if (examsCache) return { exams: examsCache, source: examsSource };
+    if (isFetchingExams) {
+        // Wait briefly for current fetch if one is in progress
+        await new Promise(r => setTimeout(r, 500));
+        if (examsCache) return { exams: examsCache, source: examsSource };
+    }
+
+    isFetchingExams = true;
     try {
         const res = await fetch('/api/data?type=exams');
         if (res.ok) {
@@ -53,6 +62,7 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
                     icon: getIcon(e.icon_type || e.iconType)
                 }));
                 examsSource = 'database';
+                isFetchingExams = false;
                 return { exams: examsCache!, source: 'database' };
             }
         }
@@ -61,6 +71,7 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
     // Set cache to static data if DB fails to prevent repeated failed fetches
     examsCache = EXAMS_DATA;
     examsSource = 'static';
+    isFetchingExams = false;
     return { exams: EXAMS_DATA, source: 'static' };
 };
 
@@ -69,6 +80,12 @@ export const getExamById = async (id: string): Promise<Exam | null> => {
     const cleanId = String(id).trim().toLowerCase();
     return exams.find(e => String(e.id).trim().toLowerCase() === cleanId) || null;
 };
+
+export const submitFeedback = (feedbackData: FeedbackData) => fetch('/api/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'submit-feedback', feedback: feedbackData })
+});
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
     const data = await fetchHub(`type=syllabus&examId=${examId}`, []);

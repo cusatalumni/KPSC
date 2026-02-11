@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Page } from '../types';
 import { FacebookIcon } from './icons/FacebookIcon';
@@ -16,6 +17,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     { nameKey: 'footer.terms', target: 'terms' },
     { nameKey: 'footer.disclosure', target: 'disclosure' },
     { nameKey: 'nav.sitemap', target: 'sitemap' },
+    { nameKey: 'nav.feedback', target: 'feedback' },
   ];
   
   const annapoornaUrl = 'https://annapoornainfo.com/';
@@ -46,7 +48,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               {footerLinks.map(link => (
                 <li key={link.nameKey}>
                   <button onClick={() => onNavigate(link.target)} className="text-slate-300 hover:text-white text-sm transition">
-                    {t(link.nameKey)}
+                    {t(link.nameKey) || link.nameKey.replace('nav.', '')}
                   </button>
                 </li>
               ))}
