@@ -10,42 +10,40 @@ export const supabase = (supabaseUrl && supabaseKey)
     : null;
 
 export async function upsertSupabaseData(table: string, data: any[], onConflict: string = 'id') {
-    if (!supabase) return null;
+    if (!supabase || !data.length) return null;
     
-    const intIdTables = ['questionbank', 'liveupdates', 'results'];
     const cleanTable = table.toLowerCase();
     
-    const cleanData = data.map(item => {
+    // 1. Clean and validate data types
+    const processedData = data.map(item => {
         const entry: any = { ...item };
         
+        // Ensure ID is string unless it's a numeric table
+        const intIdTables = ['questionbank', 'results', 'liveupdates'];
         if (intIdTables.includes(cleanTable) && entry.id !== undefined) {
-            const parsedId = parseInt(String(entry.id));
-            entry.id = isNaN(parsedId) ? (Date.now() + Math.floor(Math.random() * 1000)) : parsedId;
+            entry.id = parseInt(String(entry.id));
         } else if (entry.id !== undefined) {
             entry.id = String(entry.id).trim();
         }
 
-        // Standardize common fields
-        if (Object.prototype.hasOwnProperty.call(entry, 'correct_answer_index')) {
-            entry.correct_answer_index = parseInt(String(entry.correct_answer_index || '0'));
-        }
-        if (Object.prototype.hasOwnProperty.call(entry, 'questions')) {
-            entry.questions = parseInt(String(entry.questions || '0'));
-        }
-        if (Object.prototype.hasOwnProperty.call(entry, 'duration')) {
-            entry.duration = parseInt(String(entry.duration || '0'));
-        }
+        // Standardize numeric fields
+        if (entry.correct_answer_index !== undefined) entry.correct_answer_index = parseInt(String(entry.correct_answer_index));
+        if (entry.questions !== undefined) entry.questions = parseInt(String(entry.questions));
+        if (entry.duration !== undefined) entry.duration = parseInt(String(entry.duration));
         
         return entry;
     });
 
-    // CRITICAL: Deduplicate data by primary key before sending to Supabase
+    // 2. CRITICAL: Deduplicate the input array by the primary key (id/key/topic)
     // This prevents the "ON CONFLICT DO UPDATE command cannot affect row a second time" error
     const uniqueMap = new Map();
-    cleanData.forEach(item => {
-        const pk = item[onConflict];
-        if (pk) uniqueMap.set(pk, item);
+    processedData.forEach(item => {
+        const pkValue = item[onConflict];
+        if (pkValue !== undefined && pkValue !== null) {
+            uniqueMap.set(pkValue, item);
+        }
     });
+    
     const finalBatch = Array.from(uniqueMap.values());
 
     const { data: result, error } = await supabase
@@ -53,7 +51,7 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         .upsert(finalBatch, { onConflict });
 
     if (error) {
-        console.error(`Supabase Upsert Failed [${cleanTable}]:`, error.message);
+        console.error(`Supabase Upsert Error [${cleanTable}]:`, error.message);
         throw new Error(`Supabase Error: ${error.message}`);
     }
     return result;
@@ -61,8 +59,10 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
 
 export async function deleteSupabaseRow(table: string, id: string) {
     if (!supabase) return null;
-    const intIdTables = ['questionbank', 'liveupdates', 'results'];
-    const cleanId = intIdTables.includes(table.toLowerCase()) ? parseInt(id) : id;
-    const { error } = await supabase.from(table.toLowerCase()).delete().eq('id', cleanId);
+    const cleanTable = table.toLowerCase();
+    const intIdTables = ['questionbank', 'results', 'liveupdates'];
+    const cleanId = intIdTables.includes(cleanTable) ? parseInt(id) : id;
+    
+    const { error } = await supabase.from(cleanTable).delete().eq('id', cleanId);
     if (error) throw error;
 }
