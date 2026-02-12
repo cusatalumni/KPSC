@@ -1,5 +1,4 @@
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { CheckCircleIcon } from '../icons/CheckCircleIcon';
@@ -33,6 +32,8 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [sdkError, setSdkError] = useState(false);
+  const [isSdkLoaded, setIsSdkLoaded] = useState(false);
 
   useEffect(() => {
     if (isSignedIn && user?.id) {
@@ -40,31 +41,69 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
     }
   }, [isSignedIn, user?.id]);
 
-  useEffect(() => {
-    if (isSignedIn && !isPro && (window as any).paypal && paypalRef.current && !paymentSuccess) {
-      (window as any).paypal.Buttons({
-        style: { shape: 'pill', color: 'gold', layout: 'vertical', label: 'subscribe' },
-        createOrder: (data: any, actions: any) => {
-          return actions.order.create({
-            purchase_units: [{
-              amount: { currency_code: 'INR', value: '499.00' },
-              description: 'Kerala PSC Guru - Annual Pro Membership'
-            }]
-          });
-        },
-        onApprove: async (data: any, actions: any) => {
-          setIsProcessing(true);
-          await actions.order.capture();
-          if (user?.id) {
-            subscriptionService.upgradeToPro(user.id);
-            setPaymentSuccess(true);
-            setTimeout(() => { setIsPro(true); setPaymentSuccess(false); }, 3000);
+  const renderPaypalButtons = useCallback(() => {
+    if ((window as any).paypal && paypalRef.current && !paymentSuccess) {
+      // Clear container before rendering to avoid duplicates
+      paypalRef.current.innerHTML = '';
+      try {
+        (window as any).paypal.Buttons({
+          style: { shape: 'pill', color: 'gold', layout: 'vertical', label: 'subscribe' },
+          createOrder: (data: any, actions: any) => {
+            return actions.order.create({
+              purchase_units: [{
+                amount: { currency_code: 'INR', value: '499.00' },
+                description: 'Kerala PSC Guru - Annual Pro Membership'
+              }]
+            });
+          },
+          onApprove: async (data: any, actions: any) => {
+            setIsProcessing(true);
+            await actions.order.capture();
+            if (user?.id) {
+              subscriptionService.upgradeToPro(user.id);
+              setPaymentSuccess(true);
+              setTimeout(() => { setIsPro(true); setPaymentSuccess(false); }, 3000);
+            }
+            setIsProcessing(false);
+          },
+          onError: (err: any) => {
+            console.error('PayPal Button Error:', err);
+            setSdkError(true);
           }
-          setIsProcessing(false);
-        }
-      }).render(paypalRef.current);
+        }).render(paypalRef.current);
+      } catch (e) {
+        console.error('Failed to render PayPal buttons:', e);
+        setSdkError(true);
+      }
     }
-  }, [isSignedIn, isPro, paymentSuccess, user?.id]);
+  }, [paymentSuccess, user?.id]);
+
+  useEffect(() => {
+    if (isSignedIn && !isPro && !paymentSuccess) {
+      const SCRIPT_ID = 'paypal-sdk-dynamic';
+      
+      // If script already exists and loaded, just render
+      if (document.getElementById(SCRIPT_ID)) {
+        if ((window as any).paypal) {
+            renderPaypalButtons();
+        }
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = SCRIPT_ID;
+      script.src = "https://www.paypal.com/sdk/js?client-id=sb&currency=INR";
+      script.async = true;
+      script.onload = () => {
+        setIsSdkLoaded(true);
+        renderPaypalButtons();
+      };
+      script.onerror = () => {
+        setSdkError(true);
+      };
+      document.body.appendChild(script);
+    }
+  }, [isSignedIn, isPro, paymentSuccess, renderPaypalButtons]);
 
   if (paymentSuccess) {
       return (
@@ -196,7 +235,22 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                     ) : (
                         <div className="space-y-8">
                             <p className="text-slate-500 text-[11px] font-black uppercase tracking-[0.4em]">Secure Checkout via PayPal</p>
-                            <div id="paypal-button-container" ref={paypalRef} className="w-full drop-shadow-2xl"></div>
+                            <div id="paypal-button-container" ref={paypalRef} className="w-full drop-shadow-2xl min-h-[150px]">
+                                {sdkError ? (
+                                    <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-3xl border border-red-100 dark:border-red-800 text-center">
+                                        <p className="text-red-600 dark:text-red-400 font-bold text-sm">
+                                            പേയ്‌മെന്റ് സിസ്റ്റം ഇപ്പോൾ ലഭ്യമല്ല. <br/>
+                                            Secure external payment gateway error.
+                                        </p>
+                                        <button onClick={() => window.location.reload()} className="mt-4 text-xs font-black text-indigo-600 underline uppercase tracking-widest">Retry Connection</button>
+                                    </div>
+                                ) : !isSdkLoaded && (
+                                    <div className="flex items-center justify-center space-x-3 text-slate-500 animate-pulse">
+                                        <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Connecting to PayPal...</span>
+                                    </div>
+                                )}
+                            </div>
                             {isProcessing && (
                                 <div className="flex items-center justify-center space-x-4 text-white font-black animate-pulse bg-white/5 py-5 rounded-3xl border border-white/5">
                                     <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
