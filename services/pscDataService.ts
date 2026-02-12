@@ -1,4 +1,3 @@
-
 import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book, Exam, ExamPageContent, PracticeTest, FeedbackData } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA, EXAMS_DATA, EXAM_CONTENT_MAP } from '../constants';
 import React from 'react';
@@ -24,26 +23,41 @@ const getIcon = (type: string) => {
     return React.createElement(IconComp, { className: "h-8 w-8 text-indigo-500" });
 };
 
+const fetchWithTimeout = async (url: string, timeout = 8000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (e) {
+        clearTimeout(id);
+        throw e;
+    }
+};
+
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
-        const res = await fetch(`/api/data?${params}`);
+        const res = await fetchWithTimeout(`/api/data?${params}`);
         if (!res.ok) return mockData;
         const data = await res.json();
         return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
-    } catch (e) { return mockData; }
+    } catch (e) { 
+        console.warn(`FetchHub failed for ${params}, using mock fallback.`);
+        return mockData; 
+    }
 };
 
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
     if (examsCache) return { exams: examsCache, source: examsSource };
     if (isFetchingExams) {
-        // Wait briefly for current fetch if one is in progress
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 300));
         if (examsCache) return { exams: examsCache, source: examsSource };
     }
 
     isFetchingExams = true;
     try {
-        const res = await fetch('/api/data?type=exams');
+        const res = await fetchWithTimeout('/api/data?type=exams', 5000);
         if (res.ok) {
             const raw = await res.json();
             if (Array.isArray(raw) && raw.length > 0) {
@@ -68,7 +82,6 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
         }
     } catch (e) {}
     
-    // Set cache to static data if DB fails to prevent repeated failed fetches
     examsCache = EXAMS_DATA;
     examsSource = 'static';
     isFetchingExams = false;
@@ -88,18 +101,13 @@ export const submitFeedback = (feedbackData: FeedbackData) => fetch('/api/admin'
 });
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
-    const data = await fetchHub(`type=syllabus&examId=${examId}`, []);
-    if (data && Array.isArray(data) && data.length > 0) {
-        return data.map((item: any) => ({
-            id: String(item.id),
-            title: item.title,
-            questions: parseInt(item.questions || '20'),
-            duration: parseInt(item.duration || '20'),
-            subject: item.subject,
-            topic: item.topic
-        }));
+    const fallback = (EXAM_CONTENT_MAP[examId]?.practiceTests || []);
+    try {
+        const data = await fetchHub(`type=syllabus&examId=${examId}`, fallback);
+        return Array.isArray(data) ? data : fallback;
+    } catch (e) {
+        return fallback;
     }
-    return (EXAM_CONTENT_MAP[examId]?.practiceTests || []);
 };
 
 export const getSettings = async () => fetchHub('type=settings', { subscription_model_active: 'true' });
@@ -132,12 +140,16 @@ export const getGk = () => fetchHub('type=gk', MOCK_GK);
 export const getBooks = () => fetchHub('type=books', MOCK_BOOKS_DATA);
 
 export const getQuestionsForTest = async (subject: string, topic: string, count: number): Promise<QuizQuestion[]> => {
+    const fallback = MOCK_QUESTION_BANK.slice(0, count);
     try {
-        const res = await fetch(`/api/data?type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`);
-        if (!res.ok) return MOCK_QUESTION_BANK.slice(0, count);
+        const res = await fetchWithTimeout(`/api/data?type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`, 10000);
+        if (!res.ok) return fallback;
         const data = await res.json();
-        return (data && data.length > 0) ? data : MOCK_QUESTION_BANK.slice(0, count);
-    } catch (e) { return MOCK_QUESTION_BANK.slice(0, count); }
+        return (Array.isArray(data) && data.length > 0) ? data : fallback;
+    } catch (e) { 
+        console.warn("Question fetch failed/timed out, using fallback.");
+        return fallback; 
+    }
 };
 
 export const testConnection = async (token: string | null) => {

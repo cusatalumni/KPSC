@@ -34,49 +34,64 @@ export default async function handler(req: any, res: any) {
     };
     
     const tableName = tableMap[tType] || tType;
+    const limitCount = parseInt(count as string) || 20;
 
     try {
-        // 1. ATTEMPT SUPABASE (Priority)
+        // 1. ATTEMPT SUPABASE (Optimized with Limits)
         if (supabase) {
-            let query = supabase.from(tableName).select('*');
-            if (tableName === 'syllabus' && examId) query = query.eq('exam_id', String(examId));
-            if (tableName === 'questionbank') {
-                if (subject && subject !== 'mixed') query = query.or(`subject.ilike.%${subject}%,topic.ilike.%${subject}%`);
-                else if (topic && topic !== 'mixed') query = query.ilike('topic', `%${topic}%`);
-            }
-
-            const { data, error } = await query;
-            
-            // Fix: Check if data actually exists and has content. If empty, fall back to Sheets.
-            if (!error && data && data.length > 0) {
+            try {
+                let query = supabase.from(tableName).select('*');
+                
+                if (tableName === 'syllabus' && examId) {
+                    query = query.eq('exam_id', String(examId));
+                }
+                
                 if (tableName === 'questionbank') {
-                    const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20);
-                    return res.status(200).json(shuffled.map(q => ({
-                        ...q,
-                        options: smartParseOptions(q.options),
-                        correctAnswerIndex: parseInt(String(q.correct_answer_index || 0))
-                    })));
+                    // Optimized query: Use ilike for filtering but limit results early
+                    if (subject && subject !== 'mixed' && subject !== 'General') {
+                        query = query.or(`subject.ilike.%${subject}%,topic.ilike.%${subject}%`);
+                    } else if (topic && topic !== 'mixed') {
+                        query = query.ilike('topic', `%${topic}%`);
+                    }
+                    query = query.limit(100); // Only fetch a reasonable pool to shuffle
                 }
-                if (tableName === 'settings') {
-                    return res.status(200).json(data.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc; }, {}));
+
+                const { data, error } = await query;
+                
+                if (!error && data && data.length > 0) {
+                    if (tableName === 'questionbank') {
+                        // Shuffle the pool and take the required count
+                        const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, limitCount);
+                        return res.status(200).json(shuffled.map(q => ({
+                            ...q,
+                            options: smartParseOptions(q.options),
+                            correctAnswerIndex: parseInt(String(q.correct_answer_index || 0))
+                        })));
+                    }
+                    if (tableName === 'settings') {
+                        return res.status(200).json(data.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc; }, {}));
+                    }
+                    if (tableName === 'exams') {
+                        return res.status(200).json(data.map(e => ({
+                            id: String(e.id),
+                            title_ml: e.title_ml,
+                            title_en: e.title_en || e.title_ml,
+                            description_ml: e.description_ml,
+                            description_en: e.description_en || e.description_ml,
+                            category: e.category,
+                            level: e.level,
+                            icon_type: e.icon_type
+                        })));
+                    }
+                    return res.status(200).json(data.map(item => ({ ...item, id: item.id ? String(item.id) : undefined })));
                 }
-                if (tableName === 'exams') {
-                    return res.status(200).json(data.map(e => ({
-                        id: String(e.id),
-                        title_ml: e.title_ml,
-                        title_en: e.title_en || e.title_ml,
-                        description_ml: e.description_ml,
-                        description_en: e.description_en || e.description_ml,
-                        category: e.category,
-                        level: e.level,
-                        icon_type: e.icon_type
-                    })));
-                }
-                return res.status(200).json(data.map(item => ({ ...item, id: item.id ? String(item.id) : undefined })));
+            } catch (sbErr) {
+                console.error("Supabase Request Exception:", sbErr);
+                // Continue to fallback
             }
         }
 
-        // 2. FALLBACK TO GOOGLE SHEETS (If Supabase is offline or empty)
+        // 2. FALLBACK TO GOOGLE SHEETS
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
         
         switch (tType) {
@@ -99,22 +114,18 @@ export default async function handler(req: any, res: any) {
 
             case 'questions':
                 const qRows = await readSheetData('QuestionBank!A2:H');
-                const filteredQ = qRows.filter(r => r[0] && (!subject || subject === 'mixed' || String(r[5]).toLowerCase().includes(String(subject).toLowerCase())));
-                const shuffledQ = filteredQ.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20);
+                const filteredQ = qRows.filter(r => r[0] && (!subject || subject === 'mixed' || subject === 'General' || String(r[5]).toLowerCase().includes(String(subject).toLowerCase())));
+                const shuffledQ = filteredQ.sort(() => 0.5 - Math.random()).slice(0, limitCount);
                 return res.status(200).json(shuffledQ.map(r => ({
                     id: String(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6]
                 })));
-
-            case 'updates':
-                const upRows = await readSheetData('LiveUpdates!A2:D');
-                return res.status(200).json(upRows.map(r => ({ title: r[0], url: r[1], section: r[2], published_date: r[3] })));
 
             default:
                 const genericRows = await readSheetData(`${sheetName}!A2:Z`);
                 return res.status(200).json(genericRows);
         }
     } catch (error: any) {
-        console.error(`Data API Fatal Error [${tType}]:`, error.message);
-        return res.status(500).json({ error: error.message });
+        console.error(`Fatal Error in data API:`, error.message);
+        return res.status(500).json({ error: "Internal Server Error. Please try again later." });
     }
 }

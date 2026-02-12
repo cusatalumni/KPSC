@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Exam, PracticeTest, Page, ExamPageContent } from '../types';
 import { getExamSyllabus } from '../services/pscDataService';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { useTranslation } from '../contexts/LanguageContext';
+import { EXAM_CONTENT_MAP } from '../constants';
 
 const ExamPage: React.FC<{ 
     exam: Exam; 
@@ -15,14 +15,23 @@ const ExamPage: React.FC<{
     onNavigate: any; 
 }> = ({ exam, content, onBack, onStartTest, onStartStudy, onNavigate }) => {
   const { t } = useTranslation();
-  const [syllabus, setSyllabus] = useState<PracticeTest[]>([]);
+  // Set initial syllabus from content prop (static) to show something immediately
+  const [syllabus, setSyllabus] = useState<PracticeTest[]>(content?.practiceTests || []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    
     getExamSyllabus(exam.id).then(data => {
-        setSyllabus(data);
-        setLoading(false);
+        if (isMounted && data && data.length > 0) {
+            setSyllabus(data);
+        }
+    }).finally(() => {
+        if (isMounted) setLoading(false);
     });
+
+    return () => { isMounted = false; };
   }, [exam.id]);
 
   return (
@@ -53,29 +62,27 @@ const ExamPage: React.FC<{
           <ClipboardListIcon className="h-8 w-8 text-indigo-500" />
           <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{t('examPage.topicPractice')}</h2>
         </div>
-        {loading ? (
-            <p className="text-slate-400 font-bold">{t('loading')}</p>
-        ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {syllabus.map(test => (
-                    <div key={test.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 flex justify-between items-center group hover:border-indigo-400 transition-all">
-                        <div>
-                            <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg">{test.title}</h3>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{test.questions} {t('questions')} • {test.duration} {t('minutes')}</p>
-                            <p className="text-[9px] text-slate-500 font-mono mt-1 opacity-60">
-                                {test.subject && `Subject: ${test.subject}`} {test.topic && ` | Topic: ${test.topic}`}
-                            </p>
-                        </div>
-                        <button onClick={() => onStartTest({ 
-                            title: test.title, 
-                            questions: test.questions, 
-                            subject: test.subject,
-                            topic: test.topic 
-                        }, exam.title.ml)} className="btn-vibrant-indigo text-white font-black px-6 py-3 rounded-xl shadow-sm">{t('start')}</button>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {syllabus.map(test => (
+                <div key={test.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 flex justify-between items-center group hover:border-indigo-400 transition-all">
+                    <div className="flex-1 mr-4">
+                        <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg">{test.title}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{test.questions} {t('questions')} • {test.duration} {t('minutes')}</p>
+                        <p className="text-[9px] text-slate-500 font-mono mt-1 opacity-60">
+                            {test.subject && `Subject: ${test.subject}`} {test.topic && ` | Topic: ${test.topic}`}
+                        </p>
                     </div>
-                ))}
-            </div>
-        )}
+                    <button onClick={() => onStartTest({ 
+                        title: test.title, 
+                        questionsCount: test.questions, 
+                        subject: test.subject,
+                        topic: test.topic 
+                    })} className="btn-vibrant-indigo text-white font-black px-6 py-3 rounded-xl shadow-sm flex-shrink-0">{t('start')}</button>
+                </div>
+            ))}
+            {loading && syllabus.length === 0 && <p className="text-slate-400 font-bold col-span-full text-center py-10 animate-pulse">{t('loading')}</p>}
+        </div>
       </section>
     </div>
   );
