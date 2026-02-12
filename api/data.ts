@@ -9,14 +9,10 @@ const smartParseOptions = (raw: any): string[] => {
         try { return JSON.parse(clean); } catch (e) {
             try { return JSON.parse(clean.replace(/'/g, '"')); } catch (e2) {
                 const inner = clean.slice(1, -1).trim();
-                if (inner.includes('|')) return inner.split('|').map(s => s.trim());
-                if (inner.includes(',')) return inner.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
-                return [inner];
+                return inner.split('|').map(s => s.trim());
             }
         }
     }
-    if (clean.includes('|')) return clean.split('|').map(s => s.trim());
-    if (clean.includes(',')) return clean.split(',').map(s => s.trim());
     return [clean];
 };
 
@@ -40,10 +36,9 @@ export default async function handler(req: any, res: any) {
     const tableName = tableMap[tType] || tType;
 
     try {
-        // --- 1. TRY SUPABASE FIRST ---
+        // 1. ATTEMPT SUPABASE
         if (supabase) {
             let query = supabase.from(tableName).select('*');
-            
             if (tableName === 'syllabus' && examId) query = query.eq('exam_id', String(examId));
             if (tableName === 'questionbank') {
                 if (subject && subject !== 'mixed') query = query.or(`subject.ilike.%${subject}%,topic.ilike.%${subject}%`);
@@ -53,7 +48,6 @@ export default async function handler(req: any, res: any) {
             const { data, error } = await query;
             
             if (!error && data && data.length > 0) {
-                // Formatting for specific types
                 if (tableName === 'questionbank') {
                     const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20);
                     return res.status(200).json(shuffled.map(q => ({
@@ -65,12 +59,24 @@ export default async function handler(req: any, res: any) {
                 if (tableName === 'settings') {
                     return res.status(200).json(data.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc; }, {}));
                 }
-                // Default return with string IDs for frontend consistency
+                // Important: Standardize column names for Exams to match what frontend expects
+                if (tableName === 'exams') {
+                    return res.status(200).json(data.map(e => ({
+                        id: String(e.id),
+                        title_ml: e.title_ml,
+                        title_en: e.title_en || e.title_ml,
+                        description_ml: e.description_ml,
+                        description_en: e.description_en || e.description_ml,
+                        category: e.category,
+                        level: e.level,
+                        icon_type: e.icon_type
+                    })));
+                }
                 return res.status(200).json(data.map(item => ({ ...item, id: item.id ? String(item.id) : undefined })));
             }
         }
 
-        // --- 2. FALLBACK TO GOOGLE SHEETS ---
+        // 2. FALLBACK TO GOOGLE SHEETS
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
         
         switch (tType) {
@@ -99,16 +105,12 @@ export default async function handler(req: any, res: any) {
                     id: String(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6]
                 })));
 
-            case 'updates':
-                const upRows = await readSheetData('LiveUpdates!A2:D');
-                return res.status(200).json(upRows.map(r => ({ title: r[0], url: r[1], section: r[2], published_date: r[3] })));
-
             default:
                 const genericRows = await readSheetData(`${sheetName}!A2:Z`);
                 return res.status(200).json(genericRows);
         }
     } catch (error: any) {
-        console.error(`Data API Fatal [${tType}]:`, error.message);
+        console.error(`Data API Fatal Error [${tType}]:`, error.message);
         return res.status(500).json({ error: error.message });
     }
 }

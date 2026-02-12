@@ -14,28 +14,27 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
     
     const cleanTable = table.toLowerCase();
     
-    // 1. Clean and validate data types
     const processedData = data.map(item => {
         const entry: any = { ...item };
         
-        // Ensure ID is string unless it's a numeric table
+        // Handle Integer IDs for specific tables
         const intIdTables = ['questionbank', 'results', 'liveupdates'];
         if (intIdTables.includes(cleanTable) && entry.id !== undefined) {
-            entry.id = parseInt(String(entry.id));
+            const parsedId = parseInt(String(entry.id));
+            entry.id = isNaN(parsedId) ? (Date.now() + Math.floor(Math.random() * 1000)) : parsedId;
         } else if (entry.id !== undefined) {
             entry.id = String(entry.id).trim();
         }
 
-        // Standardize numeric fields
-        if (entry.correct_answer_index !== undefined) entry.correct_answer_index = parseInt(String(entry.correct_answer_index));
-        if (entry.questions !== undefined) entry.questions = parseInt(String(entry.questions));
-        if (entry.duration !== undefined) entry.duration = parseInt(String(entry.duration));
+        // Sanitization of common numeric fields
+        if (entry.correct_answer_index !== undefined) entry.correct_answer_index = parseInt(String(entry.correct_answer_index || '0'));
+        if (entry.questions !== undefined) entry.questions = parseInt(String(entry.questions || '0'));
+        if (entry.duration !== undefined) entry.duration = parseInt(String(entry.duration || '0'));
         
         return entry;
     });
 
-    // 2. CRITICAL: Deduplicate the input array by the primary key (id/key/topic)
-    // This prevents the "ON CONFLICT DO UPDATE command cannot affect row a second time" error
+    // Deduplicate by primary key before upserting
     const uniqueMap = new Map();
     processedData.forEach(item => {
         const pkValue = item[onConflict];
@@ -51,7 +50,7 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         .upsert(finalBatch, { onConflict });
 
     if (error) {
-        console.error(`Supabase Upsert Error [${cleanTable}]:`, error.message);
+        console.error(`Supabase Sync Error [${cleanTable}]:`, error.message);
         throw new Error(`Supabase Error: ${error.message}`);
     }
     return result;
@@ -62,7 +61,6 @@ export async function deleteSupabaseRow(table: string, id: string) {
     const cleanTable = table.toLowerCase();
     const intIdTables = ['questionbank', 'results', 'liveupdates'];
     const cleanId = intIdTables.includes(cleanTable) ? parseInt(id) : id;
-    
     const { error } = await supabase.from(cleanTable).delete().eq('id', cleanId);
     if (error) throw error;
 }
