@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
     const tableName = tableMap[tType] || tType;
 
     try {
-        // 1. ATTEMPT SUPABASE
+        // 1. ATTEMPT SUPABASE (Priority)
         if (supabase) {
             let query = supabase.from(tableName).select('*');
             if (tableName === 'syllabus' && examId) query = query.eq('exam_id', String(examId));
@@ -47,6 +47,7 @@ export default async function handler(req: any, res: any) {
 
             const { data, error } = await query;
             
+            // Fix: Check if data actually exists and has content. If empty, fall back to Sheets.
             if (!error && data && data.length > 0) {
                 if (tableName === 'questionbank') {
                     const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, parseInt(count as string) || 20);
@@ -59,7 +60,6 @@ export default async function handler(req: any, res: any) {
                 if (tableName === 'settings') {
                     return res.status(200).json(data.reduce((acc: any, curr: any) => { acc[curr.key] = curr.value; return acc; }, {}));
                 }
-                // Important: Standardize column names for Exams to match what frontend expects
                 if (tableName === 'exams') {
                     return res.status(200).json(data.map(e => ({
                         id: String(e.id),
@@ -76,7 +76,7 @@ export default async function handler(req: any, res: any) {
             }
         }
 
-        // 2. FALLBACK TO GOOGLE SHEETS
+        // 2. FALLBACK TO GOOGLE SHEETS (If Supabase is offline or empty)
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
         
         switch (tType) {
@@ -104,6 +104,10 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json(shuffledQ.map(r => ({
                     id: String(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correctAnswerIndex: parseInt(r[4] || '0'), subject: r[5], difficulty: r[6]
                 })));
+
+            case 'updates':
+                const upRows = await readSheetData('LiveUpdates!A2:D');
+                return res.status(200).json(upRows.map(r => ({ title: r[0], url: r[1], section: r[2], published_date: r[3] })));
 
             default:
                 const genericRows = await readSheetData(`${sheetName}!A2:Z`);

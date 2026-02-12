@@ -14,10 +14,11 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
     
     const cleanTable = table.toLowerCase();
     
+    // 1. Clean and validate data types
     const processedData = data.map(item => {
         const entry: any = { ...item };
         
-        // Handle Integer IDs for specific tables
+        // Define tables with integer IDs
         const intIdTables = ['questionbank', 'results', 'liveupdates'];
         if (intIdTables.includes(cleanTable) && entry.id !== undefined) {
             const parsedId = parseInt(String(entry.id));
@@ -26,7 +27,7 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
             entry.id = String(entry.id).trim();
         }
 
-        // Sanitization of common numeric fields
+        // Numeric field sanitization
         if (entry.correct_answer_index !== undefined) entry.correct_answer_index = parseInt(String(entry.correct_answer_index || '0'));
         if (entry.questions !== undefined) entry.questions = parseInt(String(entry.questions || '0'));
         if (entry.duration !== undefined) entry.duration = parseInt(String(entry.duration || '0'));
@@ -34,7 +35,8 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         return entry;
     });
 
-    // Deduplicate by primary key before upserting
+    // 2. CRITICAL: Deduplicate the input array by the primary key
+    // This prevents "ON CONFLICT DO UPDATE command cannot affect row a second time"
     const uniqueMap = new Map();
     processedData.forEach(item => {
         const pkValue = item[onConflict];
