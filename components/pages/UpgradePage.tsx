@@ -68,7 +68,7 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
           createOrder: (data: any, actions: any) => {
             return actions.order.create({
               purchase_units: [{
-                amount: { currency_code: 'INR', value: '499.00' },
+                amount: { currency_code: 'USD', value: '5.99' },
                 description: 'Kerala PSC Guru - Annual Pro Membership'
               }]
             });
@@ -123,7 +123,7 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
 
       const script = document.createElement('script');
       script.id = SCRIPT_ID;
-      script.src = `https://www.paypal.com/sdk/js?client-id=${dynamicClientId}&currency=INR`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${dynamicClientId}&currency=USD`;
       script.async = true;
       script.onload = initializeSdk;
       script.onerror = () => {
@@ -240,7 +240,7 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                     <div className="bg-slate-950 border-2 border-indigo-500/30 p-12 rounded-[3.5rem] shadow-2xl relative">
                         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-xl">Best Value</div>
                         <p className="text-indigo-300 font-black text-xs uppercase tracking-[0.3em] mb-4">Annual Pass</p>
-                        <h2 className="text-7xl font-black text-white my-4 tracking-tighter">₹499</h2>
+                        <h2 className="text-7xl font-black text-white my-4 tracking-tighter">$5.99</h2>
                         <p className="text-slate-500 font-bold uppercase text-[11px] tracking-widest mt-2">1 Full Year Access</p>
                         <div className="h-1 w-16 bg-amber-400 mx-auto my-10 rounded-full"></div>
                         <ul className="text-left space-y-5 mb-4">
