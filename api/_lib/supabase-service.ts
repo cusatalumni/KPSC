@@ -12,7 +12,6 @@ export const supabase = (supabaseUrl && supabaseKey)
 export async function upsertSupabaseData(table: string, data: any[], onConflict: string = 'id') {
     if (!supabase) return null;
     
-    // Define which tables use numeric (integer) primary keys
     const intIdTables = ['questionbank', 'liveupdates', 'results'];
     const cleanTable = table.toLowerCase();
     
@@ -23,11 +22,10 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
             const parsedId = parseInt(String(entry.id));
             entry.id = isNaN(parsedId) ? (Date.now() + Math.floor(Math.random() * 1000)) : parsedId;
         } else if (entry.id !== undefined) {
-            // Exams, Syllabus, Bookstore, Notifications etc. use STRING IDs
             entry.id = String(entry.id).trim();
         }
 
-        // Numeric field sanitization
+        // Standardize common fields
         if (Object.prototype.hasOwnProperty.call(entry, 'correct_answer_index')) {
             entry.correct_answer_index = parseInt(String(entry.correct_answer_index || '0'));
         }
@@ -37,22 +35,25 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
         if (Object.prototype.hasOwnProperty.call(entry, 'duration')) {
             entry.duration = parseInt(String(entry.duration || '0'));
         }
-        if (Object.prototype.hasOwnProperty.call(entry, 'score')) {
-            entry.score = parseFloat(String(entry.score || '0'));
-        }
-        if (Object.prototype.hasOwnProperty.call(entry, 'total')) {
-            entry.total = parseInt(String(entry.total || '0'));
-        }
         
         return entry;
     });
 
+    // CRITICAL: Deduplicate data by primary key before sending to Supabase
+    // This prevents the "ON CONFLICT DO UPDATE command cannot affect row a second time" error
+    const uniqueMap = new Map();
+    cleanData.forEach(item => {
+        const pk = item[onConflict];
+        if (pk) uniqueMap.set(pk, item);
+    });
+    const finalBatch = Array.from(uniqueMap.values());
+
     const { data: result, error } = await supabase
         .from(cleanTable)
-        .upsert(cleanData, { onConflict });
+        .upsert(finalBatch, { onConflict });
 
     if (error) {
-        console.error(`Supabase Sync Error [${cleanTable}]:`, error.message);
+        console.error(`Supabase Upsert Failed [${cleanTable}]:`, error.message);
         throw new Error(`Supabase Error: ${error.message}`);
     }
     return result;

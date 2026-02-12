@@ -13,13 +13,12 @@ function getAi() {
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
-// Simple hash function to create numeric IDs from strings
 function createNumericHash(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         const char = str.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
+        hash = hash & hash;
     }
     return Math.abs(hash);
 }
@@ -28,6 +27,7 @@ async function getNextId(sheetRange: string, startFrom: number = 1000): Promise<
     try {
         const rows = await readSheetData(sheetRange);
         if (!rows || rows.length === 0) return startFrom;
+        // Extract IDs, convert to numbers, and find the maximum
         const ids = rows.map(r => parseInt(String(r[0]))).filter(id => !isNaN(id));
         return ids.length > 0 ? Math.max(...ids) + 1 : startFrom;
     } catch (e) { return startFrom; }
@@ -55,14 +55,15 @@ export async function scrapeKpscNotifications() {
             }
         });
         
-        const nextId = await getNextId('Notifications!A2:A');
+        const baseId = await getNextId('Notifications!A2:A', 1000);
         const items = JSON.parse(response.text || "[]");
-        const sheetData = items.map((item: any, idx: number) => [String(nextId + idx), item.title, item.categoryNumber, item.lastDate, item.link]);
-        const sbData = items.map((item: any, idx: number) => ({ id: String(nextId + idx), title: item.title, categoryNumber: item.categoryNumber, lastDate: item.lastDate, link: item.link }));
+        
+        const sheetData = items.map((item: any, idx: number) => [String(baseId + idx), item.title, item.categoryNumber, item.lastDate, item.link]);
+        const sbData = items.map((item: any, idx: number) => ({ id: String(baseId + idx), title: item.title, categoryNumber: item.categoryNumber, lastDate: item.lastDate, link: item.link }));
         
         await appendSheetData('Notifications!A1', sheetData);
         await upsertSupabaseData('notifications', sbData);
-        return { message: `${items.length} notifications synced.` };
+        return { message: `${items.length} notifications synced (Starting ID: ${baseId}).` };
     } catch (e: any) { throw e; }
 }
 
@@ -88,21 +89,26 @@ export async function scrapePscLiveUpdates() {
         const items = JSON.parse(response.text || "[]");
         const sheetData = items.map((item: any) => [item.title, item.url, item.section, item.published_date]);
         const existing = await readSheetData('LiveUpdates!A2:D');
-        const combined = [...sheetData, ...existing].slice(0, 30);
         
-        await clearAndWriteSheetData('LiveUpdates!A2:D', combined);
+        // Remove duplicates from the new items based on URL
+        const existingUrls = new Set(existing.map(r => String(r[1]).trim()));
+        const uniqueNewItems = items.filter((it: any) => !existingUrls.has(it.url.trim()));
         
-        // Generate stable numeric IDs for Supabase from title
-        const sbData = items.map((it: any) => ({
-            id: createNumericHash(it.title),
-            title: it.title,
-            url: it.url,
-            section: it.section,
-            published_date: it.published_date
-        }));
+        if (uniqueNewItems.length > 0) {
+            const combined = [...uniqueNewItems.map((it:any) => [it.title, it.url, it.section, it.published_date]), ...existing].slice(0, 50);
+            await clearAndWriteSheetData('LiveUpdates!A2:D', combined);
+            
+            const sbData = uniqueNewItems.map((it: any) => ({
+                id: createNumericHash(it.url || it.title),
+                title: it.title,
+                url: it.url,
+                section: it.section,
+                published_date: it.published_date
+            }));
+            await upsertSupabaseData('liveupdates', sbData);
+        }
         
-        await upsertSupabaseData('liveupdates', sbData);
-        return { message: "Live Updates synced to Sheets and Supabase." };
+        return { message: `${uniqueNewItems.length} new updates synced.` };
     } catch (e: any) { throw e; }
 }
 
@@ -126,22 +132,15 @@ export async function scrapeCurrentAffairs() {
             }
         });
 
-        const existingRows = await readSheetData('CurrentAffairs!A2:D');
-        const twoWeeksAgo = new Date();
-        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        const filteredExisting = existingRows.filter(row => {
-            const rowDate = new Date(row[3]);
-            return !isNaN(rowDate.getTime()) && rowDate >= twoWeeksAgo;
-        });
-
-        const nextId = await getNextId('CurrentAffairs!A2:A', 5000);
         const items = JSON.parse(response.text || "[]");
-        const sheetData = items.map((item: any, idx: number) => [String(nextId + idx), item.title, item.source, item.date]);
-        const sbData = items.map((item: any, idx: number) => ({ id: String(nextId + idx), title: item.title, source: item.source, date: item.date }));
+        const baseId = await getNextId('CurrentAffairs!A2:A', 5000);
+        
+        const sheetData = items.map((item: any, idx: number) => [String(baseId + idx), item.title, item.source, item.date]);
+        const sbData = items.map((item: any, idx: number) => ({ id: String(baseId + idx), title: item.title, source: item.source, date: item.date }));
 
-        await clearAndWriteSheetData('CurrentAffairs!A2:D', [...sheetData, ...filteredExisting]);
+        await appendSheetData('CurrentAffairs!A1', sheetData);
         await upsertSupabaseData('currentaffairs', sbData);
-        return { message: `Current Affairs synced (${items.length} items).` };
+        return { message: `Current Affairs synced (${items.length} items, Starting ID: ${baseId}).` };
     } catch (e: any) { throw e; }
 }
 
@@ -164,14 +163,15 @@ export async function scrapeGk() {
             }
         });
         
-        const nextId = await getNextId('GK!A2:A', 8000);
+        const baseId = await getNextId('GK!A2:A', 8000);
         const items = JSON.parse(response.text || "[]");
-        const sheetData = items.map((item: any, idx: number) => [String(nextId + idx), item.fact, item.category]);
-        const sbData = items.map((item: any, idx: number) => ({ id: String(nextId + idx), fact: item.fact, category: item.category }));
+        
+        const sheetData = items.map((item: any, idx: number) => [String(baseId + idx), item.fact, item.category]);
+        const sbData = items.map((item: any, idx: number) => ({ id: String(baseId + idx), fact: item.fact, category: item.category }));
         
         await appendSheetData('GK!A1', sheetData);
         await upsertSupabaseData('gk', sbData);
-        return { message: `${items.length} GK facts synced.` };
+        return { message: `${items.length} GK facts synced (Starting ID: ${baseId}).` };
     } catch (e: any) { throw e; }
 }
 
@@ -196,11 +196,12 @@ export async function generateNewQuestions() {
             }
         });
         
-        const nextId = await getNextId('QuestionBank!A2:A', 20000);
+        const baseId = await getNextId('QuestionBank!A2:A', 20000);
         const items = JSON.parse(response.text || "[]");
-        const sheetData = items.map((item: any, idx: number) => [nextId + idx, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', '']);
+        
+        const sheetData = items.map((item: any, idx: number) => [baseId + idx, item.topic, item.question, JSON.stringify(item.options), item.correctAnswerIndex, 'General', 'Moderate', '']);
         const sbData = items.map((item: any, idx: number) => ({ 
-            id: nextId + idx, 
+            id: baseId + idx, 
             topic: item.topic, 
             question: item.question, 
             options: item.options, 
@@ -211,7 +212,7 @@ export async function generateNewQuestions() {
         
         await appendSheetData('QuestionBank!A1', sheetData);
         await upsertSupabaseData('questionbank', sbData);
-        return { message: `${items.length} questions injected.` };
+        return { message: `${items.length} questions injected (Starting ID: ${baseId}).` };
     } catch (e: any) { throw e; }
 }
 
@@ -219,7 +220,7 @@ export async function runDailyUpdateScrapers() {
     await scrapeKpscNotifications();
     await scrapeCurrentAffairs();
     await scrapeGk();
-    return { message: "Daily Protocols Finished." };
+    return { message: "Daily Protocols Finished Successfully." };
 }
 
 export async function runBookScraper() {
@@ -242,14 +243,17 @@ export async function runBookScraper() {
     const items = JSON.parse(response.text || "[]");
     if (items.length) {
         const existing = await readSheetData('Bookstore!A2:E');
-        const nextId = await getNextId('Bookstore!A2:A', 3000);
+        const baseId = await getNextId('Bookstore!A2:A', 3000);
+        
         const newData = items.map((item: any, idx: number) => {
             let link = item.amazonLink || '';
             if (link.includes('amazon.in') && !link.includes('tag=')) link += (link.includes('?') ? '&' : '?') + AFFILIATE_TAG;
-            return [String(nextId + idx), item.title, item.author, "", link];
+            return [String(baseId + idx), item.title, item.author, "", link];
         });
-        const existingTitles = new Set(existing.map(r => r[1].toLowerCase()));
-        const uniqueNew = newData.filter(r => !existingTitles.has(r[1].toLowerCase()));
+        
+        const existingTitles = new Set(existing.map(r => String(r[1]).toLowerCase().trim()));
+        const uniqueNew = newData.filter(r => !existingTitles.has(String(r[1]).toLowerCase().trim()));
+        
         if (uniqueNew.length > 0) {
             await appendSheetData('Bookstore!A1', uniqueNew);
             await upsertSupabaseData('bookstore', uniqueNew.map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] })));

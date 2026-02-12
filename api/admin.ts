@@ -71,7 +71,6 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
     const { action, sheet, id, data, mode, resultData, setting, question, exam, syllabus, book, feedback } = req.body;
 
-    // Public Actions
     if (action === 'save-result') {
         try {
             const resultId = resultData.id || Date.now();
@@ -100,19 +99,18 @@ export default async function handler(req: any, res: any) {
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 
-    // Admin Verification
     try { await verifyAdmin(req); } catch (e: any) { return res.status(401).json({ error: e.message || 'Unauthorized Access' }); }
 
     try {
         switch (action) {
             case 'sync-all':
-                if (!supabase) throw new Error("Supabase is not configured.");
-                const [exs, snl, qbs, bks, syls, nfs, cas, gks, ups] = await Promise.all([
+                if (!supabase) throw new Error("Supabase not linked");
+                const [exs, snl, qbs, bks, syls, nfs, cas, gks, ups, smc] = await Promise.all([
                     readSheetData('Exams!A2:H'), readSheetData('Settings!A2:B'),
                     readSheetData('QuestionBank!A2:H'), readSheetData('Bookstore!A2:E'),
                     readSheetData('Syllabus!A2:G'), readSheetData('Notifications!A2:E'),
                     readSheetData('CurrentAffairs!A2:D'), readSheetData('GK!A2:C'),
-                    readSheetData('LiveUpdates!A2:D')
+                    readSheetData('LiveUpdates!A2:D'), readSheetData('StudyMaterialsCache!A2:C')
                 ]);
                 
                 await Promise.all([
@@ -133,31 +131,35 @@ export default async function handler(req: any, res: any) {
                     upsertSupabaseData('currentaffairs', cas.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], source: r[2], date: r[3] }))),
                     upsertSupabaseData('gk', gks.filter(r => r[0]).map(r => ({ id: String(r[0]), fact: r[1], category: r[2] }))),
                     upsertSupabaseData('liveupdates', ups.filter(r => r[0]).map(r => ({ 
-                        id: createNumericHash(String(r[0])), title: r[0], url: r[1], section: r[2], published_date: r[3] 
-                    })))
+                        id: createNumericHash(String(r[1]) || String(r[0])), 
+                        title: r[0], url: r[1], section: r[2], published_date: r[3] 
+                    }))),
+                    upsertSupabaseData('studymaterialscache', smc.filter(r => r[0]).map(r => ({ 
+                        topic: r[0], content: r[1], last_updated: r[2] 
+                    })), 'topic')
                 ]);
-                return res.status(200).json({ message: 'Cloud architecture synchronized successfully.' });
+                return res.status(200).json({ message: 'Global Sync Success: Sheets and DB are now identical.' });
 
             case 'update-exam':
                 await findAndUpsertRow('Exams', exam.id, [exam.id, exam.title_ml, exam.title_en, exam.description_ml, exam.description_en, exam.category, exam.level, exam.icon_type]);
                 if (supabase) await upsertSupabaseData('exams', [{ id: String(exam.id), title_ml: exam.title_ml, title_en: exam.title_en, description_ml: exam.description_ml, description_en: exam.description_en, category: exam.category, level: exam.level, icon_type: exam.icon_type }]);
-                return res.status(200).json({ message: 'Exam Updated' });
+                return res.status(200).json({ message: 'Updated' });
 
             case 'update-syllabus':
                 await findAndUpsertRow('Syllabus', syllabus.id, [syllabus.id, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic]);
                 if (supabase) await upsertSupabaseData('syllabus', [{ id: String(syllabus.id), exam_id: String(syllabus.exam_id), title: syllabus.title, questions: syllabus.questions, duration: syllabus.duration, subject: syllabus.subject, topic: syllabus.topic }]);
-                return res.status(200).json({ message: 'Syllabus Updated' });
+                return res.status(200).json({ message: 'Updated' });
 
             case 'add-question':
                 const qId = question.id ? parseInt(question.id) : Date.now();
                 await findAndUpsertRow('QuestionBank', String(qId), [qId, question.topic, question.question, JSON.stringify(smartParseOptions(question.options)), question.correct_answer_index, question.subject, question.difficulty]);
                 if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: smartParseOptions(question.options), correct_answer_index: question.correct_answer_index, subject: question.subject, difficulty: question.difficulty }]);
-                return res.status(200).json({ message: 'Question Saved' });
+                return res.status(200).json({ message: 'Saved' });
 
             case 'csv-update':
                 const currentSheet = (sheet || '').toLowerCase();
                 const lines = (data || '').split('\n').filter((l: string) => l.trim() !== '');
-                if (!lines.length) return res.status(400).json({ error: 'No data provided.' });
+                if (!lines.length) return res.status(400).json({ error: 'No data' });
                 const rows = lines.map((line: string, index: number) => {
                     const parts = parseCsvLine(line);
                     if (currentSheet === 'questionbank') return [parseInt(parts[0]) || (Date.now() + index), parts[1], parts[2], JSON.stringify(smartParseOptions(parts[3])), parts[4], parts[5], parts[6]];
@@ -166,12 +168,12 @@ export default async function handler(req: any, res: any) {
                 });
                 if (mode === 'append') await appendSheetData(`${sheet}!A1`, rows);
                 else await clearAndWriteSheetData(`${sheet}!A2:H`, rows);
-                return res.status(200).json({ message: 'Batch sync finished.' });
+                return res.status(200).json({ message: 'Sync Finished' });
 
             case 'delete-row':
                 await deleteRowById(sheet, id);
                 if (supabase) await deleteSupabaseRow(sheet.toLowerCase(), id);
-                return res.status(200).json({ message: 'Row Deleted' });
+                return res.status(200).json({ message: 'Deleted' });
 
             case 'test-connection':
                 let sS = { ok: false }; let sbS = { ok: false };
@@ -179,20 +181,21 @@ export default async function handler(req: any, res: any) {
                 try { if (supabase) { const { error } = await supabase.from('settings').select('key').limit(1); if (!error) sbS.ok = true; } } catch (e) {}
                 return res.status(200).json({ status: { sheets: sS.ok, supabase: sbS.ok } });
 
-            case 'clear-study-cache': await clearAndWriteSheetData('StudyMaterialsCache!A2:C', []); return res.status(200).json({ message: 'Cache Cleared' });
+            case 'clear-study-cache': 
+                await clearAndWriteSheetData('StudyMaterialsCache!A2:C', []); 
+                if (supabase) await supabase.from('studymaterialscache').delete().neq('topic', '');
+                return res.status(200).json({ message: 'Cache Flushed' });
+
             case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-scraper-affairs': return res.status(200).json(await scrapeCurrentAffairs());
             case 'run-scraper-gk': return res.status(200).json(await scrapeGk());
             case 'run-scraper-questions': return res.status(200).json(await generateNewQuestions());
-            case 'run-book-scraper': await runBookScraper(); return res.status(200).json({ message: 'Books updated.' });
-            case 'update-setting': await updateSetting(setting.key, setting.value, null); return res.status(200).json({ message: 'Setting Saved' });
-            default: return res.status(400).json({ error: 'Invalid action.' });
+            case 'run-book-scraper': await runBookScraper(); return res.status(200).json({ message: 'Success' });
+            case 'update-setting': await updateSetting(setting.key, setting.value, null); return res.status(200).json({ message: 'Updated' });
+            default: return res.status(400).json({ error: 'Invalid' });
         }
-    } catch (e: any) { 
-        console.error("Admin API Fatal Error:", e.message);
-        return res.status(500).json({ error: e.message }); 
-    }
+    } catch (e: any) { return res.status(500).json({ error: e.message }); }
 }
 
 async function updateSetting(key: string, value: string, token: any) {
