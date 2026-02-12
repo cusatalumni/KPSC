@@ -15,13 +15,13 @@
     "react": "https://esm.sh/react@18.3.1",
     "react/": "https://esm.sh/react@18.3.1/",
     "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
     "@google/genai": "https://esm.sh/@google/genai@1.39.0",
     "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.21.0",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.4",
     "googleapis": "https://esm.sh/googleapis@^171.4.0",
-    "@clerk/backend": "https://esm.sh/@clerk/backend@^2.30.1"
+    "@clerk/backend": "https://esm.sh/@clerk/backend@^2.30.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
   }
 }
 </script>
@@ -45,13 +45,21 @@
     <script>
       window.process = window.process || { env: {} };
       window.onerror = function(msg, url, line, col, error) {
-        console.error("Global Error Caught: ", msg, " at ", url, ":", line);
+        // Ignore minor/external script errors that don't break core app logic
+        const ignoredErrors = ["paypal", "adsbygoogle", "host"];
+        if (ignoredErrors.some(term => String(msg).toLowerCase().includes(term))) {
+            console.warn("Minor external error ignored:", msg);
+            return false;
+        }
+
+        console.error("Critical Error:", msg);
         const root = document.getElementById('root');
-        if (root && root.innerHTML === "") {
-          root.innerHTML = '<div style="padding: 20px; color: #ef4444; font-family: sans-serif; text-align: center;">' +
-            '<h2 style="font-weight: bold; font-size: 24px;">Application Load Error</h2>' +
-            '<p style="margin-top: 10px; opacity: 0.8;">' + (msg || "Internal Script Error") + '</p>' +
-            '<button onClick="window.location.reload()" style="margin-top: 20px; background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold;">Retry Loading</button>' +
+        // Only show fatal error UI if root is completely empty (initial load failed)
+        if (root && root.innerHTML.trim() === "") {
+          root.innerHTML = '<div style="padding: 40px; color: #ef4444; font-family: sans-serif; text-align: center; background: #0f172a; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">' +
+            '<h2 style="font-weight: bold; font-size: 28px; color: white;">Application Load Error</h2>' +
+            '<p style="margin-top: 15px; opacity: 0.7; color: #94a3b8; max-width: 400px;">' + (msg || "An unexpected error occurred during startup.") + '</p>' +
+            '<button onClick="window.location.reload()" style="margin-top: 30px; background: #4f46e5; color: white; padding: 12px 24px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer;">Retry Loading</button>' +
             '</div>';
         }
         return false;
@@ -90,9 +98,11 @@
         -webkit-text-fill-color: transparent;
       }
     </style>
-  </head>
+  <link rel="stylesheet" href="/index.css">
+</head>
   <body class="bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

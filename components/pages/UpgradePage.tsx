@@ -8,6 +8,7 @@ import { SparklesIcon } from '../icons/SparklesIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { AcademicCapIcon } from '../icons/AcademicCapIcon';
 import { subscriptionService } from '../../services/subscriptionService';
+import { getSettings } from '../../services/pscDataService';
 
 interface PageProps {
   onBack: () => void;
@@ -29,22 +30,38 @@ const PremiumFeature: React.FC<{ icon: any, title: string, desc: string, color: 
 const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
   const { user, isSignedIn } = useUser();
   const paypalRef = useRef<HTMLDivElement>(null);
+  const isMounted = useRef(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [sdkError, setSdkError] = useState(false);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+  const [dynamicClientId, setDynamicClientId] = useState<string | null>(null);
 
   useEffect(() => {
+    isMounted.current = true;
     if (isSignedIn && user?.id) {
         setIsPro(subscriptionService.getSubscriptionStatus(user.id) === 'pro');
     }
+    
+    // Fetch Settings for PayPal Client ID
+    getSettings().then(settings => {
+        if (isMounted.current) {
+            setDynamicClientId(settings?.paypal_client_id || 'sb');
+        }
+    }).catch(() => {
+        if (isMounted.current) setDynamicClientId('sb');
+    });
+
+    return () => { isMounted.current = false; };
   }, [isSignedIn, user?.id]);
 
   const renderPaypalButtons = useCallback(() => {
-    if ((window as any).paypal && paypalRef.current && !paymentSuccess) {
-      // Clear container before rendering to avoid duplicates
-      paypalRef.current.innerHTML = '';
+    if ((window as any).paypal && paypalRef.current && isMounted.current) {
+      while (paypalRef.current.firstChild) {
+          paypalRef.current.removeChild(paypalRef.current.firstChild);
+      }
+      
       try {
         (window as any).paypal.Buttons({
           style: { shape: 'pill', color: 'gold', layout: 'vertical', label: 'subscribe' },
@@ -57,53 +74,64 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
             });
           },
           onApprove: async (data: any, actions: any) => {
+            if (!isMounted.current) return;
             setIsProcessing(true);
             await actions.order.capture();
-            if (user?.id) {
+            if (user?.id && isMounted.current) {
               subscriptionService.upgradeToPro(user.id);
               setPaymentSuccess(true);
-              setTimeout(() => { setIsPro(true); setPaymentSuccess(false); }, 3000);
+              setTimeout(() => { if (isMounted.current) { setIsPro(true); setPaymentSuccess(false); } }, 3000);
             }
-            setIsProcessing(false);
+            if (isMounted.current) setIsProcessing(false);
           },
           onError: (err: any) => {
-            console.error('PayPal Button Error:', err);
-            setSdkError(true);
+            console.error('PayPal Error:', err);
+            if (isMounted.current) setSdkError(true);
           }
         }).render(paypalRef.current);
       } catch (e) {
-        console.error('Failed to render PayPal buttons:', e);
-        setSdkError(true);
+        console.error('PayPal Render Exception:', e);
+        if (isMounted.current) setSdkError(true);
       }
     }
-  }, [paymentSuccess, user?.id]);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (isSignedIn && !isPro && !paymentSuccess) {
+    if (isSignedIn && !isPro && !paymentSuccess && dynamicClientId) {
       const SCRIPT_ID = 'paypal-sdk-dynamic';
       
-      // If script already exists and loaded, just render
-      if (document.getElementById(SCRIPT_ID)) {
-        if ((window as any).paypal) {
-            renderPaypalButtons();
-        }
-        return;
+      const initializeSdk = () => {
+          setIsSdkLoaded(true);
+          setTimeout(() => {
+              if (isMounted.current) renderPaypalButtons();
+          }, 100);
+      };
+
+      // Remove old script if Client ID changed (though unlikely in a single session)
+      const existingScript = document.getElementById(SCRIPT_ID) as HTMLScriptElement;
+      if (existingScript) {
+          if (existingScript.src.includes(`client-id=${dynamicClientId}`)) {
+              if ((window as any).paypal) {
+                  initializeSdk();
+                  return;
+              }
+          } else {
+              existingScript.remove();
+              if ((window as any).paypal) delete (window as any).paypal;
+          }
       }
 
       const script = document.createElement('script');
       script.id = SCRIPT_ID;
-      script.src = "https://www.paypal.com/sdk/js?client-id=sb&currency=INR";
+      script.src = `https://www.paypal.com/sdk/js?client-id=${dynamicClientId}&currency=INR`;
       script.async = true;
-      script.onload = () => {
-        setIsSdkLoaded(true);
-        renderPaypalButtons();
-      };
+      script.onload = initializeSdk;
       script.onerror = () => {
-        setSdkError(true);
+        if (isMounted.current) setSdkError(true);
       };
       document.body.appendChild(script);
     }
-  }, [isSignedIn, isPro, paymentSuccess, renderPaypalButtons]);
+  }, [isSignedIn, isPro, paymentSuccess, dynamicClientId, renderPaypalButtons]);
 
   if (paymentSuccess) {
       return (
@@ -244,12 +272,12 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                                         </p>
                                         <button onClick={() => window.location.reload()} className="mt-4 text-xs font-black text-indigo-600 underline uppercase tracking-widest">Retry Connection</button>
                                     </div>
-                                ) : !isSdkLoaded && (
+                                ) : (!isSdkLoaded || !dynamicClientId) ? (
                                     <div className="flex items-center justify-center space-x-3 text-slate-500 animate-pulse">
                                         <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin"></div>
                                         <span className="text-[10px] font-black uppercase tracking-widest">Connecting to PayPal...</span>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                             {isProcessing && (
                                 <div className="flex items-center justify-center space-x-4 text-white font-black animate-pulse bg-white/5 py-5 rounded-3xl border border-white/5">

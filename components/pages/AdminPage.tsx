@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
-// Fix: Removed deleteBook, syncCsvData, and addQuestion as they are not exported by pscDataService
 import { 
     getBooks, 
     getExams,
@@ -41,6 +39,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
+    const [paypalClientId, setPaypalClientId] = useState('sb');
     const [dataSource, setDataSource] = useState<'Database' | 'Static Fallback'>('Static Fallback');
 
     const [bulkData, setBulkData] = useState('');
@@ -61,10 +60,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const examRes = await getExams();
             setExams(examRes.exams);
             setDataSource(examRes.source === 'database' ? 'Database' : 'Static Fallback');
-            // Fix: getSettings() expects 0 arguments in pscDataService
             const [b, s] = await Promise.all([getBooks(), getSettings()]);
             setBooks(b);
             if (s?.subscription_model_active !== undefined) setIsSubscriptionActive(s.subscription_model_active === 'true');
+            if (s?.paypal_client_id) setPaypalClientId(s.paypal_client_id);
         } catch (e) { console.error(e); } finally { if (!silent) setLoading(false); }
     }, [getToken]);
 
@@ -165,13 +164,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 ))}
                                 <button type="submit" className="md:col-span-2 bg-indigo-600 text-white py-6 rounded-2xl font-black uppercase shadow-xl">{newQ.id ? 'Save Changes' : 'Inject Question'}</button>
-                                {newQ.id && <button onClick={() => setNewQ({ id: '', question: '', topic: '', subject: 'GK', options: ['', '', '', ''], correctAnswerIndex: 0 })} className="md:col-span-2 bg-slate-200 text-slate-800 py-3 rounded-xl font-black uppercase text-[10px]">Cancel Edit</button>}
                             </form>
-                        </section>
-                        <section className="pt-10 border-t-2">
-                             <h3 className="text-xl font-black uppercase mb-6 tracking-widest">Bulk Question Deployment</h3>
-                             <textarea value={bulkData} onChange={e => setBulkData(e.target.value)} placeholder="CSV: ID, Topic, Question, Opt1|Opt2|Opt3|Opt4, CorrectIdx, Subject, Difficulty, Explanation" className="w-full h-64 p-8 border rounded-[3rem] font-mono text-[10px] bg-slate-50 dark:bg-slate-900" />
-                             <button onClick={() => handleAction(() => adminOp('csv-update', { sheet: 'QuestionBank', data: bulkData, mode: 'append' }))} className="w-full mt-6 bg-emerald-600 text-white py-6 rounded-2xl font-black uppercase">Batch Append Questions</button>
                         </section>
                     </div>
                 )}
@@ -181,101 +174,46 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <section className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[4rem] border-2 border-slate-100 dark:border-slate-800">
                             <h3 className="text-2xl font-black uppercase mb-8">{newExam.id ? 'Edit Registry' : 'Register New Exam'}</h3>
                             <form onSubmit={(e) => { e.preventDefault(); handleAction(() => adminOp('update-exam', { exam: newExam })); setNewExam({ id: '', title_ml: '', title_en: '', description_ml: '', category: 'General', level: 'Preliminary', icon_type: 'book' }); }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <input value={newExam.id} onChange={e => setNewExam({...newExam, id: e.target.value})} placeholder="Exam ID (e.g. ldc_2025)" className="p-4 rounded-xl border-2 dark:bg-slate-800" required disabled={!!newExam.id && exams.some(ex => ex.id === newExam.id)} />
+                                <input value={newExam.id} onChange={e => setNewExam({...newExam, id: e.target.value})} placeholder="Exam ID (e.g. ldc_2025)" className="p-4 rounded-xl border-2 dark:bg-slate-800" required />
                                 <input value={newExam.title_ml} onChange={e => setNewExam({...newExam, title_ml: e.target.value})} placeholder="Title (Malayalam)" className="p-4 rounded-xl border-2 dark:bg-slate-800" required />
-                                <select value={newExam.category} onChange={e => setNewExam({...newExam, category: e.target.value})} className="p-4 rounded-xl border-2 dark:bg-slate-800">
-                                    <option value="General">General</option><option value="Technical">Technical</option><option value="Special">Special</option>
-                                </select>
                                 <button type="submit" className="md:col-span-2 bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase">{newExam.id ? 'Update Entry' : 'Register'}</button>
-                                {newExam.title_ml && <button onClick={() => setNewExam({ id: '', title_ml: '', title_en: '', description_ml: '', category: 'General', level: 'Preliminary', icon_type: 'book' })} className="md:col-span-2 bg-slate-200 py-3 rounded-xl font-black uppercase text-[10px]">Cancel</button>}
                             </form>
-                        </section>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {exams.map(ex => (
-                                <div key={ex.id} className="p-8 border rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between group hover:border-indigo-500 transition-all">
-                                    <div className="flex items-center space-x-6">
-                                        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-lg">{ex.icon}</div>
-                                        <div><p className="font-black text-lg">{ex.title.ml}</p><p className="text-[10px] font-black text-slate-400 uppercase">{ex.id} • {ex.category}</p></div>
-                                    </div>
-                                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button onClick={() => setNewExam({ id: ex.id, title_ml: ex.title.ml, title_en: ex.title.en || '', description_ml: ex.description.ml || '', category: ex.category, level: ex.level, icon_type: 'book' })} className="text-indigo-600 p-3 bg-white rounded-xl shadow-sm"><PencilSquareIcon className="h-5 w-5" /></button>
-                                        <button onClick={() => { if(confirm("Discard?")) handleAction(() => adminOp('delete-row', { sheet: 'Exams', id: ex.id })) }} className="text-red-500 p-3 bg-white rounded-xl shadow-sm"><TrashIcon className="h-5 w-5" /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'syllabus' && (
-                    <div className="space-y-12">
-                        <section className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[4rem] border-2 border-slate-100 dark:border-slate-800">
-                            <h3 className="text-2xl font-black uppercase mb-8">{newSyl.id ? 'Edit Sprint' : 'Add New Sprint'}</h3>
-                            <form onSubmit={(e) => { e.preventDefault(); handleAction(() => adminOp('update-syllabus', { syllabus: newSyl })); setNewSyl({ id: '', exam_id: '', title: '', questions: 20, duration: 20, subject: 'GK', topic: 'General' }); }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <select value={newSyl.exam_id} onChange={e => setNewSyl({...newSyl, exam_id: e.target.value})} className="p-4 rounded-xl border-2 dark:bg-slate-800" required>
-                                    <option value="">Target Exam</option>{exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
-                                </select>
-                                <input value={newSyl.title} onChange={e => setNewSyl({...newSyl, title: e.target.value})} placeholder="Sprint Title..." className="p-4 rounded-xl border-2 dark:bg-slate-800" required />
-                                <button type="submit" className="md:col-span-2 bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-xl">{newSyl.id ? 'Save Changes' : 'Inject Sprint'}</button>
-                            </form>
-                        </section>
-                        <div className="flex justify-center mb-8"><select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900 border-none font-black text-xs uppercase shadow-inner"><option value="">Filter by Exam</option>{exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}</select></div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {syllabusItems.map(s => (
-                                <div key={s.id} className="p-7 rounded-[2.5rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-indigo-500 transition-all flex items-center justify-between">
-                                    <div className="min-w-0 pr-4"><p className="font-black text-sm truncate uppercase">{s.title}</p><p className="text-[10px] font-bold text-slate-400 mt-2 uppercase">{s.topic} • {s.questions} Qs</p></div>
-                                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button onClick={() => setNewSyl({ id: s.id, exam_id: selectedExamId, title: s.title, questions: s.questions, duration: s.duration, subject: s.subject, topic: s.topic })} className="text-indigo-600 p-3 bg-slate-50 rounded-xl"><PencilSquareIcon className="h-4 w-4" /></button>
-                                        <button onClick={() => { if(confirm("Detach?")) handleAction(() => adminOp('delete-row', { sheet: 'Syllabus', id: s.id })) }} className="text-red-500 p-3 bg-slate-50 rounded-xl"><TrashIcon className="h-4 w-4" /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <section className="pt-10 border-t-2">
-                             <h3 className="text-xl font-black uppercase mb-6 tracking-widest">Bulk Syllabus Sync</h3>
-                             <textarea value={sylBulkData} onChange={e => setSylBulkData(e.target.value)} placeholder="ID, ExamID, Title, QCount, Duration, Subject, Topic" className="w-full h-48 p-10 border rounded-[3.5rem] font-mono text-[10px] bg-slate-50 dark:bg-slate-900" />
-                             <button onClick={() => handleAction(() => adminOp('csv-update', { sheet: 'Syllabus', data: sylBulkData, mode: 'append' }))} className="w-full mt-6 bg-indigo-600 text-white py-6 rounded-2xl font-black uppercase">Append to Syllabus</button>
-                        </section>
-                    </div>
-                )}
-
-                {activeTab === 'bookstore' && (
-                    <div className="space-y-12">
-                        <section className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[4rem] border-2 border-slate-100 dark:border-slate-800">
-                            <h3 className="text-2xl font-black uppercase mb-8">{newBook.id ? 'Edit Book' : 'Register New Book'}</h3>
-                            <form onSubmit={(e) => { e.preventDefault(); handleAction(() => adminOp('update-book', { book: newBook })); setNewBook({ id: '', title: '', author: '', imageUrl: '', amazonLink: '' }); }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <input value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} placeholder="Book Title..." className="p-4 rounded-xl border-2 dark:bg-slate-800" required />
-                                <input value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} placeholder="Author..." className="p-4 rounded-xl border-2 dark:bg-slate-800" />
-                                <input value={newBook.amazonLink} onChange={e => setNewBook({...newBook, amazonLink: e.target.value})} placeholder="Amazon Link..." className="md:col-span-2 p-4 rounded-xl border-2 dark:bg-slate-800" required />
-                                <button type="submit" className="md:col-span-2 bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase shadow-xl">{newBook.id ? 'Update Book' : 'Inject Book'}</button>
-                            </form>
-                        </section>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {books.map(b => (
-                                <div key={b.id} className="p-7 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-between group hover:border-emerald-500 transition-all border border-transparent">
-                                    <div className="min-w-0 pr-6"><p className="font-black text-sm truncate uppercase mb-2">{b.title}</p><p className="text-[9px] text-slate-400 font-black uppercase">{b.author}</p></div>
-                                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button onClick={() => setNewBook({ id: b.id, title: b.title, author: b.author, imageUrl: b.imageUrl, amazonLink: b.amazonLink })} className="text-emerald-600 p-3 bg-white rounded-xl shadow-sm"><PencilSquareIcon className="h-5 w-5" /></button>
-                                        <button onClick={() => { if(confirm("Remove?")) handleAction(() => adminOp('delete-row', { sheet: 'Bookstore', id: b.id })) }} className="text-red-500 p-3 bg-white rounded-xl shadow-sm"><TrashIcon className="h-5 w-5" /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <section className="pt-10 border-t-2">
-                             <h3 className="text-xl font-black uppercase mb-6 tracking-widest">Bulk Book Imports</h3>
-                             <textarea value={bookBulkData} onChange={e => setBookBulkData(e.target.value)} placeholder="ID, Title, Author, ImageURL, AmazonLink" className="w-full h-48 p-10 border rounded-[3.5rem] font-mono text-[10px] bg-slate-50 dark:bg-slate-900" />
-                             <button onClick={() => handleAction(() => adminOp('csv-update', { sheet: 'Bookstore', data: bookBulkData, mode: 'append' }))} className="w-full mt-6 bg-emerald-600 text-white py-6 rounded-2xl font-black uppercase">Batch Import Books</button>
                         </section>
                     </div>
                 )}
 
                 {activeTab === 'subscriptions' && (
-                    <div className="max-w-xl mx-auto py-32 text-center">
-                        <div className={`p-20 rounded-[5rem] border-4 shadow-2xl transition-all duration-1000 ${isSubscriptionActive ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
-                            <div className={`${isSubscriptionActive ? 'text-indigo-600' : 'text-slate-400'} mb-12 scale-[2.5]`}><StarIcon className="h-16 w-16 mx-auto" /></div>
+                    <div className="max-w-3xl mx-auto space-y-12">
+                        <div className={`p-10 md:p-20 rounded-[5rem] border-4 shadow-2xl transition-all duration-1000 text-center ${isSubscriptionActive ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
+                            <div className={`${isSubscriptionActive ? 'text-indigo-600' : 'text-slate-400'} mb-12 scale-[1.5]`}><StarIcon className="h-16 w-16 mx-auto" /></div>
                             <h3 className="text-5xl font-black mb-8 uppercase tracking-tighter">Access Wall</h3>
                             <p className="text-sm text-slate-500 mb-16 font-bold uppercase tracking-widest leading-relaxed">Toggle the global subscription requirement.</p>
                             <button onClick={async () => { const newVal = !isSubscriptionActive; const token = await getToken(); handleAction(() => updateSetting('subscription_model_active', String(newVal), token)); }} disabled={loading} className={`w-full py-8 rounded-[2.5rem] font-black text-xs tracking-[0.4em] uppercase shadow-2xl ${isSubscriptionActive ? 'bg-indigo-600 text-white' : 'bg-slate-950 text-white'}`}>{isSubscriptionActive ? 'Suspend Paywall' : 'Initiate PRO Layer'}</button>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl">
+                            <h3 className="text-2xl font-black uppercase mb-6 tracking-tight flex items-center">
+                                <ShieldCheckIcon className="h-6 w-6 mr-3 text-indigo-600" />
+                                Payment Configuration
+                            </h3>
+                            <p className="text-slate-500 font-medium mb-8">Set your PayPal Client ID for live payments. Use 'sb' for testing.</p>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <input 
+                                    value={paypalClientId} 
+                                    onChange={e => setPaypalClientId(e.target.value)} 
+                                    placeholder="Enter PayPal Client ID..." 
+                                    className="flex-1 p-5 rounded-2xl border-2 dark:bg-slate-800 font-mono text-sm"
+                                />
+                                <button 
+                                    onClick={async () => {
+                                        const token = await getToken();
+                                        handleAction(() => updateSetting('paypal_client_id', paypalClientId, token));
+                                    }}
+                                    className="bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg hover:bg-emerald-700"
+                                >
+                                    Save Key
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

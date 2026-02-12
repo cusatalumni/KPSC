@@ -1,3 +1,4 @@
+
 import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book, Exam, ExamPageContent, PracticeTest, FeedbackData } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA, EXAMS_DATA, EXAM_CONTENT_MAP } from '../constants';
 import React from 'react';
@@ -110,7 +111,8 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
     }
 };
 
-export const getSettings = async () => fetchHub('type=settings', { subscription_model_active: 'true' });
+// Fix: Added paypal_client_id to the mock data to ensure TypeScript recognizes the property.
+export const getSettings = async () => fetchHub('type=settings', { subscription_model_active: 'true', paypal_client_id: 'sb' });
 
 export const updateSetting = async (key: string, value: string, token: string | null) => {
     const res = await fetch('/api/admin', {
