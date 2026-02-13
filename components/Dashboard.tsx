@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, Fragment } from 'react';
 import ExamCard from './ExamCard';
-import { getDetectedExams, getExams, getGk, getCurrentAffairs } from '../services/pscDataService';
+import { getExams, getGk, getCurrentAffairs } from '../services/pscDataService';
 import type { Exam, Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import NewsTicker from './NewsTicker';
@@ -63,26 +63,25 @@ const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate
 
 const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: (page: Page) => void; onStartStudy: (topic: string) => void; }> = ({ onNavigateToExam, onNavigate, onStartStudy }) => {
   const { t, language } = useTranslation();
-  const [detectedExams, setDetectedExams] = useState<Exam[]>([]);
   const [allExams, setAllExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getDetectedExams(), getExams()]).then(([detected, examsResult]) => {
-        setDetectedExams(detected); setAllExams(examsResult.exams); setLoading(false);
-    }).catch(err => { console.error(err); setLoading(false); });
+    getExams().then(res => {
+        setAllExams(res.exams);
+        setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   const groupedExams = useMemo(() => {
     const groups: Record<string, Exam[]> = {};
-    if (detectedExams.length > 0) groups['Live'] = detectedExams;
     allExams.forEach(exam => {
         const cat = exam.category || 'General';
         if (!groups[cat]) groups[cat] = [];
         groups[cat].push(exam);
     });
     return groups;
-  }, [detectedExams, allExams]);
+  }, [allExams]);
 
   const sortedCategoryIds = useMemo(() => {
     const priority = ['Live', 'General', 'Technical', 'Special'];
@@ -90,7 +89,14 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     return [...priority.filter(p => groupedExams[p]), ...others];
   }, [groupedExams]);
 
-  if (loading) return <div className="space-y-12 animate-pulse"><div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div></div>;
+  if (loading) return (
+    <div className="space-y-12 animate-pulse">
+        <div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[2.5rem]"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1,2,3,4].map(i => <div key={i} className="h-48 bg-slate-100 dark:bg-slate-900 rounded-[2rem]"></div>)}
+        </div>
+    </div>
+  );
 
   return (
     <div className="space-y-10">
