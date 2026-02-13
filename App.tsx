@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -46,18 +45,29 @@ const App: React.FC = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { theme } = useTheme();
 
-  // Reference to avoid loop dependency on syncStateFromHash
   const currentExamIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+      let isMounted = true;
       const init = async () => {
+          // Safety timeout for initial load
+          const timeout = setTimeout(() => {
+              if (isMounted && isAppLoading) setIsAppLoading(false);
+          }, 6000);
+
           try {
               const s = await getSettings();
-              setSettings(s);
-          } catch (e) { console.error(e); } 
-          finally { if (clerkLoaded) setIsAppLoading(false); }
+              if (isMounted) setSettings(s);
+          } catch (e) { console.error("Initial settings fetch failed:", e); } 
+          finally { 
+            if (isMounted && clerkLoaded) {
+                clearTimeout(timeout);
+                setIsAppLoading(false); 
+            }
+          }
       };
       init();
+      return () => { isMounted = false; };
   }, [clerkLoaded]);
 
   const syncStateFromHash = useCallback(async () => {
@@ -87,11 +97,15 @@ const App: React.FC = () => {
     
     if (targetPage === 'exam_details' && id) {
         const cleanId = String(id).trim().toLowerCase();
-        // Check if we are already viewing this exam to prevent reloading loops
         if (currentExamIdRef.current !== cleanId) {
             setIsExamLoading(true);
             try {
-                const exam = await getExamById(cleanId);
+                // Racing getExamById against a timeout to prevent infinite spinner
+                const exam = await Promise.race([
+                    getExamById(cleanId),
+                    new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000))
+                ]);
+                
                 if (exam) {
                     currentExamIdRef.current = cleanId;
                     setSelectedExam(exam);
@@ -100,7 +114,7 @@ const App: React.FC = () => {
                     window.location.hash = '#dashboard';
                 }
             } catch (e) {
-                console.error("Error loading exam:", e);
+                console.error("Error loading exam details:", e);
                 window.location.hash = '#dashboard';
             } finally {
                 setIsExamLoading(false);

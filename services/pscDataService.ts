@@ -1,4 +1,3 @@
-
 import type { Notification, PscUpdateItem, CurrentAffairsItem, GkItem, QuizQuestion, Book, Exam, ExamPageContent, PracticeTest, FeedbackData } from '../types';
 import { MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_QUESTION_BANK, MOCK_BOOKS_DATA, EXAMS_DATA, EXAM_CONTENT_MAP } from '../constants';
 import React from 'react';
@@ -10,10 +9,10 @@ import { LightBulbIcon } from '../components/icons/LightBulbIcon';
 import { StarIcon } from '../components/icons/StarIcon';
 import { GlobeAltIcon } from '../components/icons/GlobeAltIcon';
 
-// Session cache to prevent redundant API calls and loading loops
+// Session cache and promise handling to prevent redundant/hanging API calls
 let examsCache: Exam[] | null = null;
 let examsSource: 'database' | 'static' = 'static';
-let isFetchingExams = false;
+let pendingExamsPromise: Promise<{ exams: Exam[], source: 'database' | 'static' }> | null = null;
 
 const getIcon = (type: string) => {
     const icons: Record<string, any> = {
@@ -24,7 +23,7 @@ const getIcon = (type: string) => {
     return React.createElement(IconComp, { className: "h-8 w-8 text-indigo-500" });
 };
 
-const fetchWithTimeout = async (url: string, timeout = 8000) => {
+const fetchWithTimeout = async (url: string, timeout = 5000) => {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
@@ -39,7 +38,7 @@ const fetchWithTimeout = async (url: string, timeout = 8000) => {
 
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
-        const res = await fetchWithTimeout(`/api/data?${params}`);
+        const res = await fetchWithTimeout(`/api/data?${params}`, 8000);
         if (!res.ok) return mockData;
         const data = await res.json();
         return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
@@ -50,43 +49,50 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
 };
 
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
+    // 1. Return from cache if available
     if (examsCache) return { exams: examsCache, source: examsSource };
-    if (isFetchingExams) {
-        await new Promise(r => setTimeout(r, 300));
-        if (examsCache) return { exams: examsCache, source: examsSource };
-    }
-
-    isFetchingExams = true;
-    try {
-        const res = await fetchWithTimeout('/api/data?type=exams', 5000);
-        if (res.ok) {
-            const raw = await res.json();
-            if (Array.isArray(raw) && raw.length > 0) {
-                examsCache = raw.map((e: any) => ({
-                    id: String(e.id),
-                    title: { 
-                        ml: e.title_ml || e.titleMl, 
-                        en: e.title_en || e.titleEn || e.title_ml || e.titleMl 
-                    },
-                    description: { 
-                        ml: e.description_ml || e.descriptionMl, 
-                        en: e.description_en || e.descriptionEn || e.description_ml || e.descriptionMl 
-                    },
-                    category: e.category || 'General',
-                    level: e.level || 'Preliminary',
-                    icon: getIcon(e.icon_type || e.iconType)
-                }));
-                examsSource = 'database';
-                isFetchingExams = false;
-                return { exams: examsCache!, source: 'database' };
-            }
-        }
-    } catch (e) {}
     
-    examsCache = EXAMS_DATA;
-    examsSource = 'static';
-    isFetchingExams = false;
-    return { exams: EXAMS_DATA, source: 'static' };
+    // 2. Return the existing promise if a fetch is already in progress
+    if (pendingExamsPromise) return pendingExamsPromise;
+
+    // 3. Create a new promise and store it globally to handle concurrent requests
+    pendingExamsPromise = (async () => {
+        try {
+            const res = await fetchWithTimeout('/api/data?type=exams', 5000);
+            if (res.ok) {
+                const raw = await res.json();
+                if (Array.isArray(raw) && raw.length > 0) {
+                    examsCache = raw.map((e: any) => ({
+                        id: String(e.id),
+                        title: { 
+                            ml: e.title_ml || e.titleMl, 
+                            en: e.title_en || e.titleEn || e.title_ml || e.titleMl 
+                        },
+                        description: { 
+                            ml: e.description_ml || e.descriptionMl, 
+                            en: e.description_en || e.descriptionEn || e.description_ml || e.descriptionMl 
+                        },
+                        category: e.category || 'General',
+                        level: e.level || 'Preliminary',
+                        icon: getIcon(e.icon_type || e.iconType)
+                    }));
+                    examsSource = 'database';
+                    return { exams: examsCache!, source: 'database' };
+                }
+            }
+        } catch (e) {
+            console.error("API Error fetching exams, falling back to static:", e);
+        }
+        
+        // Final fallback if API fails or returns no data
+        examsCache = EXAMS_DATA;
+        examsSource = 'static';
+        return { exams: EXAMS_DATA, source: 'static' };
+    })();
+
+    const result = await pendingExamsPromise;
+    pendingExamsPromise = null; // Clean up after completion
+    return result;
 };
 
 export const getExamById = async (id: string): Promise<Exam | null> => {
@@ -111,7 +117,6 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
     }
 };
 
-// Fix: Added paypal_client_id to the mock data to ensure TypeScript recognizes the property.
 export const getSettings = async () => fetchHub('type=settings', { subscription_model_active: 'true', paypal_client_id: 'sb' });
 
 export const updateSetting = async (key: string, value: string, token: string | null) => {
