@@ -23,6 +23,7 @@ import { XMarkIcon } from '../icons/XMarkIcon';
 import { BellIcon } from '../icons/BellIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
+import { ArrowPathIcon } from '../icons/ArrowPathIcon';
 import type { Book, Exam, PracticeTest, QuizQuestion } from '../../types';
 
 type AdminTab = 'automation' | 'exams' | 'syllabus' | 'questions' | 'bookstore' | 'subscriptions';
@@ -42,14 +43,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [paypalClientId, setPaypalClientId] = useState('sb');
     const [dataSource, setDataSource] = useState<'Database' | 'Static Fallback'>('Static Fallback');
 
-    const [bulkData, setBulkData] = useState('');
-    const [sylBulkData, setSylBulkData] = useState('');
-    const [bookBulkData, setBookBulkData] = useState('');
-
     const [newQ, setNewQ] = useState<Partial<QuizQuestion>>({ id: '', question: '', topic: '', subject: 'GK', options: ['', '', '', ''], correctAnswerIndex: 0 });
     const [newExam, setNewExam] = useState({ id: '', title_ml: '', title_en: '', description_ml: '', category: 'General', level: 'Preliminary', icon_type: 'book' });
-    const [newSyl, setNewSyl] = useState({ id: '', exam_id: '', title: '', questions: 20, duration: 20, subject: 'GK', topic: 'General' });
-    const [newBook, setNewBook] = useState({ id: '', title: '', author: '', imageUrl: '', amazonLink: '' });
 
     const refresh = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -122,10 +117,14 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <main className="bg-white dark:bg-slate-950 p-6 md:p-10 rounded-[3.5rem] shadow-2xl border dark:border-slate-800 min-h-[600px]">
                 {activeTab === 'automation' && (
                     <div className="space-y-12">
-                        <div className="bg-indigo-50 dark:bg-indigo-900/10 p-10 rounded-[3rem] border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between">
+                        <div className="bg-indigo-50 dark:bg-indigo-900/10 p-10 rounded-[3rem] border border-indigo-100 dark:border-indigo-900/30 flex flex-col md:flex-row items-center justify-between gap-6">
                             <div><h3 className="text-2xl font-black uppercase tracking-tighter">Maintenance Suite</h3><p className="text-sm font-bold text-slate-500 mt-2">Append fresh data or synchronize cloud layers.</p></div>
-                            <div className="flex space-x-4">
+                            <div className="flex flex-wrap gap-4">
                                 <button onClick={() => handleAction(() => adminOp('sync-all'))} className="bg-indigo-600 text-white px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-indigo-700">Master Push: Sheets → DB</button>
+                                <button onClick={() => handleAction(() => adminOp('sync-syllabus-linking'))} className="bg-teal-600 text-white px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-teal-700 flex items-center space-x-2">
+                                    <ArrowPathIcon className="h-4 w-4" />
+                                    <span>Link Syllabus to QB</span>
+                                </button>
                                 <button onClick={() => handleAction(() => adminOp('clear-study-cache'))} className="bg-rose-100 text-rose-700 px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Flush AI Cache</button>
                             </div>
                         </div>

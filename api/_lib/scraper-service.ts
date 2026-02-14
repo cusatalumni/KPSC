@@ -32,6 +32,18 @@ async function getNextId(sheetRange: string, startFrom: number = 1000): Promise<
     } catch (e) { return startFrom; }
 }
 
+/**
+ * Ensures an Amazon link has the affiliate tag appended correctly.
+ */
+function formatAffiliateLink(link: string): string {
+    if (!link || !link.includes('amazon.in')) return link;
+    
+    // Clean existing tags if any to prevent duplicates
+    let cleanLink = link.split('?')[0]; 
+    // Add our tag
+    return `${cleanLink}?${AFFILIATE_TAG}`;
+}
+
 export async function scrapeKpscNotifications() {
     try {
         const ai = getAi();
@@ -76,7 +88,7 @@ export async function scrapePscLiveUpdates() {
                 tools: [{ googleSearch: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
-                    type: Type.ARRAY, items: {
+                    type: Type.ARRAY items: {
                         type: Type.OBJECT, properties: {
                             title: { type: Type.STRING }, url: { type: Type.STRING },
                             section: { type: Type.STRING }, published_date: { type: Type.STRING }
@@ -204,35 +216,59 @@ export async function runDailyUpdateScrapers() {
 }
 
 export async function runBookScraper() {
-    const ai = getAi();
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", 
-        contents: `Search for top 10 latest Kerala PSC rank files on Amazon.in. Return JSON array with 'title', 'author', 'amazonLink'.`,
-        config: {
-            tools: [{ googleSearch: {} }],
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.ARRAY, items: {
-                    type: Type.OBJECT, properties: {
-                        title: { type: Type.STRING }, author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
-                    }, required: ["title", "author", "amazonLink"]
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview", 
+            contents: `Search for top 10 latest Kerala PSC rank files on Amazon.in. Return JSON array with 'title', 'author', 'amazonLink'.`,
+            config: {
+                tools: [{ googleSearch: {} }],
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY, items: {
+                        type: Type.OBJECT, properties: {
+                            title: { type: Type.STRING }, author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
+                        }, required: ["title", "author", "amazonLink"]
+                    }
                 }
             }
+        });
+
+        const items = JSON.parse(response.text || "[]");
+        if (items.length > 0) {
+            const existing = await readSheetData('Bookstore!A2:E');
+            const baseId = await getNextId('Bookstore!A2:A', 3000);
+            
+            // Normalize existing titles for comparison
+            const existingTitles = new Set(existing.map(r => String(r[1]).toLowerCase().trim()));
+            
+            // Process new items and apply affiliate tag
+            const uniqueNew = items.filter((it: any) => !existingTitles.has(it.title.toLowerCase().trim()));
+            
+            if (uniqueNew.length > 0) {
+                const finalItems = uniqueNew.map((it: any, idx: number) => {
+                    const affiliateLink = formatAffiliateLink(it.amazonLink);
+                    return {
+                        id: String(baseId + idx),
+                        title: it.title,
+                        author: it.author,
+                        imageUrl: "", // Handled by BookCover component procedurally if empty
+                        amazonLink: affiliateLink
+                    };
+                });
+
+                const sheetData = finalItems.map(it => [it.id, it.title, it.author, it.imageUrl, it.amazonLink]);
+                
+                await appendSheetData('Bookstore!A1', sheetData);
+                await upsertSupabaseData('bookstore', finalItems);
+                
+                return { success: true, message: `${finalItems.length} new books with affiliate tags added.` };
+            }
+            return { success: true, message: "No new unique books found." };
         }
-    });
-    const items = JSON.parse(response.text || "[]");
-    if (items.length) {
-        const existing = await readSheetData('Bookstore!A2:E');
-        const baseId = await getNextId('Bookstore!A2:A', 3000);
-        const existingTitles = new Set(existing.map(r => String(r[1]).toLowerCase().trim()));
-        const uniqueNew = items.filter(it => !existingTitles.has(it.title.toLowerCase().trim()));
-        
-        if (uniqueNew.length > 0) {
-            const sheetData = uniqueNew.map((it, idx) => [String(baseId + idx), it.title, it.author, "", it.amazonLink]);
-            await appendSheetData('Bookstore!A1', sheetData);
-            await upsertSupabaseData('bookstore', uniqueNew.map((it, idx) => ({ id: String(baseId + idx), title: it.title, author: it.author, imageUrl: "", amazonLink: it.amazonLink })));
-        }
-        return true;
+        return { success: false, message: "AI could not find any books." };
+    } catch (e: any) {
+        console.error("Book Scraper Error:", e.message);
+        throw e;
     }
-    return false;
 }

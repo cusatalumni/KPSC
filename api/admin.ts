@@ -36,6 +36,64 @@ function createNumericHash(str: string): number {
     return Math.abs(hash);
 }
 
+/**
+ * Intelligent Audit: Fixes Syllabus subject/topic based on actual data in QuestionBank.
+ */
+async function auditAndRepairSyllabus() {
+    if (!supabase) throw new Error("Supabase required for audit.");
+    
+    // 1. Get all unique tags from QuestionBank
+    const { data: qbData } = await supabase.from('questionbank').select('subject, topic');
+    if (!qbData || qbData.length === 0) return { message: "Question Bank is empty." };
+    
+    // Explicitly typed the sets as string sets to prevent 'unknown' issues in Array.from processing
+    const validSubjects = new Set<string>(qbData.map(q => String(q.subject || '').trim()).filter(Boolean));
+    const validTopics = new Set<string>(qbData.map(q => String(q.topic || '').trim()).filter(Boolean));
+    
+    // 2. Get all Syllabus entries
+    const { data: syllabus } = await supabase.from('syllabus').select('*');
+    if (!syllabus || syllabus.length === 0) return { message: "Syllabus table is empty." };
+    
+    let repairedCount = 0;
+    const repairedItems = [];
+
+    for (const item of syllabus) {
+        let changed = false;
+        let s = String(item.subject || '').trim();
+        let t = String(item.topic || '').trim();
+
+        // Match Subject
+        if (s && !validSubjects.has(s)) {
+            // Find fuzzy match or fallback to closest. Added explicit string type for vs.
+            const match = Array.from(validSubjects).find((vs: string) => vs.toLowerCase() === s.toLowerCase() || vs.toLowerCase().includes(s.toLowerCase()));
+            if (match) { s = match; changed = true; }
+        }
+
+        // Match Topic
+        if (t && !validTopics.has(t)) {
+            // Find fuzzy match or fallback to closest. Added explicit string type for vt.
+            const match = Array.from(validTopics).find((vt: string) => vt.toLowerCase() === t.toLowerCase() || vt.toLowerCase().includes(t.toLowerCase()));
+            if (match) { t = match; changed = true; }
+        }
+
+        if (changed) {
+            const updated = { ...item, subject: s, topic: t };
+            repairedItems.push(updated);
+            repairedCount++;
+            
+            // Sync to Sheets too
+            await findAndUpsertRow('Syllabus', String(item.id), [item.id, item.exam_id, item.title, item.questions, item.duration, s, t]);
+        }
+    }
+
+    if (repairedCount > 0) {
+        await upsertSupabaseData('syllabus', repairedItems);
+        return { message: `Linking Audit Finished. Repaired ${repairedCount} syllabus entries to match Question Bank tags.` };
+    }
+
+    return { message: "Audit Finished. All syllabus entries are already correctly mapped to Question Bank tags." };
+}
+
 export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
         const authHeader = req.headers.authorization;
@@ -123,6 +181,9 @@ export default async function handler(req: any, res: any) {
                 try { await readSheetData('Settings!A1:A1'); sS = true; } catch (e) {}
                 try { if (supabase) { const { error } = await supabase.from('settings').select('key').limit(1); sbS = !error; } } catch (e) {}
                 return res.status(200).json({ status: { sheets: sS, supabase: sbS } });
+
+            case 'sync-syllabus-linking': 
+                return res.status(200).json(await auditAndRepairSyllabus());
 
             case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());

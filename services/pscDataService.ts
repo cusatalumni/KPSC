@@ -9,6 +9,8 @@ import { LightBulbIcon } from '../components/icons/LightBulbIcon';
 import { StarIcon } from '../components/icons/StarIcon';
 import { GlobeAltIcon } from '../components/icons/GlobeAltIcon';
 
+let isFetchingExams = false;
+
 const getIcon = (type: string) => {
     const icons: Record<string, any> = {
         'book': BookOpenIcon, 'shield': ShieldCheckIcon, 'cap': AcademicCapIcon,
@@ -18,7 +20,7 @@ const getIcon = (type: string) => {
     return React.createElement(IconComp, { className: "h-8 w-8 text-indigo-500" });
 };
 
-const fetchWithTimeout = async (url: string, timeout = 4000) => {
+const fetchWithTimeout = async (url: string, timeout = 3000) => {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
@@ -31,43 +33,46 @@ const fetchWithTimeout = async (url: string, timeout = 4000) => {
     }
 };
 
-/**
- * Fetches all exams with a strict timeout and fallback to hardcoded data.
- */
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
+    if (isFetchingExams) return { exams: EXAMS_DATA, source: 'static' };
+    
+    isFetchingExams = true;
     try {
         const res = await fetchWithTimeout('/api/data?type=exams');
         if (res.ok) {
             const raw = await res.json();
             if (Array.isArray(raw) && raw.length > 0) {
                 const formatted: Exam[] = raw.map((e: any) => ({
-                    id: String(e.id),
+                    id: String(e.id || e.ID).trim().toLowerCase(),
                     title: { 
-                        ml: e.title_ml || e.titleMl, 
-                        en: e.title_en || e.titleEn || e.title_ml || e.titleMl 
+                        ml: e.title_ml || e.titleMl || e.Title_ml || 'PSC Exam', 
+                        en: e.title_en || e.titleEn || e.title_ml || 'PSC Exam'
                     },
                     description: { 
-                        ml: e.description_ml || e.descriptionMl, 
-                        en: e.description_en || e.descriptionEn || e.description_ml || e.descriptionMl 
+                        ml: e.description_ml || e.descriptionMl || '', 
+                        en: e.description_en || e.descriptionEn || e.description_ml || ''
                     },
                     category: e.category || 'General',
                     level: e.level || 'Preliminary',
                     icon: getIcon(e.icon_type || e.iconType)
                 }));
+                isFetchingExams = false;
                 return { exams: formatted, source: 'database' };
             }
         }
     } catch (e) {
-        console.warn("Database fetch failed or timed out, using fallback data.");
+        console.error("Exam sync failed:", e);
     }
     
+    isFetchingExams = false;
     return { exams: EXAMS_DATA, source: 'static' };
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
-    const fallback = EXAM_CONTENT_MAP[examId]?.practiceTests || [];
+    const cleanId = String(examId).trim().toLowerCase();
+    const fallback = EXAM_CONTENT_MAP[cleanId]?.practiceTests || EXAM_CONTENT_MAP['ldc_lgs']?.practiceTests || [];
     try {
-        const res = await fetchWithTimeout(`/api/data?type=syllabus&examId=${examId}`);
+        const res = await fetchWithTimeout(`/api/data?type=syllabus&examId=${cleanId}`);
         if (res.ok) {
             const data = await res.json();
             return Array.isArray(data) && data.length > 0 ? data : fallback;
@@ -78,23 +83,14 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
 
 export const getSettings = async () => {
     try {
-        const res = await fetchWithTimeout('/api/data?type=settings');
+        const res = await fetchWithTimeout('/api/data?type=settings', 2000);
         if (res.ok) return await res.json();
     } catch (e) {}
     return { subscription_model_active: 'true', paypal_client_id: 'sb' };
 };
 
-export const updateSetting = async (key: string, value: string, token: string | null) => {
-    const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ action: 'update-setting', setting: { key, value } })
-    });
-    return res.json();
-};
-
 export const getQuestionsForTest = async (subject: string, topic: string, count: number): Promise<QuizQuestion[]> => {
-    const fallback = MOCK_QUESTION_BANK.slice(0, count);
+    const fallback = MOCK_QUESTION_BANK.slice(0, count || 20);
     try {
         const res = await fetchWithTimeout(`/api/data?type=questions&subject=${encodeURIComponent(subject)}&topic=${encodeURIComponent(topic)}&count=${count}`, 8000);
         if (res.ok) {
@@ -105,7 +101,6 @@ export const getQuestionsForTest = async (subject: string, topic: string, count:
     return fallback;
 };
 
-// Generic fetch helpers
 const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
     try {
         const res = await fetchWithTimeout(`/api/data?${params}`);
@@ -147,6 +142,15 @@ export const clearStudyCache = (token: string | null) => fetch('/api/admin', {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({ action: 'clear-study-cache' })
 });
+
+export const updateSetting = async (key: string, value: string, token: string | null) => {
+    const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ action: 'update-setting', setting: { key, value } })
+    });
+    return res.json();
+};
 
 export const getStudyMaterial = async (topic: string): Promise<{ notes: string }> => {
     const res = await fetch('/api/study-material', {

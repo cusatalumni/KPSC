@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -26,7 +26,7 @@ import ExternalViewerPage from './components/pages/ExternalViewerPage';
 import FeedbackPage from './components/pages/FeedbackPage';
 import LoadingScreen from './components/LoadingScreen';
 import type { Exam, SubscriptionStatus, ActiveTest, Page, QuizQuestion, UserAnswers } from './types';
-import { EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
+import { EXAMS_DATA, EXAM_CONTENT_MAP, LDC_EXAM_CONTENT, MOCK_TESTS_DATA } from './constants'; 
 import { subscriptionService } from './services/subscriptionService';
 import { getSettings, getExams } from './services/pscDataService';
 import { useTheme } from './contexts/ThemeContext';
@@ -36,8 +36,8 @@ const App: React.FC = () => {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   
-  // Data States
-  const [allExams, setAllExams] = useState<Exam[]>([]);
+  // App States
+  const [allExams, setAllExams] = useState<Exam[]>(EXAMS_DATA);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeTest, setActiveTest] = useState<ActiveTest | null>(null);
   const [testResult, setTestResult] = useState<{ score: number; total: number; stats?: any; questions?: QuizQuestion[]; answers?: UserAnswers } | null>(null);
@@ -47,59 +47,80 @@ const App: React.FC = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>('free');
   const { theme } = useTheme();
 
-  // 1. Initial Load: Settings and All Exams
+  const isInitialized = useRef(false);
+
+  // 1. App Initialization with Safety Timeout
   useEffect(() => {
-      let isMounted = true;
+      if (isInitialized.current) return;
+      isInitialized.current = true;
+
+      // Force-hide loading screen after 5 seconds if Clerk is hanging
+      const safetyTimer = setTimeout(() => {
+          setIsAppLoading(false);
+      }, 5000);
+
       const initApp = async () => {
           try {
               const [s, eRes] = await Promise.all([getSettings(), getExams()]);
-              if (isMounted) {
-                  setSettings(s);
+              setSettings(s);
+              if (eRes && eRes.exams && eRes.exams.length > 0) {
                   setAllExams(eRes.exams);
               }
           } catch (e) {
-              console.error("Initialization failed:", e);
+              console.error("Init Error:", e);
           } finally {
-              if (isMounted && clerkLoaded) {
+              if (clerkLoaded) {
+                  clearTimeout(safetyTimer);
                   setIsAppLoading(false);
               }
           }
       };
+
       initApp();
-      return () => { isMounted = false; };
+      return () => clearTimeout(safetyTimer);
   }, [clerkLoaded]);
 
-  // 2. Synchronize Page state from URL Hash
+  // 2. Synchronize State from URL Hash
   const syncStateFromHash = useCallback(() => {
     const rawHash = window.location.hash || '#dashboard';
     const [hashPath, hashQuery] = rawHash.replace(/^#\/?/, '').split('?');
     const parts = hashPath.split('/');
     const pageName = parts[0] as Page;
-    const id = parts[1];
 
-    // Find the correct exam object if we are on details page
-    if (pageName === 'exam_details' && id && allExams.length > 0) {
-        const found = allExams.find(e => String(e.id).toLowerCase() === String(id).toLowerCase());
-        setSelectedExam(found || null);
+    // Reset contextual states
+    setActiveTest(null);
+    setSelectedExam(null);
+    setActiveStudyTopic(null);
+
+    // EXAM DETAILS: #exam_details/id
+    if (pageName === 'exam_details' && parts[1]) {
+        const found = allExams.find(e => String(e.id).toLowerCase() === parts[1].toLowerCase());
+        if (found) setSelectedExam(found);
     }
 
-    // Handle Study Material Deep Links
-    if (pageName === 'study_material' && id) {
-        setActiveStudyTopic(decodeURIComponent(id));
-    }
-
-    // Handle Mock Test Deep Links
-    if (pageName === 'test' && id === 'mock' && parts[2]) {
-        const mt = MOCK_TESTS_DATA.find(m => String(m.id) === String(parts[2]));
-        if (mt) {
-            setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed' });
+    // TEST ROUTING: #test/subject/topic/count/title
+    if (pageName === 'test') {
+        if (parts[1] === 'mock' && parts[2]) {
+            const mt = MOCK_TESTS_DATA.find(m => String(m.id) === String(parts[2]));
+            if (mt) {
+                setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed', negativeMarking: mt.negativeMarking });
+            }
+        } else if (parts[1] && parts[2] && parts[3]) {
+            setActiveTest({
+                subject: parts[1],
+                topic: parts[2],
+                questionsCount: parseInt(parts[3]) || 20,
+                title: parts[4] ? decodeURIComponent(parts[4]) : parts[2]
+            });
         }
     }
 
-    // External Viewer
+    if (pageName === 'study_material' && parts[1]) {
+        setActiveStudyTopic(decodeURIComponent(parts[1]));
+    }
+
     if (pageName === 'external_viewer' && hashQuery) {
-        const urlParams = new URLSearchParams(hashQuery);
-        setExternalUrl(urlParams.get('url'));
+        setExternalUrl(new URLSearchParams(hashQuery).get('url'));
     }
 
     setCurrentPage(pageName || 'dashboard');
@@ -114,7 +135,7 @@ const App: React.FC = () => {
     }
   }, [syncStateFromHash, isAppLoading]);
 
-  // 3. Handle Subscription Status
+  // 3. Subscription Handling
   useEffect(() => {
     if (settings.subscription_model_active === 'false') {
         setSubscriptionStatus('pro');
@@ -149,11 +170,11 @@ const App: React.FC = () => {
                         content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} 
                         onBack={() => handleNavigate('dashboard')} 
                         onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} 
-                        onStartStudy={()=>{}} 
+                        onStartStudy={(t: string) => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
                         onNavigate={handleNavigate}
                     />
                 ) : (
-                    <div className="p-20 text-center text-slate-400 font-bold tracking-widest animate-pulse uppercase">Searching for exam registry...</div>
+                    <div className="p-20 text-center text-slate-400 font-bold animate-pulse">EXAM DATA SYNC...</div>
                 );
             case 'test': 
                 return activeTest ? (
@@ -168,19 +189,15 @@ const App: React.FC = () => {
                         onNavigateToUpgrade={() => handleNavigate('upgrade')} 
                     />
                 ) : (
-                    <div className="p-20 text-center font-black animate-pulse">PREPARING QUESTION BANK...</div>
+                    <div className="flex flex-col items-center justify-center p-20 space-y-4">
+                        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="font-black text-slate-400 animate-pulse uppercase">Initializing Question Stream...</p>
+                    </div>
                 );
             case 'results': 
                 return testResult ? (
-                    <TestResultPage 
-                        score={testResult.score} 
-                        total={testResult.total} 
-                        stats={testResult.stats} 
-                        questions={testResult.questions} 
-                        answers={testResult.answers} 
-                        onBackToPrevious={() => handleNavigate('dashboard')} 
-                    />
-                ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={()=>{}} />;
+                    <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} questions={testResult.questions} answers={testResult.answers} onBackToPrevious={() => handleNavigate('dashboard')} />
+                ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
             case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
             case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={(c) => handleNavigate(`test/${c.id.split('_')[0]}/mixed/15/${encodeURIComponent(c.title.ml)}`)} subscriptionStatus={subscriptionStatus} />;
             case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(t) => handleNavigate(`test/mock/${t.id}`)} />;
@@ -198,11 +215,7 @@ const App: React.FC = () => {
             case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
             case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
             default: return (
-                <Dashboard 
-                    onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} 
-                    onNavigate={handleNavigate} 
-                    onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} 
-                />
+                <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />
             );
           }
         })()}

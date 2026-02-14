@@ -44,32 +44,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Manjari:wght@400;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
       window.process = window.process || { env: {} };
-      window.onerror = function(msg, url, line, col, error) {
-        // Ignore minor/external script errors that don't break core app logic
-        const ignoredErrors = ["paypal", "adsbygoogle", "host"];
-        if (ignoredErrors.some(term => String(msg).toLowerCase().includes(term))) {
-            console.warn("Minor external error ignored:", msg);
-            return false;
-        }
-
-        console.error("Critical Error:", msg);
-        const root = document.getElementById('root');
-        // Only show fatal error UI if root is completely empty (initial load failed)
-        if (root && root.innerHTML.trim() === "") {
-          root.innerHTML = '<div style="padding: 40px; color: #ef4444; font-family: sans-serif; text-align: center; background: #0f172a; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">' +
-            '<h2 style="font-weight: bold; font-size: 28px; color: white;">Application Load Error</h2>' +
-            '<p style="margin-top: 15px; opacity: 0.7; color: #94a3b8; max-width: 400px;">' + (msg || "An unexpected error occurred during startup.") + '</p>' +
-            '<button onClick="window.location.reload()" style="margin-top: 30px; background: #4f46e5; color: white; padding: 12px 24px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer;">Retry Loading</button>' +
-            '</div>';
-        }
-        return false;
-      };
     </script>
     <style>
-      body { 
-        font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif; 
-        margin: 0;
-      }
+      body { font-family: 'Noto Sans Malayalam', 'Manjari', sans-serif; margin: 0; }
       .ticker-wrap { flex-grow: 1; overflow: hidden; }
       .ticker-move { display: flex; animation: ticker-scroll 40s linear infinite; }
       @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
@@ -77,26 +54,7 @@
       @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
       .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
       @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-      }
-      .dark .glass-card {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(30, 41, 59, 0.5);
-      }
-      .btn-vibrant-indigo {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      }
-      .premium-gradient {
-        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      }
-      .gold-text {
-        background: linear-gradient(to bottom right, #f59e0b, #fbbf24, #d97706);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
+      .btn-vibrant-indigo { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
     </style>
   <link rel="stylesheet" href="/index.css">
 </head>
