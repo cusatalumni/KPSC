@@ -1,3 +1,4 @@
+
 import { readSheetData } from './_lib/sheets-service.js';
 import { supabase } from './_lib/supabase-service.js';
 
@@ -75,6 +76,14 @@ export default async function handler(req: any, res: any) {
                             id: String(e.id), title_ml: e.title_ml, title_en: e.title_en || e.title_ml, description_ml: e.description_ml, description_en: e.description_en || e.description_ml, category: e.category, level: e.level, icon_type: e.icon_type
                         })));
                     }
+                    // Fix: Map snake_case exam_id to camelCase examId for PracticeTest interface compatibility
+                    if (tableName === 'syllabus') {
+                        return res.status(200).json(data.map(item => ({ 
+                            ...item, 
+                            id: String(item.id),
+                            examId: item.exam_id 
+                        })));
+                    }
                     return res.status(200).json(data.map(item => ({ ...item, id: item.id ? String(item.id) : undefined })));
                 }
 
@@ -105,8 +114,9 @@ export default async function handler(req: any, res: any) {
                 })));
             case 'syllabus':
                 const sylRows = await readSheetData('Syllabus!A2:G');
+                // Fix: Return examId instead of exam_id to match frontend PracticeTest interface
                 return res.status(200).json(sylRows.filter(r => r[0] && (!examId || String(r[1]) === String(examId))).map(r => ({
-                    id: String(r[0]), exam_id: String(r[1]), title: r[2], questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: r[5], topic: r[6]
+                    id: String(r[0]), examId: String(r[1]), title: r[2], questions: parseInt(r[3] || '20'), duration: parseInt(r[4] || '20'), subject: r[5], topic: r[6]
                 })));
             case 'questions':
                 const qRows = await readSheetData('QuestionBank!A2:H');

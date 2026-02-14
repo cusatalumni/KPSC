@@ -123,6 +123,8 @@ export interface PracticeTest {
   duration: number;
   subject: string;
   topic: string;
+  // Added examId to support linking practice tests to exams and fix TypeScript errors in admin components
+  examId?: string;
 }
 
 export interface ExamPageContent {
