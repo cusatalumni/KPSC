@@ -15,12 +15,26 @@ import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase
 const smartParseOptions = (raw: any): string[] => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
+    
     let clean = String(raw).trim();
+    
+    // AI output often includes backslash escapes for quotes inside the CSV string
+    // e.g., "[\"Option A\", \"Option B\"]" -> [\"Option A\", \"Option B\"]
+    // We need to unescape these so JSON.parse works.
+    clean = clean.replace(/\\"/g, '"');
+    
     if (clean.startsWith('[') && clean.endsWith(']')) {
-        try { return JSON.parse(clean); } catch (e) {
-            try { return JSON.parse(clean.replace(/'/g, '"')); } catch (e2) {
+        try { 
+            return JSON.parse(clean); 
+        } catch (e) {
+            try { 
+                // Try fixing common JSON issues like single quotes
+                return JSON.parse(clean.replace(/'/g, '"')); 
+            } catch (e2) {
+                // Last resort: split by pipe or comma if it looks like a list
                 const inner = clean.slice(1, -1).trim();
-                return inner.split('|').map(s => s.trim());
+                if (inner.includes('|')) return inner.split('|').map(s => s.trim());
+                return inner.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
             }
         }
     }
@@ -43,15 +57,12 @@ function createNumericHash(str: string): number {
 async function auditAndRepairSyllabus() {
     if (!supabase) throw new Error("Supabase required for audit.");
     
-    // 1. Get all unique tags from QuestionBank
     const { data: qbData } = await supabase.from('questionbank').select('subject, topic');
     if (!qbData || qbData.length === 0) return { message: "Question Bank is empty." };
     
     const validSubjects = new Set<string>(qbData.map(q => String(q.subject || '').trim()).filter(Boolean));
     const validTopics = new Set<string>(qbData.map(q => String(q.topic || '').trim()).filter(Boolean));
     
-    // 2. Get all Syllabus entries
-    // Fixed: Removed invalid self-reference 'await syllabus ?' which caused usage before declaration error.
     const { data: syllabus } = await supabase.from('syllabus').select('*');
     if (!syllabus || syllabus.length === 0) return { message: "Syllabus table is empty." };
     
@@ -83,30 +94,49 @@ async function auditAndRepairSyllabus() {
 
     if (repairedCount > 0) {
         await upsertSupabaseData('syllabus', repairedItems);
-        return { message: `Linking Audit Finished. Repaired ${repairedCount} syllabus entries to match Question Bank tags.` };
+        return { message: `Linking Audit Finished. Repaired ${repairedCount} syllabus entries.` };
     }
-    return { message: "Audit Finished. All syllabus entries are already correctly mapped to Question Bank tags." };
+    return { message: "Audit Finished. No repairs needed." };
 }
 
 /**
- * Parses CSV string into an array of objects
+ * Enhanced CSV Parser that correctly handles quoted fields containing commas
  */
 function parseCSV(csv: string) {
-    const lines = csv.split('\n');
+    const lines = csv.split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (lines.length === 0) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     const result = [];
-    const headers = lines[0].split(',').map(h => h.trim());
 
     for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const obj: any = {};
-        const currentline = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split by comma but respect quotes
-        
-        for (let j = 0; j < headers.length; j++) {
-            let val = currentline[j]?.trim();
-            if (val?.startsWith('"') && val?.endsWith('"')) val = val.substring(1, val.length - 1);
-            obj[headers[j]] = val;
+        const line = lines[i];
+        const row: any = {};
+        const values = [];
+        let currentValue = '';
+        let insideQuotes = false;
+
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"' && line[j+1] === '"') { // Handle escaped double quotes
+                currentValue += '"';
+                j++;
+            } else if (char === '"') {
+                insideQuotes = !insideQuotes;
+            } else if (char === ',' && !insideQuotes) {
+                values.push(currentValue);
+                currentValue = '';
+            } else {
+                currentValue += char;
+            }
         }
-        result.push(obj);
+        values.push(currentValue); // Add the last value
+
+        headers.forEach((header, index) => {
+            let val = values[index]?.trim() || '';
+            row[header] = val;
+        });
+        result.push(row);
     }
     return result;
 }
@@ -142,30 +172,51 @@ export default async function handler(req: any, res: any) {
     try {
         switch (action) {
             case 'bulk-upload-questions':
+                if (!csv) throw new Error("CSV data is required.");
                 const parsed = parseCSV(csv);
-                const baseId = Date.now();
-                const sheetRows = parsed.map((q, idx) => [
-                    q.id || (baseId + idx),
-                    q.topic,
-                    q.question,
-                    q.options,
-                    q.correctAnswerIndex,
-                    q.subject,
-                    q.difficulty || 'Moderate'
+                if (parsed.length === 0) throw new Error("No valid data found in CSV.");
+
+                const baseTime = Date.now();
+                
+                // Map the parsed data ensuring the property names match (case insensitive)
+                const sbItems = parsed.map((row, idx) => {
+                    // Try to find the keys regardless of exact casing
+                    const id = parseInt(row.id || row.ID || (baseTime + idx));
+                    const topic = row.topic || '';
+                    const questionText = row.question || row.questiontext || '';
+                    const rawOptions = row.options || '[]';
+                    const correctIdx = parseInt(row.correctanswerindex || row.correct_answer_index || row.answer || '0');
+                    const subject = row.subject || 'General';
+                    const difficulty = row.difficulty || 'Moderate';
+
+                    const finalOptions = smartParseOptions(rawOptions);
+
+                    return {
+                        id,
+                        topic,
+                        question: questionText,
+                        options: finalOptions,
+                        correct_answer_index: correctIdx,
+                        subject,
+                        difficulty
+                    };
+                });
+
+                // For Google Sheets, we store options as a clean JSON string
+                const sheetRows = sbItems.map(item => [
+                    item.id,
+                    item.topic,
+                    item.question,
+                    JSON.stringify(item.options),
+                    item.correct_answer_index,
+                    item.subject,
+                    item.difficulty
                 ]);
-                const sbItems = parsed.map((q, idx) => ({
-                    id: parseInt(String(q.id || (baseId + idx))),
-                    topic: q.topic,
-                    question: q.question,
-                    options: smartParseOptions(q.options),
-                    correct_answer_index: parseInt(String(q.correctAnswerIndex)),
-                    subject: q.subject,
-                    difficulty: q.difficulty || 'Moderate'
-                }));
                 
                 await appendSheetData('QuestionBank!A1', sheetRows);
                 if (supabase) await upsertSupabaseData('questionbank', sbItems);
-                return res.status(200).json({ message: `${parsed.length} questions imported successfully.` });
+                
+                return res.status(200).json({ message: `Successfully imported ${sbItems.length} questions.` });
 
             case 'update-syllabus':
                 const sylId = syllabus.id || `syl_${Date.now()}`;
