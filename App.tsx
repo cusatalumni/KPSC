@@ -49,56 +49,57 @@ const App: React.FC = () => {
 
   const isInitialized = useRef(false);
 
-  // 1. App Initialization with Safety Timeout
+  // 1. Data Initialization (Runs once)
   useEffect(() => {
       if (isInitialized.current) return;
       isInitialized.current = true;
 
-      // Force-hide loading screen after 5 seconds if Clerk is hanging
-      const safetyTimer = setTimeout(() => {
-          setIsAppLoading(false);
-      }, 5000);
-
-      const initApp = async () => {
+      const initData = async () => {
           try {
               const [s, eRes] = await Promise.all([getSettings(), getExams()]);
-              setSettings(s);
+              if (s) setSettings(s);
               if (eRes && eRes.exams && eRes.exams.length > 0) {
                   setAllExams(eRes.exams);
               }
           } catch (e) {
-              console.error("Init Error:", e);
-          } finally {
-              if (clerkLoaded) {
-                  clearTimeout(safetyTimer);
-                  setIsAppLoading(false);
-              }
+              console.error("Data Init Error:", e);
           }
       };
+      initData();
+  }, []);
 
-      initApp();
-      return () => clearTimeout(safetyTimer);
+  // 2. Loading State Logic (Reactive to Clerk + Safety Timeout)
+  useEffect(() => {
+      // Exit loading if Clerk is ready
+      if (clerkLoaded) {
+          setIsAppLoading(false);
+      }
+
+      // Hard safety exit after 6 seconds regardless of anything
+      const safetyExit = setTimeout(() => {
+          setIsAppLoading(false);
+      }, 6000);
+
+      return () => clearTimeout(safetyExit);
   }, [clerkLoaded]);
 
-  // 2. Synchronize State from URL Hash
+  // 3. Synchronize State from URL Hash
   const syncStateFromHash = useCallback(() => {
     const rawHash = window.location.hash || '#dashboard';
     const [hashPath, hashQuery] = rawHash.replace(/^#\/?/, '').split('?');
     const parts = hashPath.split('/');
     const pageName = parts[0] as Page;
 
-    // Reset contextual states
+    // Reset contextual states to avoid data bleed
     setActiveTest(null);
     setSelectedExam(null);
     setActiveStudyTopic(null);
 
-    // EXAM DETAILS: #exam_details/id
     if (pageName === 'exam_details' && parts[1]) {
         const found = allExams.find(e => String(e.id).toLowerCase() === parts[1].toLowerCase());
         if (found) setSelectedExam(found);
     }
 
-    // TEST ROUTING: #test/subject/topic/count/title
     if (pageName === 'test') {
         if (parts[1] === 'mock' && parts[2]) {
             const mt = MOCK_TESTS_DATA.find(m => String(m.id) === String(parts[2]));
@@ -135,7 +136,7 @@ const App: React.FC = () => {
     }
   }, [syncStateFromHash, isAppLoading]);
 
-  // 3. Subscription Handling
+  // 4. Subscription Handling
   useEffect(() => {
     if (settings.subscription_model_active === 'false') {
         setSubscriptionStatus('pro');
@@ -174,7 +175,7 @@ const App: React.FC = () => {
                         onNavigate={handleNavigate}
                     />
                 ) : (
-                    <div className="p-20 text-center text-slate-400 font-bold animate-pulse">EXAM DATA SYNC...</div>
+                    <div className="p-20 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest">Finding Exam Data...</div>
                 );
             case 'test': 
                 return activeTest ? (
@@ -191,7 +192,7 @@ const App: React.FC = () => {
                 ) : (
                     <div className="flex flex-col items-center justify-center p-20 space-y-4">
                         <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="font-black text-slate-400 animate-pulse uppercase">Initializing Question Stream...</p>
+                        <p className="font-black text-slate-400 animate-pulse uppercase">Syncing Question Bank...</p>
                     </div>
                 );
             case 'results': 
