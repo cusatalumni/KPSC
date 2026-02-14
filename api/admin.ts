@@ -18,20 +18,20 @@ const smartParseOptions = (raw: any): string[] => {
     
     let clean = String(raw).trim();
     
-    // AI output often includes backslash escapes for quotes inside the CSV string
-    // e.g., "[\"Option A\", \"Option B\"]" -> [\"Option A\", \"Option B\"]
-    // We need to unescape these so JSON.parse works.
-    clean = clean.replace(/\\"/g, '"');
+    // Handle standard CSV double-double quote escaping: "" -> "
+    // and manual backslash escaping: \" -> "
+    clean = clean.replace(/""/g, '"').replace(/\\"/g, '"');
     
     if (clean.startsWith('[') && clean.endsWith(']')) {
         try { 
             return JSON.parse(clean); 
         } catch (e) {
             try { 
-                // Try fixing common JSON issues like single quotes
-                return JSON.parse(clean.replace(/'/g, '"')); 
+                // Attempt to fix common JSON syntax errors
+                const fixed = clean.replace(/'/g, '"');
+                return JSON.parse(fixed); 
             } catch (e2) {
-                // Last resort: split by pipe or comma if it looks like a list
+                // Last resort split
                 const inner = clean.slice(1, -1).trim();
                 if (inner.includes('|')) return inner.split('|').map(s => s.trim());
                 return inner.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
@@ -52,73 +52,20 @@ function createNumericHash(str: string): number {
 }
 
 /**
- * Intelligent Audit: Fixes Syllabus subject/topic based on actual data in QuestionBank.
- */
-async function auditAndRepairSyllabus() {
-    if (!supabase) throw new Error("Supabase required for audit.");
-    
-    const { data: qbData } = await supabase.from('questionbank').select('subject, topic');
-    if (!qbData || qbData.length === 0) return { message: "Question Bank is empty." };
-    
-    const validSubjects = new Set<string>(qbData.map(q => String(q.subject || '').trim()).filter(Boolean));
-    const validTopics = new Set<string>(qbData.map(q => String(q.topic || '').trim()).filter(Boolean));
-    
-    const { data: syllabus } = await supabase.from('syllabus').select('*');
-    if (!syllabus || syllabus.length === 0) return { message: "Syllabus table is empty." };
-    
-    let repairedCount = 0;
-    const repairedItems = [];
-
-    for (const item of syllabus) {
-        let changed = false;
-        let s = String(item.subject || '').trim();
-        let t = String(item.topic || '').trim();
-
-        if (s && !validSubjects.has(s)) {
-            const match = Array.from(validSubjects).find((vs: string) => vs.toLowerCase() === s.toLowerCase() || vs.toLowerCase().includes(s.toLowerCase()));
-            if (match) { s = match; changed = true; }
-        }
-
-        if (t && !validTopics.has(t)) {
-            const match = Array.from(validTopics).find((vt: string) => vt.toLowerCase() === t.toLowerCase() || vt.toLowerCase().includes(t.toLowerCase()));
-            if (match) { t = match; changed = true; }
-        }
-
-        if (changed) {
-            const updated = { ...item, subject: s, topic: t };
-            repairedItems.push(updated);
-            repairedCount++;
-            await findAndUpsertRow('Syllabus', String(item.id), [item.id, item.exam_id, item.title, item.questions, item.duration, s, t]);
-        }
-    }
-
-    if (repairedCount > 0) {
-        await upsertSupabaseData('syllabus', repairedItems);
-        return { message: `Linking Audit Finished. Repaired ${repairedCount} syllabus entries.` };
-    }
-    return { message: "Audit Finished. No repairs needed." };
-}
-
-/**
- * Enhanced CSV Parser that correctly handles quoted fields containing commas
+ * Enhanced CSV Parser that handles missing headers and quoted fields
  */
 function parseCSV(csv: string) {
     const lines = csv.split(/\r?\n/).filter(line => line.trim().length > 0);
-    if (lines.length === 0) return [];
+    if (lines.length === 0) return { headers: [], rows: [] };
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    const result = [];
-
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        const row: any = {};
+    // Function to parse a single line correctly
+    const parseLine = (line: string) => {
         const values = [];
         let currentValue = '';
         let insideQuotes = false;
-
         for (let j = 0; j < line.length; j++) {
             const char = line[j];
-            if (char === '"' && line[j+1] === '"') { // Handle escaped double quotes
+            if (char === '"' && line[j+1] === '"') {
                 currentValue += '"';
                 j++;
             } else if (char === '"') {
@@ -130,15 +77,42 @@ function parseCSV(csv: string) {
                 currentValue += char;
             }
         }
-        values.push(currentValue); // Add the last value
+        values.push(currentValue);
+        return values;
+    };
 
-        headers.forEach((header, index) => {
-            let val = values[index]?.trim() || '';
-            row[header] = val;
-        });
-        result.push(row);
+    const firstLineValues = parseLine(lines[0]);
+    const standardHeaders = ['id', 'topic', 'question', 'options', 'correctanswerindex', 'subject', 'difficulty'];
+    
+    // Check if the first line is actually a header
+    const isHeader = firstLineValues.some(val => 
+        standardHeaders.includes(val.toLowerCase().trim()) || 
+        val.toLowerCase().includes('question')
+    );
+
+    let headers: string[] = [];
+    let startIdx = 0;
+
+    if (isHeader) {
+        headers = firstLineValues.map(h => h.trim().toLowerCase());
+        startIdx = 1;
+    } else {
+        // Use default standard order if no header detected
+        headers = standardHeaders;
+        startIdx = 0;
     }
-    return result;
+
+    const rows = [];
+    for (let i = startIdx; i < lines.length; i++) {
+        const values = parseLine(lines[i]);
+        const row: any = {};
+        headers.forEach((header, index) => {
+            row[header] = values[index]?.trim() || '';
+        });
+        rows.push(row);
+    }
+
+    return { headers, rows };
 }
 
 export default async function handler(req: any, res: any) {
@@ -173,36 +147,26 @@ export default async function handler(req: any, res: any) {
         switch (action) {
             case 'bulk-upload-questions':
                 if (!csv) throw new Error("CSV data is required.");
-                const parsed = parseCSV(csv);
-                if (parsed.length === 0) throw new Error("No valid data found in CSV.");
+                const { rows } = parseCSV(csv);
+                if (rows.length === 0) throw new Error("No valid data found in CSV.");
 
                 const baseTime = Date.now();
                 
-                // Map the parsed data ensuring the property names match (case insensitive)
-                const sbItems = parsed.map((row, idx) => {
-                    // Try to find the keys regardless of exact casing
-                    const id = parseInt(row.id || row.ID || (baseTime + idx));
-                    const topic = row.topic || '';
-                    const questionText = row.question || row.questiontext || '';
-                    const rawOptions = row.options || '[]';
-                    const correctIdx = parseInt(row.correctanswerindex || row.correct_answer_index || row.answer || '0');
-                    const subject = row.subject || 'General';
-                    const difficulty = row.difficulty || 'Moderate';
-
-                    const finalOptions = smartParseOptions(rawOptions);
-
+                const sbItems = rows.map((row, idx) => {
+                    const qId = parseInt(row.id || (baseTime + idx));
+                    const optionsArr = smartParseOptions(row.options);
+                    
                     return {
-                        id,
-                        topic,
-                        question: questionText,
-                        options: finalOptions,
-                        correct_answer_index: correctIdx,
-                        subject,
-                        difficulty
+                        id: qId,
+                        topic: row.topic || '',
+                        question: row.question || '',
+                        options: optionsArr,
+                        correct_answer_index: parseInt(row.correctanswerindex || row.answer || '0'),
+                        subject: row.subject || 'General',
+                        difficulty: row.difficulty || 'Moderate'
                     };
                 });
 
-                // For Google Sheets, we store options as a clean JSON string
                 const sheetRows = sbItems.map(item => [
                     item.id,
                     item.topic,
@@ -213,10 +177,11 @@ export default async function handler(req: any, res: any) {
                     item.difficulty
                 ]);
                 
+                // Save to both
                 await appendSheetData('QuestionBank!A1', sheetRows);
                 if (supabase) await upsertSupabaseData('questionbank', sbItems);
                 
-                return res.status(200).json({ message: `Successfully imported ${sbItems.length} questions.` });
+                return res.status(200).json({ message: `Successfully imported ${sbItems.length} questions to Sheets and Cloud.` });
 
             case 'update-syllabus':
                 const sylId = syllabus.id || `syl_${Date.now()}`;
@@ -284,9 +249,6 @@ export default async function handler(req: any, res: any) {
                 try { await readSheetData('Settings!A1:A1'); sS = true; } catch (e) {}
                 try { if (supabase) { const { error } = await supabase.from('settings').select('key').limit(1); sbS = !error; } } catch (e) {}
                 return res.status(200).json({ status: { sheets: sS, supabase: sbS } });
-
-            case 'sync-syllabus-linking': 
-                return res.status(200).json(await auditAndRepairSyllabus());
 
             case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
