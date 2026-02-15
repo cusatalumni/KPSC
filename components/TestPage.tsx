@@ -44,7 +44,8 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     questions.forEach((q, idx) => {
       const selected = answers[idx];
       if (selected !== undefined) {
-        if (selected === q.correctAnswerIndex) {
+        // Strict numeric comparison
+        if (Number(selected) === Number(q.correctAnswerIndex)) {
           correct++;
           score += 1;
         } else {
@@ -114,15 +115,33 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
             setLoading(false);
             return;
         }
+        
         const processed = data.map(q => {
-           const opts = (Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : [])) as string[];
-           const correctText = opts[q.correctAnswerIndex];
-           const shuffledOptions = shuffleArray(opts);
-           const newCorrectIndex = shuffledOptions.indexOf(correctText);
+           // Ensure options is an array
+           let opts: string[] = [];
+           try {
+             opts = Array.isArray(q.options) ? q.options : JSON.parse(q.options);
+           } catch (e) {
+             opts = [];
+           }
+           
+           // Clean and identify the correct answer text before shuffling
+           const originalIdx = Number(q.correctAnswerIndex || 0);
+           const correctText = opts[originalIdx] ? String(opts[originalIdx]).trim() : '';
+           
+           // Shuffle options
+           const shuffledOptions = shuffleArray([...opts]).map(o => String(o).trim());
+           
+           // Find the NEW index of the correct text in the shuffled array
+           let newCorrectIndex = shuffledOptions.findIndex(o => o === correctText);
+           
+           // If search fails (fallback to 0 but this shouldn't happen with valid data)
+           if (newCorrectIndex === -1) newCorrectIndex = 0;
+
            return {
              ...q,
              options: shuffledOptions,
-             correctAnswerIndex: newCorrectIndex === -1 ? q.correctAnswerIndex : newCorrectIndex
+             correctAnswerIndex: newCorrectIndex
            };
         });
         setQuestions(processed as QuizQuestion[]);

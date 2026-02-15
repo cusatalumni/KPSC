@@ -121,7 +121,8 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
               <div className="space-y-4">
                   {questions.map((q, idx) => {
                       const userAns = answers[idx];
-                      const isCorrect = userAns === q.correctAnswerIndex;
+                      // Strict comparison
+                      const isCorrect = userAns !== undefined && Number(userAns) === Number(q.correctAnswerIndex);
                       const isSkipped = userAns === undefined;
 
                       return (
@@ -135,8 +136,8 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
                                       
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                           {q.options.map((opt, optIdx) => {
-                                              const isThisCorrect = optIdx === q.correctAnswerIndex;
-                                              const isThisUserSelection = optIdx === userAns;
+                                              const isThisCorrect = Number(optIdx) === Number(q.correctAnswerIndex);
+                                              const isThisUserSelection = userAns !== undefined && Number(optIdx) === Number(userAns);
                                               
                                               let borderClass = "border-slate-100 dark:border-slate-800";
                                               let bgClass = "bg-slate-50/50 dark:bg-slate-800/30";
@@ -160,7 +161,7 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
                                           })}
                                       </div>
                                       
-                                      {!isSkipped && !isCorrect && (
+                                      {!isSkipped && !isCorrect && userAns !== undefined && (
                                           <p className="mt-4 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-lg inline-block">
                                               Your Answer: {q.options[userAns]}
                                           </p>
