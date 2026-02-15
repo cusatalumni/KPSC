@@ -181,10 +181,12 @@ const App: React.FC = () => {
                     <ExamPage 
                         exam={selectedExam} 
                         content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} 
+                        subscriptionStatus={subscriptionStatus}
                         onBack={() => handleNavigate('dashboard')} 
                         onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} 
                         onStartStudy={(t: string) => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
                         onNavigate={handleNavigate}
+                        onNavigateToUpgrade={() => handleNavigate('upgrade')}
                     />
                 ) : (
                     <div className="p-20 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest">Finding Exam Data...</div>

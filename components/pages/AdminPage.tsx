@@ -45,6 +45,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [newExam, setNewExam] = useState({ id: '', title_ml: '', title_en: '', description_ml: '', category: 'General', level: 'Preliminary', icon_type: 'book' });
     const [selectedExamId, setSelectedExamId] = useState<string>('');
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
+    const [auditReport, setAuditReport] = useState<any[]>([]);
 
     const refresh = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -79,6 +80,16 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setStatus("Processing..."); setIsError(false);
         try { const r = await fn(); setStatus(r.message || "Done!"); await refresh(true); } 
         catch(e:any) { setStatus(e.message); setIsError(true); }
+    };
+
+    const runAudit = async () => {
+        setLoading(true);
+        try {
+            const data = await adminOp('get-audit-report');
+            setAuditReport(data);
+            setStatus("Audit Complete");
+        } catch (e: any) { setStatus(e.message); setIsError(true); }
+        finally { setLoading(false); }
     };
 
     const handleBulkUpload = (type: 'questions' | 'syllabus' | 'bookstore') => {
@@ -191,15 +202,63 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         It then uses AI to generate questions ONLY for those empty spots.
                                     </p>
                                 </div>
-                                <button 
-                                    onClick={() => handleAction(() => adminOp('run-gap-filler'))}
-                                    className="bg-amber-400 text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3"
-                                >
-                                    <span>Fill Syllabus Gaps</span>
-                                    <ArrowPathIcon className="h-5 w-5" />
-                                </button>
+                                <div className="flex flex-col gap-3">
+                                    <button 
+                                        onClick={() => handleAction(() => adminOp('run-gap-filler'))}
+                                        className="bg-amber-400 text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3"
+                                    >
+                                        <span>Fill Syllabus Gaps</span>
+                                        <ArrowPathIcon className="h-5 w-5" />
+                                    </button>
+                                    <button 
+                                        onClick={runAudit}
+                                        className="bg-white/10 text-white border border-white/20 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-white/20 transition-all flex items-center space-x-3"
+                                    >
+                                        <span>View Audit Report</span>
+                                        <ClipboardListIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
                              </div>
                         </div>
+
+                        {auditReport.length > 0 && (
+                            <div className="animate-fade-in space-y-6">
+                                <h3 className="text-xl font-black uppercase tracking-tight px-2 flex items-center space-x-3">
+                                    <ShieldCheckIcon className="h-6 w-6 text-indigo-500" />
+                                    <span>Intelligent Audit Report</span>
+                                </h3>
+                                <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-xl max-h-[500px] overflow-y-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-black text-[10px] uppercase tracking-widest sticky top-0 z-10">
+                                            <tr>
+                                                <th className="px-8 py-5">Topic Title</th>
+                                                <th className="px-8 py-5">Exam ID</th>
+                                                <th className="px-8 py-5 text-center">Questions in Bank</th>
+                                                <th className="px-8 py-5">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {auditReport.map(item => (
+                                                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <td className="px-8 py-5 font-bold text-sm">{item.title}</td>
+                                                    <td className="px-8 py-5 font-mono text-[10px] text-slate-400">{item.exam_id}</td>
+                                                    <td className="px-8 py-5 text-center font-black text-lg">{item.count}</td>
+                                                    <td className="px-8 py-5">
+                                                        {item.count === 0 ? (
+                                                            <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Critical Gap</span>
+                                                        ) : item.count < 5 ? (
+                                                            <span className="bg-amber-100 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Low Coverage</span>
+                                                        ) : (
+                                                            <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Good</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[3.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
                              <div className="flex items-center space-x-4 mb-8">

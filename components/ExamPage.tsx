@@ -1,21 +1,26 @@
+
 import React, { useState, useEffect } from 'react';
-import type { Exam, PracticeTest, Page, ExamPageContent } from '../types';
+import type { Exam, PracticeTest, Page, ExamPageContent, SubscriptionStatus } from '../types';
 import { getExamSyllabus } from '../services/pscDataService';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
+import { LockClosedIcon } from './icons/LockClosedIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 import { EXAM_CONTENT_MAP } from '../constants';
 
-const ExamPage: React.FC<{ 
+interface ExamPageProps {
     exam: Exam; 
     content: ExamPageContent;
+    subscriptionStatus: SubscriptionStatus;
     onBack: () => void; 
     onStartTest: any; 
     onStartStudy: any; 
     onNavigate: any; 
-}> = ({ exam, content, onBack, onStartTest, onStartStudy, onNavigate }) => {
+    onNavigateToUpgrade: () => void;
+}
+
+const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, onBack, onStartTest, onStartStudy, onNavigate, onNavigateToUpgrade }) => {
   const { t } = useTranslation();
-  // Set initial syllabus from content prop (static) to show something immediately
   const [syllabus, setSyllabus] = useState<PracticeTest[]>(content?.practiceTests || []);
   const [loading, setLoading] = useState(true);
 
@@ -64,23 +69,62 @@ const ExamPage: React.FC<{
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {syllabus.map(test => (
-                <div key={test.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 flex justify-between items-center group hover:border-indigo-400 transition-all">
-                    <div className="flex-1 mr-4">
-                        <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg">{test.title}</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{test.questions} {t('questions')} • {test.duration} {t('minutes')}</p>
-                        <p className="text-[9px] text-slate-500 font-mono mt-1 opacity-60">
-                            {test.subject && `Subject: ${test.subject}`} {test.topic && ` | Topic: ${test.topic}`}
-                        </p>
+            {syllabus.map((test, index) => {
+                // Pro Logic: Lock all topics except the first 2 for free users
+                const isLocked = subscriptionStatus === 'free' && index >= 2;
+
+                return (
+                    <div 
+                        key={test.id} 
+                        className={`bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg border-2 transition-all relative overflow-hidden group ${
+                            isLocked 
+                            ? 'border-slate-50 dark:border-slate-800 opacity-80' 
+                            : 'border-slate-100 dark:border-slate-800 hover:border-indigo-400'
+                        }`}
+                    >
+                        {isLocked && (
+                            <div className="absolute top-4 right-4 bg-amber-100 dark:bg-amber-900/40 p-2 rounded-xl z-10">
+                                <LockClosedIcon className="h-4 w-4 text-amber-600" />
+                            </div>
+                        )}
+                        <div className="flex-1 mr-4">
+                            <h3 className={`font-black text-lg ${isLocked ? 'text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>{test.title}</h3>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{test.questions} {t('questions')} • {test.duration} {t('minutes')}</p>
+                            <p className="text-[9px] text-slate-500 font-mono mt-1 opacity-60">
+                                {test.subject && `Subject: ${test.subject}`} {test.topic && ` | Topic: ${test.topic}`}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                if (isLocked) {
+                                    onNavigateToUpgrade();
+                                } else {
+                                    onStartTest({ 
+                                        title: test.title, 
+                                        questionsCount: test.questions, 
+                                        subject: test.subject,
+                                        topic: test.topic 
+                                    });
+                                }
+                            }} 
+                            className={`mt-4 w-full py-3 rounded-xl font-black transition-all active:scale-95 shadow-sm flex items-center justify-center space-x-2 ${
+                                isLocked 
+                                ? 'bg-slate-100 text-slate-500' 
+                                : 'btn-vibrant-indigo text-white'
+                            }`}
+                        >
+                            {isLocked ? (
+                                <>
+                                    <LockClosedIcon className="h-4 w-4" />
+                                    <span>UNLOCK WITH PRO</span>
+                                </>
+                            ) : (
+                                <span>{t('start')}</span>
+                            )}
+                        </button>
                     </div>
-                    <button onClick={() => onStartTest({ 
-                        title: test.title, 
-                        questionsCount: test.questions, 
-                        subject: test.subject,
-                        topic: test.topic 
-                    })} className="btn-vibrant-indigo text-white font-black px-6 py-3 rounded-xl shadow-sm flex-shrink-0">{t('start')}</button>
-                </div>
-            ))}
+                );
+            })}
             {loading && syllabus.length === 0 && <p className="text-slate-400 font-bold col-span-full text-center py-10 animate-pulse">{t('loading')}</p>}
         </div>
       </section>

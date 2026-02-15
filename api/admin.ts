@@ -97,6 +97,30 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
+            case 'get-audit-report': {
+                if (!supabase) throw new Error("Supabase required.");
+                const { data: qData } = await supabase.from('questionbank').select('topic, subject');
+                const counts: Record<string, number> = {};
+                qData?.forEach(q => { 
+                    const tKey = String(q.topic || '').toLowerCase().trim();
+                    const sKey = String(q.subject || '').toLowerCase().trim();
+                    if (tKey) counts[tKey] = (counts[tKey] || 0) + 1;
+                    if (sKey) counts[sKey] = (counts[sKey] || 0) + 1;
+                });
+                const { data: sData } = await supabase.from('syllabus').select('*');
+                const report = sData?.map(s => {
+                    const tKey = String(s.topic || s.title).toLowerCase().trim();
+                    const sKey = String(s.subject).toLowerCase().trim();
+                    return {
+                        id: s.id,
+                        exam_id: s.exam_id,
+                        title: s.title,
+                        topic: s.topic,
+                        count: counts[tKey] || counts[sKey] || 0
+                    };
+                });
+                return res.status(200).json(report || []);
+            }
             case 'bulk-upload-questions': {
                 if (!csv) throw new Error("CSV data required.");
                 const qData = parseCSV(csv);
