@@ -97,7 +97,6 @@ export default async function handler(req: any, res: any) {
     try {
         switch (action) {
             case 'bulk-upload-questions': {
-                // Wrap in block scope to avoid redeclaring variables
                 if (!csv) throw new Error("CSV data required.");
                 const qData = parseCSV(csv);
                 const items = qData.rows.map(row => ({
@@ -115,7 +114,6 @@ export default async function handler(req: any, res: any) {
             }
 
             case 'bulk-upload-syllabus': {
-                // Wrap in block scope to avoid redeclaring variables
                 if (!csv) throw new Error("CSV data required.");
                 const sData = parseCSV(csv);
                 const sItems = sData.rows.map(row => ({
@@ -132,8 +130,22 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: `Imported ${sItems.length} syllabus entries.` });
             }
 
+            case 'bulk-upload-bookstore': {
+                if (!csv) throw new Error("CSV data required.");
+                const bData = parseCSV(csv);
+                const bItems = bData.rows.map(row => ({
+                    id: row.id || `bk_${Date.now()}`,
+                    title: row.title || '',
+                    author: row.author || '',
+                    imageUrl: row.imageurl || row.image_url || '',
+                    amazonLink: row.amazonlink || row.amazon_link || 'https://amazon.in'
+                }));
+                await appendSheetData('Bookstore!A1', bItems.map(it => [it.id, it.title, it.author, it.imageUrl, it.amazonLink]));
+                if (supabase) await upsertSupabaseData('bookstore', bItems);
+                return res.status(200).json({ message: `Imported ${bItems.length} books.` });
+            }
+
             case 'sync-all': {
-                // Wrap in block scope to avoid redeclaring variables
                 if (!supabase) throw new Error("Supabase missing.");
                 const [exs, snl, qbs, bks, syls, nfs, cas, gks, ups] = await Promise.all([
                     readSheetData('Exams!A2:H'), readSheetData('Settings!A2:B'),
@@ -163,7 +175,6 @@ export default async function handler(req: any, res: any) {
             }
 
             case 'flush-data': {
-                // Wrap in block scope to avoid redeclaring variables
                 if (!targetTable) throw new Error("Table missing.");
                 const tableToFlush = String(targetTable).toLowerCase();
                 if (supabase) await supabase.from(tableToFlush).delete().neq('id', -1);
@@ -173,7 +184,6 @@ export default async function handler(req: any, res: any) {
             }
 
             case 'sync-syllabus-linking': {
-                // Wrap in block scope to avoid redeclaring variables
                 if (!supabase) throw new Error("Supabase required.");
                 const { data: qData } = await supabase.from('questionbank').select('topic, subject');
                 const counts: Record<string, number> = {};
@@ -184,30 +194,28 @@ export default async function handler(req: any, res: any) {
                         const topicKey = String(s.topic || s.title).toLowerCase().trim();
                         const subjectKey = String(s.subject).toLowerCase().trim();
                         const available = counts[topicKey] || counts[subjectKey] || 0;
-                        return { ...s, questions: available > 0 ? available : s.questions };
+                        return { ...s, questions: available > 0 ? Math.min(available, s.questions || 20) : s.questions };
                     });
                     await upsertSupabaseData('syllabus', updates);
                 }
-                return res.status(200).json({ message: "Syllabus updated with current question counts." });
+                return res.status(200).json({ message: "Syllabus audited against question bank." });
             }
 
             case 'add-question': {
-                // Wrap in block scope to avoid redeclaring variables
                 const opts = smartParseOptions(question.options);
                 const finalIdx = parseInt(String(question.correct_answer_index || '1'));
                 const qId = question.id ? parseInt(question.id) : Date.now();
                 await findAndUpsertRow('QuestionBank', String(qId), [qId, question.topic, question.question, JSON.stringify(opts), finalIdx, question.subject, question.difficulty]);
                 if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: opts, correct_answer_index: finalIdx, subject: question.subject, difficulty: question.difficulty }]);
-                return res.status(200).json({ message: 'Question Saved (1-4 index).' });
+                return res.status(200).json({ message: 'Question Saved.' });
             }
 
             case 'update-exam':
                 await findAndUpsertRow('Exams', exam.id, [exam.id, exam.title_ml, exam.title_en || exam.title_ml, exam.description_ml, exam.description_ml, exam.category, exam.level, exam.icon_type]);
                 if (supabase) await upsertSupabaseData('exams', [{ id: exam.id, title_ml: exam.title_ml, title_en: exam.title_en || exam.title_ml, description_ml: exam.description_ml, description_en: exam.description_ml, category: exam.category, level: exam.level, icon_type: exam.icon_type }]);
-                return res.status(200).json({ message: 'Exam Registered.' });
+                return res.status(200).json({ message: 'Exam Profile Updated.' });
 
             case 'update-syllabus': {
-                // Wrap in block scope to avoid redeclaring variables
                 const sylId = syllabus.id || `syl_${Date.now()}`;
                 await findAndUpsertRow('Syllabus', String(sylId), [sylId, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic]);
                 if (supabase) await upsertSupabaseData('syllabus', [{ id: String(sylId), exam_id: syllabus.exam_id, title: syllabus.title, questions: parseInt(syllabus.questions), duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic }]);
@@ -220,7 +228,6 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Deleted.' });
 
             case 'test-connection': {
-                // Wrap in block scope to avoid redeclaring variables
                 let sS = false, sbS = false;
                 try { await readSheetData('Settings!A1:A1'); sS = true; } catch (e) {}
                 try { if (supabase) { const { error } = await supabase.from('settings').select('key').limit(1); sbS = !error; } } catch (e) {}
