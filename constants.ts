@@ -35,15 +35,31 @@ export const EXAMS_DATA: Exam[] = [
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
     category: 'General',
     level: 'Preliminary'
+  },
+  {
+    id: 'veo_exam',
+    title: { ml: 'VEO (വില്ലേജ് എക്സ്റ്റൻഷൻ ഓഫീസർ)', en: 'Village Extension Officer' },
+    description: { ml: 'ഗ്രാമവികസന വകുപ്പിലെ പ്രധാന പരീക്ഷ.', en: 'Key exam in Rural Development department.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-emerald-600" }),
+    category: 'General',
+    level: 'Main'
+  },
+  {
+    id: 'lp_up_assistant',
+    title: { ml: 'LP/UP Assistant (എൽ.പി/യു.പി അസിസ്റ്റന്റ്)', en: 'LP/UP Assistant' },
+    description: { ml: 'വിദ്യാഭ്യാസ വകുപ്പിലെ അദ്ധ്യാപക തസ്തികകൾ.', en: 'Teaching posts in Education department.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-purple-600" }),
+    category: 'General',
+    level: 'Main'
   }
 ];
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
     { id: 'ldc_gk_1', title: 'Kerala History', questions: 20, duration: 20, subject: 'History', topic: 'Kerala' },
-    { id: 'ldc_comp_hw', title: 'Basics of Computer', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Hardware' },
-    { id: 'ldc_comp_sw', title: 'Basics of Computer', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Software' },
-    { id: 'ldc_comp_net', title: 'Basics of Computer', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Networks' },
+    { id: 'ldc_comp_hw', title: 'Information Technology', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Hardware' },
+    { id: 'ldc_comp_sw', title: 'Information Technology', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Software' },
+    { id: 'ldc_comp_cyber', title: 'Information Technology', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Cyber Laws' },
     { id: 'ldc_ml_gr', title: 'Malayalam Grammar', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Grammar' },
     { id: 'ldc_en_gr', title: 'English Grammar', questions: 10, duration: 10, subject: 'English', topic: 'Grammar' },
   ],
@@ -55,10 +71,11 @@ export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
     'ldc_lgs': LDC_EXAM_CONTENT,
     'plus_two_prelims': LDC_EXAM_CONTENT,
     'degree_prelims': LDC_EXAM_CONTENT,
+    'veo_exam': LDC_EXAM_CONTENT,
 };
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
-  { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'Kerala', difficulty: 'PSC Level' },
+  { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'History', difficulty: 'PSC Level' },
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
@@ -67,6 +84,12 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
     title: { ml: 'Malayalam Grammar', en: 'Malayalam Grammar' },
     description: { ml: 'മലയാള വ്യാകരണം.', en: 'Comprehensive Malayalam grammar.' },
     icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-indigo-500" })
+  },
+  {
+    id: 'computer_sci',
+    title: { ml: 'Computer Science', en: 'Computer Science' },
+    description: { ml: 'ഐടി, സോഫ്റ്റ്‌വെയർ, ഹാർഡ്‌വെയർ.', en: 'IT, Software, and Hardware basics.' },
+    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-amber-500" })
   }
 ];
 

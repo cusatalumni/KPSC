@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/admin",
-      "schedule": "30 23 * * *"
+      "schedule": "0 0,12 * * *"
     }
   ],
   "rewrites": [

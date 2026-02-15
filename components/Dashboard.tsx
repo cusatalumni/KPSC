@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, Fragment } from 'react';
 import ExamCard from './ExamCard';
-import { getExams, getGk, getCurrentAffairs } from '../services/pscDataService';
+import { getExams } from '../services/pscDataService';
 import type { Exam, Page } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import NewsTicker from './NewsTicker';
@@ -9,9 +9,7 @@ import HeroSlider from './HeroSlider';
 import AdsenseWidget from './AdsenseWidget';
 import PscLiveWidget from './PscLiveWidget';
 import QuizHomeWidget from './QuizHomeWidget';
-import CurrentAffairsWidget from './icons/CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
-import { NewspaperIcon } from './icons/NewspaperIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
@@ -32,7 +30,7 @@ const WelcomeBar: React.FC = () => {
                 </h2>
                 <p className="text-slate-400 font-bold text-lg leading-relaxed">
                    AI സാങ്കേതികവിദ്യയുടെ സഹായത്തോടെ സിലബസ് മൈക്രോ ടോപ്പിക്കുകളായി പഠിക്കാം. 
-                   1.8k+ ചോദ്യങ്ങൾ ഇപ്പോൾ ലഭ്യമാണ്.
+                   ലക്ഷക്കണക്കിന് ചോദ്യങ്ങൾ ഇപ്പോൾ ലഭ്യമാണ്.
                 </p>
                 <div className="flex flex-wrap gap-8 pt-4">
                    <div className="flex flex-col">

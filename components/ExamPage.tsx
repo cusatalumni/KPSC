@@ -7,6 +7,7 @@ import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
+import { BookOpenIcon } from './icons/BookOpenIcon';
 import { useTranslation } from '../contexts/LanguageContext';
 
 interface ExamPageProps {
@@ -15,7 +16,7 @@ interface ExamPageProps {
     subscriptionStatus: SubscriptionStatus;
     onBack: () => void; 
     onStartTest: any; 
-    onStartStudy: any; 
+    onStartStudy: (topic: string) => void; 
     onNavigate: any; 
     onNavigateToUpgrade: () => void;
 }
@@ -33,6 +34,16 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
     }).finally(() => { if (isMounted) setLoading(false); });
     return () => { isMounted = false; };
   }, [exam.id]);
+
+  const handleStudyClick = (test: PracticeTest) => {
+    // Pro check for AI study notes
+    if (subscriptionStatus !== 'pro') {
+        onNavigateToUpgrade();
+    } else {
+        // Use granular Subject • Topic context for AI notes
+        onStartStudy(`${test.subject} • ${test.topic}`);
+    }
+  };
 
   return (
     <div className="animate-fade-in max-w-7xl mx-auto pb-20 px-4">
@@ -75,8 +86,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
                     <tr>
                         <th className="px-10 py-6">Micro-Topic (Subject • Part)</th>
                         <th className="px-6 py-6 text-center">Questions</th>
-                        <th className="px-6 py-6">Status</th>
-                        <th className="px-10 py-6 text-right">Action</th>
+                        <th className="px-10 py-6 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -95,27 +105,26 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-7 text-center font-black text-slate-600 dark:text-slate-400 text-sm">{test.questions}</td>
-                                <td className="px-6 py-7">
-                                    {isLocked ? (
-                                        <span className="bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center w-fit space-x-2">
-                                            <LockClosedIcon className="h-3 w-3" />
-                                            <span>Locked</span>
-                                        </span>
-                                    ) : (
-                                        <span className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center w-fit space-x-2">
-                                            <CheckCircleIcon className="h-3 w-3" />
-                                            <span>Available</span>
-                                        </span>
-                                    )}
+                                <td className="px-6 py-7 text-center font-black text-slate-600 dark:text-slate-400 text-sm">
+                                   {isLocked ? <LockClosedIcon className="h-4 w-4 mx-auto text-slate-400" /> : `${test.questions} Qs`}
                                 </td>
                                 <td className="px-10 py-7 text-right">
-                                    <button 
-                                        onClick={() => isLocked ? onNavigateToUpgrade() : onStartTest({ ...test })}
-                                        className={`px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md ${isLocked ? 'bg-slate-800 text-white' : 'btn-vibrant-indigo text-white hover:shadow-indigo-200'}`}
-                                    >
-                                        {isLocked ? 'Unlock Pro' : 'Start Practice'}
-                                    </button>
+                                    <div className="flex items-center justify-end space-x-3">
+                                        <button 
+                                            onClick={() => handleStudyClick(test)}
+                                            className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 border-2 ${subscriptionStatus === 'pro' ? 'border-amber-100 bg-amber-50 text-amber-600 hover:bg-amber-100' : 'border-slate-100 text-slate-400 bg-slate-50 hover:border-indigo-200'}`}
+                                        >
+                                            <SparklesIcon className="h-3.5 w-3.5" />
+                                            <span>AI Notes</span>
+                                            {subscriptionStatus !== 'pro' && <LockClosedIcon className="h-3 w-3" />}
+                                        </button>
+                                        <button 
+                                            onClick={() => isLocked ? onNavigateToUpgrade() : onStartTest({ ...test })}
+                                            className={`px-8 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-md ${isLocked ? 'bg-slate-800 text-white' : 'btn-vibrant-indigo text-white hover:shadow-indigo-200'}`}
+                                        >
+                                            {isLocked ? 'Unlock Pro' : 'Start Test'}
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         );
