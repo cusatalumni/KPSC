@@ -29,6 +29,29 @@ import type { Book, Exam, PracticeTest, QuizQuestion } from '../../types';
 
 type AdminTab = 'automation' | 'exams' | 'syllabus' | 'questions' | 'bookstore' | 'subscriptions';
 
+const DEFAULT_SYLLABUS_CSV = `id,exam_id,title,questions,duration,subject,topic
+s_ldc_01,ldc_lgs,Indian History,10,10,History,Indian History
+s_ldc_02,ldc_lgs,Kerala History,10,10,History,Kerala History
+s_ldc_03,ldc_lgs,Geography of India & Kerala,10,10,Geography,Geography
+s_ldc_04,ldc_lgs,Indian Constitution & Civics,10,10,Civics,Constitution
+s_ldc_05,ldc_lgs,General Science (Physics/Bio),10,10,Science,General Science
+s_ldc_06,ldc_lgs,Current Affairs,10,10,GK,Current Affairs
+s_ldc_07,ldc_lgs,Simple Arithmetic,10,15,Maths,Arithmetic
+s_ldc_08,ldc_lgs,Mental Ability & Reasoning,10,15,Maths,Reasoning
+s_ldc_09,ldc_lgs,General English Grammar,10,10,English,Grammar
+s_ldc_10,ldc_lgs,Malayalam Grammar & Vocabulary,10,10,Malayalam,Grammar
+s_p2_01,plus_two_prelims,Advanced GK & Renaissance,20,20,GK,General
+s_p2_02,plus_two_prelims,Arithmetic & Mental Ability,20,30,Maths,Mixed
+s_p2_03,plus_two_prelims,General Science,20,20,Science,General
+s_dg_01,degree_prelims,History & Culture,20,20,History,Advanced
+s_dg_02,degree_prelims,Constitution & Public Admin,20,20,Civics,Constitution
+s_dg_03,degree_prelims,English Proficiency,20,20,English,Grammar
+s_dg_04,degree_prelims,Malayalam Language,10,10,Malayalam,Advanced
+s_veo_01,veo_exam,General Knowledge,25,25,GK,General
+s_veo_02,veo_exam,Rural Development Basics,25,25,GK,Special
+s_fm_01,fireman_exam,General Knowledge & Science,50,50,GK,General
+s_fm_02,fireman_exam,Maths & Reasoning,50,50,Maths,Mixed`;
+
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { getToken } = useAuth();
     const [activeTab, setActiveTab] = useState<AdminTab>('automation');
@@ -155,12 +178,15 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                         {/* Bulk Tools */}
                         <div className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-                             <div className="flex items-center space-x-4 mb-6">
-                                <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
-                                <div>
-                                    <h3 className="text-2xl font-black uppercase tracking-tight">Bulk CSV Tool</h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase">Paste CSV and select target below</p>
+                             <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center space-x-4">
+                                    <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
+                                    <div>
+                                        <h3 className="text-2xl font-black uppercase tracking-tight">Bulk CSV Tool</h3>
+                                        <p className="text-xs font-bold text-slate-400 uppercase">Paste CSV and select target below</p>
+                                    </div>
                                 </div>
+                                <button onClick={() => setCsvContent(DEFAULT_SYLLABUS_CSV)} className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all">Load Default Syllabus Template</button>
                             </div>
                             <textarea value={csvContent} onChange={e => setCsvContent(e.target.value)} placeholder="Paste CSV content here..." className="w-full h-48 p-6 rounded-2xl border-2 dark:bg-slate-800 font-mono text-xs mb-4" />
                             <div className="flex space-x-4">
