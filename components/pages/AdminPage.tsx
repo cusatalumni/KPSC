@@ -275,21 +275,46 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 )}
 
                 {activeTab === 'syllabus' && (
-                    <div className="space-y-8">
-                         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-10">
+                    <div className="space-y-12">
+                         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                             <select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full sm:w-1/2 p-5 rounded-2xl border-2 font-black text-sm dark:bg-slate-800 bg-white">
                                 <option value="">Select Exam Profile to View Syllabus...</option>
                                 {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
                             </select>
                          </div>
 
+                         {/* Syllabus Bulk Upload UI */}
+                         <div className="bg-indigo-50 dark:bg-indigo-900/10 p-10 rounded-[3rem] border-2 border-dashed border-indigo-100 dark:border-indigo-800">
+                             <div className="flex items-center space-x-4 mb-6">
+                                <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Bulk Import Syllabus (CSV)</h3>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Add micro-topics in bulk. Header format: id,exam_id,title,questions,duration,subject,topic</p>
+                                </div>
+                            </div>
+                            <textarea 
+                                value={csvContent} 
+                                onChange={e => setCsvContent(e.target.value)} 
+                                placeholder="1,ldc_lgs,General Knowledge,50,75,General Knowledge,History..." 
+                                className="w-full h-40 p-6 rounded-3xl border-2 dark:bg-slate-800 font-mono text-[11px] mb-6 focus:border-indigo-500 outline-none" 
+                            />
+                            <button 
+                                onClick={() => handleBulkUpload('syllabus')} 
+                                className="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-indigo-700"
+                            >
+                                Start Syllabus Import
+                            </button>
+                        </div>
+
                          {selectedExamId && (
                              <div className="space-y-6 animate-fade-in">
+                                <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 px-2">Current Micro-Topics for {selectedExamId}</h4>
                                 {syllabusItems.map(item => (
                                     <div key={item.id} className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2rem] flex justify-between items-center group">
                                         <div>
                                             <p className="font-black text-base dark:text-white leading-tight">{item.title}</p>
                                             <p className="text-[9px] text-indigo-500 font-black uppercase tracking-widest mt-1">{item.subject} • {item.questions} Questions • {item.duration} Mins</p>
+                                            <p className="text-[10px] text-slate-400 font-bold mt-0.5 italic">Topic: {item.topic}</p>
                                         </div>
                                         <button onClick={() => handleAction(() => adminOp('delete-row', { sheet: 'Syllabus', id: item.id }))} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"><TrashIcon className="h-5 w-5" /></button>
                                     </div>
