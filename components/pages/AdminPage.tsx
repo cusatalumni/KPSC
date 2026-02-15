@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
@@ -25,7 +25,6 @@ import { BellIcon } from '../icons/BellIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { BeakerIcon } from '../icons/BeakerIcon';
-import { UserCircleIcon } from '../icons/UserCircleIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import type { Exam, PracticeTest } from '../../types';
 
@@ -92,6 +91,16 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         finally { setLoading(false); }
     };
 
+    const auditGroups = useMemo(() => {
+        const groups = { critical: [] as any[], low: [] as any[], good: [] as any[] };
+        auditReport.forEach(item => {
+            if (item.count === 0) groups.critical.push(item);
+            else if (item.count < 5) groups.low.push(item);
+            else groups.good.push(item);
+        });
+        return groups;
+    }, [auditReport]);
+
     const handleBulkUpload = (type: 'questions' | 'syllabus' | 'bookstore') => {
         if (!csvContent.trim()) return alert("Paste CSV data first.");
         const actionMap = { 'questions': 'bulk-upload-questions', 'syllabus': 'bulk-upload-syllabus', 'bookstore': 'bulk-upload-bookstore' };
@@ -110,12 +119,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-[1.5rem] shadow-xl border border-slate-100 dark:border-slate-800 flex items-center space-x-6">
                          <div className="flex items-center space-x-2">
                             <div className={`w-3 h-3 rounded-full ${dbStatus.sheets ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`}></div>
-                            <span className="text-[10px] font-black uppercase tracking-tighter">Google Sheets: <span className={dbStatus.sheets ? 'text-emerald-500' : 'text-red-500'}>{dbStatus.sheets ? 'OPERATIONAL' : 'OFFLINE'}</span></span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter">Sheets: <span className={dbStatus.sheets ? 'text-emerald-500' : 'text-red-500'}>{dbStatus.sheets ? 'READY' : 'OFF'}</span></span>
                          </div>
                          <div className="w-px h-4 bg-slate-200 dark:bg-slate-800"></div>
                          <div className="flex items-center space-x-2">
                             <div className={`w-3 h-3 rounded-full ${dbStatus.supabase ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`}></div>
-                            <span className="text-[10px] font-black uppercase tracking-tighter">Cloud DB: <span className={dbStatus.supabase ? 'text-emerald-500' : 'text-red-500'}>{dbStatus.supabase ? 'OPERATIONAL' : 'OFFLINE'}</span></span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter">DB: <span className={dbStatus.supabase ? 'text-emerald-500' : 'text-red-500'}>{dbStatus.supabase ? 'READY' : 'OFF'}</span></span>
                          </div>
                     </div>
                 </div>
@@ -146,16 +155,16 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                          <div className="bg-indigo-600 p-10 rounded-[2.5rem] text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
                             <div className="absolute right-0 top-0 opacity-10 -mr-20 -mt-20"><ArrowPathIcon className="h-64 w-64" /></div>
                             <div className="relative z-10">
-                                <h3 className="text-3xl font-black uppercase tracking-tighter">System Reconstruction</h3>
-                                <p className="text-indigo-100 font-bold mt-2">Pull all manual changes from Google Sheets into Cloud Production.</p>
+                                <h3 className="text-3xl font-black uppercase tracking-tighter">Database Rebuild</h3>
+                                <p className="text-indigo-100 font-bold mt-2">Sync all data between Google Sheets and Supabase Production.</p>
                             </div>
-                            <button onClick={() => handleAction(() => adminOp('sync-all'))} className="relative z-10 bg-white text-indigo-600 px-10 py-5 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all">Rebuild Cloud Layer</button>
+                            <button onClick={() => handleAction(() => adminOp('sync-all'))} className="relative z-10 bg-white text-indigo-600 px-10 py-5 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all">Start Production Sync</button>
                         </div>
 
                         <div className="space-y-6">
                             <div className="flex items-center space-x-3 text-slate-800 dark:text-white">
                                 <BeakerIcon className="h-6 w-6 text-indigo-500" />
-                                <h3 className="text-xl font-black uppercase tracking-tight">AI Automation Triggers</h3>
+                                <h3 className="text-xl font-black uppercase tracking-tight">AI Scraping Tools</h3>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[
@@ -164,7 +173,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     { id: 'run-scraper-affairs', label: 'Current Affairs', icon: NewspaperIcon, color: 'bg-teal-500' },
                                     { id: 'run-scraper-gk', label: 'GK Fact Scraper', icon: LightBulbIcon, color: 'bg-amber-500' },
                                     { id: 'run-scraper-questions', label: 'AI Q-Generator', icon: PlusIcon, color: 'bg-slate-800' },
-                                    { id: 'run-book-scraper', label: 'Book (ASIN) Scraper', icon: BookOpenIcon, color: 'bg-rose-500' },
+                                    { id: 'run-book-scraper', label: 'Book Store Sync', icon: BookOpenIcon, color: 'bg-rose-500' },
                                 ].map((tool) => (
                                     <button 
                                         key={tool.id} 
@@ -176,7 +185,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         </div>
                                         <div>
                                             <p className="font-black text-sm dark:text-white">{tool.label}</p>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Start Scraper</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Execute Now</p>
                                         </div>
                                     </button>
                                 ))}
@@ -188,75 +197,67 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {activeTab === 'questions' && (
                     <div className="space-y-12">
                         {/* Smart Gap Filler Component */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
+                        <div className="bg-slate-950 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group border border-white/5">
                              <div className="absolute right-0 top-0 opacity-10 group-hover:scale-110 transition-transform duration-1000 -mr-20 -mt-20"><SparklesIcon className="h-96 w-96" /></div>
                              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                                 <div className="max-w-xl">
                                     <div className="flex items-center space-x-3 mb-4">
-                                        <div className="p-2 bg-white/20 rounded-lg"><SparklesIcon className="h-6 w-6" /></div>
-                                        <span className="font-black tracking-widest text-xs uppercase">Intelligent Gap Management</span>
+                                        <div className="p-2 bg-indigo-500 rounded-lg"><SparklesIcon className="h-6 w-6" /></div>
+                                        <span className="font-black tracking-widest text-xs uppercase text-indigo-400">Question Bank Auditor</span>
                                     </div>
-                                    <h3 className="text-3xl font-black uppercase tracking-tighter">Targeted Question Filler</h3>
-                                    <p className="text-indigo-100 font-bold mt-3 text-sm leading-relaxed">
-                                        This tool audits your existing <span className="text-amber-400">1800+ questions</span> and identifies which micro-topics from the 177 syllabus items are missing. 
-                                        It then uses AI to generate questions ONLY for those empty spots.
+                                    <h3 className="text-3xl font-black uppercase tracking-tighter">Micro-Topic Intelligence</h3>
+                                    <p className="text-slate-400 font-bold mt-3 text-sm leading-relaxed">
+                                        Audit existing questions against the 177 syllabus items. Identify and fill empty spots using Targeted AI.
                                     </p>
                                 </div>
-                                <div className="flex flex-col gap-3">
-                                    <button 
-                                        onClick={() => handleAction(() => adminOp('run-gap-filler'))}
-                                        className="bg-amber-400 text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3"
-                                    >
-                                        <span>Fill Syllabus Gaps</span>
-                                        <ArrowPathIcon className="h-5 w-5" />
-                                    </button>
+                                <div className="flex flex-col sm:flex-row gap-3">
                                     <button 
                                         onClick={runAudit}
-                                        className="bg-white/10 text-white border border-white/20 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-white/20 transition-all flex items-center space-x-3"
+                                        className="bg-white/10 text-white border border-white/20 px-8 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-white/20 transition-all flex items-center justify-center space-x-3"
                                     >
-                                        <span>View Audit Report</span>
                                         <ClipboardListIcon className="h-5 w-5" />
+                                        <span>Show Audit Report</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleAction(() => adminOp('run-gap-filler'))}
+                                        className="bg-indigo-600 text-white px-8 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center space-x-3"
+                                    >
+                                        <SparklesIcon className="h-5 w-5" />
+                                        <span>Fill All Gaps</span>
                                     </button>
                                 </div>
                              </div>
                         </div>
 
                         {auditReport.length > 0 && (
-                            <div className="animate-fade-in space-y-6">
-                                <h3 className="text-xl font-black uppercase tracking-tight px-2 flex items-center space-x-3">
-                                    <ShieldCheckIcon className="h-6 w-6 text-indigo-500" />
-                                    <span>Intelligent Audit Report</span>
-                                </h3>
-                                <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-xl max-h-[500px] overflow-y-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-black text-[10px] uppercase tracking-widest sticky top-0 z-10">
-                                            <tr>
-                                                <th className="px-8 py-5">Topic Title</th>
-                                                <th className="px-8 py-5">Exam ID</th>
-                                                <th className="px-8 py-5 text-center">Questions in Bank</th>
-                                                <th className="px-8 py-5">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                            {auditReport.map(item => (
-                                                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                    <td className="px-8 py-5 font-bold text-sm">{item.title}</td>
-                                                    <td className="px-8 py-5 font-mono text-[10px] text-slate-400">{item.exam_id}</td>
-                                                    <td className="px-8 py-5 text-center font-black text-lg">{item.count}</td>
-                                                    <td className="px-8 py-5">
-                                                        {item.count === 0 ? (
-                                                            <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Critical Gap</span>
-                                                        ) : item.count < 5 ? (
-                                                            <span className="bg-amber-100 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Low Coverage</span>
-                                                        ) : (
-                                                            <span className="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">Good</span>
-                                                        )}
-                                                    </td>
-                                                </tr>
+                            <div className="animate-fade-in space-y-12">
+                                {[
+                                    { key: 'critical', label: 'Critical Gaps (0 Questions)', color: 'text-red-500', bg: 'bg-red-500/10' },
+                                    { key: 'low', label: 'Low Coverage (< 5 Questions)', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                                    { key: 'good', label: 'Healthy Topics', color: 'text-emerald-500', bg: 'bg-emerald-500/10' }
+                                ].map(group => auditGroups[group.key as keyof typeof auditGroups].length > 0 && (
+                                    <div key={group.key} className="space-y-6">
+                                        <div className={`flex items-center space-x-3 p-4 rounded-2xl ${group.bg}`}>
+                                            <div className={`w-3 h-3 rounded-full ${group.color.replace('text', 'bg')}`}></div>
+                                            <h4 className={`font-black uppercase tracking-widest text-xs ${group.color}`}>{group.label}</h4>
+                                            <span className="text-[10px] font-bold text-slate-400">({auditGroups[group.key as keyof typeof auditGroups].length} Topics)</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {auditGroups[group.key as keyof typeof auditGroups].map(item => (
+                                                <div key={item.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group hover:border-indigo-400 transition-all">
+                                                    <div className="flex-1 min-w-0 pr-4">
+                                                        <p className="font-bold text-sm truncate dark:text-white">{item.title}</p>
+                                                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-tighter mt-1">{item.exam_id}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-xl font-black text-slate-800 dark:text-slate-100">{item.count}</span>
+                                                        <p className="text-[8px] font-black text-slate-400 uppercase">Qs</p>
+                                                    </div>
+                                                </div>
                                             ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
@@ -265,11 +266,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
                                 <div>
                                     <h3 className="text-2xl font-black uppercase tracking-tight">Bulk Import (CSV)</h3>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Manually append questions to the bank</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Append manual data to the Question Bank</p>
                                 </div>
                             </div>
-                            <textarea value={csvContent} onChange={e => setCsvContent(e.target.value)} placeholder="Paste CSV content here..." className="w-full h-48 p-6 rounded-3xl border-2 dark:bg-slate-800 font-mono text-[11px] mb-6 focus:border-indigo-500 outline-none" />
-                            <button onClick={() => handleBulkUpload('questions')} className="bg-slate-800 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-slate-900">Start Manual Import</button>
+                            <textarea value={csvContent} onChange={e => setCsvContent(e.target.value)} placeholder="Format: id,topic,question,options,answer..." className="w-full h-48 p-6 rounded-3xl border-2 dark:bg-slate-800 font-mono text-[11px] mb-6 focus:border-indigo-500 outline-none" />
+                            <button onClick={() => handleBulkUpload('questions')} className="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-indigo-700">Start Import</button>
                         </div>
                     </div>
                 )}
@@ -299,11 +300,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             <td className="px-8 py-6 text-sm font-bold">{sub.plan_type}</td>
                                             <td className="px-8 py-6 text-sm font-medium text-slate-500">{new Date(sub.expiry_date).toLocaleDateString()}</td>
                                             <td className="px-8 py-6 text-right">
-                                                <button onClick={() => { if(confirm('Cancel this subscription?')) handleAction(() => adminOp('delete-row', { sheet: 'Subscriptions', id: sub.user_id }))}} className="text-red-500 hover:scale-110 transition-transform"><TrashIcon className="h-5 w-5" /></button>
+                                                <button onClick={() => { if(confirm('Cancel subscription?')) handleAction(() => adminOp('delete-row', { sheet: 'Subscriptions', id: sub.user_id }))}} className="text-red-500 hover:scale-110 transition-transform"><TrashIcon className="h-5 w-5" /></button>
                                             </td>
                                         </tr>
                                     )) : (
-                                        <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-black uppercase tracking-widest">No Active Subscriptions Found</td></tr>
+                                        <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-black uppercase tracking-widest">No active subscribers.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -314,19 +315,19 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {activeTab === 'exams' && (
                     <div className="space-y-10">
                         <section className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800">
-                             <h3 className="text-xl font-black uppercase mb-8 tracking-tight">Register New Exam Profile</h3>
+                             <h3 className="text-xl font-black uppercase mb-8 tracking-tight">Create Exam Category</h3>
                              <form onSubmit={e => { e.preventDefault(); handleAction(() => adminOp('update-exam', { exam: newExam })); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input value={newExam.id} onChange={e => setNewExam({...newExam, id: e.target.value})} placeholder="Unique ID (e.g., veo_exam)" className="p-4 rounded-2xl border-2 dark:bg-slate-800 font-bold" required />
-                                <input value={newExam.title_ml} onChange={e => setNewExam({...newExam, title_ml: e.target.value})} placeholder="Title (മലയാളം)" className="p-4 rounded-2xl border-2 dark:bg-slate-800 font-bold" required />
+                                <input value={newExam.id} onChange={e => setNewExam({...newExam, id: e.target.value})} placeholder="Exam ID (slug)" className="p-4 rounded-2xl border-2 dark:bg-slate-800 font-bold" required />
+                                <input value={newExam.title_ml} onChange={e => setNewExam({...newExam, title_ml: e.target.value})} placeholder="Malayalam Title" className="p-4 rounded-2xl border-2 dark:bg-slate-800 font-bold" required />
                                 <input value={newExam.category} onChange={e => setNewExam({...newExam, category: e.target.value})} placeholder="Category (General/Technical)" className="p-4 rounded-2xl border-2 dark:bg-slate-800 font-bold" />
-                                <button type="submit" className="md:col-span-2 bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">Activate Exam Profile</button>
+                                <button type="submit" className="md:col-span-2 bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">Deploy Exam Profile</button>
                              </form>
                         </section>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {exams.map(e => (
-                                <div key={e.id} className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2rem] flex justify-between items-center">
-                                    <div><p className="font-black text-sm">{e.title.ml}</p><p className="text-[10px] text-slate-400 font-black uppercase">{e.id} • {e.category}</p></div>
-                                    <button onClick={() => handleAction(() => adminOp('delete-row', { sheet: 'Exams', id: e.id }))} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"><TrashIcon className="h-5 w-5" /></button>
+                                <div key={e.id} className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2rem] flex justify-between items-center group">
+                                    <div><p className="font-black text-sm">{e.title.ml}</p><p className="text-[10px] text-slate-400 font-black uppercase mt-1">{e.id} • {e.category}</p></div>
+                                    <button onClick={() => handleAction(() => adminOp('delete-row', { sheet: 'Exams', id: e.id }))} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"><TrashIcon className="h-5 w-5" /></button>
                                 </div>
                             ))}
                         </div>
@@ -337,48 +338,37 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="space-y-12">
                          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                             <select value={selectedExamId} onChange={e => setSelectedExamId(e.target.value)} className="w-full sm:w-1/2 p-5 rounded-2xl border-2 font-black text-sm dark:bg-slate-800 bg-white">
-                                <option value="">Select Exam Profile to View Syllabus...</option>
+                                <option value="">Select Exam to view micro-topics...</option>
                                 {exams.map(e => <option key={e.id} value={e.id}>{e.title.ml}</option>)}
                             </select>
                          </div>
 
-                         {/* Syllabus Bulk Upload UI */}
                          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-10 rounded-[3rem] border-2 border-dashed border-indigo-100 dark:border-indigo-800">
                              <div className="flex items-center space-x-4 mb-6">
                                 <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
                                 <div>
-                                    <h3 className="text-2xl font-black uppercase tracking-tight">Bulk Import Syllabus (CSV)</h3>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Add micro-topics in bulk. Header format: id,exam_id,title,questions,duration,subject,topic</p>
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Topic Bulk Import</h3>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CSV: id,exam_id,title,questions,duration,subject,topic</p>
                                 </div>
                             </div>
-                            <textarea 
-                                value={csvContent} 
-                                onChange={e => setCsvContent(e.target.value)} 
-                                placeholder="1,ldc_lgs,General Knowledge,50,75,General Knowledge,History..." 
-                                className="w-full h-40 p-6 rounded-3xl border-2 dark:bg-slate-800 font-mono text-[11px] mb-6 focus:border-indigo-500 outline-none" 
-                            />
-                            <button 
-                                onClick={() => handleBulkUpload('syllabus')} 
-                                className="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-indigo-700"
-                            >
-                                Start Syllabus Import
-                            </button>
+                            <textarea value={csvContent} onChange={e => setCsvContent(e.target.value)} className="w-full h-40 p-6 rounded-3xl border-2 dark:bg-slate-800 font-mono text-[11px] mb-6 focus:border-indigo-500 outline-none" />
+                            <button onClick={() => handleBulkUpload('syllabus')} className="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg">Start Import</button>
                         </div>
 
                          {selectedExamId && (
                              <div className="space-y-6 animate-fade-in">
-                                <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 px-2">Current Micro-Topics for {selectedExamId}</h4>
-                                {syllabusItems.map(item => (
-                                    <div key={item.id} className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2rem] flex justify-between items-center group">
-                                        <div>
-                                            <p className="font-black text-base dark:text-white leading-tight">{item.title}</p>
-                                            <p className="text-[9px] text-indigo-500 font-black uppercase tracking-widest mt-1">{item.subject} • {item.questions} Questions • {item.duration} Mins</p>
-                                            <p className="text-[10px] text-slate-400 font-bold mt-0.5 italic">Topic: {item.topic}</p>
+                                <h4 className="text-lg font-black uppercase tracking-widest text-slate-400 px-2">Current Syllabus ({syllabusItems.length})</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {syllabusItems.map(item => (
+                                        <div key={item.id} className="p-6 bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2rem] flex justify-between items-center group">
+                                            <div>
+                                                <p className="font-black text-base dark:text-white leading-tight">{item.title}</p>
+                                                <p className="text-[9px] text-indigo-500 font-black uppercase mt-1">{item.subject} • {item.questions} Qs</p>
+                                            </div>
+                                            <button onClick={() => handleAction(() => adminOp('delete-row', { sheet: 'Syllabus', id: item.id }))} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"><TrashIcon className="h-5 w-5" /></button>
                                         </div>
-                                        <button onClick={() => handleAction(() => adminOp('delete-row', { sheet: 'Syllabus', id: item.id }))} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-all"><TrashIcon className="h-5 w-5" /></button>
-                                    </div>
-                                ))}
-                                {syllabusItems.length === 0 && <p className="text-center py-20 text-slate-400 font-black uppercase tracking-[0.2em] bg-slate-50 rounded-[3rem] border-2 border-dashed">Syllabus is empty for this exam.</p>}
+                                    ))}
+                                </div>
                              </div>
                          )}
                     </div>
