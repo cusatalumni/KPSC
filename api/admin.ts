@@ -26,6 +26,41 @@ const smartParseOptions = (raw: any): string[] => {
     return [clean];
 };
 
+function parseCSV(csv: string) {
+    const lines = csv.split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (lines.length === 0) return { headers: [], rows: [] };
+
+    const parseLine = (line: string) => {
+        const values = [];
+        let currentValue = '';
+        let insideQuotes = false;
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"' && line[j+1] === '"') {
+                currentValue += '"'; j++;
+            } else if (char === '"') {
+                insideQuotes = !insideQuotes;
+            } else if (char === ',' && !insideQuotes) {
+                values.push(currentValue); currentValue = '';
+            } else {
+                currentValue += char;
+            }
+        }
+        values.push(currentValue);
+        return values;
+    };
+
+    const firstLine = parseLine(lines[0]);
+    const headers = firstLine.map(h => h.trim().toLowerCase());
+    const rows = lines.slice(1).map(line => {
+        const values = parseLine(line);
+        const row: any = {};
+        headers.forEach((h, i) => { row[h] = values[i]?.trim() || ''; });
+        return row;
+    });
+    return { headers, rows };
+}
+
 function createNumericHash(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -61,8 +96,45 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
-            case 'sync-all':
-                if (!supabase) throw new Error("Supabase connection missing.");
+            case 'bulk-upload-questions': {
+                // Wrap in block scope to avoid redeclaring variables
+                if (!csv) throw new Error("CSV data required.");
+                const qData = parseCSV(csv);
+                const items = qData.rows.map(row => ({
+                    id: parseInt(row.id || String(Date.now() + Math.random())),
+                    topic: row.topic || '',
+                    question: row.question || '',
+                    options: smartParseOptions(row.options),
+                    correct_answer_index: parseInt(row.correctanswerindex || row.answer || '1'),
+                    subject: row.subject || 'General',
+                    difficulty: row.difficulty || 'Moderate'
+                }));
+                await appendSheetData('QuestionBank!A1', items.map(it => [it.id, it.topic, it.question, JSON.stringify(it.options), it.correct_answer_index, it.subject, it.difficulty]));
+                if (supabase) await upsertSupabaseData('questionbank', items);
+                return res.status(200).json({ message: `Imported ${items.length} questions.` });
+            }
+
+            case 'bulk-upload-syllabus': {
+                // Wrap in block scope to avoid redeclaring variables
+                if (!csv) throw new Error("CSV data required.");
+                const sData = parseCSV(csv);
+                const sItems = sData.rows.map(row => ({
+                    id: row.id || `syl_${Date.now()}_${Math.random()}`,
+                    exam_id: row.exam_id || row.examid || '',
+                    title: row.title || '',
+                    questions: parseInt(row.questions || '20'),
+                    duration: parseInt(row.duration || '20'),
+                    subject: row.subject || '',
+                    topic: row.topic || ''
+                }));
+                await appendSheetData('Syllabus!A1', sItems.map(it => [it.id, it.exam_id, it.title, it.questions, it.duration, it.subject, it.topic]));
+                if (supabase) await upsertSupabaseData('syllabus', sItems);
+                return res.status(200).json({ message: `Imported ${sItems.length} syllabus entries.` });
+            }
+
+            case 'sync-all': {
+                // Wrap in block scope to avoid redeclaring variables
+                if (!supabase) throw new Error("Supabase missing.");
                 const [exs, snl, qbs, bks, syls, nfs, cas, gks, ups] = await Promise.all([
                     readSheetData('Exams!A2:H'), readSheetData('Settings!A2:B'),
                     readSheetData('QuestionBank!A2:H'), readSheetData('Bookstore!A2:E'),
@@ -71,39 +143,37 @@ export default async function handler(req: any, res: any) {
                     readSheetData('LiveUpdates!A2:D')
                 ]);
                 
-                // NO SUBTRACTION: Indices are kept exactly as 1, 2, 3, 4
-                const normalizedQuestions = qbs.filter(r => r[0]).map(r => ({
-                    id: parseInt(String(r[0])),
-                    topic: r[1],
-                    question: r[2],
-                    options: smartParseOptions(r[3]),
-                    correct_answer_index: parseInt(String(r[4] || '1')), // Keep 1-based
-                    subject: r[5],
-                    difficulty: r[6]
+                const normalizedQ = qbs.filter(r => r[0]).map(r => ({
+                    id: parseInt(String(r[0])), topic: r[1], question: r[2], options: smartParseOptions(r[3]),
+                    correct_answer_index: parseInt(String(r[4] || '1')), subject: r[5], difficulty: r[6]
                 }));
 
                 await Promise.all([
                     upsertSupabaseData('exams', exs.filter(r => r[0]).map(r => ({ id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }))),
                     upsertSupabaseData('settings', snl.filter(r => r[0]).map(r => ({ key: String(r[0]), value: String(r[1] || '') })), 'key'),
-                    upsertSupabaseData('questionbank', normalizedQuestions),
+                    upsertSupabaseData('questionbank', normalizedQ),
                     upsertSupabaseData('bookstore', bks.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] }))),
-                    upsertSupabaseData('syllabus', syls.filter(r => r[0]).map(r => ({ id: String(r[0]), exam_id: String(r[1]), title: r[2], questions: r[3], duration: r[4], subject: r[5], topic: r[6] }))),
+                    upsertSupabaseData('syllabus', syls.filter(r => r[0]).map(r => ({ id: String(r[0]), exam_id: String(r[1]), title: r[2], questions: parseInt(r[3]), duration: parseInt(r[4]), subject: r[5], topic: r[6] }))),
                     upsertSupabaseData('notifications', nfs.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] }))),
                     upsertSupabaseData('currentaffairs', cas.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], source: r[2], date: r[3] }))),
                     upsertSupabaseData('gk', gks.filter(r => r[0]).map(r => ({ id: String(r[0]), fact: r[1], category: r[2] }))),
                     upsertSupabaseData('liveupdates', ups.filter(r => r[0]).map(r => ({ id: createNumericHash(String(r[1]) || String(r[0])), title: r[0], url: r[1], section: r[2], published_date: r[3] })))
                 ]);
-                return res.status(200).json({ message: 'Sync Successful. 1-4 indexing preserved.' });
+                return res.status(200).json({ message: 'Cloud Layers Fully Rebuilt.' });
+            }
 
-            case 'flush-data':
+            case 'flush-data': {
+                // Wrap in block scope to avoid redeclaring variables
                 if (!targetTable) throw new Error("Table missing.");
                 const tableToFlush = String(targetTable).toLowerCase();
                 if (supabase) await supabase.from(tableToFlush).delete().neq('id', -1);
                 const sheetMapping: Record<string, string> = { 'questionbank': 'QuestionBank', 'syllabus': 'Syllabus', 'results': 'Results', 'notifications': 'Notifications', 'liveupdates': 'LiveUpdates', 'bookstore': 'Bookstore', 'currentaffairs': 'CurrentAffairs', 'gk': 'GK' };
                 if (sheetMapping[tableToFlush]) await clearAndWriteSheetData(`${sheetMapping[tableToFlush]}!A2:Z`, []);
                 return res.status(200).json({ message: `Table ${tableToFlush} cleared.` });
+            }
 
-            case 'sync-syllabus-linking':
+            case 'sync-syllabus-linking': {
+                // Wrap in block scope to avoid redeclaring variables
                 if (!supabase) throw new Error("Supabase required.");
                 const { data: qData } = await supabase.from('questionbank').select('topic, subject');
                 const counts: Record<string, number> = {};
@@ -118,23 +188,51 @@ export default async function handler(req: any, res: any) {
                     });
                     await upsertSupabaseData('syllabus', updates);
                 }
-                return res.status(200).json({ message: "Syllabus updated with counts." });
+                return res.status(200).json({ message: "Syllabus updated with current question counts." });
+            }
 
-            case 'update-setting':
-                await findAndUpsertRow('Settings', setting.key, [setting.key, String(setting.value || '')]);
-                if (supabase) await upsertSupabaseData('settings', [{ key: setting.key, value: String(setting.value || '') }], 'key');
-                return res.status(200).json({ message: 'Setting Updated.' });
+            case 'add-question': {
+                // Wrap in block scope to avoid redeclaring variables
+                const opts = smartParseOptions(question.options);
+                const finalIdx = parseInt(String(question.correct_answer_index || '1'));
+                const qId = question.id ? parseInt(question.id) : Date.now();
+                await findAndUpsertRow('QuestionBank', String(qId), [qId, question.topic, question.question, JSON.stringify(opts), finalIdx, question.subject, question.difficulty]);
+                if (supabase) await upsertSupabaseData('questionbank', [{ id: qId, topic: question.topic, question: question.question, options: opts, correct_answer_index: finalIdx, subject: question.subject, difficulty: question.difficulty }]);
+                return res.status(200).json({ message: 'Question Saved (1-4 index).' });
+            }
+
+            case 'update-exam':
+                await findAndUpsertRow('Exams', exam.id, [exam.id, exam.title_ml, exam.title_en || exam.title_ml, exam.description_ml, exam.description_ml, exam.category, exam.level, exam.icon_type]);
+                if (supabase) await upsertSupabaseData('exams', [{ id: exam.id, title_ml: exam.title_ml, title_en: exam.title_en || exam.title_ml, description_ml: exam.description_ml, description_en: exam.description_ml, category: exam.category, level: exam.level, icon_type: exam.icon_type }]);
+                return res.status(200).json({ message: 'Exam Registered.' });
+
+            case 'update-syllabus': {
+                // Wrap in block scope to avoid redeclaring variables
+                const sylId = syllabus.id || `syl_${Date.now()}`;
+                await findAndUpsertRow('Syllabus', String(sylId), [sylId, syllabus.exam_id, syllabus.title, syllabus.questions, syllabus.duration, syllabus.subject, syllabus.topic]);
+                if (supabase) await upsertSupabaseData('syllabus', [{ id: String(sylId), exam_id: syllabus.exam_id, title: syllabus.title, questions: parseInt(syllabus.questions), duration: parseInt(syllabus.duration), subject: syllabus.subject, topic: syllabus.topic }]);
+                return res.status(200).json({ message: 'Syllabus Updated.' });
+            }
 
             case 'delete-row':
                 await deleteRowById(sheet, id);
                 if (supabase) await deleteSupabaseRow(sheet, id);
                 return res.status(200).json({ message: 'Deleted.' });
 
-            case 'test-connection':
+            case 'test-connection': {
+                // Wrap in block scope to avoid redeclaring variables
                 let sS = false, sbS = false;
                 try { await readSheetData('Settings!A1:A1'); sS = true; } catch (e) {}
                 try { if (supabase) { const { error } = await supabase.from('settings').select('key').limit(1); sbS = !error; } } catch (e) {}
                 return res.status(200).json({ status: { sheets: sS, supabase: sbS } });
+            }
+
+            case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
+            case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
+            case 'run-scraper-affairs': return res.status(200).json(await scrapeCurrentAffairs());
+            case 'run-scraper-gk': return res.status(200).json(await scrapeGk());
+            case 'run-scraper-questions': return res.status(200).json(await generateNewQuestions());
+            case 'run-book-scraper': return res.status(200).json(await runBookScraper());
 
             default: return res.status(400).json({ error: 'Invalid Action' });
         }
