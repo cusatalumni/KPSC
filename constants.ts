@@ -35,108 +35,30 @@ export const EXAMS_DATA: Exam[] = [
     icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
     category: 'General',
     level: 'Preliminary'
-  },
-  {
-    id: 'veo_exam',
-    title: { ml: 'VEO (വില്ലേജ് എക്സ്റ്റൻഷൻ ഓഫീസർ)', en: 'Village Extension Officer' },
-    description: { ml: 'ഗ്രാമവികസന വകുപ്പിലെ പ്രധാന പരീക്ഷ.', en: 'Key exam in Rural Development department.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-emerald-600" }),
-    category: 'General',
-    level: 'Main'
-  },
-  {
-    id: 'fireman_exam',
-    title: { ml: 'Fireman / Firewoman (ഫയർമാൻ)', en: 'Fireman / Firewoman' },
-    description: { ml: 'ഫയർ ആന്റ് റെസ്ക്യൂ സർവീസിലെ പരീക്ഷകൾ.', en: 'Fire and Rescue services exams.' },
-    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-red-500" }),
-    category: 'Special',
-    level: 'Preliminary'
-  },
-  {
-    id: 'lp_up_assistant',
-    title: { ml: 'LP/UP Assistant (എൽ.പി/യു.പി അസിസ്റ്റന്റ്)', en: 'LP/UP Assistant' },
-    description: { ml: 'വിദ്യാഭ്യാസ വകുപ്പിലെ അദ്ധ്യാപക തസ്തികകൾ.', en: 'Teaching posts in Education department.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-purple-600" }),
-    category: 'General',
-    level: 'Main'
-  },
-  {
-    id: 'staff_nurse',
-    title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' },
-    description: { ml: 'ആരോഗ്യ വകുപ്പിലെ നഴ്സിംഗ് തസ്തികകളിലേക്കുള്ള പരീക്ഷ.', en: 'Nursing post exams in Health Department.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-amber-600" }),
-    category: 'Technical',
-    level: 'Main'
-  },
-  {
-    id: 'kseb_sub_eng',
-    title: { ml: 'KSEB Sub Engineer (സബ് എൻജിനീയർ)', en: 'KSEB Sub Engineer' },
-    description: { ml: 'കെ.എസ്.ഇ.ബി ഇലക്ട്രിക്കൽ വിഭാഗം പരീക്ഷകൾ.', en: 'KSEB Electrical Engineering exams.' },
-    icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-amber-500" }),
-    category: 'Technical',
-    level: 'Main'
   }
 ];
 
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ldc_gk', title: 'General Knowledge', questions: 20, duration: 20, subject: 'GK', topic: 'GK' },
-    { id: 'ldc_ml', title: 'Malayalam Grammar', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Malayalam Grammar' },
-    { id: 'ldc_en', title: 'English Grammar', questions: 10, duration: 10, subject: 'English', topic: 'English Grammar' },
-    { id: 'ldc_ma', title: 'Mental Ability', questions: 10, duration: 15, subject: 'Reasoning', topic: 'Mental Ability' },
-    { id: 'ldc_sc', title: 'General Science', questions: 10, duration: 10, subject: 'Science', topic: 'Science' },
-    { id: 'ldc_his', title: 'Indian History', questions: 10, duration: 10, subject: 'History', topic: 'Indian History' },
+    { id: 'ldc_gk_1', title: 'Kerala History', questions: 20, duration: 20, subject: 'History', topic: 'Kerala' },
+    { id: 'ldc_comp_hw', title: 'Basics of Computer', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Hardware' },
+    { id: 'ldc_comp_sw', title: 'Basics of Computer', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Software' },
+    { id: 'ldc_comp_net', title: 'Basics of Computer', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Networks' },
+    { id: 'ldc_ml_gr', title: 'Malayalam Grammar', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Grammar' },
+    { id: 'ldc_en_gr', title: 'English Grammar', questions: 10, duration: 10, subject: 'English', topic: 'Grammar' },
   ],
   studyNotes: [{ id: 'sn_kh', title: 'Kerala History' }, { id: 'sn_ic', title: 'Indian Constitution' }],
   previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
-};
-
-export const TEACHING_EXAM_CONTENT: ExamPageContent = {
-  practiceTests: [
-    { id: 'teach_psy', title: 'Psychology & Pedagogy', questions: 20, duration: 25, subject: 'Psychology', topic: 'Educational Psychology' },
-    { id: 'teach_gk', title: 'General Knowledge', questions: 15, duration: 15, subject: 'GK', topic: 'GK' },
-    { id: 'teach_ml', title: 'Malayalam', questions: 10, duration: 10, subject: 'Malayalam', topic: 'Malayalam Grammar' },
-    { id: 'teach_en', title: 'English', questions: 10, duration: 10, subject: 'English', topic: 'English Grammar' },
-  ],
-  studyNotes: [{ id: 'sn_psy', title: 'Learning Theories' }],
-  previousPapers: [{ id: 'pp_lpup22', title: 'LP/UP 2022 Paper' }]
-};
-
-export const STAFF_NURSE_CONTENT: ExamPageContent = {
-  practiceTests: [
-    { id: 'sn_ns', title: 'Nursing Science', questions: 20, duration: 20, subject: 'Nursing', topic: 'Nursing Science' },
-    { id: 'sn_an', title: 'Anatomy', questions: 10, duration: 10, subject: 'Science', topic: 'Biology' },
-    { id: 'sn_gk', title: 'General Knowledge', questions: 10, duration: 10, subject: 'GK', topic: 'GK' },
-  ],
-  studyNotes: [{ id: 'sn_fn', title: 'Nursing Fundamentals' }],
-  previousPapers: [{ id: 'pp_sn23', title: 'Staff Nurse 2023 Paper' }]
-};
-
-export const KSEB_CONTENT: ExamPageContent = {
-  practiceTests: [
-    { id: 'ks_ee', title: 'Electrical Engineering', questions: 20, duration: 20, subject: 'Technical', topic: 'Electrical Engineering' },
-    { id: 'ks_em', title: 'Engineering Maths', questions: 10, duration: 15, subject: 'Engineering Mathematics', topic: 'Calculus' },
-    { id: 'ks_gk', title: 'General Knowledge', questions: 10, duration: 10, subject: 'GK', topic: 'GK' },
-  ],
-  studyNotes: [{ id: 'sn_ps', title: 'Power Systems' }],
-  previousPapers: [{ id: 'pp_se22', title: 'Sub Engineer 2022 Paper' }]
 };
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
     'ldc_lgs': LDC_EXAM_CONTENT,
     'plus_two_prelims': LDC_EXAM_CONTENT,
     'degree_prelims': LDC_EXAM_CONTENT,
-    'veo_exam': LDC_EXAM_CONTENT,
-    'fireman_exam': LDC_EXAM_CONTENT,
-    'lp_up_assistant': TEACHING_EXAM_CONTENT,
-    'staff_nurse': STAFF_NURSE_CONTENT,
-    'kseb_sub_eng': KSEB_CONTENT,
 };
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [
   { id: 'h1', question: "വൈക്കം സത്യാഗ്രഹം നടന്ന വർഷം?", options: ['1924', '1925', '1930', '1921'], correctAnswerIndex: 0, topic: 'Kerala History', subject: 'Kerala', difficulty: 'PSC Level' },
-  { id: 'h2', question: "ഇന്ത്യൻ നാഷണൽ കോൺഗ്രസ് സ്ഥാപിച്ചത് ആര്?", options: ['എ.ഓ. ഹ്യൂം', 'ഗാന്ധിജി', 'നെഹ്‌റു', 'തിലക്'], correctAnswerIndex: 0, topic: 'Indian History', subject: 'History', difficulty: 'PSC Level' },
-  { id: 'ma1', question: "2, 4, 8, 16, ___ അടുത്ത സംഖ്യ ഏത്?", options: ['32', '24', '20', '64'], correctAnswerIndex: 0, topic: 'Mental Ability', subject: 'Reasoning', difficulty: 'Easy' },
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
@@ -145,24 +67,6 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
     title: { ml: 'Malayalam Grammar', en: 'Malayalam Grammar' },
     description: { ml: 'മലയാള വ്യാകരണം.', en: 'Comprehensive Malayalam grammar.' },
     icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-indigo-500" })
-  },
-  {
-    id: 'mental_ability',
-    title: { ml: 'Mental Ability', en: 'Mental Ability' },
-    description: { ml: 'ഗണിതവും ചിന്താശേഷിയും.', en: 'Quantitative Aptitude and Mental Ability.' },
-    icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-amber-500" })
-  },
-  {
-    id: 'indian_const',
-    title: { ml: 'Indian Constitution', en: 'Indian Constitution' },
-    description: { ml: 'ഇന്ത്യൻ ഭരണഘടന.', en: 'Articles, Parts, and Amendments.' },
-    icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-rose-500" })
-  },
-  {
-    id: 'kerala_hist',
-    title: { ml: 'Kerala History', en: 'Kerala History' },
-    description: { ml: 'കേരള ചരിത്രം.', en: 'From early times to modern Kerala.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-emerald-500" })
   }
 ];
 
@@ -176,76 +80,6 @@ export const LOCK_MOCK_TESTS_DATA: MockTest[] = [
     duration: 75,
     negativeMarking: 0.33,
     isPro: false
-  },
-  {
-    id: 'mt_degree_01',
-    examId: 'degree_prelims',
-    title: { ml: 'Degree Level Model 01', en: 'Degree Level Model 01' },
-    description: { ml: 'ബിരുദതല പരീക്ഷകൾക്കായുള്ള പ്രത്യേക മോക്ക് ടെസ്റ്റ്.', en: 'Special mock test for degree level exams.' },
-    questionsCount: 100,
-    duration: 90,
-    negativeMarking: 0.33,
-    isPro: true
-  },
-  {
-    id: 'mt_plus2_01',
-    examId: 'plus_two_prelims',
-    title: { ml: 'Plus Two Prelims Model', en: 'Plus Two Prelims Model' },
-    description: { ml: 'സി.പി.ഒ / എക്സൈസ് പരീക്ഷകൾക്കായുള്ള പരിശീലനം.', en: 'Practice for CPO / Excise exams.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_veo_01',
-    examId: 'veo_exam',
-    title: { ml: 'VEO Main Exam Mock', en: 'VEO Main Exam Mock' },
-    description: { ml: 'വി.ഇ.ഒ മെയിൻ പരീക്ഷയ്ക്കായുള്ള മോക്ക് ടെസ്റ്റ്.', en: 'Mock test for VEO main exam.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_fire_01',
-    examId: 'fireman_exam',
-    title: { ml: 'Fireman/Woman Mock', en: 'Fireman/Woman Mock' },
-    description: { ml: 'ഫയർമാൻ പരീക്ഷയ്ക്കായുള്ള കായിക/മാനസിക ചോദ്യങ്ങൾ.', en: 'Special questions for Fireman exam.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_lpup_01',
-    examId: 'lp_up_assistant',
-    title: { ml: 'LP/UP Assistant Mock', en: 'LP/UP Assistant Mock' },
-    description: { ml: 'സൈക്കോളജി ഉൾപ്പെടെയുള്ള മോക്ക് ടെസ്റ്റ്.', en: 'Mock test including Psychology section.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: false
-  },
-  {
-    id: 'mt_nurse_01',
-    examId: 'staff_nurse',
-    title: { ml: 'Staff Nurse Gr II Mock', en: 'Staff Nurse Gr II Mock' },
-    description: { ml: 'നഴ്സിംഗ് വിഷയങ്ങൾ ഉൾപ്പെടുത്തിയ മോക്ക് ടെസ്റ്റ്.', en: 'Mock test for Staff Nurse post.' },
-    questionsCount: 100,
-    duration: 90,
-    negativeMarking: 0.33,
-    isPro: true
-  },
-  {
-    id: 'mt_kseb_01',
-    examId: 'kseb_sub_eng',
-    title: { ml: 'KSEB Sub Engineer Mock', en: 'KSEB Sub Engineer Mock' },
-    description: { ml: 'ഇലക്ട്രിക്കൽ എൻജിനീയറിംഗ് മോക്ക് ടെസ്റ്റ്.', en: 'Electrical engineering mock test.' },
-    questionsCount: 100,
-    duration: 75,
-    negativeMarking: 0.33,
-    isPro: true
   }
 ];
 

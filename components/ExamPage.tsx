@@ -6,10 +6,8 @@ import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { ClipboardListIcon } from './icons/ClipboardListIcon';
 import { LockClosedIcon } from './icons/LockClosedIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
-// Added missing icon import
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { useTranslation } from '../contexts/LanguageContext';
-import { EXAM_CONTENT_MAP } from '../constants';
 
 interface ExamPageProps {
     exam: Exam; 
@@ -30,15 +28,9 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
-    
     getExamSyllabus(exam.id).then(data => {
-        if (isMounted && data && data.length > 0) {
-            setSyllabus(data);
-        }
-    }).finally(() => {
-        if (isMounted) setLoading(false);
-    });
-
+        if (isMounted && data && data.length > 0) setSyllabus(data);
+    }).finally(() => { if (isMounted) setLoading(false); });
     return () => { isMounted = false; };
   }, [exam.id]);
 
@@ -72,26 +64,19 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
             <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><ClipboardListIcon className="h-6 w-6" /></div>
             <div>
                 <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{t('examPage.topicPractice')}</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Comprehensive Topic-Wise Training Table</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Syllabus Breakdown: Subject-Wise Micro Topics</p>
             </div>
           </div>
-          {subscriptionStatus === 'free' && (
-              <div className="bg-amber-400/10 border border-amber-400/20 px-6 py-3 rounded-2xl flex items-center space-x-3 animate-pulse">
-                 <LockClosedIcon className="h-5 w-5 text-amber-600" />
-                 <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Upgrade to Unlock all 177+ Topics</span>
-              </div>
-          )}
         </div>
         
         <div className="overflow-x-auto">
             <table className="w-full text-left">
                 <thead className="bg-slate-100 dark:bg-slate-800/50 text-slate-500 font-black text-[10px] uppercase tracking-widest border-b dark:border-slate-800">
                     <tr>
-                        <th className="px-10 py-6">Micro-Topic Name</th>
+                        <th className="px-10 py-6">Micro-Topic (Subject • Part)</th>
                         <th className="px-6 py-6 text-center">Questions</th>
-                        <th className="px-6 py-6 text-center">Duration</th>
                         <th className="px-6 py-6">Status</th>
-                        <th className="px-10 py-6 text-right">Training</th>
+                        <th className="px-10 py-6 text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -103,13 +88,14 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
                                     <div className="flex items-center space-x-4">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${isLocked ? 'bg-slate-100 text-slate-400' : 'bg-indigo-50 text-indigo-600'}`}>{index + 1}</div>
                                         <div>
-                                            <p className={`font-black text-base ${isLocked ? 'text-slate-500' : 'text-slate-800 dark:text-slate-100'}`}>{test.title}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{test.subject} • {test.topic}</p>
+                                            <p className={`font-black text-base ${isLocked ? 'text-slate-500' : 'text-slate-800 dark:text-slate-100'}`}>
+                                               {test.subject} • {test.topic}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{test.title}</p>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-7 text-center font-black text-slate-600 dark:text-slate-400 text-sm">{test.questions}</td>
-                                <td className="px-6 py-7 text-center font-black text-slate-600 dark:text-slate-400 text-sm">{test.duration}m</td>
                                 <td className="px-6 py-7">
                                     {isLocked ? (
                                         <span className="bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center w-fit space-x-2">
@@ -119,23 +105,16 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
                                     ) : (
                                         <span className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-[9px] font-black uppercase flex items-center w-fit space-x-2">
                                             <CheckCircleIcon className="h-3 w-3" />
-                                            <span>Active</span>
+                                            <span>Available</span>
                                         </span>
                                     )}
                                 </td>
                                 <td className="px-10 py-7 text-right">
                                     <button 
-                                        onClick={() => isLocked ? onNavigateToUpgrade() : onStartTest({ title: test.title, questionsCount: test.questions, subject: test.subject, topic: test.topic })}
-                                        className={`px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md flex items-center space-x-2 ml-auto ${isLocked ? 'bg-slate-800 text-white' : 'btn-vibrant-indigo text-white hover:shadow-indigo-200'}`}
+                                        onClick={() => isLocked ? onNavigateToUpgrade() : onStartTest({ ...test })}
+                                        className={`px-8 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md ${isLocked ? 'bg-slate-800 text-white' : 'btn-vibrant-indigo text-white hover:shadow-indigo-200'}`}
                                     >
-                                        {isLocked ? (
-                                            <>
-                                                <SparklesIcon className="h-3.5 w-3.5 text-amber-400" />
-                                                <span>Go Pro</span>
-                                            </>
-                                        ) : (
-                                            <span>Start Practice</span>
-                                        )}
+                                        {isLocked ? 'Unlock Pro' : 'Start Practice'}
                                     </button>
                                 </td>
                             </tr>
@@ -143,7 +122,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ exam, content, subscriptionStatus, 
                     })}
                 </tbody>
             </table>
-            {loading && syllabus.length === 0 && <div className="p-20 text-center text-slate-400 font-black uppercase tracking-[0.3em] animate-pulse">Syncing Learning Data...</div>}
+            {loading && syllabus.length === 0 && <div className="p-20 text-center text-slate-400 font-black uppercase tracking-[0.3em] animate-pulse">Syncing Micro-Topics...</div>}
         </div>
       </section>
     </div>

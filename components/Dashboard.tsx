@@ -13,94 +13,48 @@ import CurrentAffairsWidget from './icons/CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { NewspaperIcon } from './icons/NewspaperIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
-// Added missing icon import
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
 const WelcomeBar: React.FC = () => {
-    const { t } = useTranslation();
     return (
-        <div className="bg-slate-950 p-10 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden mb-12 border border-white/5 shadow-2xl">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            <div className="relative z-10 space-y-3">
-                <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-indigo-600 rounded-lg shadow-lg"><SparklesIcon className="h-5 w-5 text-white" /></div>
-                    <span className="font-black text-[10px] uppercase tracking-[0.4em] text-indigo-400">Personalized Learning</span>
+        <div className="bg-slate-950 p-10 md:p-14 rounded-[4rem] text-white flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden mb-16 border-2 border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+            <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-indigo-600/10 rounded-full blur-[120px] -mr-64 -mt-64"></div>
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-[100px] -ml-40 -mb-40"></div>
+            
+            <div className="relative z-10 space-y-6 max-w-2xl">
+                <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-[0_0_30px_rgba(79,70,229,0.5)]"><SparklesIcon className="h-6 w-6 text-white" /></div>
+                    <span className="font-black text-[11px] uppercase tracking-[0.5em] text-indigo-400">Next Gen Learning</span>
                 </div>
-                <h2 className="text-4xl font-black tracking-tighter">നിങ്ങളുടെ പരീക്ഷാ തയ്യാറെടുപ്പ് <br/><span className="text-indigo-500">ഇവിടെ തുടങ്ങാം!</span></h2>
-                <p className="text-slate-400 font-bold max-w-md">1800+ ചോദ്യങ്ങളും 177 മൈക്രോ ടോപ്പിക്കുകളുമുള്ള കേരളത്തിലെ ഏറ്റവും വലിയ PSC സ്റ്റഡി ഹബ്ബ്.</p>
+                <h2 className="text-5xl md:text-6xl font-black tracking-tighter leading-[0.95]">
+                   റാങ്ക് പട്ടികയിൽ <br/>
+                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-indigo-200 to-indigo-500">മുന്നിലെത്താം!</span>
+                </h2>
+                <p className="text-slate-400 font-bold text-lg leading-relaxed">
+                   AI സാങ്കേതികവിദ്യയുടെ സഹായത്തോടെ സിലബസ് മൈക്രോ ടോപ്പിക്കുകളായി പഠിക്കാം. 
+                   1.8k+ ചോദ്യങ്ങൾ ഇപ്പോൾ ലഭ്യമാണ്.
+                </p>
+                <div className="flex flex-wrap gap-8 pt-4">
+                   <div className="flex flex-col">
+                      <span className="text-4xl font-black text-indigo-500">177+</span>
+                      <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Micro Topics</span>
+                   </div>
+                   <div className="w-px h-12 bg-white/10 hidden sm:block"></div>
+                   <div className="flex flex-col">
+                      <span className="text-4xl font-black text-emerald-500">100%</span>
+                      <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Syllabus Sync</span>
+                   </div>
+                </div>
             </div>
-            <div className="relative z-10 bg-white/5 border border-white/10 p-6 rounded-[2.5rem] flex items-center space-x-10 shadow-inner">
-                <div className="text-center">
-                    <p className="text-3xl font-black text-indigo-400">1.8k+</p>
-                    <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mt-1">Questions</p>
-                </div>
-                <div className="w-px h-10 bg-white/10"></div>
-                <div className="text-center">
-                    <p className="text-3xl font-black text-emerald-400">177</p>
-                    <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mt-1">Micro Topics</p>
-                </div>
-                <div className="w-px h-10 bg-white/10"></div>
-                <div className="text-center">
-                    <p className="text-3xl font-black text-amber-400">AI</p>
-                    <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mt-1">Verified</p>
-                </div>
-            </div>
-        </div>
-    );
-};
 
-const DailyPulse: React.FC<{ onNavigate: (page: Page) => void }> = ({ onNavigate }) => {
-    const { t } = useTranslation();
-    const [items, setItems] = useState<{ type: 'gk' | 'news', data: any }[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        Promise.all([getGk(), getCurrentAffairs()]).then(([gk, news]) => {
-            const combined = [
-                ...gk.slice(0, 5).map(item => ({ type: 'gk' as const, data: item })),
-                ...news.slice(0, 5).map(item => ({ type: 'news' as const, data: item }))
-            ].sort(() => 0.5 - Math.random());
-            setItems(combined);
-            setLoading(false);
-        }).catch(() => setLoading(false));
-    }, []);
-
-    useEffect(() => {
-        if (items.length === 0) return;
-        const timer = setInterval(() => {
-            setCurrentIndex(prev => (prev + 1) % items.length);
-        }, 5000);
-        return () => clearInterval(timer);
-    }, [items]);
-
-    if (loading || items.length === 0) return null;
-    const current = items[currentIndex];
-
-    return (
-        <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group cursor-pointer hover:border-indigo-400 transition-all h-full flex flex-col" 
-             onClick={() => onNavigate(current.type === 'gk' ? 'gk' : 'current_affairs')}>
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-bl-[8rem] -mr-16 -mt-16 group-hover:scale-110 transition-transform"></div>
-            <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center space-x-3">
-                    <div className={`p-4 rounded-2xl shadow-lg ${current.type === 'gk' ? 'bg-yellow-500 text-white' : 'bg-teal-500 text-white'}`}>
-                        {current.type === 'gk' ? <LightBulbIcon className="h-6 w-6" /> : <NewspaperIcon className="h-6 w-6" />}
+            <div className="relative z-10 hidden lg:block">
+                 <div className="w-64 h-64 bg-white/5 rounded-[3rem] border border-white/10 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center rotate-3 shadow-2xl">
+                    <div className="w-20 h-20 bg-indigo-600/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                       <LightBulbIcon className="h-10 w-10 text-indigo-400" />
                     </div>
-                    <div>
-                        <span className="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400 block">
-                            {current.type === 'gk' ? 'Daily Intelligence' : 'Breaking Update'}
-                        </span>
-                        <span className="text-[11px] font-black text-indigo-600 uppercase">Flash Card</span>
-                    </div>
-                </div>
-            </div>
-            <div className="flex-grow flex flex-col justify-center">
-                <h4 className="text-2xl font-black text-slate-800 dark:text-white leading-tight animate-fade-in tracking-tighter italic">"{current.type === 'gk' ? current.data.fact : current.data.title}"</h4>
-            </div>
-            <div className="mt-8 flex items-center space-x-2 text-indigo-600">
-                <span className="text-[10px] font-black uppercase tracking-widest">Learn More</span>
-                <div className="h-0.5 flex-grow bg-indigo-50"></div>
-                <ChevronRightIcon className="h-4 w-4" />
+                    <p className="text-white font-black text-sm mb-1 uppercase tracking-widest">Smart Study</p>
+                    <p className="text-slate-500 font-bold text-xs">Unlock your potential with PSC Guru Pro</p>
+                 </div>
             </div>
         </div>
     );
@@ -136,56 +90,53 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
 
   if (loading) return (
     <div className="space-y-12 animate-pulse p-4">
-        <div className="h-72 bg-slate-200 dark:bg-slate-800 rounded-[3.5rem]"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[1,2,3,4].map(i => <div key={i} className="h-48 bg-slate-100 dark:bg-slate-900 rounded-[2.5rem]"></div>)}
+        <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-[3.5rem]"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1,2,3].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-900 rounded-[2.5rem]"></div>)}
         </div>
     </div>
   );
 
   return (
-    <div className="space-y-16 pb-20">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-stretch px-4">
-          <div className="lg:col-span-2"><HeroSlider onNavigate={onNavigate} /></div>
-          <div className="h-full"><DailyPulse onNavigate={onNavigate} /></div>
+    <div className="space-y-20 pb-32">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 px-4">
+          <div className="lg:col-span-3"><HeroSlider onNavigate={onNavigate} /></div>
+          <div className="hidden lg:block space-y-6">
+              <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
+              <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
+          </div>
       </div>
       
       <div className="px-4"><NewsTicker /></div>
       
       <div className="px-4"><WelcomeBar /></div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 px-4">
-        <div className="lg:col-span-3 space-y-20">
-          {sortedCategoryIds.map((catId) => (
-              <section key={catId} className="animate-fade-in-up">
-                  <div className="flex items-center space-x-5 mb-10 border-b-2 dark:border-slate-800 pb-6">
-                    <div className="h-10 w-2 bg-indigo-600 rounded-full shadow-[0_0_15px_rgba(79,70,229,0.5)]"></div>
+      <div className="px-4 space-y-24">
+        {sortedCategoryIds.map((catId) => (
+            <section key={catId} className="animate-fade-in-up">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 border-b-2 dark:border-slate-800 pb-10">
+                  <div className="flex items-center space-x-6">
+                    <div className="h-16 w-3 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.4)]"></div>
                     <div>
-                        <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tighter">{t(`dashboard.examCategories.${catId}`) || catId}</h3>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Curated Preparation Tracks</p>
+                        <h3 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">{t(`dashboard.examCategories.${catId}`) || catId}</h3>
+                        <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px] mt-2">Professional Training Tracks</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-                    {(groupedExams[catId] || []).map((exam, idx) => (
-                        <Fragment key={exam.id}>
-                            <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
-                            {(idx + 1) % 7 === 0 && <div className="sm:col-span-2 py-6"><AdsenseWidget /></div>}
-                        </Fragment>
-                    ))}
-                  </div>
-              </section>
-          ))}
-        </div>
-        <div className="space-y-10">
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 p-1 rounded-[2.5rem] shadow-2xl">
-              <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-          </div>
-          <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
-          <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
-          <div className="sticky top-24">
-             <AdsenseWidget />
-          </div>
-        </div>
+                  <button onClick={() => onNavigate('mock_test_home')} className="flex items-center space-x-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest hover:translate-x-2 transition-transform">
+                     <span>View All Tests</span>
+                     <ChevronRightIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
+                  {(groupedExams[catId] || []).map((exam, idx) => (
+                      <Fragment key={exam.id}>
+                          <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
+                          {(idx + 1) % 6 === 0 && <div className="sm:col-span-2 lg:col-span-3 py-6"><AdsenseWidget /></div>}
+                      </Fragment>
+                  ))}
+                </div>
+            </section>
+        ))}
       </div>
     </div>
   );
