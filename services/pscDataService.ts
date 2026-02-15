@@ -1,3 +1,4 @@
+
 import type { Exam, PracticeTest, FeedbackData, QuizQuestion } from '../types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_BOOKS_DATA, MOCK_QUESTION_BANK } from '../constants';
 import React from 'react';
@@ -87,6 +88,14 @@ export const getSettings = async () => {
         if (res.ok) return await res.json();
     } catch (e) {}
     return { subscription_model_active: 'true', paypal_client_id: 'sb' };
+};
+
+export const getSubscriptions = async () => {
+    try {
+        const res = await fetchWithTimeout('/api/data?type=subscriptions', 3000);
+        if (res.ok) return await res.json();
+    } catch (e) {}
+    return [];
 };
 
 export const getQuestionsForTest = async (subject: string, topic: string, count: number): Promise<QuizQuestion[]> => {

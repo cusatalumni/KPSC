@@ -8,7 +8,8 @@ import {
     scrapePscLiveUpdates, 
     scrapeCurrentAffairs, 
     scrapeGk, 
-    generateNewQuestions 
+    generateNewQuestions,
+    generateQuestionsForGaps
 } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
@@ -194,12 +195,15 @@ export default async function handler(req: any, res: any) {
                         const topicKey = String(s.topic || s.title).toLowerCase().trim();
                         const subjectKey = String(s.subject).toLowerCase().trim();
                         const available = counts[topicKey] || counts[subjectKey] || 0;
-                        return { ...s, questions: available > 0 ? Math.min(available, s.questions || 20) : s.questions };
+                        return { ...s, questions: available === 0 ? 0 : s.questions };
                     });
                     await upsertSupabaseData('syllabus', updates);
                 }
                 return res.status(200).json({ message: "Syllabus audited against question bank." });
             }
+
+            case 'run-gap-filler':
+                return res.status(200).json(await generateQuestionsForGaps());
 
             case 'add-question': {
                 const opts = smartParseOptions(question.options);

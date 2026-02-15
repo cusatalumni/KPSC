@@ -24,7 +24,8 @@ export default async function handler(req: any, res: any) {
     const tableMap: Record<string, string> = {
         'exams': 'exams', 'questions': 'questionbank', 'books': 'bookstore',
         'updates': 'liveupdates', 'affairs': 'currentaffairs', 'gk': 'gk',
-        'syllabus': 'syllabus', 'notifications': 'notifications', 'settings': 'settings'
+        'syllabus': 'syllabus', 'notifications': 'notifications', 'settings': 'settings',
+        'subscriptions': 'subscriptions'
     };
     
     const tableName = tableMap[tType] || tType;
@@ -41,6 +42,9 @@ export default async function handler(req: any, res: any) {
                     query = query.ilike('topic', `%${topic}%`);
                 }
                 query = query.limit(100);
+            }
+            if (tableName === 'subscriptions') {
+                query = query.order('last_updated', { ascending: false });
             }
             const { data, error } = await query;
             if (!error && data && data.length > 0) {
@@ -61,7 +65,7 @@ export default async function handler(req: any, res: any) {
                 const filtered = qRows.filter(r => r[0]).sort(() => 0.5 - Math.random()).slice(0, limitCount);
                 return res.status(200).json(filtered.map(r => ({
                     id: String(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), 
-                    correctAnswerIndex: parseInt(String(r[4] || '1')), // Directly use 1-based
+                    correctAnswerIndex: parseInt(String(r[4] || '1')), 
                     subject: r[5], difficulty: r[6]
                 })));
             default:

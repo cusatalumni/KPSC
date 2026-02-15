@@ -4,12 +4,11 @@ import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { 
-    getBooks, 
     getExams,
     testConnection,
     getExamSyllabus,
     getSettings,
-    updateSetting
+    getSubscriptions
 } from '../../services/pscDataService';
 import { RssIcon } from '../icons/RssIcon';
 import { TrashIcon } from '../icons/TrashIcon';
@@ -26,33 +25,11 @@ import { BellIcon } from '../icons/BellIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { BeakerIcon } from '../icons/BeakerIcon';
-import type { Book, Exam, PracticeTest, QuizQuestion } from '../../types';
+import { UserCircleIcon } from '../icons/UserCircleIcon';
+import { SparklesIcon } from '../icons/SparklesIcon';
+import type { Exam, PracticeTest } from '../../types';
 
-type AdminTab = 'automation' | 'exams' | 'syllabus' | 'questions' | 'bookstore' | 'subscriptions';
-
-const DEFAULT_SYLLABUS_CSV = `id,exam_id,title,questions,duration,subject,topic
-s_ldc_01,ldc_lgs,Indian History,10,10,History,Indian History
-s_ldc_02,ldc_lgs,Kerala History,10,10,History,Kerala History
-s_ldc_03,ldc_lgs,Geography,10,10,Geography,Geography
-s_ldc_04,ldc_lgs,Constitution,10,10,Civics,Constitution
-s_p2_01,plus_two_prelims,General Science,20,20,Science,General
-s_p2_02,plus_two_prelims,Arithmetic,20,30,Maths,Mixed
-s_dg_01,degree_prelims,Advanced History,20,20,History,Advanced
-s_dg_02,degree_prelims,Civil Law Basics,20,20,Civics,Law
-s_veo_01,veo_exam,Rural Development,25,25,GK,Special
-s_veo_02,veo_exam,Social Welfare,25,25,GK,Social
-s_fm_01,fireman_exam,Fire Safety GK,50,50,GK,Special
-s_fm_02,fireman_exam,Mental Ability,50,50,Maths,Mixed
-s_lp_01,lp_up_assistant,Psychology,20,20,Psychology,Educational
-s_lp_02,lp_up_assistant,Pedagogy,20,20,Psychology,Teaching
-s_sn_01,staff_nurse,Nursing Science,50,60,Technical,Nursing
-s_ks_01,kseb_sub_eng,Electrical Eng,50,60,Technical,Electrical`;
-
-const DEFAULT_BOOKS_CSV = `id,title,author,imageUrl,amazonLink
-b1,Kerala PSC LDC Rank File,Lakshya Publications,,https://amazon.in
-b2,PSC Bulletin Question Bank,Talent Academy,,https://amazon.in
-b3,Indian Constitution,M Laxmikanth,,https://amazon.in
-b4,Kerala History,E Sreedhara Menon,,https://amazon.in`;
+type AdminTab = 'automation' | 'exams' | 'syllabus' | 'questions' | 'access';
 
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { getToken } = useAuth();
@@ -62,7 +39,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [status, setStatus] = useState<string | null>(null);
     const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [isSubscriptionActive, setIsSubscriptionActive] = useState(true);
+    const [subscriptions, setSubscriptions] = useState<any[]>([]);
 
     const [csvContent, setCsvContent] = useState('');
     const [newExam, setNewExam] = useState({ id: '', title_ml: '', title_en: '', description_ml: '', category: 'General', level: 'Preliminary', icon_type: 'book' });
@@ -75,9 +52,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const conn = await testConnection(token);
             if (conn && conn.status) setDbStatus(conn.status);
-            const [examRes, s] = await Promise.all([getExams(), getSettings()]);
+            const [examRes, subs] = await Promise.all([getExams(), getSubscriptions()]);
             setExams(examRes.exams);
-            if (s?.subscription_model_active !== undefined) setIsSubscriptionActive(s.subscription_model_active === 'true');
+            setSubscriptions(subs || []);
         } catch (e) { console.error(e); } finally { if (!silent) setLoading(false); }
     }, [getToken]);
 
@@ -117,7 +94,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-32 px-4 animate-fade-in text-slate-800 dark:text-slate-100">
-            {/* Connection Status Panel */}
             <div className="flex flex-wrap items-center justify-between gap-6">
                 <div className="flex space-x-4">
                     <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-[1.5rem] shadow-xl border border-slate-100 dark:border-slate-800 flex items-center space-x-6">
@@ -150,6 +126,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {tabBtn('exams', 'Exams', AcademicCapIcon)}
                 {tabBtn('syllabus', 'Syllabus', ClipboardListIcon)}
                 {tabBtn('questions', 'Q-Bank', PlusIcon)}
+                {tabBtn('access', 'Access Hub', ShieldCheckIcon)}
             </div>
 
             <main className="bg-white dark:bg-slate-950 p-8 md:p-12 rounded-[3rem] shadow-2xl border dark:border-slate-800 min-h-[600px]">
@@ -164,7 +141,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <button onClick={() => handleAction(() => adminOp('sync-all'))} className="relative z-10 bg-white text-indigo-600 px-10 py-5 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all">Rebuild Cloud Layer</button>
                         </div>
 
-                        {/* AI Automation Triggers */}
                         <div className="space-y-6">
                             <div className="flex items-center space-x-3 text-slate-800 dark:text-white">
                                 <BeakerIcon className="h-6 w-6 text-indigo-500" />
@@ -177,7 +153,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     { id: 'run-scraper-affairs', label: 'Current Affairs', icon: NewspaperIcon, color: 'bg-teal-500' },
                                     { id: 'run-scraper-gk', label: 'GK Fact Scraper', icon: LightBulbIcon, color: 'bg-amber-500' },
                                     { id: 'run-scraper-questions', label: 'AI Q-Generator', icon: PlusIcon, color: 'bg-slate-800' },
-                                    { id: 'run-book-scraper', label: 'Book Scraper', icon: BookOpenIcon, color: 'bg-rose-500' },
+                                    { id: 'run-book-scraper', label: 'Book (ASIN) Scraper', icon: BookOpenIcon, color: 'bg-rose-500' },
                                 ].map((tool) => (
                                     <button 
                                         key={tool.id} 
@@ -195,41 +171,84 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        {/* Bulk Import System */}
-                        <div className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[3.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
-                             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                                <div className="flex items-center space-x-4">
-                                    <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
-                                    <div>
-                                        <h3 className="text-2xl font-black uppercase tracking-tight">Bulk Import System</h3>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CSV Tool for fast database setup</p>
+                {activeTab === 'questions' && (
+                    <div className="space-y-12">
+                        {/* Smart Gap Filler Component */}
+                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
+                             <div className="absolute right-0 top-0 opacity-10 group-hover:scale-110 transition-transform duration-1000 -mr-20 -mt-20"><SparklesIcon className="h-96 w-96" /></div>
+                             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                                <div className="max-w-xl">
+                                    <div className="flex items-center space-x-3 mb-4">
+                                        <div className="p-2 bg-white/20 rounded-lg"><SparklesIcon className="h-6 w-6" /></div>
+                                        <span className="font-black tracking-widest text-xs uppercase">Intelligent Gap Management</span>
                                     </div>
+                                    <h3 className="text-3xl font-black uppercase tracking-tighter">Targeted Question Filler</h3>
+                                    <p className="text-indigo-100 font-bold mt-3 text-sm leading-relaxed">
+                                        This tool audits your existing <span className="text-amber-400">1800+ questions</span> and identifies which micro-topics from the 177 syllabus items are missing. 
+                                        It then uses AI to generate questions ONLY for those empty spots.
+                                    </p>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <button onClick={() => setCsvContent(DEFAULT_SYLLABUS_CSV)} className="bg-white border-2 border-indigo-100 text-indigo-600 px-4 py-2 rounded-xl font-black text-[9px] uppercase hover:bg-indigo-50 transition-all">Load Full Syllabus Template</button>
-                                    <button onClick={() => setCsvContent(DEFAULT_BOOKS_CSV)} className="bg-white border-2 border-emerald-100 text-emerald-600 px-4 py-2 rounded-xl font-black text-[9px] uppercase hover:bg-emerald-50 transition-all">Load Books Template</button>
+                                <button 
+                                    onClick={() => handleAction(() => adminOp('run-gap-filler'))}
+                                    className="bg-amber-400 text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center space-x-3"
+                                >
+                                    <span>Fill Syllabus Gaps</span>
+                                    <ArrowPathIcon className="h-5 w-5" />
+                                </button>
+                             </div>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-10 rounded-[3.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800">
+                             <div className="flex items-center space-x-4 mb-8">
+                                <CloudArrowUpIcon className="h-8 w-8 text-indigo-600" />
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Bulk Import (CSV)</h3>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Manually append questions to the bank</p>
                                 </div>
                             </div>
                             <textarea value={csvContent} onChange={e => setCsvContent(e.target.value)} placeholder="Paste CSV content here..." className="w-full h-48 p-6 rounded-3xl border-2 dark:bg-slate-800 font-mono text-[11px] mb-6 focus:border-indigo-500 outline-none" />
-                            <div className="flex flex-wrap gap-4">
-                                <button onClick={() => handleBulkUpload('syllabus')} className="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-indigo-700">Import Syllabus</button>
-                                <button onClick={() => handleBulkUpload('bookstore')} className="bg-emerald-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-emerald-700">Import Books</button>
-                                <button onClick={() => handleBulkUpload('questions')} className="bg-slate-800 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-slate-900">Import Q-Bank</button>
-                            </div>
+                            <button onClick={() => handleBulkUpload('questions')} className="bg-slate-800 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg hover:bg-slate-900">Start Manual Import</button>
                         </div>
+                    </div>
+                )}
 
-                        <div className="bg-red-50 dark:bg-red-900/10 p-10 rounded-[2.5rem] border-2 border-red-100 dark:border-red-900/30">
-                            <div className="flex items-center space-x-4 mb-8 text-red-600">
-                                <TrashIcon className="h-8 w-8" />
-                                <h3 className="text-2xl font-black uppercase tracking-tighter">Emergency Reset (Production Only)</h3>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {['questionbank', 'syllabus', 'results', 'bookstore'].map(table => (
-                                    <button key={table} onClick={() => { if(confirm(`Flush ${table}?`)) handleAction(() => adminOp('flush-data', { targetTable: table }))}} className="bg-white dark:bg-slate-900 border-2 border-red-100 dark:border-red-900/50 text-red-600 p-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-sm">Wipe {table}</button>
-                                ))}
-                            </div>
-                        </div>
+                {activeTab === 'access' && (
+                    <div className="space-y-8">
+                         <div className="flex items-center justify-between">
+                            <h3 className="text-2xl font-black uppercase tracking-tight">Active Subscriptions</h3>
+                            <button onClick={() => refresh()} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-all"><ArrowPathIcon className="h-5 w-5" /></button>
+                         </div>
+                         <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-xl">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-black text-[10px] uppercase tracking-widest">
+                                    <tr>
+                                        <th className="px-8 py-5">User ID</th>
+                                        <th className="px-8 py-5">Status</th>
+                                        <th className="px-8 py-5">Plan</th>
+                                        <th className="px-8 py-5">Expires On</th>
+                                        <th className="px-8 py-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {subscriptions.length > 0 ? subscriptions.map(sub => (
+                                        <tr key={sub.user_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td className="px-8 py-6 font-mono text-xs text-slate-400">{sub.user_id}</td>
+                                            <td className="px-8 py-6"><span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase ${sub.status === 'pro' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{sub.status}</span></td>
+                                            <td className="px-8 py-6 text-sm font-bold">{sub.plan_type}</td>
+                                            <td className="px-8 py-6 text-sm font-medium text-slate-500">{new Date(sub.expiry_date).toLocaleDateString()}</td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button onClick={() => { if(confirm('Cancel this subscription?')) handleAction(() => adminOp('delete-row', { sheet: 'Subscriptions', id: sub.user_id }))}} className="text-red-500 hover:scale-110 transition-transform"><TrashIcon className="h-5 w-5" /></button>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-black uppercase tracking-widest">No Active Subscriptions Found</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                         </div>
                     </div>
                 )}
 

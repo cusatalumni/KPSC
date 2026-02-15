@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData, readSheetData } from './sheets-service.js';
-import { upsertSupabaseData } from './supabase-service.js';
+import { supabase, upsertSupabaseData } from './supabase-service.js';
 
 declare var process: any;
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
@@ -33,15 +33,10 @@ async function getNextId(sheetRange: string, startFrom: number = 1000): Promise<
     } catch (e) { return startFrom; }
 }
 
-/**
- * Ensures an Amazon link has the affiliate tag appended correctly.
- */
-function formatAffiliateLink(link: string): string {
+function formatAffiliateLink(link: string, asin?: string): string {
+    if (asin) return `https://www.amazon.in/dp/${asin}?${AFFILIATE_TAG}`;
     if (!link || !link.includes('amazon.in')) return link;
-    
-    // Clean existing tags if any to prevent duplicates
     let cleanLink = link.split('?')[0]; 
-    // Add our tag
     return `${cleanLink}?${AFFILIATE_TAG}`;
 }
 
@@ -89,7 +84,6 @@ export async function scrapePscLiveUpdates() {
                 tools: [{ googleSearch: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
-                    // Added missing comma after Type.ARRAY
                     type: Type.ARRAY, items: {
                         type: Type.OBJECT, properties: {
                             title: { type: Type.STRING }, url: { type: Type.STRING },
@@ -210,6 +204,84 @@ export async function generateNewQuestions() {
     } catch (e: any) { throw e; }
 }
 
+export async function generateQuestionsForGaps() {
+    if (!supabase) throw new Error("Supabase required for Gap Audit.");
+    
+    // 1. Audit current counts
+    const { data: qData } = await supabase.from('questionbank').select('topic, subject');
+    const counts: Record<string, number> = {};
+    qData?.forEach(q => { 
+        const topicKey = String(q.topic || '').toLowerCase().trim();
+        const subjectKey = String(q.subject || '').toLowerCase().trim();
+        if (topicKey) counts[topicKey] = (counts[topicKey] || 0) + 1;
+        if (subjectKey) counts[subjectKey] = (counts[subjectKey] || 0) + 1;
+    });
+
+    // 2. Find syllabus topics with low/zero questions
+    const { data: sData } = await supabase.from('syllabus').select('*');
+    if (!sData) return { message: "Syllabus is empty." };
+
+    const gaps = sData.filter(s => {
+        const topicKey = String(s.topic || s.title).toLowerCase().trim();
+        const subjectKey = String(s.subject).toLowerCase().trim();
+        const available = counts[topicKey] || counts[subjectKey] || 0;
+        return available < 5; // Target topics with less than 5 questions
+    });
+
+    if (gaps.length === 0) return { message: "No gaps found! All topics have questions." };
+
+    // 3. Select the top 3 gap topics to fill
+    const targetTopics = gaps.slice(0, 3).map(g => g.topic || g.title);
+    
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview', 
+            contents: `Generate 15 high-quality PSC style MCQ questions in Malayalam. 
+            Split them across these specific micro-topics: ${targetTopics.join(', ')}.
+            Return JSON array with 'topic', 'subject', 'question', 'options' (4), 'correctAnswerIndex'.`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY, items: {
+                        type: Type.OBJECT, properties: {
+                            topic: { type: Type.STRING },
+                            subject: { type: Type.STRING },
+                            question: { type: Type.STRING }, 
+                            options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            correctAnswerIndex: { type: Type.INTEGER }
+                        }, required: ["topic", "question", "options", "correctAnswerIndex"]
+                    }
+                }
+            }
+        });
+
+        const items = JSON.parse(response.text || "[]");
+        if (items.length > 0) {
+            const baseId = await getNextId('QuestionBank!A2:A', 30000);
+            const sheetData = items.map((item: any, idx: number) => [
+                baseId + idx, item.topic, item.question, JSON.stringify(item.options), 
+                item.correctAnswerIndex, item.subject || 'General', 'PSC Level', ''
+            ]);
+            const sbData = items.map((item: any, idx: number) => ({ 
+                id: baseId + idx, 
+                topic: item.topic, 
+                question: item.question, 
+                options: item.options, 
+                correct_answer_index: item.correctAnswerIndex, 
+                subject: item.subject || 'General', 
+                difficulty: 'PSC Level'
+            }));
+
+            await appendSheetData('QuestionBank!A1', sheetData);
+            await upsertSupabaseData('questionbank', sbData);
+            return { message: `Success! Added ${items.length} targeted questions for: ${targetTopics.join(', ')}` };
+        }
+    } catch (e: any) { throw e; }
+
+    return { message: "Gap filler ran but no questions were generated." };
+}
+
 export async function runDailyUpdateScrapers() {
     await scrapeKpscNotifications();
     await scrapeCurrentAffairs();
@@ -222,14 +294,17 @@ export async function runBookScraper() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview", 
-            contents: `Search for top 10 latest Kerala PSC rank files on Amazon.in. Return JSON array with 'title', 'author', 'amazonLink'.`,
+            contents: `Search for top 10 latest Kerala PSC rank files on Amazon.in. Return JSON array with 'title', 'author', 'asin', and 'amazonLink'. Prioritize finding the exact ASIN.`,
             config: {
                 tools: [{ googleSearch: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.ARRAY, items: {
                         type: Type.OBJECT, properties: {
-                            title: { type: Type.STRING }, author: { type: Type.STRING }, amazonLink: { type: Type.STRING },
+                            title: { type: Type.STRING }, 
+                            author: { type: Type.STRING }, 
+                            asin: { type: Type.STRING },
+                            amazonLink: { type: Type.STRING },
                         }, required: ["title", "author", "amazonLink"]
                     }
                 }
@@ -240,37 +315,28 @@ export async function runBookScraper() {
         if (items.length > 0) {
             const existing = await readSheetData('Bookstore!A2:E');
             const baseId = await getNextId('Bookstore!A2:A', 3000);
-            
-            // Normalize existing titles for comparison
             const existingTitles = new Set(existing.map(r => String(r[1]).toLowerCase().trim()));
-            
-            // Process new items and apply affiliate tag
             const uniqueNew = items.filter((it: any) => !existingTitles.has(it.title.toLowerCase().trim()));
             
             if (uniqueNew.length > 0) {
                 const finalItems = uniqueNew.map((it: any, idx: number) => {
-                    const affiliateLink = formatAffiliateLink(it.amazonLink);
+                    const affiliateLink = formatAffiliateLink(it.amazonLink, it.asin);
                     return {
                         id: String(baseId + idx),
                         title: it.title,
                         author: it.author,
-                        imageUrl: "", // Handled by BookCover component procedurally if empty
+                        imageUrl: it.asin ? `https://images-na.ssl-images-amazon.com/images/P/${it.asin}.01._SCLZZZZZZZ_SX300_.jpg` : "",
                         amazonLink: affiliateLink
                     };
                 });
 
                 const sheetData = finalItems.map(it => [it.id, it.title, it.author, it.imageUrl, it.amazonLink]);
-                
                 await appendSheetData('Bookstore!A1', sheetData);
                 await upsertSupabaseData('bookstore', finalItems);
-                
-                return { success: true, message: `${finalItems.length} new books with affiliate tags added.` };
+                return { success: true, message: `${finalItems.length} new books synced.` };
             }
-            return { success: true, message: "No new unique books found." };
+            return { success: true, message: "No new books found." };
         }
-        return { success: false, message: "AI could not find any books." };
-    } catch (e: any) {
-        console.error("Book Scraper Error:", e.message);
-        throw e;
-    }
+        return { success: false, message: "AI could not find books." };
+    } catch (e: any) { throw e; }
 }
