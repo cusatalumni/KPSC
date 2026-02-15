@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
@@ -33,6 +34,7 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
   const isMounted = useRef(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [expiryInfo, setExpiryInfo] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [sdkError, setSdkError] = useState(false);
   const [isSdkLoaded, setIsSdkLoaded] = useState(false);
@@ -40,9 +42,19 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
 
   useEffect(() => {
     isMounted.current = true;
-    if (isSignedIn && user?.id) {
-        setIsPro(subscriptionService.getSubscriptionStatus(user.id) === 'pro');
-    }
+    
+    const checkStatus = async () => {
+        if (isSignedIn && user?.id) {
+            const data = await subscriptionService.getSubscriptionData(user.id);
+            if (isMounted.current) {
+                setIsPro(data.status === 'pro');
+                if (data.expiryDate) {
+                    setExpiryInfo(new Date(data.expiryDate).toLocaleDateString());
+                }
+            }
+        }
+    };
+    checkStatus();
     
     // Fetch Settings for PayPal Client ID
     getSettings().then(settings => {
@@ -78,9 +90,14 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
             setIsProcessing(true);
             await actions.order.capture();
             if (user?.id && isMounted.current) {
-              subscriptionService.upgradeToPro(user.id);
-              setPaymentSuccess(true);
-              setTimeout(() => { if (isMounted.current) { setIsPro(true); setPaymentSuccess(false); } }, 3000);
+              // Now call the service which hits the database API
+              const success = await subscriptionService.upgradeToPro(user.id);
+              if (success && isMounted.current) {
+                setPaymentSuccess(true);
+                setTimeout(() => { if (isMounted.current) { setIsPro(true); setPaymentSuccess(false); } }, 3000);
+              } else {
+                  alert("Payment confirmed but database sync failed. Please contact support.");
+              }
             }
             if (isMounted.current) setIsProcessing(false);
           },
@@ -107,7 +124,6 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
           }, 100);
       };
 
-      // Remove old script if Client ID changed (though unlikely in a single session)
       const existingScript = document.getElementById(SCRIPT_ID) as HTMLScriptElement;
       if (existingScript) {
           if (existingScript.src.includes(`client-id=${dynamicClientId}`)) {
@@ -168,11 +184,11 @@ const UpgradePage: React.FC<PageProps> = ({ onBack, onUpgrade }) => {
                                       <p className="font-mono text-sm text-slate-200 bg-white/5 p-3 rounded-xl border border-white/5">{user?.id.slice(-12).toUpperCase()}</p>
                                   </div>
                                   <div>
-                                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Current Status</p>
+                                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Valid Until</p>
                                       <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
                                           <p className="text-emerald-400 font-black flex items-center space-x-2 text-sm">
                                               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                              <span>Active • Lifetime Access</span>
+                                              <span>{expiryInfo || 'Active Access'}</span>
                                           </p>
                                       </div>
                                   </div>

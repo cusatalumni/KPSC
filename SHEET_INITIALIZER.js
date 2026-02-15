@@ -2,10 +2,6 @@
 /**
  * Kerala PSC Guru - Database Initializer
  * -------------------------------------
- * 1. Open your Google Sheet.
- * 2. Go to Extensions -> Apps Script.
- * 3. Delete any existing code and paste this.
- * 4. Select "initializeDatabase" from the dropdown and click "Run".
  */
 
 function initializeDatabase() {
@@ -15,7 +11,12 @@ function initializeDatabase() {
     {
       name: 'Settings',
       headers: ['key', 'value'],
-      sample: [['subscription_model_active', 'true'], ['maintenance_mode', 'false']]
+      sample: [['subscription_model_active', 'true'], ['paypal_client_id', 'sb']]
+    },
+    {
+      name: 'Subscriptions',
+      headers: ['user_id', 'status', 'plan_type', 'start_date', 'expiry_date', 'last_updated'],
+      sample: [['user_sample_123', 'pro', 'Annual', new Date().toISOString(), new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), new Date().toISOString()]]
     },
     {
       name: 'StudyMaterialsCache',
@@ -77,18 +78,15 @@ function initializeDatabase() {
       sheet.clear(); 
     }
     
-    // Set headers
     sheet.getRange(1, 1, 1, s.headers.length)
          .setValues([s.headers])
          .setBackground('#f3f3f3')
          .setFontWeight('bold');
     
-    // Add sample data
     if (s.sample) {
       sheet.getRange(2, 1, s.sample.length, s.sample[0].length).setValues(s.sample);
     }
     
-    // Freeze top row
     sheet.setFrozenRows(1);
   });
 

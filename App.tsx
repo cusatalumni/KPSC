@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import Header from './components/Header';
@@ -136,18 +137,29 @@ const App: React.FC = () => {
     }
   }, [syncStateFromHash, isAppLoading]);
 
-  // 4. Subscription Handling
+  // 4. Subscription Handling (Updated for Database Sync)
   useEffect(() => {
     if (settings.subscription_model_active === 'false') {
         setSubscriptionStatus('pro');
         return;
     }
-    if (isSignedIn && user?.id) {
-      setSubscriptionStatus(subscriptionService.getSubscriptionStatus(user.id));
-    } else {
-      setSubscriptionStatus('free');
+    
+    const fetchSub = async () => {
+        if (isSignedIn && user?.id) {
+          const data = await subscriptionService.getSubscriptionData(user.id);
+          setSubscriptionStatus(data.status);
+        } else {
+          setSubscriptionStatus('free');
+        }
+    };
+    
+    if (clerkLoaded) {
+        fetchSub();
     }
-  }, [user, isSignedIn, settings]);
+    
+    window.addEventListener('subscription_updated', fetchSub);
+    return () => window.removeEventListener('subscription_updated', fetchSub);
+  }, [user, isSignedIn, settings, clerkLoaded]);
 
   const handleNavigate = (page: string) => {
     window.location.hash = page.startsWith('#') ? page : `#${page}`;

@@ -19,6 +19,12 @@ export interface Exam {
   level: ExamLevel;
 }
 
+export interface SubscriptionData {
+  status: SubscriptionStatus;
+  expiryDate?: string;
+  planType?: string;
+}
+
 export interface FeedbackData {
   needs: string;
   easeInfo: string;
@@ -123,7 +129,6 @@ export interface PracticeTest {
   duration: number;
   subject: string;
   topic: string;
-  // Added examId to support linking practice tests to exams and fix TypeScript errors in admin components
   examId?: string;
 }
 
@@ -131,14 +136,6 @@ export interface ExamPageContent {
   practiceTests: PracticeTest[];
   studyNotes: StudyMaterial[];
   previousPapers: { id: string; title: string }[];
-}
-
-export interface Testimonial {
-  id: string;
-  name: string;
-  role: string;
-  avatarUrl: string;
-  quote: string;
 }
 
 export interface Book {
@@ -149,8 +146,28 @@ export interface Book {
   amazonLink: string;
 }
 
+export interface UserAnswers {
+  [questionIndex: number]: number;
+}
+
+export interface NavLink {
+  nameKey: string;
+  target?: Page;
+  children?: NavLink[];
+}
+
+// Added missing types to resolve import errors found in components and constants
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  avatarUrl: string;
+  quote: string;
+}
+
 export interface ExamCalendarEntry {
-  slNo: number;
+  slNo: string | number;
   catNo: string;
   postName: string;
   department: string;
@@ -190,14 +207,4 @@ export interface GkItem {
   id: string;
   fact: string;
   category: string;
-}
-
-export interface UserAnswers {
-  [questionIndex: number]: number;
-}
-
-export interface NavLink {
-  nameKey: string;
-  target?: Page;
-  children?: NavLink[];
 }

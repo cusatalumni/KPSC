@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { QuizQuestion, UserAnswers, SubscriptionStatus, ActiveTest } from '../types';
 import { getQuestionsForTest } from '../services/pscDataService';
 import Modal from './Modal';
@@ -14,7 +14,7 @@ interface TestPageProps {
   onNavigateToUpgrade: () => void;
 }
 
-const QUESTION_TIME_LIMIT = 25; // 25 seconds per question
+const QUESTION_TIME_LIMIT = 25;
 
 const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onTestComplete, onBack, onNavigateToUpgrade }) => {
   const { t } = useTranslation();
@@ -25,15 +25,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(activeTest.questionsCount * 60);
   const [questionTimeLeft, setQuestionTimeLeft] = useState(QUESTION_TIME_LIMIT);
-  
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
 
   const handleSubmit = useCallback(() => {
     let score = 0;
@@ -44,8 +35,8 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     questions.forEach((q, idx) => {
       const selected = answers[idx];
       if (selected !== undefined) {
-        // Strict numeric comparison
-        if (Number(selected) === Number(q.correctAnswerIndex)) {
+        // COMPARE: selected (0-3) + 1 with correctAnswerIndex (1-4)
+        if (Number(selected) + 1 === Number(q.correctAnswerIndex)) {
           correct++;
           score += 1;
         } else {
@@ -55,46 +46,26 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
       }
     });
 
-    onTestComplete(
-        parseFloat(score.toFixed(2)), 
-        questions.length, 
-        { correct, wrong, skipped: questions.length - (correct + wrong) },
-        questions,
-        answers
-    );
+    onTestComplete(parseFloat(score.toFixed(2)), questions.length, { correct, wrong, skipped: questions.length - (correct + wrong) }, questions, answers);
   }, [questions, answers, onTestComplete, activeTest]);
 
-  // Overall Timer
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { 
-            clearInterval(timer); 
-            handleSubmit(); 
-            return 0; 
-        }
+        if (prev <= 1) { clearInterval(timer); handleSubmit(); return 0; }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
   }, [handleSubmit]);
 
-  // Question Timer
   useEffect(() => {
     if (loading || questions.length === 0 || isSubmitModalOpen) return;
-
     const qTimer = setInterval(() => {
         setQuestionTimeLeft(prev => {
             if (prev <= 1) {
-                // Auto move to next on timeout or submit if last
-                if (currentIndex < questions.length - 1) {
-                    setCurrentIndex(c => c + 1);
-                    return QUESTION_TIME_LIMIT;
-                } else {
-                    clearInterval(qTimer);
-                    setIsSubmitModalOpen(true);
-                    return 0;
-                }
+                if (currentIndex < questions.length - 1) { setCurrentIndex(c => c + 1); return QUESTION_TIME_LIMIT; }
+                else { clearInterval(qTimer); setIsSubmitModalOpen(true); return 0; }
             }
             return prev - 1;
         });
@@ -102,7 +73,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     return () => clearInterval(qTimer);
   }, [currentIndex, questions.length, loading, isSubmitModalOpen]);
 
-  // Reset Question Timer when currentIndex changes manually
   useEffect(() => {
     setQuestionTimeLeft(QUESTION_TIME_LIMIT);
   }, [currentIndex]);
@@ -110,59 +80,13 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   useEffect(() => {
     getQuestionsForTest(activeTest.subject, activeTest.topic, activeTest.questionsCount)
       .then(data => {
-        if (!data || data.length === 0) {
-            setQuestions([]);
-            setLoading(false);
-            return;
-        }
-        
-        const processed = data.map(q => {
-           // Ensure options is an array
-           let opts: string[] = [];
-           try {
-             opts = Array.isArray(q.options) ? q.options : JSON.parse(q.options);
-           } catch (e) {
-             opts = [];
-           }
-           
-           // Clean and identify the correct answer text before shuffling
-           const originalIdx = Number(q.correctAnswerIndex || 0);
-           const correctText = opts[originalIdx] ? String(opts[originalIdx]).trim() : '';
-           
-           // Shuffle options
-           const shuffledOptions = shuffleArray([...opts]).map(o => String(o).trim());
-           
-           // Find the NEW index of the correct text in the shuffled array
-           let newCorrectIndex = shuffledOptions.findIndex(o => o === correctText);
-           
-           // If search fails (fallback to 0 but this shouldn't happen with valid data)
-           if (newCorrectIndex === -1) newCorrectIndex = 0;
-
-           return {
-             ...q,
-             options: shuffledOptions,
-             correctAnswerIndex: newCorrectIndex
-           };
-        });
-        setQuestions(processed as QuizQuestion[]);
+        // No normalization here, indices are 1-4 directly from API
+        setQuestions(data as QuizQuestion[]);
         setLoading(false);
       });
   }, [activeTest]);
 
-  const selectOption = (idx: number) => {
-    setAnswers(prev => ({...prev, [currentIndex]: idx}));
-  };
-
-  const handleOptionDoubleClick = (idx: number) => {
-    selectOption(idx);
-    setTimeout(() => {
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        } else {
-            setIsSubmitModalOpen(true);
-        }
-    }, 200);
-  };
+  const selectOption = (idx: number) => setAnswers(prev => ({...prev, [currentIndex]: idx}));
 
   if (loading) return (
     <div className="h-[80vh] flex flex-col items-center justify-center p-6 space-y-6">
@@ -175,7 +99,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     <div className="h-[80vh] flex flex-col items-center justify-center p-10 text-center">
         <div className="bg-red-50 p-10 rounded-[2.5rem] border border-red-100 max-w-md">
             <h2 className="text-2xl font-black text-red-600 mb-4">No Questions Found</h2>
-            <p className="text-slate-600 mb-8 font-medium">ചോദ്യങ്ങൾ തയ്യാറായിക്കൊണ്ടിരിക്കുന്നു. ദയവായി അല്പസമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.</p>
             <button onClick={onBack} className="w-full bg-slate-800 text-white font-black py-4 rounded-xl shadow-lg">Back to Previous Page</button>
         </div>
     </div>
@@ -183,7 +106,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
 
   const q = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
-  const isUrgent = questionTimeLeft <= 5;
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col">
@@ -192,16 +114,11 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
           <div className="flex items-center space-x-3">
             <div className="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-lg">{currentIndex + 1}</div>
             <div>
-                <h2 className="text-lg font-black dark:text-white leading-none mb-1 line-clamp-1">{activeTest.title}</h2>
+                <h2 className="text-lg font-black dark:text-white leading-none mb-1">{activeTest.title}</h2>
                 <div className="flex items-center space-x-2">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        {t('test.question')} {currentIndex + 1} {t('of')} {questions.length}
-                    </p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('test.question')} {currentIndex + 1} {t('of')} {questions.length}</p>
                     <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                    <span className={`text-[9px] font-black uppercase flex items-center ${isUrgent ? 'text-red-500 animate-pulse' : 'text-indigo-500'}`}>
-                        {isUrgent && <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>}
-                        Q-Time: {questionTimeLeft}s
-                    </span>
+                    <span className={`text-[9px] font-black uppercase ${questionTimeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-indigo-500'}`}>Q-Time: {questionTimeLeft}s</span>
                 </div>
             </div>
           </div>
@@ -220,60 +137,29 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
             <button 
               key={idx} 
               onClick={() => selectOption(idx)}
-              onDoubleClick={() => handleOptionDoubleClick(idx)}
               className={`p-3 md:p-4 rounded-xl border-2 text-left font-bold transition-all flex items-center group relative overflow-hidden ${
                 answers[currentIndex] === idx 
                 ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 dark:text-white' 
-                : 'border-slate-100 dark:border-slate-800 dark:text-slate-300 hover:border-indigo-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                : 'border-slate-100 dark:border-slate-800 dark:text-slate-300 hover:border-indigo-200 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center space-x-3 w-full relative z-10">
-                <span className={`w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center border-2 text-xs transition-colors ${
-                    answers[currentIndex] === idx 
-                    ? 'bg-indigo-600 border-indigo-600 text-white' 
-                    : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 group-hover:border-indigo-300'
-                }`}>
-                    {String.fromCharCode(65+idx)}
-                </span>
+                <span className={`w-7 h-7 flex-shrink-0 rounded-lg flex items-center justify-center border-2 text-xs ${answers[currentIndex] === idx ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>{String.fromCharCode(65+idx)}</span>
                 <span className="text-sm md:text-base leading-tight flex-1">{opt}</span>
-                <div className="opacity-0 group-hover:opacity-100 text-[8px] font-black text-slate-300 uppercase tracking-tighter hidden md:block">Double-click to select & next</div>
               </div>
             </button>
           ))}
         </div>
 
         <div className="flex justify-between mt-4 pt-4 border-t dark:border-slate-800 flex-shrink-0">
-          <button 
-            onClick={() => setCurrentIndex(c => Math.max(0, c-1))} 
-            disabled={currentIndex===0} 
-            className="px-6 py-3 font-black text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors uppercase tracking-widest text-[10px]"
-          >
-            {t('test.previous')}
-          </button>
-          
+          <button onClick={() => setCurrentIndex(c => Math.max(0, c-1))} disabled={currentIndex===0} className="px-6 py-3 font-black text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors uppercase tracking-widest text-[10px]">{t('test.previous')}</button>
           <div className="flex space-x-2">
-            {!isLast && (
-                <button 
-                    onClick={() => setCurrentIndex(c => c+1)} 
-                    className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest text-[10px]"
-                >
-                    {t('test.next')}
-                </button>
-            )}
-            <button 
-                onClick={() => setIsSubmitModalOpen(true)} 
-                className={`${isLast ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} px-8 py-3 rounded-xl font-black shadow-md active:scale-95 transition-all uppercase tracking-widest text-[10px]`}
-            >
-                {t('test.submit')}
-            </button>
+            {!isLast && <button onClick={() => setCurrentIndex(c => c+1)} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black shadow-lg hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest text-[10px]">{t('test.next')}</button>}
+            <button onClick={() => setIsSubmitModalOpen(true)} className={`${isLast ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-100 text-slate-500'} px-8 py-3 rounded-xl font-black shadow-md active:scale-95 transition-all uppercase tracking-widest text-[10px]`}>{t('test.submit')}</button>
           </div>
         </div>
       </div>
-
-      <Modal isOpen={isSubmitModalOpen} onClose={()=>setIsSubmitModalOpen(false)} onConfirm={handleSubmit} title={t('test.modal.title')}>
-        <p className="font-medium text-slate-600 leading-relaxed">{t('test.modal.body')}</p>
-        <p className="text-xs text-slate-400 mt-2 italic">നിങ്ങൾ {Object.keys(answers).length} ചോദ്യങ്ങൾക്ക് ഉത്തരം നൽകിയിട്ടുണ്ട്.</p>
-      </Modal>
+      <Modal isOpen={isSubmitModalOpen} onClose={()=>setIsSubmitModalOpen(false)} onConfirm={handleSubmit} title={t('test.modal.title')}><p className="font-medium text-slate-600 leading-relaxed">{t('test.modal.body')}</p></Modal>
     </div>
   );
 };

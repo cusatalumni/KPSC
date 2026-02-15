@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { clearAndWriteSheetData, appendSheetData, readSheetData } from './sheets-service.js';
 import { upsertSupabaseData } from './supabase-service.js';
@@ -88,7 +89,8 @@ export async function scrapePscLiveUpdates() {
                 tools: [{ googleSearch: {} }],
                 responseMimeType: "application/json",
                 responseSchema: {
-                    type: Type.ARRAY items: {
+                    // Added missing comma after Type.ARRAY
+                    type: Type.ARRAY, items: {
                         type: Type.OBJECT, properties: {
                             title: { type: Type.STRING }, url: { type: Type.STRING },
                             section: { type: Type.STRING }, published_date: { type: Type.STRING }
