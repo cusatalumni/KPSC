@@ -207,7 +207,8 @@ export default async function handler(req: any, res: any) {
                 
                 await Promise.all([
                     upsertSupabaseData('exams', exs.filter(r => r[0]).map(r => ({ id: String(r[0]), title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }))),
-                    upsertSupabaseData('settings', snl.filter(r => r[0]).map(r => ({ key: r[0], value: r[1] })), 'key'),
+                    // Ensure setting value is never null/undefined
+                    upsertSupabaseData('settings', snl.filter(r => r[0]).map(r => ({ key: String(r[0]), value: String(r[1] || '') })), 'key'),
                     upsertSupabaseData('questionbank', qbs.filter(r => r[0]).map(r => ({ id: parseInt(String(r[0])), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correct_answer_index: r[4], subject: r[5], difficulty: r[6] }))),
                     upsertSupabaseData('bookstore', bks.filter(r => r[0]).map(r => ({ id: String(r[0]), title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] }))),
                     upsertSupabaseData('syllabus', syls.filter(r => r[0]).map(r => ({ id: String(r[0]), exam_id: String(r[1]), title: r[2], questions: r[3], duration: r[4], subject: r[5], topic: r[6] }))),
@@ -229,8 +230,9 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: 'Exam Updated.' });
 
             case 'update-setting':
-                await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
-                if (supabase) await upsertSupabaseData('settings', [{ key: setting.key, value: setting.value }], 'key');
+                const cleanValue = String(setting.value || '');
+                await findAndUpsertRow('Settings', setting.key, [setting.key, cleanValue]);
+                if (supabase) await upsertSupabaseData('settings', [{ key: setting.key, value: cleanValue }], 'key');
                 return res.status(200).json({ message: 'Setting Updated.' });
 
             case 'add-question':

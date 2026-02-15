@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -25,6 +26,11 @@ export async function upsertSupabaseData(table: string, data: any[], onConflict:
             entry.id = isNaN(parsedId) ? (Date.now() + Math.floor(Math.random() * 1000)) : parsedId;
         } else if (entry.id !== undefined) {
             entry.id = String(entry.id).trim();
+        }
+
+        // Mandatory field protection (avoid null value violation)
+        if (cleanTable === 'settings' && entry.value === undefined || entry.value === null) {
+            entry.value = '';
         }
 
         // Numeric field sanitization
