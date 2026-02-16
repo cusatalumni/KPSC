@@ -26,6 +26,7 @@ import { BellIcon } from '../icons/BellIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { CloudArrowUpIcon } from '../icons/CloudArrowUpIcon';
 import { PencilSquareIcon } from '../icons/PencilSquareIcon';
+import { TagIcon } from '../icons/TagIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
 type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users';
@@ -160,6 +161,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {activeTab === 'automation' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <ToolCard title="Full DB Sync" icon={ArrowPathIcon} action="rebuild-db" color="bg-red-600" desc="Synchronizes all records from Google Sheets to Supabase production database." />
+                        <ToolCard title="Flashcard Generator" icon={TagIcon} action="run-flashcard-generator" color="bg-orange-600" desc="AI generates study cards from existing GK and Question Bank data." />
                         <ToolCard title="PSC Daily Sync" icon={SparklesIcon} action="run-daily-sync" color="bg-indigo-600" desc="Full cycle sync: Jobs, Live Updates, CA, GK and Gap Filler." />
                         <ToolCard title="Job Notifications" icon={BellIcon} action="run-scraper-notifications" color="bg-emerald-600" desc="Scrapes official PSC site for active job announcements." />
                         <ToolCard title="PSC Live Updates" icon={RssIcon} action="run-scraper-updates" color="bg-cyan-600" desc="Real-time sync for results, rank lists and exam schedules." />
@@ -246,7 +248,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         </div>
                     </div>
                 )}
-                {/* User/Book management omitted for briefness but remain functional via refreshData */}
             </main>
         </div>
     );
