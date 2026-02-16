@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion, Page, NavLink } from './types';
+import type { Exam, Notification, StudyMaterial, ExamPageContent, Testimonial, Book, ExamCalendarEntry, QuizCategory, MockTest, PscUpdateItem, QuestionPaper, CurrentAffairsItem, GkItem, QuizQuestion, Page, NavLink, FlashCard } from './types';
 import { BookOpenIcon } from './components/icons/BookOpenIcon';
 import { StarIcon } from './components/icons/StarIcon';
 import { AcademicCapIcon } from './components/icons/AcademicCapIcon';
@@ -80,3 +80,9 @@ export const TESTIMONIALS_DATA: Testimonial[] = [];
 export const MOCK_BOOKS_DATA: Book[] = [];
 export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
 export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [];
+
+// Fix: Added missing MOCK_FLASHCARDS export
+export const MOCK_FLASHCARDS: FlashCard[] = [
+    { id: 'fc1', front: 'Longest river in Kerala?', back: 'Periyar', topic: 'Geography' },
+    { id: 'fc2', front: 'Father of Kerala Renaissance?', back: 'Sree Narayana Guru', topic: 'History' }
+];

@@ -40,6 +40,16 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
+            case 'test-connection': {
+                let sheetsOk = false;
+                let supabaseOk = !!supabase;
+                try { await readSheetData('Settings!A1:A1'); sheetsOk = true; } catch (e) { sheetsOk = false; }
+                if (supabaseOk) {
+                    try { const { error } = await supabase!.from('settings').select('key').limit(1); if (error) supabaseOk = false; }
+                    catch (e) { supabaseOk = false; }
+                }
+                return res.status(200).json({ status: { sheets: sheetsOk, supabase: supabaseOk } });
+            }
             case 'rebuild-db': return res.status(200).json(await syncAllFromSheetsToSupabase());
             case 'run-daily-sync': return res.status(200).json(await runDailyUpdateScrapers());
             case 'run-gk-scraper': return res.status(200).json(await scrapeGkFacts());

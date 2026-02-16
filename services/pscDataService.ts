@@ -1,6 +1,16 @@
 
 import type { Exam, PracticeTest, FeedbackData, QuizQuestion, FlashCard } from '../types';
-import { EXAMS_DATA, EXAM_CONTENT_MAP, MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_BOOKS_DATA, MOCK_QUESTION_BANK } from '../constants';
+import { 
+    EXAMS_DATA, 
+    EXAM_CONTENT_MAP, 
+    MOCK_NOTIFICATIONS, 
+    MOCK_PSC_UPDATES, 
+    MOCK_CURRENT_AFFAIRS, 
+    MOCK_GK, 
+    MOCK_BOOKS_DATA, 
+    MOCK_QUESTION_BANK,
+    MOCK_FLASHCARDS // Ensure this exists in constants or added below
+} from '../constants';
 import React from 'react';
 import { BookOpenIcon } from '../components/icons/BookOpenIcon';
 import { ShieldCheckIcon } from '../components/icons/ShieldCheckIcon';
@@ -60,15 +70,16 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
     return { exams: EXAMS_DATA, source: 'static' };
 };
 
+// Fix: Use MOCK_FLASHCARDS from constants as fallback
 export const getFlashCards = async (): Promise<FlashCard[]> => {
     try {
         const res = await fetchWithTimeout('/api/data?type=flash_cards', 4000);
         if (res.ok) {
             const data = await res.json();
-            return Array.isArray(data) ? data : [];
+            return (Array.isArray(data) && data.length > 0) ? data : MOCK_FLASHCARDS;
         }
     } catch (e) {}
-    return [];
+    return MOCK_FLASHCARDS;
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
@@ -117,7 +128,7 @@ const fetchHub = async <T>(params: string, mockData: T): Promise<T> => {
         const res = await fetchWithTimeout(`/api/data?${params}`);
         if (!res.ok) return mockData;
         const data = await res.json();
-        return (data && (!Array.isArray(data) || data.length > 0)) ? data : mockData;
+        return (data && (!Array.isArray(data) || (Array.isArray(data) && data.length > 0))) ? data : mockData;
     } catch (e) { return mockData; }
 };
 
@@ -147,7 +158,7 @@ export const testConnection = async (token: string | null) => {
             body: JSON.stringify({ action: 'test-connection' })
         });
         if (!res.ok) return { status: { sheets: false, supabase: false } };
-        return res.json();
+        return await res.json();
     } catch (e) {
         return { status: { sheets: false, supabase: false } };
     }
