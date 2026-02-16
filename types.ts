@@ -19,13 +19,6 @@ export interface Exam {
   level: ExamLevel;
 }
 
-export interface FlashCard {
-  id: string;
-  front: string;
-  back: string;
-  topic: string;
-}
-
 export interface SubscriptionData {
   status: SubscriptionStatus;
   expiryDate?: string;
@@ -110,7 +103,6 @@ export type Page =
   | 'previous_papers'
   | 'current_affairs'
   | 'gk'
-  | 'flash_cards'
   | 'admin_panel'
   | 'study_material'
   | 'sitemap'
@@ -163,6 +155,8 @@ export interface NavLink {
   target?: Page;
   children?: NavLink[];
 }
+
+// Added missing types to resolve import errors found in components and constants
 
 export interface Testimonial {
   id: string;
