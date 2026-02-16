@@ -86,7 +86,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
-            if (activeTab === 'exams' || activeTab === 'books' || activeTab === 'users') refreshData(true);
+            // Refresh relevant data
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper'].includes(action)) {
+                refreshData(true);
+            }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
     };
 
@@ -248,6 +251,97 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500"><tr><th className="px-8 py-5">Topic</th><th className="px-8 py-5">Questions</th><th className="px-8 py-5 text-right">Actions</th></tr></thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{syllabusItems.map(s => (<tr key={s.id} className="text-sm font-bold"><td className="px-8 py-6">{s.topic}<span className="block text-[10px] opacity-40 uppercase">{s.subject}</span></td><td className="px-8 py-6">{s.questions}</td><td className="px-8 py-6 text-right"><button onClick={() => handleAction('delete-row', { sheet: 'Syllabus', id: s.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button></td></tr>))}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'books' && (
+                    <div className="space-y-8">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-2xl font-black uppercase tracking-tight">Manage Bookstore</h3>
+                            <button onClick={() => handleAction('run-book-scraper')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2">
+                                <SparklesIcon className="h-4 w-4" />
+                                <span>Re-Scrape Books</span>
+                            </button>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
+                                    <tr>
+                                        <th className="px-8 py-5">Book Title</th>
+                                        <th className="px-8 py-5">Author</th>
+                                        <th className="px-8 py-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {books.map(book => (
+                                        <tr key={book.id} className="text-sm font-bold">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-10 h-14 bg-slate-200 dark:bg-slate-800 rounded flex-shrink-0 overflow-hidden">
+                                                        <img src={book.imageUrl} alt="" className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <span className="line-clamp-2">{book.title}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-slate-500">{book.author}</td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {books.length === 0 && (
+                                        <tr>
+                                            <td colSpan={3} className="px-8 py-20 text-center text-slate-400 font-bold">No books found. Use "Automation" to scrape some.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'users' && (
+                    <div className="space-y-8">
+                        <h3 className="text-2xl font-black uppercase tracking-tight">Premium Subscriptions</h3>
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
+                                    <tr>
+                                        <th className="px-8 py-5">User ID</th>
+                                        <th className="px-8 py-5">Status</th>
+                                        <th className="px-8 py-5">Plan</th>
+                                        <th className="px-8 py-5">Expiry</th>
+                                        <th className="px-8 py-5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {subscriptions.map((sub, idx) => (
+                                        <tr key={sub.user_id || idx} className="text-sm font-bold">
+                                            <td className="px-8 py-6 font-mono text-xs">{sub.user_id}</td>
+                                            <td className="px-8 py-6">
+                                                <span className={`px-3 py-1 rounded-full text-[9px] uppercase font-black ${sub.status === 'pro' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
+                                                    {sub.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-slate-500 uppercase text-[10px]">{sub.plan_type}</td>
+                                            <td className="px-8 py-6 text-slate-500 text-xs">{sub.expiry_date ? new Date(sub.expiry_date).toLocaleDateString() : '-'}</td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button onClick={() => handleAction('delete-row', { sheet: 'Subscriptions', id: sub.user_id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {subscriptions.length === 0 && (
+                                        <tr>
+                                            <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-bold">No premium users found yet.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
                             </table>
                         </div>
                     </div>
