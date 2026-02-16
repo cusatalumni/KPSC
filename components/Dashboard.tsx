@@ -9,8 +9,8 @@ import HeroSlider from './HeroSlider';
 import AdsenseWidget from './AdsenseWidget';
 import PscLiveWidget from './PscLiveWidget';
 import QuizHomeWidget from './QuizHomeWidget';
-import GkWidget from './GkWidget';
-import CurrentAffairsWidget from './icons/CurrentAffairsWidget';
+import RotatingDailyWidget from './RotatingDailyWidget';
+import CalendarWidget from './CalendarWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
@@ -98,47 +98,63 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
   );
 
   return (
-    <div className="space-y-20 pb-32">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 px-4">
+    <div className="space-y-12 pb-32">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 px-4">
           <div className="lg:col-span-3"><HeroSlider onNavigate={onNavigate} /></div>
-          <div className="hidden lg:block space-y-6">
-              <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
-              <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
-              <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
-              <GkWidget onNavigate={() => onNavigate('gk')} />
-          </div>
+          <div className="hidden lg:block h-full"><RotatingDailyWidget onNavigate={onNavigate} /></div>
       </div>
       
       <div className="px-4"><NewsTicker /></div>
       
       <div className="px-4"><WelcomeBar /></div>
 
-      <div className="px-4 space-y-24">
-        {sortedCategoryIds.map((catId) => (
-            <section key={catId} className="animate-fade-in-up">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 border-b-2 dark:border-slate-800 pb-10">
-                  <div className="flex items-center space-x-6">
-                    <div className="h-16 w-3 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.4)]"></div>
-                    <div>
-                        <h3 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">{t(`dashboard.examCategories.${catId}`) || catId}</h3>
-                        <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px] mt-2">Professional Training Tracks</p>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 px-4">
+        <div className="lg:col-span-3 space-y-24">
+            {sortedCategoryIds.map((catId) => (
+                <section key={catId} className="animate-fade-in-up">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 border-b-2 dark:border-slate-800 pb-10">
+                      <div className="flex items-center space-x-6">
+                        <div className="h-16 w-3 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.4)]"></div>
+                        <div>
+                            <h3 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">{t(`dashboard.examCategories.${catId}`) || catId}</h3>
+                            <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px] mt-2">Professional Training Tracks</p>
+                        </div>
+                      </div>
+                      <button onClick={() => onNavigate('mock_test_home')} className="flex items-center space-x-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest hover:translate-x-2 transition-transform">
+                         <span>View All Tests</span>
+                         <ChevronRightIcon className="h-4 w-4" />
+                      </button>
                     </div>
-                  </div>
-                  <button onClick={() => onNavigate('mock_test_home')} className="flex items-center space-x-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest hover:translate-x-2 transition-transform">
-                     <span>View All Tests</span>
-                     <ChevronRightIcon className="h-4 w-4" />
-                  </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-10">
+                      {(groupedExams[catId] || []).map((exam, idx) => (
+                          <Fragment key={exam.id}>
+                              <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
+                              {/* Show ad card after every 7 items */}
+                              {(idx + 1) % 7 === 0 && <AdsenseWidget />}
+                          </Fragment>
+                      ))}
+                    </div>
+                </section>
+            ))}
+        </div>
+
+        {/* Dashboard Side Sidebar */}
+        <aside className="hidden lg:block space-y-8">
+            <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
+            <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
+            <CalendarWidget onNavigate={() => onNavigate('exam_calendar')} />
+            <div className="sticky top-28">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col items-center justify-center min-h-[400px]">
+                    <span className="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.3em] mb-4">Sponsored</span>
+                    <ins className="adsbygoogle"
+                        style={{ display: 'block', width: '100%', height: '100%' }}
+                        data-ad-client="ca-pub-0776870820469795"
+                        data-ad-slot="7322087591"
+                        data-ad-format="auto"
+                        data-full-width-responsive="true"></ins>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
-                  {(groupedExams[catId] || []).map((exam, idx) => (
-                      <Fragment key={exam.id}>
-                          <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
-                          {(idx + 1) % 6 === 0 && <div className="sm:col-span-2 lg:col-span-3 py-6"><AdsenseWidget /></div>}
-                      </Fragment>
-                  ))}
-                </div>
-            </section>
-        ))}
+            </div>
+        </aside>
       </div>
     </div>
   );
