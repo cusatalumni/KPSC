@@ -4,20 +4,50 @@ import { supabase } from './_lib/supabase-service.js';
 
 const smartParseOptions = (raw: any): string[] => {
     if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    let clean = String(raw).trim();
-    if (clean.startsWith('[') && clean.endsWith(']')) {
-        try { return JSON.parse(clean); } catch (e) {
-            try { return JSON.parse(clean.replace(/'/g, '"')); } catch (e2) {
-                return clean.slice(1, -1).split('|').map(s => s.trim());
+    
+    // Recursive function to unwrap multiple layers of JSON strings
+    const unwrap = (val: any): any => {
+        if (Array.isArray(val)) {
+            // Check if it's an array with one string that looks like an array
+            if (val.length === 1 && typeof val[0] === 'string' && val[0].startsWith('[')) {
+                return unwrap(val[0]);
+            }
+            return val;
+        }
+        if (typeof val === 'string') {
+            const trimmed = val.trim();
+            if (trimmed.startsWith('[') || trimmed.startsWith('"[')) {
+                try {
+                    // Try parsing. If it's something like ""[\"A\"]"", it might need two parses.
+                    let cleaned = trimmed;
+                    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+                        cleaned = cleaned.slice(1, -1).replace(/\\"/g, '"');
+                    }
+                    const parsed = JSON.parse(cleaned);
+                    return unwrap(parsed);
+                } catch (e) {
+                    return trimmed;
+                }
             }
         }
+        return val;
+    };
+
+    const final = unwrap(raw);
+    
+    if (Array.isArray(final)) return final.map(String);
+    
+    // Fallback for string-based data in Sheets
+    if (typeof final === 'string') {
+        if (final.includes('|')) return final.split('|').map(s => s.trim());
+        return [final];
     }
-    return [clean];
+    
+    return [];
 };
 
 export default async function handler(req: any, res: any) {
-    const { type, examId, subject, topic, count } = req.query;
+    const { type, examId, subject, topic, count, offset, limit } = req.query;
     if (!type) return res.status(400).json({ error: 'Type required' });
 
     const tType = type.toLowerCase();
@@ -30,12 +60,14 @@ export default async function handler(req: any, res: any) {
     
     const tableName = tableMap[tType] || tType;
     
-    // Determine dynamic limit: Increase pool for GK/Affairs for better randomization
-    let limitCount = parseInt(count as string);
+    // Determine dynamic range
+    const offsetCount = parseInt(offset as string) || 0;
+    let limitCount = parseInt(limit as string) || parseInt(count as string);
+
     if (isNaN(limitCount)) {
         if (tableName === 'exams') limitCount = 100;
-        else if (tableName === 'gk' || tableName === 'currentaffairs') limitCount = 60; 
-        else if (tableName === 'flashcards') limitCount = 50;
+        else if (tableName === 'gk' || tableName === 'currentaffairs' || tableName === 'flashcards') limitCount = 20; 
+        else if (tableName === 'bookstore') limitCount = 20;
         else limitCount = 20;
     }
 
@@ -51,21 +83,17 @@ export default async function handler(req: any, res: any) {
                 }
             }
             
-            query = query.limit(limitCount);
+            // Apply Pagination Range
+            query = query.range(offsetCount, offsetCount + limitCount - 1);
 
-            if (tableName === 'subscriptions') {
-                query = query.order('last_updated', { ascending: false });
-            }
-            
-            // Randomize results for GK/Affairs if we are getting a pool for the widget
-            if (tableName === 'gk' || tableName === 'currentaffairs') {
+            if (tableName === 'subscriptions' || tableName === 'currentaffairs' || tableName === 'gk' || tableName === 'notifications' || tableName === 'flashcards' || tableName === 'bookstore') {
                 query = query.order('id', { ascending: false });
             }
 
             const { data, error } = await query;
             if (!error && data && data.length > 0) {
                 if (tableName === 'questionbank') {
-                    return res.status(200).json(data.sort(() => 0.5 - Math.random()).slice(0, limitCount).map(q => ({
+                    return res.status(200).json(data.sort(() => 0.5 - Math.random()).map(q => ({
                         ...q, options: smartParseOptions(q.options), correctAnswerIndex: parseInt(String(q.correct_answer_index || '1'))
                     })));
                 }
@@ -77,17 +105,19 @@ export default async function handler(req: any, res: any) {
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
         try {
             const rows = await readSheetData(`${sheetName}!A2:Z`);
+            const paginatedRows = rows.slice(offsetCount, offsetCount + limitCount);
+            
             if (tType === 'questions') {
-                 return res.status(200).json(rows.slice(0, limitCount).map((r, i) => ({
-                    id: String(r[0] || i), topic: r[1], question: r[2], options: smartParseOptions(r[3]), 
+                 return res.status(200).json(paginatedRows.map((r, i) => ({
+                    id: String(r[0] || (offsetCount + i)), topic: r[1], question: r[2], options: smartParseOptions(r[3]), 
                     correctAnswerIndex: parseInt(String(r[4] || '1')), 
                     subject: r[5], difficulty: r[6]
                 })));
             }
-            return res.status(200).json(rows.slice(0, limitCount));
+            return res.status(200).json(paginatedRows);
         } catch (sheetErr: any) {
             console.error("Sheets Fallback Failed:", sheetErr.message);
-            return res.status(200).json([]); // Return empty rather than 500 to keep UI alive
+            return res.status(200).json([]);
         }
 
     } catch (error: any) { 

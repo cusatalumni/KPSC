@@ -67,6 +67,26 @@ export const NAV_STRUCTURE: NavLink[] = [
   { nameKey: 'nav.bookstore', target: 'bookstore' }
 ];
 
+export const MARCH_EXAMS_DATA: ExamCalendarEntry[] = [
+  { slNo: 1, catNo: "021/2024", postName: "LDC (Various Departments)", department: "Various", examDate: "14-03-2026", syllabusLink: "#" },
+  { slNo: 2, catNo: "115/2024", postName: "Civil Police Officer", department: "Police", examDate: "21-03-2026", syllabusLink: "#" },
+  { slNo: 3, catNo: "442/2024", postName: "University Assistant", department: "Universities", examDate: "28-03-2026", syllabusLink: "#" }
+];
+
+export const APRIL_EXAMS_DATA: ExamCalendarEntry[] = [
+  { slNo: 1, catNo: "005/2025", postName: "Last Grade Servants", department: "Various", examDate: "04-04-2026", syllabusLink: "#" },
+  { slNo: 2, catNo: "189/2024", postName: "Beat Forest Officer", department: "Forest", examDate: "18-04-2026", syllabusLink: "#" },
+  { slNo: 3, catNo: "312/2024", postName: "Sub Inspector of Police", department: "Police", examDate: "25-04-2026", syllabusLink: "#" }
+];
+
+export const MOCK_FLASHCARDS: FlashCard[] = [
+    { id: 'fc1', front: 'കേരളത്തിലെ ഏറ്റവും നീളം കൂടിയ നദി?', back: 'പെരിയാർ (244 കി.മീ)', topic: 'Geography' },
+    { id: 'fc2', front: 'കേരള നവോത്ഥാനത്തിന്റെ പിതാവ്?', back: 'ശ്രീനാരായണ ഗുരു', topic: 'History' },
+    { id: 'fc3', front: 'ഇന്ത്യൻ ഭരണഘടനയുടെ ശില്പി?', back: 'ഡോ. ബി. ആർ. അംബേദ്കർ', topic: 'Constitution' },
+    { id: 'fc4', front: 'കേരളത്തിൽ അവസാനം രൂപീകൃതമായ ജില്ല?', back: 'കാസർഗോഡ് (1984)', topic: 'General' },
+    { id: 'fc5', front: 'അറബിക്കടലിന്റെ റാണി എന്നറിയപ്പെടുന്നത്?', back: 'കൊച്ചി', topic: 'Geography' }
+];
+
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [];
 export const QUIZ_CATEGORIES: QuizCategory[] = [];
 export const MOCK_TESTS_DATA: MockTest[] = [];
@@ -78,11 +98,5 @@ export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [];
 export const STUDY_MATERIALS_DATA: StudyMaterial[] = [];
 export const TESTIMONIALS_DATA: Testimonial[] = [];
 export const MOCK_BOOKS_DATA: Book[] = [];
-export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = [];
-export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = [];
-
-// Fix: Added missing MOCK_FLASHCARDS export
-export const MOCK_FLASHCARDS: FlashCard[] = [
-    { id: 'fc1', front: 'Longest river in Kerala?', back: 'Periyar', topic: 'Geography' },
-    { id: 'fc2', front: 'Father of Kerala Renaissance?', back: 'Sree Narayana Guru', topic: 'History' }
-];
+export const SEPTEMBER_EXAMS_DATA: ExamCalendarEntry[] = MARCH_EXAMS_DATA; // Fallback
+export const OCTOBER_EXAMS_DATA: ExamCalendarEntry[] = APRIL_EXAMS_DATA; // Fallback

@@ -24,18 +24,33 @@ function createNumericHash(str: string): number {
     return Math.abs(hash);
 }
 
-const smartParseOptions = (raw: any): string[] => {
+/**
+ * Robustly parses options to ensure they are returned as a pure Array.
+ * Fixes "Double Stringification" issues common with AI JSON outputs.
+ */
+const ensureArray = (raw: any): string[] => {
     if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    let clean = String(raw).trim();
-    if (clean.startsWith('[') && clean.endsWith(']')) {
-        try { return JSON.parse(clean); } catch (e) {
-            try { return JSON.parse(clean.replace(/'/g, '"')); } catch (e2) {
-                return clean.slice(1, -1).split('|').map(s => s.trim());
-            }
+    
+    // If it's already an array, check if the first element is a stringified array
+    if (Array.isArray(raw)) {
+        if (raw.length === 1 && typeof raw[0] === 'string' && raw[0].startsWith('[')) {
+            return ensureArray(raw[0]);
+        }
+        return raw.map(String);
+    }
+    
+    try {
+        const str = String(raw).trim();
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) return ensureArray(parsed); // Recursive check
+        if (typeof parsed === 'string') return ensureArray(parsed);
+    } catch (e) {
+        // Fallback for non-JSON strings that might be pipe-separated
+        if (typeof raw === 'string' && raw.includes('|')) {
+            return raw.split('|').map(s => s.trim());
         }
     }
-    return [clean];
+    return [String(raw)];
 };
 
 async function getNextId(sheetRange: string, startFrom: number = 1000): Promise<number> {
@@ -54,9 +69,6 @@ export function formatAffiliateLink(link: string, asin?: string): string {
     return `${cleanLink}?${AFFILIATE_TAG}`;
 }
 
-/**
- * Constructs a high-quality Amazon image URL if ASIN is provided.
- */
 function constructAmazonImg(asin?: string): string {
     if (!asin || asin.length < 5) return "";
     return `https://images-na.ssl-images-amazon.com/images/P/${asin.toUpperCase()}.01._SCLZZZZZZZ_SX400_.jpg`;
@@ -110,7 +122,7 @@ export async function syncAllFromSheetsToSupabase() {
     const tables = [
         { sheet: 'Exams', supabase: 'exams', map: (r: any) => ({ id: r[0], title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }) },
         { sheet: 'Syllabus', supabase: 'syllabus', map: (r: any) => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3] || '0'), duration: parseInt(r[4] || '0'), subject: r[5], topic: r[6] }) },
-        { sheet: 'QuestionBank', supabase: 'questionbank', map: (r: any) => ({ id: parseInt(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), correct_answer_index: parseInt(r[4] || '1'), subject: r[5], difficulty: r[6], explanation: r[7] }) },
+        { sheet: 'QuestionBank', supabase: 'questionbank', map: (r: any) => ({ id: parseInt(r[0]), topic: r[1], question: r[2], options: ensureArray(r[3]), correct_answer_index: parseInt(r[4] || '1'), subject: r[5], difficulty: r[6], explanation: r[7] }) },
         { sheet: 'GK', supabase: 'gk', map: (r: any) => ({ id: r[0], fact: r[1], category: r[2] }) },
         { sheet: 'CurrentAffairs', supabase: 'currentaffairs', map: (r: any) => ({ id: r[0], title: r[1], source: r[2], date: r[3] }) },
         { sheet: 'Notifications', supabase: 'notifications', map: (r: any) => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] }) },
@@ -230,7 +242,7 @@ export async function generateQuestionsForGaps(batchSize: number = 8) {
                 id: currentId++, 
                 topic: item.topic, 
                 question: item.question, 
-                options: item.options, 
+                options: ensureArray(item.options), 
                 correct_answer_index: parseInt(String(item.correctAnswerIndex || item.correct_answer_index || 1)), 
                 subject: item.subject || 'General', 
                 difficulty: 'PSC Level',
@@ -275,6 +287,7 @@ export async function auditAndCorrectQuestions() {
             2. Verify accuracy.
             3. CRITICAL: Ensure 'correct_answer_index' is strictly 1 to 4.
             4. Create a detailed 'explanation' in Malayalam if missing.
+            5. Ensure 'options' is returned as a JSON array of strings.
             Return corrected JSON array with all fields: id, topic, question, options, correct_answer_index, subject, difficulty, explanation.
             Data: ${JSON.stringify(questions)}`,
             config: { responseMimeType: "application/json" }
@@ -284,12 +297,15 @@ export async function auditAndCorrectQuestions() {
         if (corrected.length > 0) {
             const sanitized = corrected.map((q: any) => ({
                 ...q,
+                options: ensureArray(q.options),
                 correct_answer_index: parseInt(String(q.correct_answer_index || 1))
             }));
 
             await upsertSupabaseData('questionbank', sanitized);
             for (const q of sanitized) {
-                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation || '']);
+                // IMPORTANT: Only stringify for Sheets. Supabase upsert already handles array type.
+                const sheetOptions = JSON.stringify(q.options);
+                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, sheetOptions, q.correct_answer_index, q.subject, q.difficulty, q.explanation || '']);
             }
 
             const maxIdBatch = Math.max(...sanitized.map((q:any) => q.id));
@@ -298,7 +314,10 @@ export async function auditAndCorrectQuestions() {
                 findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
             ]);
 
-            return { message: `Audit complete. Corrected indices and added explanations for ${sanitized.length} questions. Next ${sanitized.length} last_audited_id` };
+            return { 
+                message: `Audit complete for ${sanitized.length} questions. Next session starts from ID: ${maxIdBatch + 1}.`, 
+                nextId: maxIdBatch + 1 
+            };
         }
     } catch (e: any) { throw e; }
     return { message: "No changes needed for this batch." };
@@ -310,7 +329,6 @@ export async function auditAndCorrectBooks() {
     const { data: books } = await supabase.from('bookstore').select('*');
     if (!books || books.length === 0) return { message: "No books to audit." };
 
-    // Define what "needs repair" means: missing imageUrl, dummy text, or missing affiliate tag
     const repairNeeded = books.filter(b => 
         !b.imageUrl || 
         b.imageUrl.length < 12 || 
