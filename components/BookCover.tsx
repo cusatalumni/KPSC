@@ -52,8 +52,20 @@ const StyleB: React.FC<{ title: string; author: string; color: { bg: string; sha
 );
 
 const BookCover: React.FC<BookCoverProps> = ({ title, author, imageUrl, className }) => {
-  // If we have a proper HTTP URL, use it
-  if (imageUrl && imageUrl.startsWith('http')) {
+  // Validate imageUrl: Must be a string, start with http, and not be a common placeholder
+  const isValidUrl = (url: any): boolean => {
+      if (typeof url !== 'string') return false;
+      const cleanUrl = url.trim().toUpperCase();
+      if (cleanUrl.length < 12) return false;
+      if (!cleanUrl.startsWith('HTTP')) return false;
+      if (cleanUrl.includes('NO IMG')) return false;
+      if (cleanUrl.includes('EMPTY')) return false;
+      if (cleanUrl.includes('UNDEFINED')) return false;
+      if (cleanUrl.includes('NULL')) return false;
+      return true;
+  };
+
+  if (isValidUrl(imageUrl)) {
     return (
       <div className={`relative overflow-hidden ${className}`}>
         <img 
@@ -61,12 +73,20 @@ const BookCover: React.FC<BookCoverProps> = ({ title, author, imageUrl, classNam
             alt={title} 
             className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" 
             referrerPolicy="no-referrer"
+            onError={(e) => {
+                // If the image fails to load, trigger the procedural fallback by clearing the src
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                if (target.parentElement) {
+                    target.parentElement.classList.add('broken-image-fallback');
+                }
+            }}
         />
       </div>
     );
   }
 
-  // Otherwise, use Procedural Logic
+  // Procedural Logic for missing or invalid images
   const hash = getHashOfString(title);
   const styleIndex = Math.abs(hash) % 2;
   const colorIndex = Math.floor(Math.abs(hash) / 2) % 5;

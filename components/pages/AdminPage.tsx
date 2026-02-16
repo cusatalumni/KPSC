@@ -124,6 +124,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
     );
 
+    const isValidUrl = (url: any): boolean => {
+        if (typeof url !== 'string') return false;
+        const cleanUrl = url.trim().toUpperCase();
+        return cleanUrl.startsWith('HTTP') && !cleanUrl.includes('NO IMG') && !cleanUrl.includes('EMPTY');
+    };
+
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-32 px-4 animate-fade-in text-slate-800 dark:text-slate-100">
             {/* Header Controls */}
@@ -283,15 +289,15 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                     {books.map(book => {
-                                        const hasImage = book.imageUrl && book.imageUrl.length > 10;
-                                        const isAffiliate = book.amazonLink.includes('tag=malayalambooks-21');
+                                        const hasValidImage = isValidUrl(book.imageUrl);
+                                        const isAffiliate = book.amazonLink && book.amazonLink.includes('tag=malayalambooks-21');
                                         
                                         return (
                                             <tr key={book.id} className="text-sm font-bold">
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center space-x-3">
                                                         <div className="w-10 h-14 bg-slate-200 dark:bg-slate-800 rounded flex-shrink-0 overflow-hidden shadow-sm">
-                                                            {hasImage ? (
+                                                            {hasValidImage ? (
                                                                 <img src={book.imageUrl} alt="" className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-400">NO IMG</div>
@@ -305,7 +311,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <div className="flex space-x-2">
-                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${hasImage ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>Image: {hasImage ? 'OK' : 'MISSING'}</span>
+                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${hasValidImage ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>Image: {hasValidImage ? 'OK' : 'MISSING'}</span>
                                                         <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${isAffiliate ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>Link: {isAffiliate ? 'AFFILIATE' : 'REPAIR'}</span>
                                                     </div>
                                                 </td>

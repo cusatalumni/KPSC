@@ -54,6 +54,14 @@ export function formatAffiliateLink(link: string, asin?: string): string {
     return `${cleanLink}?${AFFILIATE_TAG}`;
 }
 
+/**
+ * Constructs a high-quality Amazon image URL if ASIN is provided.
+ */
+function constructAmazonImg(asin?: string): string {
+    if (!asin || asin.length < 5) return "";
+    return `https://images-na.ssl-images-amazon.com/images/P/${asin.toUpperCase()}.01._SCLZZZZZZZ_SX400_.jpg`;
+}
+
 export async function generateFlashcardsFromContent() {
     if (!supabase) throw new Error("Supabase required for Flashcard generation.");
     
@@ -299,11 +307,18 @@ export async function auditAndCorrectQuestions() {
 export async function auditAndCorrectBooks() {
     if (!supabase) throw new Error("Supabase required for Book Audit.");
     
-    // 1. Fetch books that might need repair (missing image or potentially bad link)
     const { data: books } = await supabase.from('bookstore').select('*');
     if (!books || books.length === 0) return { message: "No books to audit." };
 
-    const repairNeeded = books.filter(b => !b.imageUrl || b.imageUrl.length < 10 || !b.amazonLink.includes(AFFILIATE_TAG));
+    // Define what "needs repair" means: missing imageUrl, dummy text, or missing affiliate tag
+    const repairNeeded = books.filter(b => 
+        !b.imageUrl || 
+        b.imageUrl.length < 12 || 
+        b.imageUrl.includes('NO IMG') || 
+        b.imageUrl.includes('EMPTY') ||
+        !b.amazonLink.includes(AFFILIATE_TAG)
+    );
+    
     if (repairNeeded.length === 0) return { message: "All books appear healthy." };
 
     const batch = repairNeeded.slice(0, 10);
@@ -312,13 +327,16 @@ export async function auditAndCorrectBooks() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Research missing details for these books on Amazon.in. 
-            For each book, find:
-            1. The 'asin' (10-char Amazon ID).
-            2. Valid 'amazonLink' (must be in format: https://www.amazon.in/dp/ASIN).
-            3. A valid 'imageUrl' from Amazon (if possible).
-            Books to research: ${JSON.stringify(batch)}
-            Return corrected JSON array of objects with fields: id, title, author, imageUrl, amazonLink.`,
+            contents: `I need high-quality Amazon.in details for these Kerala PSC study materials. 
+            Search for each book's:
+            1. 'asin' (10-character Amazon ID).
+            2. High-quality '.jpg' URL from Amazon media servers (starting with https://m.media-amazon.com/ or images-na.ssl-images-amazon.com).
+            3. Direct product link: https://www.amazon.in/dp/ASIN.
+            
+            Books to fix: ${JSON.stringify(batch)}
+            
+            Return JSON array of objects with fields: id, title, author, imageUrl, amazonLink. 
+            IMPORTANT: If you can't find a real Amazon URL, return the imageUrl as "".`,
             config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
         });
 
@@ -326,6 +344,7 @@ export async function auditAndCorrectBooks() {
         if (corrected.length > 0) {
             const final = corrected.map((b: any) => ({
                 ...b,
+                imageUrl: b.imageUrl && b.imageUrl.startsWith('http') ? b.imageUrl : "",
                 amazonLink: formatAffiliateLink(b.amazonLink)
             }));
 
@@ -333,10 +352,10 @@ export async function auditAndCorrectBooks() {
             for (const b of final) {
                 await findAndUpsertRow('Bookstore', String(b.id), [b.id, b.title, b.author, b.imageUrl, b.amazonLink]);
             }
-            return { message: `Successfully repaired ${final.length} books.` };
+            return { message: `Successfully repaired ${final.length} books with new images and links.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "Book repair finished with no changes." };
+    return { message: "Book repair process finished but no updates were found." };
 }
 
 export async function runDailyUpdateScrapers() {
@@ -354,13 +373,19 @@ export async function runBookScraper() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview", 
-            contents: `Find 8 top PSC rank files on Amazon.in. Return JSON array with 'title', 'author', 'asin', 'amazonLink'.`,
+            contents: `Find 8 latest Kerala PSC rank files or study guides on Amazon.in. Return JSON array with 'title', 'author', 'asin', 'amazonLink'.`,
             config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
             const baseId = await getNextId('Bookstore!A2:A', 3000);
-            const finalItems = items.map((it: any, idx: number) => ({ id: String(baseId + idx), title: it.title, author: it.author, imageUrl: it.asin ? `https://images-na.ssl-images-amazon.com/images/P/${it.asin}.01._SCLZZZZZZZ_SX300_.jpg` : "", amazonLink: formatAffiliateLink(it.amazonLink, it.asin) }));
+            const finalItems = items.map((it: any, idx: number) => ({ 
+                id: String(baseId + idx), 
+                title: it.title, 
+                author: it.author, 
+                imageUrl: constructAmazonImg(it.asin), 
+                amazonLink: formatAffiliateLink(it.amazonLink, it.asin) 
+            }));
             await upsertSupabaseData('bookstore', finalItems);
             const sheetRows = finalItems.map(it => [it.id, it.title, it.author, it.imageUrl, it.amazonLink]);
             await appendSheetData('Bookstore!A1', sheetRows);
