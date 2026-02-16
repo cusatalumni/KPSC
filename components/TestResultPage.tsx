@@ -9,6 +9,7 @@ import { saveTestResult } from '../services/pscDataService';
 import type { QuizQuestion, UserAnswers } from '../types';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XCircleIcon } from './icons/XCircleIcon';
+import { SparklesIcon } from './icons/SparklesIcon';
 
 interface TestResultPageProps {
   score: number;
@@ -78,8 +79,12 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
               <div className="space-y-4">
                   {questions.map((q, idx) => {
                       const userAns = answers[idx];
-                      // COMPARE: userAns (0-3) + 1 with correctAnswerIndex (1-4)
-                      const isCorrect = userAns !== undefined && (Number(userAns) + 1) === Number(q.correctAnswerIndex);
+                      
+                      // NORMALIZE INDEX: handle 0-3 and 1-4
+                      let correctIdx = Number(q.correctAnswerIndex);
+                      if (correctIdx === 0) correctIdx = 1;
+
+                      const isCorrect = userAns !== undefined && (Number(userAns) + 1) === correctIdx;
                       const isSkipped = userAns === undefined;
 
                       return (
@@ -90,8 +95,7 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
                                       <p className="font-bold text-slate-800 dark:text-slate-200 mb-4">{q.question}</p>
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                           {q.options.map((opt, optIdx) => {
-                                              // COMPARE: optIdx (0-3) + 1 with q.correctAnswerIndex (1-4)
-                                              const isThisCorrect = (Number(optIdx) + 1) === Number(q.correctAnswerIndex);
+                                              const isThisCorrect = (Number(optIdx) + 1) === correctIdx;
                                               const isThisUserSelection = userAns !== undefined && Number(optIdx) === Number(userAns);
                                               
                                               let bClass = "border-slate-100 dark:border-slate-800";
@@ -107,6 +111,15 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
                                               );
                                           })}
                                       </div>
+                                      {q.explanation && (
+                                          <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800 flex items-start space-x-3">
+                                              <SparklesIcon className="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+                                              <div>
+                                                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Explanation</p>
+                                                  <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">{q.explanation}</p>
+                                              </div>
+                                          </div>
+                                      )}
                                   </div>
                               </div>
                           </div>

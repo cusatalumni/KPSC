@@ -35,8 +35,15 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
     questions.forEach((q, idx) => {
       const selected = answers[idx];
       if (selected !== undefined) {
-        // COMPARE: selected (0-3) + 1 with correctAnswerIndex (1-4)
-        if (Number(selected) + 1 === Number(q.correctAnswerIndex)) {
+        // ROBUST EVALUATION: 
+        // Normalize DB index to 1-4. If it's 0, treat as 1.
+        let correctIdx = Number(q.correctAnswerIndex);
+        if (correctIdx === 0) correctIdx = 1; 
+
+        // User selection is 0-3. Map to 1-4 for comparison.
+        const userSelectionIdx = Number(selected) + 1;
+
+        if (userSelectionIdx === correctIdx) {
           correct++;
           score += 1;
         } else {
@@ -80,7 +87,6 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   useEffect(() => {
     getQuestionsForTest(activeTest.subject, activeTest.topic, activeTest.questionsCount)
       .then(data => {
-        // No normalization here, indices are 1-4 directly from API
         setQuestions(data as QuizQuestion[]);
         setLoading(false);
       });
