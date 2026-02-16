@@ -28,6 +28,7 @@ import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { CloudArrowUpIcon } from '../icons/CloudArrowUpIcon';
 import { PencilSquareIcon } from '../icons/PencilSquareIcon';
 import { TagIcon } from '../icons/TagIcon';
+import { WrenchScrewdriverIcon } from '../icons/WrenchScrewdriverIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
 type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users';
@@ -87,7 +88,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
             // Refresh relevant data
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'run-book-audit'].includes(action)) {
                 refreshData(true);
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
@@ -258,41 +259,64 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'books' && (
                     <div className="space-y-8">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                             <h3 className="text-2xl font-black uppercase tracking-tight">Manage Bookstore</h3>
-                            <button onClick={() => handleAction('run-book-scraper')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2">
-                                <SparklesIcon className="h-4 w-4" />
-                                <span>Re-Scrape Books</span>
-                            </button>
+                            <div className="flex flex-wrap gap-3">
+                                <button onClick={() => handleAction('run-book-audit')} className="bg-amber-500 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2 hover:bg-amber-600 transition-all">
+                                    <WrenchScrewdriverIcon className="h-4 w-4" />
+                                    <span>Auto-Repair Images & Links</span>
+                                </button>
+                                <button onClick={() => handleAction('run-book-scraper')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2 hover:bg-indigo-700 transition-all">
+                                    <SparklesIcon className="h-4 w-4" />
+                                    <span>Scrape New Books</span>
+                                </button>
+                            </div>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
                                     <tr>
                                         <th className="px-8 py-5">Book Title</th>
-                                        <th className="px-8 py-5">Author</th>
+                                        <th className="px-8 py-5">Status</th>
                                         <th className="px-8 py-5 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {books.map(book => (
-                                        <tr key={book.id} className="text-sm font-bold">
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="w-10 h-14 bg-slate-200 dark:bg-slate-800 rounded flex-shrink-0 overflow-hidden">
-                                                        <img src={book.imageUrl} alt="" className="w-full h-full object-cover" />
+                                    {books.map(book => {
+                                        const hasImage = book.imageUrl && book.imageUrl.length > 10;
+                                        const isAffiliate = book.amazonLink.includes('tag=malayalambooks-21');
+                                        
+                                        return (
+                                            <tr key={book.id} className="text-sm font-bold">
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="w-10 h-14 bg-slate-200 dark:bg-slate-800 rounded flex-shrink-0 overflow-hidden shadow-sm">
+                                                            {hasImage ? (
+                                                                <img src={book.imageUrl} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-400">NO IMG</div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <span className="line-clamp-1">{book.title}</span>
+                                                            <span className="text-[10px] text-slate-400 block">{book.author}</span>
+                                                        </div>
                                                     </div>
-                                                    <span className="line-clamp-2">{book.title}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6 text-slate-500">{book.author}</td>
-                                            <td className="px-8 py-6 text-right">
-                                                <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex space-x-2">
+                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${hasImage ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>Image: {hasImage ? 'OK' : 'MISSING'}</span>
+                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${isAffiliate ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>Link: {isAffiliate ? 'AFFILIATE' : 'REPAIR'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6 text-right">
+                                                    <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                     {books.length === 0 && (
                                         <tr>
                                             <td colSpan={3} className="px-8 py-20 text-center text-slate-400 font-bold">No books found. Use "Automation" to scrape some.</td>

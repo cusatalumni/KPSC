@@ -249,7 +249,7 @@ export async function auditAndCorrectQuestions() {
         .select('*')
         .gt('id', lastId)
         .order('id', { ascending: true })
-        .limit(60);
+        .limit(90);
 
     if (!questions || questions.length === 0) {
         await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
@@ -290,10 +290,53 @@ export async function auditAndCorrectQuestions() {
                 findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
             ]);
 
-            return { message: `Audit complete. Corrected indices and added explanations for ${sanitized.length} questions.` };
+            return { message: `Audit complete. Corrected indices and added explanations for ${sanitized.length} questions. Next ${sanitized.length} last_audited_id` };
         }
     } catch (e: any) { throw e; }
     return { message: "No changes needed for this batch." };
+}
+
+export async function auditAndCorrectBooks() {
+    if (!supabase) throw new Error("Supabase required for Book Audit.");
+    
+    // 1. Fetch books that might need repair (missing image or potentially bad link)
+    const { data: books } = await supabase.from('bookstore').select('*');
+    if (!books || books.length === 0) return { message: "No books to audit." };
+
+    const repairNeeded = books.filter(b => !b.imageUrl || b.imageUrl.length < 10 || !b.amazonLink.includes(AFFILIATE_TAG));
+    if (repairNeeded.length === 0) return { message: "All books appear healthy." };
+
+    const batch = repairNeeded.slice(0, 10);
+    
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Research missing details for these books on Amazon.in. 
+            For each book, find:
+            1. The 'asin' (10-char Amazon ID).
+            2. Valid 'amazonLink' (must be in format: https://www.amazon.in/dp/ASIN).
+            3. A valid 'imageUrl' from Amazon (if possible).
+            Books to research: ${JSON.stringify(batch)}
+            Return corrected JSON array of objects with fields: id, title, author, imageUrl, amazonLink.`,
+            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+        });
+
+        const corrected = JSON.parse(response.text || "[]");
+        if (corrected.length > 0) {
+            const final = corrected.map((b: any) => ({
+                ...b,
+                amazonLink: formatAffiliateLink(b.amazonLink)
+            }));
+
+            await upsertSupabaseData('bookstore', final);
+            for (const b of final) {
+                await findAndUpsertRow('Bookstore', String(b.id), [b.id, b.title, b.author, b.imageUrl, b.amazonLink]);
+            }
+            return { message: `Successfully repaired ${final.length} books.` };
+        }
+    } catch (e: any) { throw e; }
+    return { message: "Book repair finished with no changes." };
 }
 
 export async function runDailyUpdateScrapers() {

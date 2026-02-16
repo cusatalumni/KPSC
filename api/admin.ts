@@ -11,7 +11,8 @@ import {
     generateQuestionsForGaps,
     auditAndCorrectQuestions,
     syncAllFromSheetsToSupabase,
-    generateFlashcardsFromContent
+    generateFlashcardsFromContent,
+    auditAndCorrectBooks
 } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
@@ -59,6 +60,7 @@ export default async function handler(req: any, res: any) {
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-gap-filler': return res.status(200).json(await generateQuestionsForGaps(8));
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
+            case 'run-book-audit': return res.status(200).json(await auditAndCorrectBooks());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-flashcard-generator': return res.status(200).json(await generateFlashcardsFromContent());
             case 'reset-qa-audit': {
