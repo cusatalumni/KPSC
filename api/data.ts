@@ -29,7 +29,8 @@ export default async function handler(req: any, res: any) {
     };
     
     const tableName = tableMap[tType] || tType;
-    const limitCount = parseInt(count as string) || 20;
+    // Increase default limit for exams to 100 to show all categories
+    const limitCount = parseInt(count as string) || (tableName === 'exams' ? 100 : 20);
 
     try {
         if (supabase) {
@@ -41,8 +42,11 @@ export default async function handler(req: any, res: any) {
                 } else if (topic && topic !== 'mixed') {
                     query = query.ilike('topic', `%${topic}%`);
                 }
-                query = query.limit(100);
             }
+            
+            // Apply higher limit
+            query = query.limit(limitCount);
+
             if (tableName === 'subscriptions') {
                 query = query.order('last_updated', { ascending: false });
             }
@@ -57,7 +61,7 @@ export default async function handler(req: any, res: any) {
             }
         }
 
-        // Fallback
+        // Fallback to Google Sheets
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
         switch (tType) {
             case 'questions':
@@ -69,7 +73,11 @@ export default async function handler(req: any, res: any) {
                     subject: r[5], difficulty: r[6]
                 })));
             default:
-                return res.status(200).json(await readSheetData(`${sheetName}!A2:Z`));
+                const rows = await readSheetData(`${sheetName}!A2:Z`);
+                return res.status(200).json(rows.slice(0, limitCount));
         }
-    } catch (error: any) { return res.status(500).json({ error: "Internal Error" }); }
+    } catch (error: any) { 
+        console.error("Data Fetch Error:", error);
+        return res.status(500).json({ error: "Internal Error" }); 
+    }
 }

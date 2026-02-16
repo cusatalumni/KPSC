@@ -6,21 +6,13 @@ import {
     runBookScraper, 
     scrapeKpscNotifications, 
     scrapePscLiveUpdates, 
+    scrapeGkFacts,
+    scrapeCurrentAffairs,
     generateQuestionsForGaps,
     auditAndCorrectQuestions,
-    checkAndFixAllAffiliateLinks
+    rebuildDatabase
 } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
-
-const smartParseOptions = (raw: any): string[] => {
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    let clean = String(raw).trim();
-    if (clean.startsWith('[') && clean.endsWith(']')) {
-        try { return JSON.parse(clean); } catch (e) { return clean.slice(1, -1).split('|').map(s => s.trim()); }
-    }
-    return [clean];
-};
 
 export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
@@ -33,7 +25,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, id, resultData, sheet } = req.body;
+    const { action, id, resultData, sheet, data } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -48,19 +40,36 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
-            case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
+            case 'rebuild-db': return res.status(200).json(await rebuildDatabase());
+            case 'run-daily-sync': return res.status(200).json(await runDailyUpdateScrapers());
+            case 'run-gk-scraper': return res.status(200).json(await scrapeGkFacts());
+            case 'run-ca-scraper': return res.status(200).json(await scrapeCurrentAffairs());
+            case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
+            case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-gap-filler': return res.status(200).json(await generateQuestionsForGaps(8));
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
-            case 'verify-affiliate-links': return res.status(200).json(await checkAndFixAllAffiliateLinks());
+            case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
+            
+            case 'save-question': 
+                if (supabase) await upsertSupabaseData('questionbank', [data]);
+                await appendSheetData('QuestionBank!A1', [[data.id, data.topic, data.question, JSON.stringify(data.options), data.correct_answer_index, data.subject, data.difficulty]]);
+                return res.status(200).json({ message: 'Question saved to bank.' });
+
+            case 'bulk-upload-questions':
+                if (supabase) await upsertSupabaseData('questionbank', data);
+                const sheetRows = data.map((q:any) => [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty]);
+                await appendSheetData('QuestionBank!A1', sheetRows);
+                return res.status(200).json({ message: `Bulk upload successful. Processed ${data.length} questions.` });
+
             case 'get-audit-report': {
-                if (!supabase) throw new Error("Supabase required.");
+                if (!supabase) throw new Error("Supabase required for audit report.");
                 const { data: qData } = await supabase.from('questionbank').select('topic');
                 const counts: Record<string, number> = {};
                 qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
                 const { data: sData } = await supabase.from('syllabus').select('*');
-                return res.status(200).json(sData?.map(s => ({ id: s.id, exam_id: s.exam_id, title: s.title, topic: s.topic, count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 })) || []);
+                return res.status(200).json(sData?.map(s => ({ id: s.id, topic: s.topic, count: counts[String(s.topic).toLowerCase().trim()] || 0 })) || []);
             }
-            case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Deleted.' });
+            case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });
         }
     } catch (e: any) { return res.status(500).json({ error: e.message }); }

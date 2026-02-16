@@ -1,4 +1,5 @@
 
+// Fix: Use 'react' as the correct source for React and its hooks.
 import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { getCurrentAffairs } from '../../services/pscDataService';
 import type { CurrentAffairsItem } from '../../types';
@@ -7,12 +8,17 @@ import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
 import AdsenseWidget from '../AdsenseWidget';
 
+/**
+ * CurrentAffairsPage Component
+ * Displays a grid of current affairs items fetched from the PSC data service.
+ */
 const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
     const [items, setItems] = useState<CurrentAffairsItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Fetch current affairs items on component mount
     const fetchItems = useCallback(async () => {
         setLoading(true); setError(null);
         try { const data = await getCurrentAffairs(); setItems(data); } 
@@ -41,15 +47,15 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {items.map((item, index) => (
                             <Fragment key={item.id}>
-                                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border dark:border-slate-800 hover:shadow-2xl transition-all flex flex-col justify-between">
-                                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight line-clamp-3">{item.title}</h3>
+                                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border dark:border-slate-800 hover:shadow-2xl transition-all flex flex-col justify-between h-full">
+                                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight line-clamp-4">{item.title}</h3>
                                     <div className="mt-8 pt-5 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
                                         <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</p><p className="font-black text-teal-600 text-xs">{item.source}</p></div>
                                         <div className="text-right"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Date</p><p className="font-bold text-slate-500 text-xs">{item.date}</p></div>
                                     </div>
                                 </div>
-                                {/* Ad after every 7 cards */}
-                                {(index + 1) % 7 === 0 && <div className="md:col-span-2 lg:col-span-3 py-4"><AdsenseWidget /></div>}
+                                {/* Injected as a single grid item for symmetry */}
+                                {(index + 1) % 7 === 0 && <AdsenseWidget />}
                             </Fragment>
                         ))}
                     </div>

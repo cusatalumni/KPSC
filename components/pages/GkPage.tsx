@@ -40,15 +40,17 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {items.map((item, index) => (
                             <Fragment key={item.id}>
-                                <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-xl border-2 border-slate-50 dark:border-slate-800 hover:border-amber-200 transition-all relative overflow-hidden group min-h-[200px]">
+                                <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-xl border-2 border-slate-50 dark:border-slate-800 hover:border-amber-200 transition-all relative overflow-hidden group min-h-[200px] flex flex-col justify-between h-full">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 dark:bg-amber-900/10 rounded-bl-[5rem] -mr-10 -mt-10"></div>
-                                    <div className="relative z-10 h-full flex flex-col justify-between">
+                                    <div className="relative z-10">
                                         <p className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-relaxed italic">"{item.fact}"</p>
-                                        <div className="mt-8"><span className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-amber-200">{item.category}</span></div>
+                                    </div>
+                                    <div className="relative z-10 mt-8">
+                                        <span className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-amber-200 inline-block">{item.category}</span>
                                     </div>
                                 </div>
-                                {/* Ad after every 7 cards */}
-                                {(index + 1) % 7 === 0 && <div className="md:col-span-2 lg:col-span-3 py-4"><AdsenseWidget /></div>}
+                                {/* Injected as a single grid item for symmetry */}
+                                {(index + 1) % 7 === 0 && <AdsenseWidget />}
                             </Fragment>
                         ))}
                     </div>
