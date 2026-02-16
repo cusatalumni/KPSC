@@ -61,6 +61,11 @@ export default async function handler(req: any, res: any) {
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-flashcard-generator': return res.status(200).json(await generateFlashcardsFromContent());
+            case 'reset-qa-audit': {
+                if (supabase) await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
+                await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
+                return res.status(200).json({ message: 'QA Audit progress has been reset to ID 0.' });
+            }
             
             case 'save-question': 
                 if (supabase) await upsertSupabaseData('questionbank', [data]);
