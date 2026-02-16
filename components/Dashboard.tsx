@@ -9,6 +9,8 @@ import HeroSlider from './HeroSlider';
 import AdsenseWidget from './AdsenseWidget';
 import PscLiveWidget from './PscLiveWidget';
 import QuizHomeWidget from './QuizHomeWidget';
+import GkWidget from './GkWidget';
+import CurrentAffairsWidget from './icons/CurrentAffairsWidget';
 import { LightBulbIcon } from './icons/LightBulbIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
@@ -102,6 +104,8 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
           <div className="hidden lg:block space-y-6">
               <PscLiveWidget onNavigate={() => onNavigate('psc_live_updates')} />
               <QuizHomeWidget onNavigate={() => onNavigate('quiz_home')} />
+              <CurrentAffairsWidget onNavigate={() => onNavigate('current_affairs')} />
+              <GkWidget onNavigate={() => onNavigate('gk')} />
           </div>
       </div>
       
