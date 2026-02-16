@@ -32,12 +32,14 @@ export const translations = {
     home: "Home",
     practice: "Practice",
     examHub: "Exam Hub",
+    dailyFacts: "Daily Facts",
     resources: "Resources",
     quizzes: "Quizzes",
     mockTests: "Mock Tests",
     studyMaterials: "Study Materials",
     currentAffairs: "Current Affairs",
     gk: "General Knowledge",
+    flashCards: "Flash Cards",
     previousPapers: "Previous Papers",
     pscLive: "PSC Live Updates",
     more: "More",
@@ -46,6 +48,12 @@ export const translations = {
     sitemap: "Sitemap",
     adminPanel: "Admin Panel",
     feedback: "Feedback"
+  },
+  flashCards: {
+    title: "Flash Cards",
+    subtitle: "Quickly recall key facts with flipping cards.",
+    instruction: "Click on a card to flip and see the answer.",
+    noCards: "No cards available in this category."
   },
   sitemap: {
     title: "Sitemap",
@@ -69,17 +77,17 @@ export const translations = {
   heroSlider: {
     slide1: {
       title: "Learning Reaches New Levels with the Power of AI",
-      description: "Prepare for your exams with our AI-generated questions, personalized study notes, and smart analytics.",
+      description: "Prepare for your exams with our AI-generated questions.",
       cta: "Start Learning"
     },
     slide2: {
       title: "Practice Like the Real Exam",
-      description: "Access hundreds of mock tests based on the latest syllabus to improve your rank and time management.",
+      description: "Access hundreds of mock tests based on the latest syllabus.",
       cta: "Take Mock Tests"
     },
     slide3: {
       title: "Never Miss an Update",
-      description: "Get real-time updates on the latest notifications, rank lists, and news directly from the PSC.",
+      description: "Get real-time updates on the latest notifications.",
       cta: "See Updates"
     }
   },
@@ -100,9 +108,6 @@ export const translations = {
     examCard: {
         syllabusTitle: "Core Subjects:"
     }
-  },
-  bookOfTheDay: {
-    title: "Book of the Day"
   },
   bookstore: {
     title: "Bookstore",
@@ -125,51 +130,7 @@ export const translations = {
   },
   pscLive: {
     title: "PSC Live Updates",
-    subtitle: "The latest rank lists, notifications, and more from keralapsc.gov.in, updated daily."
-  },
-  previousPapers: {
-    title: "Previous Question Papers",
-    subtitle: "Find old question papers from the official PSC website using AI.",
-    searchPlaceholder: "e.g., LDC 2020, Police Constable...",
-    aiSearching: "AI is finding question papers for you...",
-    noResults: {
-      title: "No Results Found",
-      message: "Could not find question papers related to your search. Please try something else."
-    }
-  },
-  studyMaterial: {
-    title: "Study Materials",
-    subtitle: "AI-generated study notes",
-    loading: "AI is writing your study notes...",
-    allMaterials: "View All"
-  },
-  test: {
-    guestMode: "You are practicing as a Guest. Please login to save your performance history.",
-    noQuestionsError: "No questions are available for this topic.",
-    fetchError: "There was an error fetching questions.",
-    backToPrevious: "Back to Previous Page",
-    quitExam: "Quit and Exit Examination",
-    loading: {
-      ml: "AI നിങ്ങൾക്കായി പുതിയ ചോദ്യങ്ങൾ തയ്യാറാക്കുന്നു...",
-      en: "AI is generating fresh questions for you..."
-    },
-    question: "Question",
-    previous: "Previous",
-    next: "Next",
-    submit: "Submit",
-    endTest: "End Test",
-    progress: "Course Progress",
-    modal: {
-      title: "Submit Test",
-      body: "Are you sure you want to submit this test?",
-      cancel: "Cancel"
-    }
-  },
-  upgradeModal: {
-    title: "Unlock PRO Feature",
-    body: "You've completed the 10 free questions. Upgrade to PRO to unlock the full test and access all premium features.",
-    confirm: "Upgrade Now",
-    cancel: "Later"
+    subtitle: "The latest rank lists, notifications, and more."
   },
   results: {
     title: "Test Result",
@@ -197,8 +158,5 @@ export const translations = {
     recommendedBooks: "Recommended Books",
     topicPractice: "Topic-wise Practice",
     backToDashboard: "Back to Dashboard"
-  },
-  quiz_home: {
-    subtitle: "Select a topic to test your knowledge and see how you rank."
   }
 };

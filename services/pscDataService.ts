@@ -1,5 +1,5 @@
 
-import type { Exam, PracticeTest, FeedbackData, QuizQuestion } from '../types';
+import type { Exam, PracticeTest, FeedbackData, QuizQuestion, FlashCard } from '../types';
 import { EXAMS_DATA, EXAM_CONTENT_MAP, MOCK_NOTIFICATIONS, MOCK_PSC_UPDATES, MOCK_CURRENT_AFFAIRS, MOCK_GK, MOCK_BOOKS_DATA, MOCK_QUESTION_BANK } from '../constants';
 import React from 'react';
 import { BookOpenIcon } from '../components/icons/BookOpenIcon';
@@ -28,45 +28,40 @@ const fetchWithTimeout = async (url: string, timeout = 3000) => {
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(id);
         return response;
-    } catch (e) {
-        clearTimeout(id);
-        throw e;
-    }
+    } catch (e) { clearTimeout(id); throw e; }
 };
 
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
     if (isFetchingExams) return { exams: EXAMS_DATA, source: 'static' };
-    
     isFetchingExams = true;
     try {
         const res = await fetchWithTimeout('/api/data?type=exams');
         if (res.ok) {
             const raw = await res.json();
             if (Array.isArray(raw) && raw.length > 0) {
-                const formatted: Exam[] = raw.map((e: any) => ({
+                const formatted = raw.map((e: any) => ({
                     id: String(e.id || e.ID).trim().toLowerCase(),
-                    title: { 
-                        ml: e.title_ml || e.titleMl || e.Title_ml || 'PSC Exam', 
-                        en: e.title_en || e.titleEn || e.title_ml || 'PSC Exam'
-                    },
-                    description: { 
-                        ml: e.description_ml || e.descriptionMl || '', 
-                        en: e.description_en || e.descriptionEn || e.description_ml || ''
-                    },
+                    title: { ml: e.title_ml || 'PSC Exam', en: e.title_en || 'PSC Exam' },
+                    description: { ml: e.description_ml || '', en: e.description_en || '' },
                     category: e.category || 'General',
                     level: e.level || 'Preliminary',
-                    icon: getIcon(e.icon_type || e.iconType)
+                    icon: getIcon(e.icon_type)
                 }));
                 isFetchingExams = false;
                 return { exams: formatted, source: 'database' };
             }
         }
-    } catch (e) {
-        console.error("Exam sync failed:", e);
-    }
-    
+    } catch (e) { console.error(e); }
     isFetchingExams = false;
     return { exams: EXAMS_DATA, source: 'static' };
+};
+
+export const getFlashCards = async (): Promise<FlashCard[]> => {
+    try {
+        const res = await fetchWithTimeout('/api/data?type=flash_cards', 4000);
+        if (res.ok) return await res.json();
+    } catch (e) {}
+    return [];
 };
 
 export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> => {
@@ -169,5 +164,3 @@ export const getStudyMaterial = async (topic: string): Promise<{ notes: string }
     });
     return res.json();
 };
-
-export const getDetectedExams = async (): Promise<Exam[]> => [];
