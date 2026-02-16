@@ -181,15 +181,17 @@ export async function scrapeKpscNotifications() {
 
 export async function generateQuestionsForGaps(batchSize: number = 8) {
     if (!supabase) throw new Error("Supabase required for Gap Audit.");
+    
+    // 1. Audit current coverage
     const { data: qData } = await supabase.from('questionbank').select('topic');
     const counts: Record<string, number> = {};
     qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
 
     const { data: sData } = await supabase.from('syllabus').select('*');
-    if (!sData) return { message: "Syllabus is empty." };
+    if (!sData) return { message: "Syllabus is empty. No topics to check." };
 
     const gaps = sData.filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) < 5);
-    if (gaps.length === 0) return { message: "No content gaps found." };
+    if (gaps.length === 0) return { message: "No content gaps found. Data is balanced." };
 
     const targetTopics = gaps.slice(0, batchSize).map(g => g.topic || g.title);
     
@@ -197,28 +199,61 @@ export async function generateQuestionsForGaps(batchSize: number = 8) {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview', 
-            contents: `Generate 30 high-quality MCQ questions in Malayalam for topics: ${targetTopics.join(', ')}. Format: JSON array with 'topic', 'subject', 'question', 'options', 'correctAnswerIndex' (1-4).`,
+            contents: `Generate 30 high-quality MCQ questions in Malayalam for PSC exams. 
+            Target topics: ${targetTopics.join(', ')}. 
+            Format: JSON array of objects with 'topic', 'subject', 'question', 'options' (array of 4), 'correctAnswerIndex' (1-4).`,
             config: { responseMimeType: "application/json" }
         });
+
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
-            const baseId = await getNextId('QuestionBank!A2:A', 40000);
-            const sbData = items.map((item: any, idx: number) => ({ id: baseId + idx, topic: item.topic, question: item.question, options: item.options, correct_answer_index: item.correctAnswerIndex, subject: item.subject || 'General', difficulty: 'PSC Level' }));
+            // 2. Determine safe starting ID
+            const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
+            let currentId = (maxIdRow?.id || 40000) + 1;
+
+            const sbData = items.map((item: any) => {
+                const row = { 
+                    id: currentId++, 
+                    topic: item.topic, 
+                    question: item.question, 
+                    options: item.options, 
+                    correct_answer_index: item.correctAnswerIndex || item.correct_answer_index || 1, 
+                    subject: item.subject || 'General', 
+                    difficulty: 'PSC Level' 
+                };
+                return row;
+            });
+
+            // 3. Save to Supabase
             await upsertSupabaseData('questionbank', sbData);
-            return { message: `Added ${items.length} new questions for syllabus gaps.` };
+            
+            // 4. Mirror to Google Sheets to ensure persistence
+            const sheetRows = sbData.map(q => [
+                q.id, 
+                q.topic, 
+                q.question, 
+                JSON.stringify(q.options), 
+                q.correct_answer_index, 
+                q.subject, 
+                q.difficulty
+            ]);
+            await appendSheetData('QuestionBank!A1', sheetRows);
+
+            return { message: `Successfully added ${sbData.length} new questions to Database and Sheets for topics: ${targetTopics.join(', ')}.` };
         }
-    } catch (e: any) { throw e; }
-    return { message: "Gap filler execution finished." };
+    } catch (e: any) { 
+        console.error("Gap Filler Error:", e.message);
+        throw e; 
+    }
+    return { message: "AI processing completed but no data was generated." };
 }
 
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase is required for QA Audit.");
     
-    // 1. Correctly retrieve the cursor from Supabase settings
     const { data: settings } = await supabase.from('settings').select('value').eq('key', 'last_audited_id').single();
     const lastId = parseInt(settings?.value || '0');
     
-    // 2. Fetch the NEXT 30 questions to avoid repeating the same ones
     const { data: questions } = await supabase.from('questionbank')
         .select('*')
         .gt('id', lastId)
@@ -226,7 +261,6 @@ export async function auditAndCorrectQuestions() {
         .limit(30);
 
     if (!questions || questions.length === 0) {
-        // If we reached the end, reset to start from 0 for a fresh loop or notify admin
         await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
         await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
         return { message: "Reached end of Question Bank. Audit cursor reset to beginning." };
@@ -242,16 +276,11 @@ export async function auditAndCorrectQuestions() {
 
         const corrected = JSON.parse(response.text || "[]");
         if (corrected.length > 0) {
-            // Update corrected questions
             await upsertSupabaseData('questionbank', corrected);
-            
-            // 3. Update the 'last_audited_id' to the highest ID in the current batch
             const maxIdBatch = Math.max(...questions.map(q => q.id));
             
             await Promise.all([
-                // Update Supabase Settings
                 upsertSupabaseData('settings', [{ key: 'last_audited_id', value: String(maxIdBatch) }], 'key'),
-                // Mirror to Sheets Settings
                 findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
             ]);
 
