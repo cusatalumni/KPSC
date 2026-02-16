@@ -54,15 +54,51 @@ export function formatAffiliateLink(link: string, asin?: string): string {
     return `${cleanLink}?${AFFILIATE_TAG}`;
 }
 
-/**
- * Synchronizes all data from Google Sheets to Supabase production.
- * This is a non-destructive operation that upserts existing records.
- */
+export async function generateFlashcardsFromContent() {
+    if (!supabase) throw new Error("Supabase required for Flashcard generation.");
+    
+    const [{ data: gk }, { data: questions }] = await Promise.all([
+        supabase.from('gk').select('fact, category').limit(20),
+        supabase.from('questionbank').select('question, options, correct_answer_index, topic').limit(20)
+    ]);
+
+    const sourceData = { gk, questions };
+    
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Transform this data into high-quality PSC Flashcards. 
+            For GK facts, create a question for 'front' and the fact detail for 'back'. 
+            For QuestionBank, use the question for 'front' and the correct option text for 'back'.
+            Return JSON array of objects with 'front', 'back', and 'topic'.
+            Data to process: ${JSON.stringify(sourceData)}`,
+            config: { responseMimeType: "application/json" }
+        });
+
+        const newCards = JSON.parse(response.text || "[]");
+        if (newCards.length > 0) {
+            const baseId = await getNextId('Flashcards!A2:A', 9000);
+            const formatted = newCards.map((c: any, idx: number) => ({
+                id: String(baseId + idx),
+                front: c.front,
+                back: c.back,
+                topic: c.topic || 'General'
+            }));
+
+            await upsertSupabaseData('flashcards', formatted);
+            const sheetRows = formatted.map((c: any) => [c.id, c.front, c.back, c.topic]);
+            await appendSheetData('Flashcards!A1', sheetRows);
+
+            return { message: `Generated ${formatted.length} new flashcards.` };
+        }
+    } catch (e: any) { throw e; }
+    return { message: "No new flashcards could be generated." };
+}
+
 export async function syncAllFromSheetsToSupabase() {
     if (!supabase) throw new Error("Supabase connection is not available.");
-    
     const syncLogs: string[] = [];
-    
     const tables = [
         { sheet: 'Exams', supabase: 'exams', map: (r: any) => ({ id: r[0], title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }) },
         { sheet: 'Syllabus', supabase: 'syllabus', map: (r: any) => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3] || '0'), duration: parseInt(r[4] || '0'), subject: r[5], topic: r[6] }) },
@@ -70,7 +106,8 @@ export async function syncAllFromSheetsToSupabase() {
         { sheet: 'GK', supabase: 'gk', map: (r: any) => ({ id: r[0], fact: r[1], category: r[2] }) },
         { sheet: 'CurrentAffairs', supabase: 'currentaffairs', map: (r: any) => ({ id: r[0], title: r[1], source: r[2], date: r[3] }) },
         { sheet: 'Notifications', supabase: 'notifications', map: (r: any) => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] }) },
-        { sheet: 'Bookstore', supabase: 'bookstore', map: (r: any) => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] }) }
+        { sheet: 'Bookstore', supabase: 'bookstore', map: (r: any) => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] }) },
+        { sheet: 'Flashcards', supabase: 'flashcards', map: (r: any) => ({ id: r[0], front: r[1], back: r[2], topic: r[3] }) }
     ];
 
     for (const table of tables) {
@@ -84,15 +121,10 @@ export async function syncAllFromSheetsToSupabase() {
                 }
             }
         } catch (err: any) {
-            console.error(`Sync error for ${table.sheet}:`, err.message);
             syncLogs.push(`Failed sync for ${table.supabase}: ${err.message}`);
         }
     }
-
-    return { 
-        message: "Production database sync completed.", 
-        details: syncLogs.join(', ') 
-    };
+    return { message: "Database sync completed.", details: syncLogs.join(', ') };
 }
 
 export async function scrapeGkFacts() {
@@ -108,7 +140,7 @@ export async function scrapeGkFacts() {
             const baseId = await getNextId('GK!A2:A', 5000);
             const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), fact: it.fact, category: it.category }));
             await upsertSupabaseData('gk', sbData);
-            return { message: `${items.length} GK facts generated and synced.` };
+            return { message: `${items.length} GK facts generated.` };
         }
     } catch (e: any) { throw e; }
 }
@@ -126,7 +158,7 @@ export async function scrapeCurrentAffairs() {
             const baseId = await getNextId('CurrentAffairs!A2:A', 8000);
             const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), title: it.title, source: it.source, date: it.date }));
             await upsertSupabaseData('currentaffairs', sbData);
-            return { message: `${items.length} Current Affairs items updated.` };
+            return { message: `${items.length} Current Affairs updated.` };
         }
     } catch (e: any) { throw e; }
 }
@@ -154,10 +186,10 @@ export async function generateQuestionsForGaps(batchSize: number = 8) {
     qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
 
     const { data: sData } = await supabase.from('syllabus').select('*');
-    if (!sData) return { message: "Syllabus is empty. No gaps to fill." };
+    if (!sData) return { message: "Syllabus is empty." };
 
     const gaps = sData.filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) < 5);
-    if (gaps.length === 0) return { message: "No content gaps found. Content is balanced." };
+    if (gaps.length === 0) return { message: "No content gaps found." };
 
     const targetTopics = gaps.slice(0, batchSize).map(g => g.topic || g.title);
     
@@ -173,31 +205,31 @@ export async function generateQuestionsForGaps(batchSize: number = 8) {
             const baseId = await getNextId('QuestionBank!A2:A', 40000);
             const sbData = items.map((item: any, idx: number) => ({ id: baseId + idx, topic: item.topic, question: item.question, options: item.options, correct_answer_index: item.correctAnswerIndex, subject: item.subject || 'General', difficulty: 'PSC Level' }));
             await upsertSupabaseData('questionbank', sbData);
-            return { message: `Added ${items.length} new questions for identified syllabus gaps.` };
+            return { message: `Added ${items.length} new questions for syllabus gaps.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "Gap filler execution finished with no new data." };
+    return { message: "Gap filler execution finished." };
 }
 
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase is required for QA Audit.");
     
-    // 1. Get the current cursor from Settings
+    // 1. Correctly retrieve the cursor from Supabase settings
     const { data: settings } = await supabase.from('settings').select('value').eq('key', 'last_audited_id').single();
     const lastId = parseInt(settings?.value || '0');
-
-    // 2. Fetch the "next batch" of questions
-    const { data: questions } = await supabase
-        .from('questionbank')
+    
+    // 2. Fetch the NEXT 30 questions to avoid repeating the same ones
+    const { data: questions } = await supabase.from('questionbank')
         .select('*')
         .gt('id', lastId)
         .order('id', { ascending: true })
         .limit(30);
 
     if (!questions || questions.length === 0) {
-        // Reset cursor to 0 if we hit the end
+        // If we reached the end, reset to start from 0 for a fresh loop or notify admin
+        await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
         await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
-        return { message: "No new questions found. Audit cursor reset to beginning." };
+        return { message: "Reached end of Question Bank. Audit cursor reset to beginning." };
     }
 
     try {
@@ -207,15 +239,23 @@ export async function auditAndCorrectQuestions() {
             contents: `Audit these questions for Malayalam grammar and PSC standards. Ensure options are logical. Return corrected JSON array. Data: ${JSON.stringify(questions)}`,
             config: { responseMimeType: "application/json" }
         });
+
         const corrected = JSON.parse(response.text || "[]");
         if (corrected.length > 0) {
+            // Update corrected questions
             await upsertSupabaseData('questionbank', corrected);
             
-            // 3. Update cursor to the highest ID processed
-            const maxId = Math.max(...questions.map(q => q.id));
-            await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxId)]);
+            // 3. Update the 'last_audited_id' to the highest ID in the current batch
+            const maxIdBatch = Math.max(...questions.map(q => q.id));
             
-            return { message: `QA Audit complete. Processed questions up to ID ${maxId}.` };
+            await Promise.all([
+                // Update Supabase Settings
+                upsertSupabaseData('settings', [{ key: 'last_audited_id', value: String(maxIdBatch) }], 'key'),
+                // Mirror to Sheets Settings
+                findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
+            ]);
+
+            return { message: `QA Audit complete for batch. Next audit will start after ID ${maxIdBatch}.` };
         }
     } catch (e: any) { throw e; }
     return { message: "Audit batch finished with no changes." };
@@ -227,6 +267,7 @@ export async function runDailyUpdateScrapers() {
     await scrapeCurrentAffairs();
     await scrapeGkFacts();
     await generateQuestionsForGaps(5);
+    await generateFlashcardsFromContent();
     return { message: "Complete Daily Routine Finished." };
 }
 
