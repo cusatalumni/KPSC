@@ -1,4 +1,5 @@
 
+import { verifyAdmin } from "./_lib/clerk-auth.js";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
@@ -194,8 +195,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                             <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center">
                                 <h3 className="text-xl font-black uppercase mb-4">QA Quality Audit</h3>
-                                <p className="text-indigo-100 text-xs font-bold mb-8">AI scans recent questions to fix formatting, options, and correctness automatically.</p>
-                                <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all">Start Audit</button>
+                                <p className="text-indigo-100 text-xs font-bold mb-8">AI scans questions sequentially to fix formatting and add explanations.</p>
+                                <div className="flex space-x-3">
+                                    <button onClick={() => handleAction('run-batch-qa')} className="flex-1 bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all">Start Audit</button>
+                                    <button onClick={() => { if(confirm("Are you sure you want to reset the audit cursor to the beginning (ID 0)?")) handleAction('reset-qa-audit'); }} className="flex-1 bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all">Reset Progress</button>
+                                </div>
                             </div>
                         </div>
 
