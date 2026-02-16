@@ -1,3 +1,4 @@
+
 import { google } from 'googleapis';
 
 declare var process: any;
@@ -5,10 +6,13 @@ declare var process: any;
 const getSanitizedKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     let sanitized = key.trim();
+    // Handle quotes that often appear in Vercel env variables
     if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
         sanitized = sanitized.substring(1, sanitized.length - 1);
     }
+    // Correctly replace escaped newlines
     sanitized = sanitized.replace(/\\n/g, '\n');
+    // Ensure header/footer are present
     if (!sanitized.includes('-----BEGIN PRIVATE KEY-----')) {
         sanitized = `-----BEGIN PRIVATE KEY-----\n${sanitized}\n-----END PRIVATE KEY-----`;
     }
@@ -26,7 +30,9 @@ async function getSheetsClient() {
     const rawKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKey = getSanitizedKey(rawKey);
 
-    if (!clientEmail || !privateKey) throw new Error('Google Credentials missing.');
+    if (!clientEmail || !privateKey) {
+        throw new Error('Google Credentials missing. Check GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY.');
+    }
 
     try {
         const auth = new google.auth.GoogleAuth({
@@ -35,7 +41,9 @@ async function getSheetsClient() {
         });
         const authClient = await auth.getClient();
         return google.sheets({ version: 'v4', auth: authClient as any });
-    } catch (e: any) { throw new Error(`Auth failed: ${e.message}`); }
+    } catch (e: any) { 
+        throw new Error(`Google Sheets Auth failed: ${e.message}`); 
+    }
 }
 
 export const readSheetData = async (range: string) => {
@@ -44,7 +52,10 @@ export const readSheetData = async (range: string) => {
         const sheets = await getSheetsClient();
         const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
         return response.data.values || [];
-    } catch (e: any) { throw e; }
+    } catch (e: any) { 
+        console.error("Sheets Read Error:", e.message);
+        throw e; 
+    }
 };
 
 export const appendSheetData = async (range: string, values: any[][]) => {
@@ -87,7 +98,6 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
         
         if (rowIndex !== -1) {
             const targetRange = `${sheetName}!A${rowIndex + 1}`;
-            // CRITICAL: Must wrap newRowData in another array so it populates multiple columns
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: targetRange,

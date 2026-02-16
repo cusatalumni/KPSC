@@ -21,14 +21,18 @@ const getIcon = (type: string) => {
     return React.createElement(IconComp, { className: "h-8 w-8 text-indigo-500" });
 };
 
-const fetchWithTimeout = async (url: string, timeout = 3000) => {
+const fetchWithTimeout = async (url: string, timeout = 5000) => {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(id);
         return response;
-    } catch (e) { clearTimeout(id); throw e; }
+    } catch (e) { 
+        clearTimeout(id); 
+        console.warn(`Fetch timeout/error for ${url}:`, e);
+        throw e; 
+    }
 };
 
 export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 'static' }> => {
@@ -51,7 +55,7 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
                 return { exams: formatted, source: 'database' };
             }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Exams fetch failed:", e); }
     isFetchingExams = false;
     return { exams: EXAMS_DATA, source: 'static' };
 };
@@ -59,7 +63,10 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
 export const getFlashCards = async (): Promise<FlashCard[]> => {
     try {
         const res = await fetchWithTimeout('/api/data?type=flash_cards', 4000);
-        if (res.ok) return await res.json();
+        if (res.ok) {
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+        }
     } catch (e) {}
     return [];
 };
@@ -133,12 +140,17 @@ export const saveTestResult = (resultData: any) => fetch('/api/admin', {
 });
 
 export const testConnection = async (token: string | null) => {
-    const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ action: 'test-connection' })
-    });
-    return res.json();
+    try {
+        const res = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ action: 'test-connection' })
+        });
+        if (!res.ok) return { status: { sheets: false, supabase: false } };
+        return res.json();
+    } catch (e) {
+        return { status: { sheets: false, supabase: false } };
+    }
 };
 
 export const clearStudyCache = (token: string | null) => fetch('/api/admin', {

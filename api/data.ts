@@ -25,12 +25,19 @@ export default async function handler(req: any, res: any) {
         'exams': 'exams', 'questions': 'questionbank', 'books': 'bookstore',
         'updates': 'liveupdates', 'affairs': 'currentaffairs', 'gk': 'gk',
         'syllabus': 'syllabus', 'notifications': 'notifications', 'settings': 'settings',
-        'subscriptions': 'subscriptions'
+        'subscriptions': 'subscriptions', 'flash_cards': 'flashcards'
     };
     
     const tableName = tableMap[tType] || tType;
-    // Increase default limit for exams to 100 to show all categories
-    const limitCount = parseInt(count as string) || (tableName === 'exams' ? 100 : 20);
+    
+    // Determine dynamic limit: Increase pool for GK/Affairs for better randomization
+    let limitCount = parseInt(count as string);
+    if (isNaN(limitCount)) {
+        if (tableName === 'exams') limitCount = 100;
+        else if (tableName === 'gk' || tableName === 'currentaffairs') limitCount = 60; 
+        else if (tableName === 'flashcards') limitCount = 50;
+        else limitCount = 20;
+    }
 
     try {
         if (supabase) {
@@ -44,12 +51,17 @@ export default async function handler(req: any, res: any) {
                 }
             }
             
-            // Apply higher limit
             query = query.limit(limitCount);
 
             if (tableName === 'subscriptions') {
                 query = query.order('last_updated', { ascending: false });
             }
+            
+            // Randomize results for GK/Affairs if we are getting a pool for the widget
+            if (tableName === 'gk' || tableName === 'currentaffairs') {
+                query = query.order('id', { ascending: false });
+            }
+
             const { data, error } = await query;
             if (!error && data && data.length > 0) {
                 if (tableName === 'questionbank') {
@@ -63,21 +75,23 @@ export default async function handler(req: any, res: any) {
 
         // Fallback to Google Sheets
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
-        switch (tType) {
-            case 'questions':
-                const qRows = await readSheetData('QuestionBank!A2:H');
-                const filtered = qRows.filter(r => r[0]).sort(() => 0.5 - Math.random()).slice(0, limitCount);
-                return res.status(200).json(filtered.map(r => ({
-                    id: String(r[0]), topic: r[1], question: r[2], options: smartParseOptions(r[3]), 
+        try {
+            const rows = await readSheetData(`${sheetName}!A2:Z`);
+            if (tType === 'questions') {
+                 return res.status(200).json(rows.slice(0, limitCount).map((r, i) => ({
+                    id: String(r[0] || i), topic: r[1], question: r[2], options: smartParseOptions(r[3]), 
                     correctAnswerIndex: parseInt(String(r[4] || '1')), 
                     subject: r[5], difficulty: r[6]
                 })));
-            default:
-                const rows = await readSheetData(`${sheetName}!A2:Z`);
-                return res.status(200).json(rows.slice(0, limitCount));
+            }
+            return res.status(200).json(rows.slice(0, limitCount));
+        } catch (sheetErr: any) {
+            console.error("Sheets Fallback Failed:", sheetErr.message);
+            return res.status(200).json([]); // Return empty rather than 500 to keep UI alive
         }
+
     } catch (error: any) { 
-        console.error("Data Fetch Error:", error);
-        return res.status(500).json({ error: "Internal Error" }); 
+        console.error("Data API Error:", error.message);
+        return res.status(500).json({ error: "Database Request Failed" }); 
     }
 }

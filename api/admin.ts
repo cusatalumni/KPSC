@@ -10,7 +10,7 @@ import {
     scrapeCurrentAffairs,
     generateQuestionsForGaps,
     auditAndCorrectQuestions,
-    rebuildDatabase
+    syncAllFromSheetsToSupabase
 } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
@@ -40,7 +40,7 @@ export default async function handler(req: any, res: any) {
 
     try {
         switch (action) {
-            case 'rebuild-db': return res.status(200).json(await rebuildDatabase());
+            case 'rebuild-db': return res.status(200).json(await syncAllFromSheetsToSupabase());
             case 'run-daily-sync': return res.status(200).json(await runDailyUpdateScrapers());
             case 'run-gk-scraper': return res.status(200).json(await scrapeGkFacts());
             case 'run-ca-scraper': return res.status(200).json(await scrapeCurrentAffairs());

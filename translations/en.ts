@@ -113,7 +113,7 @@ export const translations = {
     title: "Bookstore",
     subtitle: "Choose from the best books for your PSC preparation.",
     buyOnAmazon: "Buy on Amazon",
-    disclosure: "As an affiliate, we earn from qualifying purchases without any expence from you"
+    disclosure: "Some links on this website are affiliate links.As an affiliate, we earn from qualifying purchases at no additional cost to you."
   },
   mockTests: {
     title: "Mock Tests",
