@@ -290,7 +290,9 @@ export async function auditAndCorrectQuestions() {
                 findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
             ]);
 
-            return { message: `Audit complete. Corrected indices and added explanations for ${sanitized.length} questions.` };
+       
+            return { message: `Audit complete. Corrected indices and added explanations for ${sanitized.length} questions. Next Batch starts from Id ${last_audited_id +1}` };
+        
         }
     } catch (e: any) { throw e; }
     return { message: "No changes needed for this batch." };
