@@ -258,7 +258,7 @@ export async function auditAndCorrectQuestions() {
         .select('*')
         .gt('id', lastId)
         .order('id', { ascending: true })
-        .limit(30);
+        .limit(90);
 
     if (!questions || questions.length === 0) {
         await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
