@@ -20,6 +20,7 @@ import PscLiveUpdatesPage from './components/pages/PscLiveUpdatesPage';
 import PreviousPapersPage from './components/pages/PreviousPapersPage';
 import CurrentAffairsPage from './components/pages/CurrentAffairsPage';
 import GkPage from './components/pages/GkPage';
+import FlashCardsPage from './components/pages/FlashCardsPage';
 import AdminPage from './components/pages/AdminPage';
 import StudyMaterialPage from './components/pages/StudyMaterialPage';
 import SitemapPage from './components/pages/SitemapPage';
@@ -50,48 +51,31 @@ const App: React.FC = () => {
 
   const isInitialized = useRef(false);
 
-  // 1. Data Initialization (Runs once)
   useEffect(() => {
       if (isInitialized.current) return;
       isInitialized.current = true;
-
       const initData = async () => {
           try {
               const [s, eRes] = await Promise.all([getSettings(), getExams()]);
               if (s) setSettings(s);
-              if (eRes && eRes.exams && eRes.exams.length > 0) {
-                  setAllExams(eRes.exams);
-              }
-          } catch (e) {
-              console.error("Data Init Error:", e);
-          }
+              if (eRes && eRes.exams && eRes.exams.length > 0) setAllExams(eRes.exams);
+          } catch (e) { console.error(e); }
       };
       initData();
   }, []);
 
-  // 2. Loading State Logic (Reactive to Clerk + Safety Timeout)
   useEffect(() => {
-      // Exit loading if Clerk is ready
-      if (clerkLoaded) {
-          setIsAppLoading(false);
-      }
-
-      // Hard safety exit after 6 seconds regardless of anything
-      const safetyExit = setTimeout(() => {
-          setIsAppLoading(false);
-      }, 6000);
-
+      if (clerkLoaded) setIsAppLoading(false);
+      const safetyExit = setTimeout(() => setIsAppLoading(false), 6000);
       return () => clearTimeout(safetyExit);
   }, [clerkLoaded]);
 
-  // 3. Synchronize State from URL Hash
   const syncStateFromHash = useCallback(() => {
     const rawHash = window.location.hash || '#dashboard';
     const [hashPath, hashQuery] = rawHash.replace(/^#\/?/, '').split('?');
     const parts = hashPath.split('/');
     const pageName = parts[0] as Page;
 
-    // Reset contextual states to avoid data bleed
     setActiveTest(null);
     setSelectedExam(null);
     setActiveStudyTopic(null);
@@ -104,26 +88,14 @@ const App: React.FC = () => {
     if (pageName === 'test') {
         if (parts[1] === 'mock' && parts[2]) {
             const mt = MOCK_TESTS_DATA.find(m => String(m.id) === String(parts[2]));
-            if (mt) {
-                setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed', negativeMarking: mt.negativeMarking });
-            }
+            if (mt) setActiveTest({ title: mt.title.ml, questionsCount: mt.questionsCount, subject: 'mixed', topic: 'mixed', negativeMarking: mt.negativeMarking });
         } else if (parts[1] && parts[2] && parts[3]) {
-            setActiveTest({
-                subject: parts[1],
-                topic: parts[2],
-                questionsCount: parseInt(parts[3]) || 20,
-                title: parts[4] ? decodeURIComponent(parts[4]) : parts[2]
-            });
+            setActiveTest({ subject: parts[1], topic: parts[2], questionsCount: parseInt(parts[3]) || 20, title: parts[4] ? decodeURIComponent(parts[4]) : parts[2] });
         }
     }
 
-    if (pageName === 'study_material' && parts[1]) {
-        setActiveStudyTopic(decodeURIComponent(parts[1]));
-    }
-
-    if (pageName === 'external_viewer' && hashQuery) {
-        setExternalUrl(new URLSearchParams(hashQuery).get('url'));
-    }
+    if (pageName === 'study_material' && parts[1]) setActiveStudyTopic(decodeURIComponent(parts[1]));
+    if (pageName === 'external_viewer' && hashQuery) setExternalUrl(new URLSearchParams(hashQuery).get('url'));
 
     setCurrentPage(pageName || 'dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -137,26 +109,15 @@ const App: React.FC = () => {
     }
   }, [syncStateFromHash, isAppLoading]);
 
-  // 4. Subscription Handling (Updated for Database Sync)
   useEffect(() => {
-    if (settings.subscription_model_active === 'false') {
-        setSubscriptionStatus('pro');
-        return;
-    }
-    
+    if (settings.subscription_model_active === 'false') { setSubscriptionStatus('pro'); return; }
     const fetchSub = async () => {
         if (isSignedIn && user?.id) {
           const data = await subscriptionService.getSubscriptionData(user.id);
           setSubscriptionStatus(data.status);
-        } else {
-          setSubscriptionStatus('free');
-        }
+        } else setSubscriptionStatus('free');
     };
-    
-    if (clerkLoaded) {
-        fetchSub();
-    }
-    
+    if (clerkLoaded) fetchSub();
     window.addEventListener('subscription_updated', fetchSub);
     return () => window.removeEventListener('subscription_updated', fetchSub);
   }, [user, isSignedIn, settings, clerkLoaded]);
@@ -176,49 +137,16 @@ const App: React.FC = () => {
         {(() => {
           switch(currentPage) {
             case 'admin_panel': return <AdminPage onBack={() => handleNavigate('dashboard')} />;
-            case 'exam_details': 
-                return selectedExam ? (
-                    <ExamPage 
-                        exam={selectedExam} 
-                        content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} 
-                        subscriptionStatus={subscriptionStatus}
-                        onBack={() => handleNavigate('dashboard')} 
-                        onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} 
-                        onStartStudy={(t: string) => handleNavigate(`study_material/${encodeURIComponent(t)}`)}
-                        onNavigate={handleNavigate}
-                        onNavigateToUpgrade={() => handleNavigate('upgrade')}
-                    />
-                ) : (
-                    <div className="p-20 text-center text-slate-400 font-bold animate-pulse uppercase tracking-widest">Finding Exam Data...</div>
-                );
-            case 'test': 
-                return activeTest ? (
-                    <TestPage 
-                        activeTest={activeTest} 
-                        subscriptionStatus={subscriptionStatus} 
-                        onTestComplete={(s, t, st, q, a) => { 
-                            setTestResult({ score: s, total: t, stats: st, questions: q, answers: a }); 
-                            handleNavigate('results'); 
-                        }} 
-                        onBack={() => window.history.back()} 
-                        onNavigateToUpgrade={() => handleNavigate('upgrade')} 
-                    />
-                ) : (
-                    <div className="flex flex-col items-center justify-center p-20 space-y-4">
-                        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="font-black text-slate-400 animate-pulse uppercase">Syncing Question Bank...</p>
-                    </div>
-                );
-            case 'results': 
-                return testResult ? (
-                    <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} questions={testResult.questions} answers={testResult.answers} onBackToPrevious={() => handleNavigate('dashboard')} />
-                ) : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
+            case 'exam_details': return selectedExam ? <ExamPage exam={selectedExam} content={EXAM_CONTENT_MAP[selectedExam.id] || LDC_EXAM_CONTENT} subscriptionStatus={subscriptionStatus} onBack={() => handleNavigate('dashboard')} onStartTest={(t: any) => handleNavigate(`test/${t.subject}/${t.topic}/${t.questions}/${encodeURIComponent(t.title)}`)} onStartStudy={(t: string) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} onNavigate={handleNavigate} onNavigateToUpgrade={() => handleNavigate('upgrade')} /> : <div className="p-20 text-center">Finding Exam Data...</div>;
+            case 'test': return activeTest ? <TestPage activeTest={activeTest} subscriptionStatus={subscriptionStatus} onTestComplete={(s, t, st, q, a) => { setTestResult({ score: s, total: t, stats: st, questions: q, answers: a }); handleNavigate('results'); }} onBack={() => window.history.back()} onNavigateToUpgrade={() => handleNavigate('upgrade')} /> : <div className="text-center p-20">Loading...</div>;
+            case 'results': return testResult ? <TestResultPage score={testResult.score} total={testResult.total} stats={testResult.stats} questions={testResult.questions} answers={testResult.answers} onBackToPrevious={() => handleNavigate('dashboard')} /> : <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
             case 'bookstore': return <BookstorePage onBack={() => handleNavigate('dashboard')} />;
             case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={(c) => handleNavigate(`test/${c.id.split('_')[0]}/mixed/15/${encodeURIComponent(c.title.ml)}`)} subscriptionStatus={subscriptionStatus} />;
             case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(t) => handleNavigate(`test/mock/${t.id}`)} />;
             case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
             case 'current_affairs': return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
             case 'gk': return <GkPage onBack={() => handleNavigate('dashboard')} />;
+            case 'flash_cards': return <FlashCardsPage onBack={() => handleNavigate('dashboard')} />;
             case 'upgrade': return <UpgradePage onBack={() => window.history.back()} onUpgrade={() => {}} />;
             case 'study_material': return <StudyMaterialPage topic={activeStudyTopic || 'General Study'} onBack={() => handleNavigate('dashboard')} />;
             case 'external_viewer': return <ExternalViewerPage url={externalUrl || ''} onBack={() => handleNavigate('dashboard')} />;
@@ -229,9 +157,7 @@ const App: React.FC = () => {
             case 'privacy': return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
             case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
             case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
-            default: return (
-                <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />
-            );
+            default: return <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
           }
         })()}
       </main>
