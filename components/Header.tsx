@@ -40,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   useEffect(() => {
     getSettings().then(s => {
         if (s && s.subscription_model_active !== undefined) {
-            setIsSubActive(s.subscription_model_active === 'true');
+            setIsSubActive(String(s.subscription_model_active) === 'true');
         }
     }).catch(() => setIsSubActive(true));
   }, [isSignedIn]);
@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
       return <div className="h-10 w-24 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>;
     }
 
-    const isPro = subData?.status === 'pro';
+    const isPro = subData?.status === 'pro' || !isSubActive;
 
     if (isSignedIn) {
       return (
@@ -110,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
           {isPro ? (
               <div className="hidden lg:flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl">
                   <LockOpenIcon className="h-4 w-4 text-emerald-500" />
-                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Pro Member</span>
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{!isSubActive ? 'Free Pro Access' : 'Pro Member'}</span>
               </div>
           ) : isSubActive && (
             <button 
@@ -137,8 +137,19 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
 
   return (
     <div className="flex flex-col w-full sticky top-0 z-50">
-      {/* Expiry Warning Banner */}
-      {daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0 && (
+      {/* Global Pro Free Banner */}
+      {!isSubActive && (
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 text-white py-2.5 px-4 text-center animate-fade-in flex items-center justify-center space-x-4 shadow-xl border-b border-white/10">
+              <SparklesIcon className="h-4 w-4 text-emerald-200 animate-pulse hidden sm:block" />
+              <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.15em] drop-shadow-sm">
+                  പരിമിത കാലത്തേക്ക് എല്ലാ പ്രോ ഫീച്ചറുകളും <span className="bg-white text-emerald-600 px-2 py-0.5 rounded ml-1">സൗജന്യം!</span>
+              </p>
+              <SparklesIcon className="h-4 w-4 text-emerald-200 animate-pulse hidden sm:block" />
+          </div>
+      )}
+
+      {/* Expiry Warning Banner (Only show if not in global free mode) */}
+      {isSubActive && daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0 && (
           <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white py-2 px-4 text-center animate-fade-in flex items-center justify-center space-x-4 shadow-lg overflow-hidden relative">
               <div className="absolute top-0 right-0 w-32 h-full opacity-10"><SparklesIcon className="w-full h-full" /></div>
               <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.1em] drop-shadow-sm">
