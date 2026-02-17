@@ -59,6 +59,8 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
     return allIds.filter(id => groupedExams[id] && groupedExams[id].length > 0);
   }, [groupedExams]);
 
+  const themes: ('indigo' | 'emerald' | 'rose' | 'amber' | 'cyan')[] = ['indigo', 'emerald', 'rose', 'amber', 'cyan'];
+
   if (loading) return (
     <div className="space-y-12 animate-pulse p-4">
         <div className="h-80 bg-slate-200 dark:bg-slate-800 rounded-[3.5rem]"></div>
@@ -99,7 +101,12 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
                       {(groupedExams[catId] || []).map((exam, idx) => (
                           <Fragment key={exam.id}>
                               <div className="h-full flex flex-col">
-                                  <ExamCard exam={exam} onNavigate={onNavigateToExam} language={language} theme="indigo" />
+                                  <ExamCard 
+                                    exam={exam} 
+                                    onNavigate={onNavigateToExam} 
+                                    language={language} 
+                                    theme={themes[idx % themes.length]} 
+                                  />
                               </div>
                               {(idx + 1) % 7 === 0 && <AdsenseWidget />}
                           </Fragment>

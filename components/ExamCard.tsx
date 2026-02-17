@@ -14,43 +14,42 @@ interface ExamCardProps {
 const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate, language, theme = 'indigo', syllabusPreview = [] }) => {
   const { t } = useTranslation();
   
-  const themeClasses = {
-    indigo: 'bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-indigo-200/50',
-    amber: 'bg-gradient-to-br from-amber-500 to-amber-700 shadow-amber-200/50',
-    rose: 'bg-gradient-to-br from-rose-500 to-rose-700 shadow-rose-200/50',
-    emerald: 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-200/50',
-    cyan: 'bg-gradient-to-br from-cyan-500 to-cyan-700 shadow-cyan-200/50'
+  const themeGradients = {
+    indigo: 'from-indigo-600 to-indigo-800',
+    amber: 'from-amber-500 to-orange-600',
+    rose: 'from-rose-500 to-pink-600',
+    emerald: 'from-emerald-500 to-teal-600',
+    cyan: 'from-cyan-500 to-blue-600'
   };
 
-  const accentTextClasses = {
-    indigo: 'text-indigo-600',
-    amber: 'text-amber-600',
-    rose: 'text-rose-600',
-    emerald: 'text-emerald-600',
-    cyan: 'text-cyan-600'
+  const themeBorder = {
+    indigo: 'border-indigo-100 dark:border-indigo-900/30',
+    amber: 'border-amber-100 dark:border-amber-900/30',
+    rose: 'border-rose-100 dark:border-rose-900/30',
+    emerald: 'border-emerald-100 dark:border-emerald-900/30',
+    cyan: 'border-cyan-100 dark:border-cyan-900/30'
   };
 
   return (
-    <div className={`bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-xl hover:shadow-2xl hover:-translate-y-1 transform transition-all duration-300 flex flex-col border border-slate-100 dark:border-slate-800 relative overflow-hidden group`}>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800 rounded-bl-[4rem] -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
+    <div className={`bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl hover:shadow-2xl hover:-translate-y-2 transform transition-all duration-500 flex flex-col border-2 ${themeBorder[theme]} relative overflow-hidden group h-full`}>
+      {/* Dynamic Gradient Header */}
+      <div className={`h-3 w-full bg-gradient-to-r ${themeGradients[theme]}`}></div>
       
-      <div className="relative z-10 flex-grow">
-        <div className="flex items-center space-x-4 mb-5">
-          <div className={`p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 ${accentTextClasses[theme]} shadow-inner group-hover:scale-110 transition-transform flex-shrink-0`}>
+      <div className="p-8 flex flex-col h-full">
+        <div className="flex items-start space-x-5 mb-6">
+          <div className={`p-4 rounded-2xl bg-gradient-to-br ${themeGradients[theme]} text-white shadow-lg group-hover:rotate-6 transition-transform flex-shrink-0`}>
               {exam.icon}
           </div>
           <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap gap-1.5 mb-1">
-                 <span className="text-[7px] font-black uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">{exam.level}</span>
-              </div>
-              <h4 className="text-lg font-black text-slate-800 dark:text-slate-100 leading-tight truncate">{exam.title[language]}</h4>
+              <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 mb-2 inline-block tracking-widest">{exam.level}</span>
+              <h4 className="text-xl font-black text-slate-800 dark:text-slate-100 leading-tight tracking-tight line-clamp-2">{exam.title[language]}</h4>
           </div>
         </div>
         
-        <p className="text-slate-500 dark:text-slate-400 text-sm font-bold leading-relaxed line-clamp-2 min-h-[2.5rem]">{exam.description[language]}</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm font-bold leading-relaxed line-clamp-2 mb-8 italic opacity-80">"{exam.description[language]}"</p>
 
-        {syllabusPreview.length > 0 && (
-            <div className="mt-5 pt-4 border-t border-slate-50 dark:border-slate-800">
+        <div className="mt-auto pt-6 border-t border-slate-50 dark:border-slate-800 flex flex-col gap-5">
+            {syllabusPreview.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {syllabusPreview.map((item, idx) => (
                         <span key={idx} className="bg-slate-50 dark:bg-slate-800 text-slate-400 text-[8px] font-black px-2 py-0.5 rounded uppercase">
@@ -58,16 +57,19 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, onNavigate, language, theme =
                         </span>
                     ))}
                 </div>
-            </div>
-        )}
+            )}
+            
+            <button 
+                onClick={() => onNavigate(exam)}
+                className={`w-full text-center text-white font-black py-4 rounded-2xl transition-all active:scale-95 shadow-lg text-[10px] uppercase tracking-[0.2em] bg-gradient-to-r ${themeGradients[theme]} hover:brightness-110`}
+            >
+                {t('start')}
+            </button>
+        </div>
       </div>
-      
-       <button 
-        onClick={() => onNavigate(exam)}
-        className={`mt-6 w-full text-center text-white font-black py-4 rounded-2xl transition-all active:scale-95 shadow-lg text-xs uppercase tracking-widest ${themeClasses[theme]}`}
-       >
-          {t('start')}
-        </button>
+
+      {/* Decorative background element */}
+      <div className={`absolute -bottom-10 -right-10 w-32 h-32 bg-gradient-to-br ${themeGradients[theme]} opacity-[0.03] rounded-full`}></div>
     </div>
   );
 };

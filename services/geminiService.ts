@@ -5,7 +5,7 @@ import { Type } from "@google/genai";
 
 /**
  * Searches for previous papers by calling our secure internal backend.
- * Uses real-time Google Search targeted at official Kerala PSC archive pages.
+ * Uses real-time Google Search with strict rules against URL pattern guessing.
  */
 export const searchPreviousPapers = async (query: string): Promise<{ papers: QuestionPaper[], sources: any[] }> => {
     try {
@@ -15,22 +15,20 @@ export const searchPreviousPapers = async (query: string): Promise<{ papers: Que
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                prompt: `You are a Kerala PSC document specialist. Search for official PDF download links for: "${query}".
+                prompt: `You are a Kerala PSC Document Retrieval Specialist. Search for the official PDF download links for: "${query}".
                 
-                STRICT SEARCH SOURCES:
-                You MUST prioritize results from these specific official URLs:
-                1. https://www.keralapsc.gov.in/previous-question-papers
-                2. https://www.keralapsc.gov.in/question-paper-descriptive-exam
-                3. https://www.keralapsc.gov.in/answerkey_omrexams
-                4. https://www.keralapsc.gov.in/index.php/answerkey_onlineexams
+                CRITICAL INSTRUCTIONS:
+                1. STRICT SOURCE: Only provide links from keralapsc.gov.in.
+                2. NO HALLUCINATION: DO NOT guess or construct URL patterns like '/sites/default/files/question_paper/'. 
+                3. REAL PATHS: Kerala PSC uses date-based paths (e.g., /2018-08/175-2016.pdf). Only return the EXACT URL found in the search grounding results.
+                4. FALLBACK: If the direct .pdf URL is not visible in search snippets, return the URL of the official PSC results/download page where the link is hosted.
                 
-                Return a JSON array of objects representing the most relevant question papers or answer keys. 
-                Each object MUST have:
-                1. 'title': Clear name (e.g., LDC 2021 OMR Exam).
-                2. 'url': The direct .pdf download link.
-                3. 'year': The year of the exam.
-                4. 'size': Approximate file size if known, else 'Official PDF'.
-                5. 'category': One of: "OMR Question", "Descriptive", "OMR Answer Key", "Online Exam Key".`,
+                Return a JSON array of objects:
+                - 'title': Clear name (e.g. TRADESMAN - AUTOMOBILE MECHANIC).
+                - 'url': The ACTUAL official PDF link or Hosting Page URL.
+                - 'year': Exam Year.
+                - 'category': "OMR Question", "Descriptive", "Answer Key".
+                - 'isDirectPdf': boolean (true if the link ends in .pdf).`,
                 model: 'gemini-3-flash-preview',
                 useSearch: true,
                 responseSchema: {
@@ -41,10 +39,10 @@ export const searchPreviousPapers = async (query: string): Promise<{ papers: Que
                             title: { type: Type.STRING },
                             url: { type: Type.STRING },
                             year: { type: Type.STRING },
-                            size: { type: Type.STRING },
-                            category: { type: Type.STRING }
+                            category: { type: Type.STRING },
+                            isDirectPdf: { type: Type.BOOLEAN }
                         },
-                        required: ["title", "url", "year", "category"]
+                        required: ["title", "url", "year", "category", "isDirectPdf"]
                     }
                 }
             }),

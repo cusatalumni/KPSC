@@ -20,20 +20,38 @@ const MockTestCard: React.FC<MockTestCardProps> = ({ test, onStart }) => {
 
   // Pattern styling based on exam type
   const getCardTheme = () => {
-    if (test.examId === 'ldc_lgs') return 'border-indigo-100 bg-indigo-50/20 text-indigo-600';
-    if (test.examId === 'university_assistant') return 'border-emerald-100 bg-emerald-50/20 text-emerald-600';
-    return 'border-amber-100 bg-amber-50/20 text-amber-600';
+    if (test.examId === 'ldc_lgs') return {
+        border: 'border-indigo-200 dark:border-indigo-900/50',
+        header: 'bg-gradient-to-r from-indigo-600 to-blue-600',
+        iconBg: 'bg-indigo-50 dark:bg-indigo-950',
+        iconText: 'text-indigo-600',
+        btn: 'bg-indigo-600 hover:bg-indigo-700'
+    };
+    if (test.examId === 'university_assistant') return {
+        border: 'border-emerald-200 dark:border-emerald-900/50',
+        header: 'bg-gradient-to-r from-emerald-600 to-teal-600',
+        iconBg: 'bg-emerald-50 dark:bg-emerald-950',
+        iconText: 'text-emerald-600',
+        btn: 'bg-emerald-600 hover:bg-emerald-700'
+    };
+    return {
+        border: 'border-amber-200 dark:border-amber-900/50',
+        header: 'bg-gradient-to-r from-amber-500 to-orange-600',
+        iconBg: 'bg-amber-50 dark:bg-amber-950',
+        iconText: 'text-amber-600',
+        btn: 'bg-amber-600 hover:bg-amber-700'
+    };
   };
 
-  const themeClass = getCardTheme();
+  const theme = getCardTheme();
 
   return (
-    <div className={`bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-xl hover:shadow-2xl hover:-translate-y-2 transform transition-all duration-500 flex flex-col justify-between border-2 border-slate-50 dark:border-slate-800 group relative overflow-hidden h-full`}>
-      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 bg-current pointer-events-none rounded-bl-[5rem] -mr-12 -mt-12 transition-transform group-hover:scale-125"></div>
+    <div className={`bg-white dark:bg-slate-900 rounded-[3rem] shadow-xl hover:shadow-2xl hover:-translate-y-2 transform transition-all duration-500 flex flex-col border-2 ${theme.border} group relative overflow-hidden h-full`}>
+      <div className={`h-3 w-full ${theme.header}`}></div>
       
-      <div>
+      <div className="p-8 flex flex-col h-full">
         <div className="flex items-start space-x-5 mb-6">
-          <div className={`p-4 rounded-2xl shadow-inner group-hover:rotate-3 transition-transform ${themeClass.split(' ')[2] + ' bg-white dark:bg-slate-800 border'}`}>
+          <div className={`p-4 rounded-2xl shadow-inner group-hover:rotate-3 transition-transform ${theme.iconBg} ${theme.iconText} border dark:border-slate-800`}>
              {exam?.icon || <DocumentChartBarIcon className="h-8 w-8" />}
           </div>
           <div className="flex-1">
@@ -44,32 +62,34 @@ const MockTestCard: React.FC<MockTestCardProps> = ({ test, onStart }) => {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{exam?.title[language] || 'PSC Official'}</span>
           </div>
         </div>
+        
         <p className="text-slate-500 dark:text-slate-400 font-bold text-sm leading-relaxed mb-8 line-clamp-2 italic opacity-80">"{test.description[language]}"</p>
-      </div>
       
-      <div className="mt-auto">
-        <div className="grid grid-cols-3 gap-2 mb-6">
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border dark:border-slate-700 flex flex-col items-center">
-                <span className="text-[7px] font-black text-slate-400 uppercase mb-0.5">Questions</span>
-                <span className="text-xs font-black text-slate-700 dark:text-white">{test.questionsCount}</span>
+        <div className="mt-auto">
+            <div className="grid grid-cols-3 gap-2 mb-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border dark:border-slate-700 flex flex-col items-center">
+                    <span className="text-[7px] font-black text-slate-400 uppercase mb-0.5">Questions</span>
+                    <span className="text-xs font-black text-slate-700 dark:text-white">{test.questionsCount}</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border dark:border-slate-700 flex flex-col items-center">
+                    <span className="text-[7px] font-black text-slate-400 uppercase mb-0.5">Duration</span>
+                    <span className="text-xs font-black text-slate-700 dark:text-white">{test.duration}m</span>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border dark:border-slate-700 flex flex-col items-center">
+                    <span className="text-[7px] font-black text-rose-400 uppercase mb-0.5">Negative</span>
+                    <span className="text-xs font-black text-rose-600">-{test.negativeMarking}</span>
+                </div>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border dark:border-slate-700 flex flex-col items-center">
-                <span className="text-[7px] font-black text-slate-400 uppercase mb-0.5">Duration</span>
-                <span className="text-xs font-black text-slate-700 dark:text-white">{test.duration}m</span>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border dark:border-slate-700 flex flex-col items-center">
-                <span className="text-[7px] font-black text-rose-400 uppercase mb-0.5">Negative</span>
-                <span className="text-xs font-black text-rose-600">-{test.negativeMarking}</span>
-            </div>
-        </div>
 
-        <button 
-          onClick={() => onStart(test)}
-          className="w-full btn-vibrant-indigo text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-indigo-200 transition-all active:scale-95 text-xs uppercase tracking-widest"
-        >
-          പരീക്ഷ ആരംഭിക്കുക
-        </button>
+            <button 
+              onClick={() => onStart(test)}
+              className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-xs uppercase tracking-widest ${theme.btn}`}
+            >
+              പരീക്ഷ ആരംഭിക്കുക
+            </button>
+        </div>
       </div>
+      <div className={`absolute top-0 right-0 w-32 h-32 opacity-[0.03] ${theme.header} rounded-full -mr-16 -mt-16`}></div>
     </div>
   );
 };

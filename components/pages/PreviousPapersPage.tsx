@@ -73,14 +73,14 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="relative z-10">
                     <div className="bg-white/5 backdrop-blur-xl p-5 rounded-[1.5rem] w-fit mx-auto mb-8 border border-white/10 flex items-center space-x-3">
                         <ShieldCheckIcon className="h-5 w-5 text-indigo-400" />
-                        <span className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.3em]">Official Archive Access</span>
+                        <span className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.3em]">Verified Official Archives</span>
                     </div>
                     
                     <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none mb-6">
                         ക്യു-പേപ്പർ ഹബ്ബ്
                     </h1>
                     <p className="text-slate-400 text-lg md:text-xl font-bold max-w-2xl mx-auto leading-relaxed">
-                        കേരള പി.എസ്.സി ഔദ്യോഗിക പേജുകളിൽ നിന്നുള്ള <br className="hidden md:block"/> ചോദ്യപേപ്പറുകളും ഉത്തരസൂചികകളും സെർച്ച് ചെയ്യാം.
+                        തെറ്റായ ലിങ്കുകൾ ഒഴിവാക്കാൻ AI നേരിട്ട് PSC സർവറുകളിൽ സെർച്ച് ചെയ്യുന്നു.
                     </p>
 
                     {/* AI Search Bar */}
@@ -100,7 +100,7 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 className="bg-indigo-600 text-white font-black px-8 py-4 rounded-3xl hover:bg-indigo-500 transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center space-x-3"
                             >
                                 {loading ? <ArrowPathIcon className="h-5 w-5 animate-spin" /> : <SparklesIcon className="h-5 w-5" />}
-                                <span className="uppercase tracking-widest text-[10px]">{loading ? 'Scanning Archives...' : 'Find PDF'}</span>
+                                <span className="uppercase tracking-widest text-[10px]">{loading ? 'Searching...' : 'Find Official PDF'}</span>
                             </button>
                         </div>
                     </div>
@@ -112,7 +112,7 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-slate-900 rounded-[4rem] border-4 border-dashed border-slate-100 dark:border-slate-800">
                             <div className="w-20 h-20 border-[6px] border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-8"></div>
-                            <p className="text-xl font-black text-slate-400 uppercase tracking-[0.4em] animate-pulse text-center">Scanning Kerala PSC official download pages...</p>
+                            <p className="text-xl font-black text-slate-400 uppercase tracking-[0.4em] animate-pulse text-center">Scanning Verified PSC Links...</p>
                         </div>
                     ) : error ? (
                         <div className="text-center text-red-500 bg-red-50 p-12 rounded-[3rem] border-2 border-red-100 font-bold text-xl">{error}</div>
@@ -125,39 +125,46 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         {searched ? 'സെർച്ച് റിസൾട്ടുകൾ' : 'റീസെന്റ് ഡൗൺലോഡുകൾ'}
                                     </h2>
                                 </div>
-                                {searched && <button onClick={() => {setSearched(false); setQuery(''); setSources([]);}} className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-5 py-2.5 rounded-xl hover:bg-indigo-100 uppercase tracking-widest transition-all">Reset Archive</button>}
+                                {searched && <button onClick={() => {setSearched(false); setQuery(''); setSources([]);}} className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-5 py-2.5 rounded-xl hover:bg-indigo-100 uppercase tracking-widest transition-all">Reset Search</button>}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {paperList.map((item, index) => (
-                                    <a 
-                                        href={item.url.startsWith('http') ? item.url : `https://www.google.com/search?q=${encodeURIComponent(item.title + " Kerala PSC PDF")}`} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        key={index} 
-                                        className="group bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all flex flex-col justify-between relative overflow-hidden"
-                                    >
-                                        <div className="flex items-start space-x-4 mb-6">
-                                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-inner">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1.5">
-                                                    <CategoryBadge category={item.category} />
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase">{item.year}</span>
+                                    <div key={index} className="group bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-lg border border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all flex flex-col justify-between relative overflow-hidden h-full">
+                                        <div>
+                                            <div className="flex items-start space-x-4 mb-6">
+                                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-inner">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                                                 </div>
-                                                <h3 className="text-lg font-black text-slate-800 dark:text-white group-hover:text-indigo-600 transition-colors leading-tight line-clamp-2">{item.title}</h3>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                        <CategoryBadge category={item.category} />
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase">{item.year}</span>
+                                                    </div>
+                                                    <h3 className="text-lg font-black text-slate-800 dark:text-white leading-tight line-clamp-3">{item.title}</h3>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50 dark:border-slate-800">
-                                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{item.size || 'Official PDF'}</span>
-                                            <div className="flex items-center space-x-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">
-                                                <span>Download</span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                        <div className="mt-auto">
+                                            <div className="flex flex-wrap gap-2 mb-4">
+                                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md ${item.isDirectPdf || item.url?.endsWith('.pdf') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                                    {item.isDirectPdf || item.url?.endsWith('.pdf') ? 'Direct PDF' : 'Official Web Page'}
+                                                </span>
                                             </div>
+                                            <a 
+                                                href={item.url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="w-full bg-slate-50 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white p-4 rounded-xl flex items-center justify-between transition-all group/btn"
+                                            >
+                                                <span className="text-[10px] font-black uppercase tracking-widest">
+                                                    {item.isDirectPdf || item.url?.endsWith('.pdf') ? 'Download PDF' : 'Go to Download Page'}
+                                                </span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                            </a>
                                         </div>
-                                    </a>
+                                    </div>
                                 ))}
                             </div>
                             
@@ -169,10 +176,9 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 </div>
                             )}
 
-                            {/* Grounding Sources Listing */}
                             {sources.length > 0 && (
                                 <div className="mt-16 p-8 bg-slate-50 dark:bg-slate-900/30 rounded-3xl border border-slate-100 dark:border-slate-800">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Official Archives Scanned</h4>
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Search Footprints (Sources)</h4>
                                     <div className="flex flex-wrap gap-3">
                                         {sources.map((chunk, idx) => (
                                             chunk.web && (
@@ -198,15 +204,8 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <aside className="space-y-10">
                     <div className="bg-indigo-600 rounded-[3rem] p-8 text-white shadow-2xl relative overflow-hidden group border-b-[8px] border-indigo-900">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                        <h4 className="text-xl font-black mb-4 tracking-tight leading-tight">സ്പെസിഫിക് പേപ്പർ വേണോ?</h4>
-                        <p className="text-indigo-100 text-sm font-bold leading-relaxed mb-8 italic">"നിങ്ങൾ തിരയുന്ന പരീക്ഷയുടെ പേരും ഒപ്പം വർഷവും നൽകുന്നത് ഏറ്റവും കൃത്യമായ ഫലം നൽകാൻ സഹായിക്കും."</p>
-                        <div className="bg-indigo-950/40 p-5 rounded-2xl border border-white/10 backdrop-blur-md">
-                            <p className="text-[9px] font-black uppercase text-amber-300 tracking-[0.2em] mb-2">Example Search</p>
-                            <p className="text-xs font-bold text-indigo-100 leading-relaxed">LDC 2017 Thiruvananthapuram</p>
-                        </div>
-                    </div>
-                    <div className="sticky top-32">
-                        <AdsenseWidget />
+                        <h4 className="text-xl font-black mb-4 tracking-tight leading-tight">പിഴവുകൾ ഒഴിവാക്കാം</h4>
+                        <p className="text-indigo-100 text-sm font-bold leading-relaxed mb-8 italic">"കേരള പി.എസ്.സി സൈറ്റിലെ ഓരോ വർഷത്തെയും ഫയലുകൾ വ്യത്യസ്ത ഫോൾഡറുകളിലാണ്. കൃത്യമായ ലിങ്ക് ലഭിക്കാൻ പരീക്ഷയുടെ പേരും വർഷവും ചേർത്ത് സെർച്ച് ചെയ്യുക."</p>
                     </div>
                 </aside>
             </div>
