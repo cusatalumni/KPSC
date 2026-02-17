@@ -12,7 +12,8 @@ import {
     auditAndCorrectQuestions,
     syncAllFromSheetsToSupabase,
     generateFlashcardsFromContent,
-    auditAndCorrectBooks
+    auditAndCorrectBooks,
+    repairLanguageMismatches
 } from "./_lib/scraper-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
@@ -86,6 +87,7 @@ export default async function handler(req: any, res: any) {
             case 'run-book-audit': return res.status(200).json(await auditAndCorrectBooks());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-flashcard-generator': return res.status(200).json(await generateFlashcardsFromContent());
+            case 'run-language-repair': return res.status(200).json(await repairLanguageMismatches());
             
             case 'update-setting': {
                 if (supabase) await upsertSupabaseData('settings', [setting], 'key');

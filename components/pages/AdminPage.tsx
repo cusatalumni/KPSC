@@ -1,5 +1,4 @@
 
-import { verifyAdmin } from "./_lib/clerk-auth.js";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
@@ -32,6 +31,7 @@ import { PencilSquareIcon } from '../icons/PencilSquareIcon';
 import { TagIcon } from '../icons/TagIcon';
 import { WrenchScrewdriverIcon } from '../icons/WrenchScrewdriverIcon';
 import { Cog6ToothIcon } from '../icons/Cog6ToothIcon';
+import { LanguageIcon } from '../icons/LanguageIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
 type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users' | 'settings';
@@ -90,7 +90,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleAction = async (action: string, payload: any = {}) => {
         setStatus("Processing operation..."); 
         setIsError(false);
-        if (action === 'run-batch-qa' || action === 'reset-qa-audit') setAuditInfo(null);
+        if (action === 'run-batch-qa' || action === 'reset-qa-audit' || action === 'run-language-repair') setAuditInfo(null);
         
         try {
             const r = await adminOp(action, payload);
@@ -100,7 +100,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 setAuditInfo({ nextId: r.nextId, message: r.message });
             }
 
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair'].includes(action)) {
                 await refreshData(true);
             }
             
@@ -111,7 +111,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleToggleSetting = async (key: string, currentVal: any) => {
-        // Ensure we handle currentVal being undefined or coming from different formats
         const newVal = (String(currentVal) === 'true') ? 'false' : 'true';
         await handleAction('update-setting', { setting: { key, value: newVal } });
     };
@@ -198,7 +197,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'qbank' && (
                     <div className="space-y-16">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border dark:border-slate-800">
                                 <div className="flex items-center justify-between mb-6">
                                     <div>
@@ -231,6 +230,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to identify empty exams and topics.</p>}
                             </div>
+                            
                             <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden">
                                 <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
                                 <h3 className="text-xl font-black uppercase mb-4">QA Quality Audit</h3>
@@ -243,10 +243,23 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 )}
 
-                                <div className="flex space-x-3 relative z-10">
-                                    <button onClick={() => handleAction('run-batch-qa')} className="flex-1 bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all">Start Audit</button>
-                                    <button onClick={() => { if(confirm("Are you sure you want to reset the audit cursor to the beginning (ID 0)?")) handleAction('reset-qa-audit'); }} className="flex-1 bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all">Reset Progress</button>
+                                <div className="flex flex-col space-y-3 relative z-10">
+                                    <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full">Start Sequential Audit</button>
+                                    <button onClick={() => { if(confirm("Are you sure you want to reset the audit cursor to the beginning (ID 0)?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">Reset Audit Cursor</button>
                                 </div>
+                            </div>
+
+                            <div className="bg-rose-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden">
+                                <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-32 w-32" /></div>
+                                <h3 className="text-xl font-black uppercase mb-4">Language Repair</h3>
+                                <p className="text-rose-100 text-xs font-bold mb-6">Scan technical subjects (Engineering, IT, English) that were incorrectly translated and revert them to English.</p>
+                                <button 
+                                    onClick={() => handleAction('run-language-repair')} 
+                                    className="bg-white text-rose-600 font-black py-5 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full flex items-center justify-center space-x-2"
+                                >
+                                    <ArrowPathIcon className="h-4 w-4" />
+                                    <span>Repair Technical Subjects</span>
+                                </button>
                             </div>
                         </div>
 

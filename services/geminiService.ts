@@ -5,9 +5,9 @@ import { Type } from "@google/genai";
 
 /**
  * Searches for previous papers by calling our secure internal backend.
- * The API key is handled on the server side to prevent exposure.
+ * Uses real-time Google Search targeted at official Kerala PSC archive pages.
  */
-export const searchPreviousPapers = async (query: string): Promise<QuestionPaper[]> => {
+export const searchPreviousPapers = async (query: string): Promise<{ papers: QuestionPaper[], sources: any[] }> => {
     try {
         const response = await fetch('/api/ai', {
             method: 'POST',
@@ -15,11 +15,24 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                prompt: `Search for Kerala PSC previous question papers matching the query "${query}". 
-                Target official sources like keralapsc.gov.in. 
-                Return a JSON array of the top 5 most relevant results. 
-                Each object must have 'title', 'url', and 'date'.`,
+                prompt: `You are a Kerala PSC document specialist. Search for official PDF download links for: "${query}".
+                
+                STRICT SEARCH SOURCES:
+                You MUST prioritize results from these specific official URLs:
+                1. https://www.keralapsc.gov.in/previous-question-papers
+                2. https://www.keralapsc.gov.in/question-paper-descriptive-exam
+                3. https://www.keralapsc.gov.in/answerkey_omrexams
+                4. https://www.keralapsc.gov.in/index.php/answerkey_onlineexams
+                
+                Return a JSON array of objects representing the most relevant question papers or answer keys. 
+                Each object MUST have:
+                1. 'title': Clear name (e.g., LDC 2021 OMR Exam).
+                2. 'url': The direct .pdf download link.
+                3. 'year': The year of the exam.
+                4. 'size': Approximate file size if known, else 'Official PDF'.
+                5. 'category': One of: "OMR Question", "Descriptive", "OMR Answer Key", "Online Exam Key".`,
                 model: 'gemini-3-flash-preview',
+                useSearch: true,
                 responseSchema: {
                     type: Type.ARRAY,
                     items: {
@@ -27,9 +40,11 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
                         properties: {
                             title: { type: Type.STRING },
                             url: { type: Type.STRING },
-                            date: { type: Type.STRING }
+                            year: { type: Type.STRING },
+                            size: { type: Type.STRING },
+                            category: { type: Type.STRING }
                         },
-                        required: ["title", "url", "date"]
+                        required: ["title", "url", "year", "category"]
                     }
                 }
             }),
@@ -40,16 +55,15 @@ export const searchPreviousPapers = async (query: string): Promise<QuestionPaper
             throw new Error(errorData.error || 'Backend AI request failed');
         }
 
-        const data = await response.json();
+        const result = await response.json();
         
-        if (Array.isArray(data)) {
-            return data as QuestionPaper[];
-        }
-        
-        return MOCK_QUESTION_PAPERS;
+        return {
+            papers: Array.isArray(result.data) ? result.data : MOCK_QUESTION_PAPERS,
+            sources: result.sources || []
+        };
 
     } catch (error) {
         console.error("Error fetching papers from backend AI:", error);
-        return MOCK_QUESTION_PAPERS;
+        return { papers: MOCK_QUESTION_PAPERS, sources: [] };
     }
 };

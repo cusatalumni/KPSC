@@ -103,7 +103,13 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview', 
-            contents: `Generate high-quality PSC MCQs in Malayalam for these topics: ${targetTopics.join(', ')}. 
+            contents: `Generate high-quality Kerala PSC MCQs for these topics: ${targetTopics.join(', ')}. 
+            
+            STRICT LANGUAGE RULES:
+            1. ENGLISH SUBJECT: If the subject is 'English', keep it in English.
+            2. TECHNICAL SUBJECTS: If the subject is Engineering, IT, Computer Science, Nursing, or any professional technical field, generate the question and options in ENGLISH only.
+            3. GENERAL SUBJECTS: For History, Geography, Science, Malayalam, etc., generate in professional MALAYALAM.
+            
             Return JSON array of objects with: topic, subject, question, options (array of 4 strings), correctAnswerIndex (1-4), explanation.`,
             config: { responseMimeType: "application/json" }
         });
@@ -145,7 +151,15 @@ export async function auditAndCorrectQuestions() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Audit these PSC questions for Malayalam grammar and accuracy. Data: ${JSON.stringify(questions)}`,
+            contents: `You are an expert Kerala PSC content auditor. Audit these questions for factual accuracy and grammar.
+            
+            CRITICAL LANGUAGE RULES:
+            1. SUBJECT CHECK (ENGLISH/TECHNICAL): If the 'subject' is 'English', 'Engineering', 'IT', 'Computer Science', or 'Technical', you MUST keep the question and options in English. If it is currently in Malayalam, REVERT/RE-WRITE IT BACK TO ENGLISH.
+            2. OTHERS: For all other general subjects, ensure the text is in professional Malayalam.
+            3. CORRECTNESS: Verify the facts and ensure the 'correct_answer_index' (1-4) is accurate.
+            4. EXPLANATION: Add a short, helpful explanation in the same language as the question.
+            
+            Maintain the JSON structure exactly. Data: ${JSON.stringify(questions)}`,
             config: { responseMimeType: "application/json" }
         });
 
@@ -162,10 +176,56 @@ export async function auditAndCorrectQuestions() {
                 upsertSupabaseData('settings', [{ key: 'last_audited_id', value: String(maxIdBatch) }], 'key'),
                 findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
             ]);
-            return { message: `Audited up to ID ${maxIdBatch}.`, nextId: maxIdBatch + 1 };
+            return { message: `Audited up to ID ${maxIdBatch}. Incorrect language mappings for Technical/English subjects have been repaired.`, nextId: maxIdBatch + 1 };
         }
     } catch (e: any) { throw e; }
     return { message: "Batch processed." };
+}
+
+/**
+ * Specifically finds questions in Technical/English subjects and ensures they are in English.
+ */
+export async function repairLanguageMismatches() {
+    if (!supabase) throw new Error("Supabase required.");
+    
+    // Find questions in technical subjects
+    const technicalSubjects = ['English', 'Engineering', 'IT', 'Computer Science', 'Technical', 'Nursing'];
+    const { data: mismatches } = await supabase
+        .from('questionbank')
+        .select('*')
+        .in('subject', technicalSubjects)
+        .limit(30);
+
+    if (!mismatches || mismatches.length === 0) return { message: "No language mismatches found in current batch." };
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `You are a technical content restorer. These questions belong to technical subjects but may have been incorrectly translated to Malayalam. 
+            
+            YOUR TASK:
+            1. Restore the question and all options to professional English.
+            2. Ensure the technical terminology is accurate.
+            3. Keep the same 'id' and 'correct_answer_index'.
+            4. Provide the explanation in English.
+            
+            Return JSON array of updated objects: ${JSON.stringify(mismatches)}`,
+            config: { responseMimeType: "application/json" }
+        });
+
+        const repaired = JSON.parse(response.text || "[]");
+        if (repaired.length > 0) {
+            const sanitized = repaired.map((q: any) => ({
+                ...q,
+                options: ensureArray(q.options),
+                correct_answer_index: parseInt(String(q.correct_answer_index || 1))
+            }));
+            await upsertSupabaseData('questionbank', sanitized);
+            return { message: `Repaired ${repaired.length} technical questions. They are now back in English.` };
+        }
+    } catch (e: any) { throw e; }
+    return { message: "Repair batch processed." };
 }
 
 export async function runDailyUpdateScrapers() {
