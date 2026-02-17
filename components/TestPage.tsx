@@ -122,7 +122,7 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
   const q = questions[currentIndex];
 
   return (
-    <div className="max-w-5xl mx-auto h-[calc(100vh-100px)] flex flex-col px-4 overflow-hidden">
+    <div className="max-w-5xl mx-auto h-[calc(100vh-120px)] flex flex-col px-4 overflow-hidden">
       <div className={`bg-white dark:bg-slate-900 p-5 md:p-8 rounded-[2.5rem] shadow-2xl border dark:border-slate-800 flex flex-col h-full overflow-hidden`}>
         {/* Header Section */}
         <div className="flex justify-between items-center mb-6 border-b pb-4 flex-shrink-0">
@@ -192,11 +192,12 @@ const TestPage: React.FC<TestPageProps> = ({ activeTest, subscriptionStatus, onT
             ) : null}
             
             <button 
-              onClick={() => setIsSubmitModalOpen(true)} 
+              onClick={() => isLast && setIsSubmitModalOpen(true)} 
+              disabled={!isLast}
               className={`px-8 py-3 rounded-xl font-black shadow-xl transition-all active:scale-95 uppercase text-[10px] tracking-widest border-b-4 ${
                 isLast 
-                ? 'bg-emerald-600 text-white border-emerald-800' 
-                : 'bg-slate-200 text-slate-400 border-slate-300'
+                ? 'bg-indigo-600 text-white border-indigo-800 cursor-pointer opacity-100' 
+                : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed opacity-50'
               }`}
             >
               പരീക്ഷ പൂർത്തിയാക്കുക

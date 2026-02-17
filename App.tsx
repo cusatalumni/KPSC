@@ -144,6 +144,7 @@ const App: React.FC = () => {
             case 'quiz_home': return <QuizHomePage onBack={() => handleNavigate('dashboard')} onStartQuiz={(c) => handleNavigate(`test/${c.id.split('_')[0]}/mixed/15/${encodeURIComponent(c.title.ml)}`)} subscriptionStatus={subscriptionStatus} />;
             case 'mock_test_home': return <MockTestHomePage onBack={() => handleNavigate('dashboard')} onStartTest={(t) => handleNavigate(`test/mock/${t.id}`)} />;
             case 'psc_live_updates': return <PscLiveUpdatesPage onBack={() => handleNavigate('dashboard')} />;
+            case 'previous_papers': return <PreviousPapersPage onBack={() => handleNavigate('dashboard')} />;
             case 'current_affairs': return <CurrentAffairsPage onBack={() => handleNavigate('dashboard')} />;
             case 'gk': return <GkPage onBack={() => handleNavigate('dashboard')} />;
             case 'flash_cards': return <FlashCardsPage onBack={() => handleNavigate('dashboard')} />;
