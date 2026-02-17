@@ -43,7 +43,7 @@ export const LDC_EXAM_CONTENT: ExamPageContent = {
     { id: 'ldc_gk_1', title: 'Kerala History', questions: 20, duration: 20, subject: 'History', topic: 'Kerala' },
     { id: 'ldc_comp_hw', title: 'Information Technology', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Hardware' }
   ],
-  studyNotes: [{ id: 'sn_kh', title: 'Kerala History' }],
+  studyNotes: [{ id: 'sn_kh', title: 'Kerala History', subject: 'History' }],
   previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
 };
 
@@ -65,6 +65,25 @@ export const NAV_STRUCTURE: NavLink[] = [
   },
   { nameKey: 'nav.examHub', children: [{ nameKey: 'nav.examCalendar', target: 'exam_calendar' }, { nameKey: 'nav.previousPapers', target: 'previous_papers' }, { nameKey: 'nav.studyMaterials', target: 'study_material' }] },
   { nameKey: 'nav.bookstore', target: 'bookstore' }
+];
+
+export const STUDY_SUBJECTS: StudyMaterial[] = [
+    { id: 'hist', title: 'ചരിത്രം', subject: 'History', icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-rose-500" }) },
+    { id: 'const', title: 'ഭരണഘടന', subject: 'Constitution', icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-indigo-500" }) },
+    { id: 'sci', title: 'ശാസ്ത്രം', subject: 'Science', icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-cyan-500" }) },
+    { id: 'geo', title: 'ഭൂമിശാസ്ത്രം', subject: 'Geography', icon: React.createElement(GlobeAltIcon, { className: "h-6 w-6 text-emerald-500" }) },
+    { id: 'math', title: 'ഗണിതം', subject: 'Maths', icon: React.createElement(ClipboardListIcon, { className: "h-6 w-6 text-amber-500" }) },
+    { id: 'mal', title: 'മലയാളം', subject: 'Malayalam', icon: React.createElement(LightBulbIcon, { className: "h-6 w-6 text-orange-500" }) },
+    { id: 'eng', title: 'ഇംഗ്ലീഷ്', subject: 'English', icon: React.createElement(AcademicCapIcon, { className: "h-6 w-6 text-blue-500" }) },
+    { id: 'it', title: 'ഐ.ടി', subject: 'IT', icon: React.createElement(ShieldCheckIcon, { className: "h-6 w-6 text-teal-500" }) }
+];
+
+export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
+    { title: 'LDC 2021 (Phase 1)', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/021_2021.pdf', date: '20-02-2021', year: '2021', size: '1.2 MB' },
+    { title: 'University Assistant 2023', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/ua_2023.pdf', date: '15-06-2023', year: '2023', size: '2.4 MB' },
+    { title: 'LGS 2021 (Various)', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/lgs_2021.pdf', date: '12-03-2021', year: '2021', size: '0.8 MB' },
+    { title: 'Secretariat Assistant 2018', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/sa_2018.pdf', date: '13-10-2018', year: '2018', size: '3.1 MB' },
+    { title: 'CPO / Constable 2022', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/cpo_2022.pdf', date: '04-11-2022', year: '2022', size: '1.5 MB' }
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [
@@ -104,7 +123,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [];
 export const MOCK_PSC_UPDATES: PscUpdateItem[] = [];
 export const MOCK_CURRENT_AFFAIRS: CurrentAffairsItem[] = [];
 export const MOCK_GK: GkItem[] = [];
-export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [];
 export const STUDY_MATERIALS_DATA: StudyMaterial[] = [];
 export const TESTIMONIALS_DATA: Testimonial[] = [];
 export const MOCK_BOOKS_DATA: Book[] = [];

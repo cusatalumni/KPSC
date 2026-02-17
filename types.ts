@@ -128,6 +128,8 @@ export interface Notification {
 export interface StudyMaterial {
   id: string;
   title: string;
+  subject: string;
+  icon?: React.ReactNode;
 }
 
 export interface PracticeTest {
@@ -200,6 +202,8 @@ export interface QuestionPaper {
   title: string;
   url: string;
   date: string;
+  size?: string;
+  year?: string;
 }
 
 export interface CurrentAffairsItem {
