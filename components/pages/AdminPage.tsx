@@ -9,7 +9,9 @@ import {
     testConnection,
     getExamSyllabus,
     getSubscriptions,
-    getBooks
+    getBooks,
+    getSettings,
+    updateSetting
 } from '../../services/pscDataService';
 import { RssIcon } from '../icons/RssIcon';
 import { TrashIcon } from '../icons/TrashIcon';
@@ -29,9 +31,10 @@ import { CloudArrowUpIcon } from '../icons/CloudArrowUpIcon';
 import { PencilSquareIcon } from '../icons/PencilSquareIcon';
 import { TagIcon } from '../icons/TagIcon';
 import { WrenchScrewdriverIcon } from '../icons/WrenchScrewdriverIcon';
+import { Cog6ToothIcon } from '../icons/Cog6ToothIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
-type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users';
+type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users' | 'settings';
 
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { getToken } = useAuth();
@@ -47,6 +50,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [selectedExamId, setSelectedExamId] = useState('');
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
     const [auditReport, setAuditReport] = useState<any[]>([]);
+    const [settings, setSettings] = useState<any>({});
 
     const [sq, setSq] = useState({ topic: '', question: '', options: ['', '', '', ''], correct: 1, subject: '' });
 
@@ -56,10 +60,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const conn = await testConnection(token);
             if (conn && conn.status) setDbStatus(conn.status);
-            const [examRes, subs, bks] = await Promise.all([getExams(), getSubscriptions(), getBooks()]);
+            const [examRes, subs, bks, s] = await Promise.all([getExams(), getSubscriptions(), getBooks(), getSettings()]);
             setExams(examRes.exams || []);
             setSubscriptions(subs || []);
             setBooks(bks || []);
+            if (s) setSettings(s);
         } catch (e) { console.error("Admin refresh error:", e); } finally { if (!silent) setLoading(false); }
     }, [getToken]);
 
@@ -85,7 +90,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleAction = async (action: string, payload: any = {}) => {
         setStatus("Processing operation..."); 
         setIsError(false);
-        setAuditInfo(null);
+        if (action === 'run-batch-qa' || action === 'reset-qa-audit') setAuditInfo(null);
+        
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
@@ -94,10 +100,20 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 setAuditInfo({ nextId: r.nextId, message: r.message });
             }
 
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'run-book-audit'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-book-scraper', 'run-book-audit', 'update-setting'].includes(action)) {
                 refreshData(true);
             }
+            
+            if (action === 'run-targeted-gap-fill') {
+                setAuditReport(await adminOp('get-audit-report'));
+            }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
+    };
+
+    const handleToggleSetting = async (key: string, currentVal: string) => {
+        const newVal = currentVal === 'true' ? 'false' : 'true';
+        const token = await getToken();
+        await handleAction('update-setting', { setting: { key, value: newVal } });
     };
 
     const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,7 +176,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     { id: 'exams', label: 'Exams', icon: AcademicCapIcon },
                     { id: 'syllabus', label: 'Syllabus', icon: PlusIcon },
                     { id: 'books', label: 'Books', icon: BookOpenIcon },
-                    { id: 'users', label: 'Users', icon: ShieldCheckIcon }
+                    { id: 'users', label: 'Users', icon: ShieldCheckIcon },
+                    { id: 'settings', label: 'Settings', icon: Cog6ToothIcon }
                 ].map(t => (
                     <button key={t.id} onClick={() => setActiveTab(t.id as AdminTab)} className={`flex items-center space-x-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-indigo-600 text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-slate-500 border border-transparent hover:border-indigo-500'}`}>
                         <t.icon className="h-4 w-4" /><span>{t.label}</span>
@@ -191,18 +208,28 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border dark:border-slate-800">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
-                                    <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg">Show Report</button>
+                                    <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg">Refresh Report</button>
                                 </div>
                                 {auditReport.length > 0 ? (
-                                    <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    <div className="max-h-80 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                                         {auditReport.map((r, i) => (
                                             <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700">
-                                                <div><p className="font-bold text-xs">{r.topic}</p></div>
-                                                <span className={`text-[10px] font-black px-2 py-1 rounded ${r.count < 5 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>{r.count} Qs</span>
+                                                <div className="flex-1 min-w-0 pr-4">
+                                                    <p className="font-bold text-xs truncate">{r.topic}</p>
+                                                    <p className={`text-[9px] font-black uppercase mt-1 ${r.count === 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                                                        {r.count === 0 ? 'Empty Exam: Questions Needed' : `${r.count} Questions Available`}
+                                                    </p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleAction('run-targeted-gap-fill', { topic: r.topic })}
+                                                    className={`px-4 py-2 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all ${r.count === 0 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'}`}
+                                                >
+                                                    {r.count === 0 ? 'Fill Now' : 'Add More'}
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
-                                ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to see question coverage across topics.</p>}
+                                ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to identify empty exams and topics.</p>}
                             </div>
                             <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden">
                                 <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
@@ -243,6 +270,53 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <textarea placeholder="Question Text" value={sq.question} onChange={e=>setSq({...sq, question: e.target.value})} className="w-full bg-white dark:bg-slate-800 p-4 rounded-xl text-xs font-bold min-h-[80px] border-none" />
                                     <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg hover:scale-[1.02] active:scale-95 transition-all">Save to Bank</button>
                                 </form>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'settings' && (
+                    <div className="space-y-12 animate-fade-in">
+                        <div className="flex items-center space-x-4">
+                            <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-xl"><Cog6ToothIcon className="h-6 w-6" /></div>
+                            <h3 className="text-2xl font-black uppercase tracking-tight">System Configuration</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl flex items-center justify-between">
+                                <div className="space-y-1 pr-6">
+                                    <h4 className="text-base font-black uppercase text-slate-800 dark:text-white">Subscription Mode</h4>
+                                    <p className="text-[10px] text-slate-500 font-bold leading-relaxed">Turn this OFF to disable all paywalls and give everyone Pro access.</p>
+                                </div>
+                                <button 
+                                    onClick={() => handleToggleSetting('subscription_model_active', settings.subscription_model_active)}
+                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${settings.subscription_model_active === 'true' ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                >
+                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings.subscription_model_active === 'true' ? 'translate-x-7' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-xl flex items-center justify-between">
+                                <div className="space-y-1 pr-6">
+                                    <h4 className="text-base font-black uppercase text-slate-800 dark:text-white">Auto Gap-Filler</h4>
+                                    <p className="text-[10px] text-slate-500 font-bold leading-relaxed">Automatically generate questions for empty topics during daily sync.</p>
+                                </div>
+                                <button 
+                                    onClick={() => handleToggleSetting('auto_gap_filler', settings.auto_gap_filler || 'false')}
+                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${settings.auto_gap_filler === 'true' ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                >
+                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings.auto_gap_filler === 'true' ? 'translate-x-7' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-amber-50 dark:bg-amber-900/10 p-8 rounded-[2.5rem] border-2 border-amber-100 dark:border-amber-900/30 flex items-start space-x-6">
+                            <div className="p-3 bg-amber-500 rounded-2xl text-white shadow-lg flex-shrink-0"><LightBulbIcon className="h-6 w-6" /></div>
+                            <div>
+                                <h4 className="font-black uppercase text-amber-700 dark:text-amber-400 mb-2">Admin Pro Tip</h4>
+                                <p className="text-sm font-bold text-amber-800 dark:text-amber-200/70 leading-relaxed">
+                                    When Subscription Mode is <span className="underline">OFF</span>, all "Pro Only" tags are hidden and users see the app as 100% free. This is recommended during initial launch phases or for massive promotional events.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -332,11 +406,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             </tr>
                                         );
                                     })}
-                                    {books.length === 0 && (
-                                        <tr>
-                                            <td colSpan={3} className="px-8 py-20 text-center text-slate-400 font-bold">No books found. Use "Automation" to scrape some.</td>
-                                        </tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -375,11 +444,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             </td>
                                         </tr>
                                     ))}
-                                    {subscriptions.length === 0 && (
-                                        <tr>
-                                            <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-bold">No premium users found yet.</td>
-                                        </tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>

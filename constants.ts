@@ -67,6 +67,18 @@ export const NAV_STRUCTURE: NavLink[] = [
   { nameKey: 'nav.bookstore', target: 'bookstore' }
 ];
 
+export const QUIZ_CATEGORIES: QuizCategory[] = [
+  { id: 'kerala_renaissance', title: { ml: 'നവോത്ഥാനം', en: 'Kerala Renaissance' }, description: { ml: 'കേരളത്തിലെ നവോത്ഥാന നായകരെയും സമരങ്ങളെയും കുറിച്ചുള്ള ചോദ്യങ്ങൾ.', en: 'Questions about Kerala renaissance leaders and movements.' }, icon: React.createElement(StarIcon, { className: "h-6 w-6 text-indigo-500" }) },
+  { id: 'indian_constitution', title: { ml: 'ഭരണഘടന', en: 'Indian Constitution' }, description: { ml: 'ഇന്ത്യൻ ഭരണഘടനയുടെ പ്രസക്ത ഭാഗങ്ങളെക്കുറിച്ചുള്ള ക്വിസ്.', en: 'Quiz on essential parts of the Indian Constitution.' }, icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-amber-600" }) },
+  { id: 'kerala_history', title: { ml: 'കേരള ചരിത്രം', en: 'Kerala History' }, description: { ml: 'ചരിത്രപ്രധാനമായ സംഭവങ്ങളും ഭരണാധികാരികളും.', en: 'Historical events and rulers of Kerala.' }, icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-rose-600" }) },
+  { id: 'science', title: { ml: 'ശാസ്ത്രം', en: 'General Science' }, description: { ml: 'ഭൗതികശാസ്ത്രം, രസതന്ത്രം, ജീവശാസ്ത്രം.', en: 'Physics, Chemistry, and Biology essentials.' }, icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-cyan-600" }) },
+];
+
+export const MOCK_TESTS_DATA: MockTest[] = [
+  { id: 'mock_ldc_1', examId: 'ldc_lgs', title: { ml: 'LDC Full Length Mock #1', en: 'LDC Full Length Mock #1' }, description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മോക്ക് ടെസ്റ്റ്.', en: 'Full length mock test with 100 questions.' }, questionsCount: 100, duration: 75, negativeMarking: 0.33, isPro: false },
+  { id: 'mock_degree_1', examId: 'degree_prelims', title: { ml: 'Degree Level Model Exam', en: 'Degree Level Model Exam' }, description: { ml: 'ഡിഗ്രി ലെവൽ പ്രിലിംസ് മാതൃകാ പരീക്ഷ.', en: 'Degree level preliminary model exam.' }, questionsCount: 100, duration: 75, negativeMarking: 0.33, isPro: true }
+];
+
 export const MARCH_EXAMS_DATA: ExamCalendarEntry[] = [
   { slNo: 1, catNo: "021/2024", postName: "LDC (Various Departments)", department: "Various", examDate: "14-03-2026", syllabusLink: "#" },
   { slNo: 2, catNo: "115/2024", postName: "Civil Police Officer", department: "Police", examDate: "21-03-2026", syllabusLink: "#" },
@@ -88,8 +100,6 @@ export const MOCK_FLASHCARDS: FlashCard[] = [
 ];
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [];
-export const QUIZ_CATEGORIES: QuizCategory[] = [];
-export const MOCK_TESTS_DATA: MockTest[] = [];
 export const MOCK_NOTIFICATIONS: Notification[] = [];
 export const MOCK_PSC_UPDATES: PscUpdateItem[] = [];
 export const MOCK_CURRENT_AFFAIRS: CurrentAffairsItem[] = [];

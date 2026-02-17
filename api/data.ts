@@ -2,13 +2,15 @@
 import { readSheetData } from './_lib/sheets-service.js';
 import { supabase } from './_lib/supabase-service.js';
 
+/**
+ * Enhanced option parser that unwraps multiple layers of stringification.
+ */
 const smartParseOptions = (raw: any): string[] => {
     if (!raw) return [];
     
-    // Recursive function to unwrap multiple layers of JSON strings
     const unwrap = (val: any): any => {
         if (Array.isArray(val)) {
-            // Check if it's an array with one string that looks like an array
+            // Handle array-wrapped stringified arrays: ["[\"A\", \"B\"]"]
             if (val.length === 1 && typeof val[0] === 'string' && val[0].startsWith('[')) {
                 return unwrap(val[0]);
             }
@@ -16,9 +18,9 @@ const smartParseOptions = (raw: any): string[] => {
         }
         if (typeof val === 'string') {
             const trimmed = val.trim();
+            // Handle potentially escaped strings: "\"[\"A\"]\""
             if (trimmed.startsWith('[') || trimmed.startsWith('"[')) {
                 try {
-                    // Try parsing. If it's something like ""[\"A\"]"", it might need two parses.
                     let cleaned = trimmed;
                     if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
                         cleaned = cleaned.slice(1, -1).replace(/\\"/g, '"');
@@ -37,7 +39,7 @@ const smartParseOptions = (raw: any): string[] => {
     
     if (Array.isArray(final)) return final.map(String);
     
-    // Fallback for string-based data in Sheets
+    // Fallback for custom string separators
     if (typeof final === 'string') {
         if (final.includes('|')) return final.split('|').map(s => s.trim());
         return [final];
@@ -60,7 +62,6 @@ export default async function handler(req: any, res: any) {
     
     const tableName = tableMap[tType] || tType;
     
-    // Determine dynamic range
     const offsetCount = parseInt(offset as string) || 0;
     let limitCount = parseInt(limit as string) || parseInt(count as string);
 
@@ -83,7 +84,6 @@ export default async function handler(req: any, res: any) {
                 }
             }
             
-            // Apply Pagination Range
             query = query.range(offsetCount, offsetCount + limitCount - 1);
 
             if (tableName === 'subscriptions' || tableName === 'currentaffairs' || tableName === 'gk' || tableName === 'notifications' || tableName === 'flashcards' || tableName === 'bookstore') {
@@ -101,7 +101,6 @@ export default async function handler(req: any, res: any) {
             }
         }
 
-        // Fallback to Google Sheets
         const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
         try {
             const rows = await readSheetData(`${sheetName}!A2:Z`);

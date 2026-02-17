@@ -27,7 +27,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, id, resultData, sheet, data } = req.body;
+    const { action, id, resultData, sheet, data, topic, setting } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -59,10 +59,18 @@ export default async function handler(req: any, res: any) {
             case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-gap-filler': return res.status(200).json(await generateQuestionsForGaps(8));
+            case 'run-targeted-gap-fill': return res.status(200).json(await generateQuestionsForGaps(topic));
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-book-audit': return res.status(200).json(await auditAndCorrectBooks());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-flashcard-generator': return res.status(200).json(await generateFlashcardsFromContent());
+            
+            case 'update-setting': {
+                if (supabase) await upsertSupabaseData('settings', [setting], 'key');
+                await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
+                return res.status(200).json({ message: `Setting "${setting.key}" updated to ${setting.value}` });
+            }
+
             case 'reset-qa-audit': {
                 if (supabase) await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
                 await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
@@ -81,7 +89,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: `Bulk upload successful. Processed ${data.length} questions.` });
 
             case 'get-audit-report': {
-                if (!supabase) throw new Error("Supabase required for audit report.");
+                if (!supabase) throw new Error("Supabase required.");
                 const { data: qData } = await supabase.from('questionbank').select('topic');
                 const counts: Record<string, number> = {};
                 qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
