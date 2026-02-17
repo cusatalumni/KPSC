@@ -60,6 +60,28 @@ export default async function handler(req: any, res: any) {
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-gap-filler': return res.status(200).json(await generateQuestionsForGaps(8));
             case 'run-targeted-gap-fill': return res.status(200).json(await generateQuestionsForGaps(topic));
+            
+            case 'run-all-gaps': {
+                if (!supabase) throw new Error("Supabase required.");
+                const { data: sData } = await supabase.from('syllabus').select('topic, title');
+                const { data: qData } = await supabase.from('questionbank').select('topic');
+                const counts: Record<string, number> = {};
+                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
+                
+                const emptyTopics = (sData || [])
+                    .filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) === 0)
+                    .map(s => s.topic || s.title);
+
+                if (emptyTopics.length === 0) return res.status(200).json({ message: "No empty topics found." });
+                
+                // Process top 5 to avoid timeout
+                const batch = emptyTopics.slice(0, 5);
+                for (const t of batch) {
+                    try { await generateQuestionsForGaps(t); } catch (err) {}
+                }
+                return res.status(200).json({ message: `Filled gaps for ${batch.length} topics. Total remaining: ${emptyTopics.length - batch.length}` });
+            }
+
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-book-audit': return res.status(200).json(await auditAndCorrectBooks());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
@@ -90,14 +112,31 @@ export default async function handler(req: any, res: any) {
 
             case 'get-audit-report': {
                 if (!supabase) throw new Error("Supabase required.");
-                const { data: qData } = await supabase.from('questionbank').select('topic');
+                const { data: qData, error: qError } = await supabase.from('questionbank').select('topic');
+                if (qError) throw qError;
+                
                 const counts: Record<string, number> = {};
-                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
-                const { data: sData } = await supabase.from('syllabus').select('*');
-                return res.status(200).json(sData?.map(s => ({ id: s.id, topic: s.topic, count: counts[String(s.topic).toLowerCase().trim()] || 0 })) || []);
+                qData?.forEach(q => { 
+                    const t = String(q.topic || '').toLowerCase().trim(); 
+                    if (t) counts[t] = (counts[t] || 0) + 1; 
+                });
+
+                const { data: sData, error: sError } = await supabase.from('syllabus').select('id, topic, title');
+                if (sError) throw sError;
+
+                const report = (sData || []).map(s => ({
+                    id: s.id,
+                    topic: s.topic || s.title,
+                    count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0
+                }));
+
+                return res.status(200).json(report);
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });
         }
-    } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    } catch (e: any) { 
+        console.error("Admin Error:", e.message);
+        return res.status(500).json({ error: `Admin Action Failed: ${e.message}` }); 
+    }
 }

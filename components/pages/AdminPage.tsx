@@ -100,19 +100,19 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 setAuditInfo({ nextId: r.nextId, message: r.message });
             }
 
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-book-scraper', 'run-book-audit', 'update-setting'].includes(action)) {
-                refreshData(true);
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting'].includes(action)) {
+                await refreshData(true);
             }
             
-            if (action === 'run-targeted-gap-fill') {
+            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps') {
                 setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
     };
 
-    const handleToggleSetting = async (key: string, currentVal: string) => {
-        const newVal = currentVal === 'true' ? 'false' : 'true';
-        const token = await getToken();
+    const handleToggleSetting = async (key: string, currentVal: any) => {
+        // Ensure we handle currentVal being undefined or coming from different formats
+        const newVal = (String(currentVal) === 'true') ? 'false' : 'true';
         await handleAction('update-setting', { setting: { key, value: newVal } });
     };
 
@@ -145,12 +145,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
         </div>
     );
-
-    const isValidUrl = (url: any): boolean => {
-        if (typeof url !== 'string') return false;
-        const cleanUrl = url.trim().toUpperCase();
-        return cleanUrl.startsWith('HTTP') && !cleanUrl.includes('NO IMG') && !cleanUrl.includes('EMPTY');
-    };
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-32 px-4 animate-fade-in text-slate-800 dark:text-slate-100">
@@ -207,8 +201,14 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border dark:border-slate-800">
                                 <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
-                                    <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg">Refresh Report</button>
+                                    <div>
+                                        <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Identify empty exams and topics</p>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button onClick={() => handleAction('run-all-gaps')} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase shadow-lg hover:bg-emerald-700">Fill All Gaps</button>
+                                        <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase shadow-lg">Refresh Report</button>
+                                    </div>
                                 </div>
                                 {auditReport.length > 0 ? (
                                     <div className="max-h-80 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
@@ -217,7 +217,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                 <div className="flex-1 min-w-0 pr-4">
                                                     <p className="font-bold text-xs truncate">{r.topic}</p>
                                                     <p className={`text-[9px] font-black uppercase mt-1 ${r.count === 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                                                        {r.count === 0 ? 'Empty Exam: Questions Needed' : `${r.count} Questions Available`}
+                                                        {r.count === 0 ? 'Empty Topic: Questions Needed' : `${r.count} Questions Available`}
                                                     </p>
                                                 </div>
                                                 <button 
@@ -290,9 +290,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 </div>
                                 <button 
                                     onClick={() => handleToggleSetting('subscription_model_active', settings.subscription_model_active)}
-                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${settings.subscription_model_active === 'true' ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${String(settings.subscription_model_active) === 'true' ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                                 >
-                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings.subscription_model_active === 'true' ? 'translate-x-7' : 'translate-x-1'}`} />
+                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${String(settings.subscription_model_active) === 'true' ? 'translate-x-7' : 'translate-x-1'}`} />
                                 </button>
                             </div>
 
@@ -302,10 +302,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <p className="text-[10px] text-slate-500 font-bold leading-relaxed">Automatically generate questions for empty topics during daily sync.</p>
                                 </div>
                                 <button 
-                                    onClick={() => handleToggleSetting('auto_gap_filler', settings.auto_gap_filler || 'false')}
-                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${settings.auto_gap_filler === 'true' ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                    onClick={() => handleToggleSetting('auto_gap_filler', settings.auto_gap_filler)}
+                                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${String(settings.auto_gap_filler) === 'true' ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                                 >
-                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings.auto_gap_filler === 'true' ? 'translate-x-7' : 'translate-x-1'}`} />
+                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${String(settings.auto_gap_filler) === 'true' ? 'translate-x-7' : 'translate-x-1'}`} />
                                 </button>
                             </div>
                         </div>
@@ -315,7 +315,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <div>
                                 <h4 className="font-black uppercase text-amber-700 dark:text-amber-400 mb-2">Admin Pro Tip</h4>
                                 <p className="text-sm font-bold text-amber-800 dark:text-amber-200/70 leading-relaxed">
-                                    When Subscription Mode is <span className="underline">OFF</span>, all "Pro Only" tags are hidden and users see the app as 100% free. This is recommended during initial launch phases or for massive promotional events.
+                                    When Subscription Mode is <span className="underline font-black">OFF</span> (Grey), all "Pro Only" tags are hidden and users see the app as 100% free. When <span className="underline font-black">ON</span> (Indigo), paywalls are active.
                                 </p>
                             </div>
                         </div>
@@ -371,41 +371,26 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {books.map(book => {
-                                        const hasValidImage = isValidUrl(book.imageUrl);
-                                        const isAffiliate = book.amazonLink && book.amazonLink.includes('tag=malayalambooks-21');
-                                        
-                                        return (
-                                            <tr key={book.id} className="text-sm font-bold">
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className="w-10 h-14 bg-slate-200 dark:bg-slate-800 rounded flex-shrink-0 overflow-hidden shadow-sm">
-                                                            {hasValidImage ? (
-                                                                <img src={book.imageUrl} alt="" className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center text-[8px] text-slate-400">NO IMG</div>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <span className="line-clamp-1">{book.title}</span>
-                                                            <span className="text-[10px] text-slate-400 block">{book.author}</span>
-                                                        </div>
+                                    {books.map(book => (
+                                        <tr key={book.id} className="text-sm font-bold">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-10 h-14 bg-slate-200 dark:bg-slate-800 rounded flex-shrink-0 overflow-hidden shadow-sm">
+                                                        <img src={book.imageUrl} alt="" className="w-full h-full object-cover" />
                                                     </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex space-x-2">
-                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${hasValidImage ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>Image: {hasValidImage ? 'OK' : 'MISSING'}</span>
-                                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${isAffiliate ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>Link: {isAffiliate ? 'AFFILIATE' : 'REPAIR'}</span>
+                                                    <div>
+                                                        <span className="line-clamp-1">{book.title}</span>
+                                                        <span className="text-[10px] text-slate-400 block">{book.author}</span>
                                                     </div>
-                                                </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                                                    <TrashIcon className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -421,8 +406,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <tr>
                                         <th className="px-8 py-5">User ID</th>
                                         <th className="px-8 py-5">Status</th>
-                                        <th className="px-8 py-5">Plan</th>
-                                        <th className="px-8 py-5">Expiry</th>
                                         <th className="px-8 py-5 text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -435,8 +418,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                     {sub.status}
                                                 </span>
                                             </td>
-                                            <td className="px-8 py-6 text-slate-500 uppercase text-[10px]">{sub.plan_type}</td>
-                                            <td className="px-8 py-6 text-slate-500 text-xs">{sub.expiry_date ? new Date(sub.expiry_date).toLocaleDateString() : '-'}</td>
                                             <td className="px-8 py-6 text-right">
                                                 <button onClick={() => handleAction('delete-row', { sheet: 'Subscriptions', id: sub.user_id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
                                                     <TrashIcon className="h-4 w-4" />

@@ -9,7 +9,7 @@ import {
     MOCK_GK, 
     MOCK_BOOKS_DATA, 
     MOCK_QUESTION_BANK,
-    MOCK_FLASHCARDS // Ensure this exists in constants or added below
+    MOCK_FLASHCARDS
 } from '../constants';
 import React from 'react';
 import { BookOpenIcon } from '../components/icons/BookOpenIcon';
@@ -70,7 +70,6 @@ export const getExams = async (): Promise<{ exams: Exam[], source: 'database' | 
     return { exams: EXAMS_DATA, source: 'static' };
 };
 
-// Fix: Use MOCK_FLASHCARDS from constants as fallback
 export const getFlashCards = async (): Promise<FlashCard[]> => {
     try {
         const res = await fetchWithTimeout('/api/data?type=flash_cards', 4000);
@@ -98,7 +97,17 @@ export const getExamSyllabus = async (examId: string): Promise<PracticeTest[]> =
 export const getSettings = async () => {
     try {
         const res = await fetchWithTimeout('/api/data?type=settings', 2000);
-        if (res.ok) return await res.json();
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                // Reduce array of {key, value} into a single object
+                return data.reduce((acc: any, curr: any) => {
+                    acc[curr.key] = curr.value;
+                    return acc;
+                }, {});
+            }
+            return data;
+        }
     } catch (e) {}
     return { subscription_model_active: 'true', paypal_client_id: 'sb' };
 };

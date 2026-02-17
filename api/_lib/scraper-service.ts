@@ -26,42 +26,28 @@ function createNumericHash(str: string): number {
 
 /**
  * Advanced unescaping and array normalization.
- * Fixes: ["\"[\\\"0\\\",\\\"1\\\",\\\"e\\\",\\\"Infinity\\\"]\""] and other nested formats.
  */
 const ensureArray = (raw: any): string[] => {
     if (!raw) return [];
-    
     let processed = raw;
-    
-    // Handle array-wrapped stringified arrays
     if (Array.isArray(processed) && processed.length === 1 && typeof processed[0] === 'string') {
         processed = processed[0];
     }
-
     if (typeof processed === 'string') {
         let clean = processed.trim();
-        
-        // Remove outer quotes if they exist (e.g. ""[...]"" )
-        if (clean.startsWith('"') && clean.endsWith('"')) {
-            clean = clean.slice(1, -1);
-        }
-        
-        // Unescape backslashes
+        if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
         clean = clean.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-
         try {
             const parsed = JSON.parse(clean);
             if (Array.isArray(parsed)) return parsed.map(String);
-            if (typeof parsed === 'string') return ensureArray(parsed); // Recurse for deeply nested
+            if (typeof parsed === 'string') return ensureArray(parsed);
         } catch (e) {
-            // If parse fails, handle pipe or comma strings
             if (clean.includes('|')) return clean.split('|').map(s => s.trim());
             if (clean.startsWith('[') && clean.endsWith(']')) {
                 return clean.slice(1, -1).split(',').map(s => s.trim().replace(/^"|"$/g, ''));
             }
         }
     }
-
     if (Array.isArray(processed)) return processed.map(String);
     return [String(processed)];
 };
@@ -95,16 +81,15 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
 
     if (typeof batchSizeOrTopic === 'string') {
         targetTopics = [batchSizeOrTopic];
-        countPerTopic = 15; // Generate more if specifically requested
+        countPerTopic = 15;
     } else {
-        const { data: sData } = await supabase.from('syllabus').select('*');
+        const { data: sData } = await supabase.from('syllabus').select('topic, title');
         if (!sData) return { message: "No syllabus found." };
         
         const { data: qData } = await supabase.from('questionbank').select('topic');
         const counts: Record<string, number> = {};
         qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
 
-        // Prioritize topics with 0 questions first, then low count
         const gaps = sData
             .map(s => ({ topic: s.topic || s.title, count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 }))
             .sort((a, b) => a.count - b.count);
@@ -112,14 +97,13 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
         targetTopics = gaps.slice(0, batchSizeOrTopic as number).map(g => g.topic);
     }
 
-    if (targetTopics.length === 0) return { message: "No topics identified for gap filling." };
+    if (targetTopics.length === 0) return { message: "No topics identified." };
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview', 
-            contents: `Generate ${targetTopics.length * countPerTopic} high-quality PSC MCQs in Malayalam for these topics: ${targetTopics.join(', ')}. 
-            For each topic, provide around ${countPerTopic} questions. 
+            contents: `Generate high-quality PSC MCQs in Malayalam for these topics: ${targetTopics.join(', ')}. 
             Return JSON array of objects with: topic, subject, question, options (array of 4 strings), correctAnswerIndex (1-4), explanation.`,
             config: { responseMimeType: "application/json" }
         });
@@ -144,39 +128,24 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
             const sheetRows = sbData.map(q => [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
             await appendSheetData('QuestionBank!A1', sheetRows);
 
-            return { message: `Added ${sbData.length} new questions for: ${targetTopics.join(', ')}.` };
+            return { message: `Added ${sbData.length} new questions.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "AI process finished but no items were created." };
+    return { message: "Process finished." };
 }
 
 export async function auditAndCorrectQuestions() {
-    if (!supabase) throw new Error("Supabase required for Audit.");
-    
+    if (!supabase) throw new Error("Supabase required.");
     const { data: settings } = await supabase.from('settings').select('value').eq('key', 'last_audited_id').single();
     const lastId = parseInt(settings?.value || '0');
-    
-    const { data: questions } = await supabase.from('questionbank')
-        .select('*')
-        .gt('id', lastId)
-        .order('id', { ascending: true })
-        .limit(40);
-
-    if (!questions || questions.length === 0) {
-        return { message: "Audit complete (no more questions).", nextId: 0, completed: true };
-    }
+    const { data: questions } = await supabase.from('questionbank').select('*').gt('id', lastId).order('id', { ascending: true }).limit(40);
+    if (!questions || questions.length === 0) return { message: "Audit complete.", nextId: 0, completed: true };
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Audit these PSC questions. 
-            Tasks: 
-            1. Fix Malayalam grammar.
-            2. Verify facts.
-            3. Ensure 'options' is a pure array of strings (NO extra escaping).
-            4. Ensure 'correct_answer_index' is 1-4.
-            Data: ${JSON.stringify(questions)}`,
+            contents: `Audit these PSC questions for Malayalam grammar and accuracy. Data: ${JSON.stringify(questions)}`,
             config: { responseMimeType: "application/json" }
         });
 
@@ -187,22 +156,13 @@ export async function auditAndCorrectQuestions() {
                 options: ensureArray(q.options),
                 correct_answer_index: parseInt(String(q.correct_answer_index || 1))
             }));
-
             await upsertSupabaseData('questionbank', sanitized);
-            for (const q of sanitized) {
-                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation || '']);
-            }
-
             const maxIdBatch = Math.max(...sanitized.map((q:any) => q.id));
             await Promise.all([
                 upsertSupabaseData('settings', [{ key: 'last_audited_id', value: String(maxIdBatch) }], 'key'),
                 findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(maxIdBatch)])
             ]);
-
-            return { 
-                message: `Audited up to ID ${maxIdBatch}.`, 
-                nextId: maxIdBatch + 1 
-            };
+            return { message: `Audited up to ID ${maxIdBatch}.`, nextId: maxIdBatch + 1 };
         }
     } catch (e: any) { throw e; }
     return { message: "Batch processed." };
@@ -228,7 +188,7 @@ export async function syncAllFromSheetsToSupabase() {
         const rows = await readSheetData(`${t.sheet}!A2:Z`);
         if (rows?.length) await upsertSupabaseData(t.supabase, rows.filter(r => r[0]).map(t.map));
     }
-    return { message: "Manual sync finished." };
+    return { message: "Sync complete." };
 }
 
 export async function scrapeGkFacts() {
@@ -321,67 +281,37 @@ export async function scrapePscLiveUpdates() {
     } catch (e: any) { throw e; }
 }
 
-/**
- * AI logic to generate flashcards from existing GK content.
- */
 export async function generateFlashcardsFromContent() {
     if (!supabase) throw new Error("Supabase required.");
-    
-    // Fetch some content to transform
     const { data: gkData } = await supabase.from('gk').select('*').limit(20);
-    
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Create 10 PSC Flashcards in Malayalam based on this content: ${JSON.stringify(gkData)}. 
-            JSON array of objects: {front, back, topic}`,
+            contents: `Create 10 PSC Flashcards in Malayalam based on: ${JSON.stringify(gkData)}. JSON array of objects: {front, back, topic}`,
             config: { responseMimeType: "application/json" }
         });
-        
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
             const baseId = await getNextId('FlashCards!A2:A', 7000);
-            const sbData = items.map((it: any, idx: number) => ({
-                id: String(baseId + idx),
-                front: it.front,
-                back: it.back,
-                topic: it.topic || 'General'
-            }));
+            const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), front: it.front, back: it.back, topic: it.topic || 'General' }));
             await upsertSupabaseData('flashcards', sbData);
             await appendSheetData('FlashCards!A1', sbData.map(it => [it.id, it.front, it.back, it.topic]));
-            return { message: `Generated ${sbData.length} new flashcards.` };
+            return { message: `Generated ${sbData.length} flashcards.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "No flashcards generated." };
+    return { message: "None generated." };
 }
 
-/**
- * Repairs book links and verifies affiliate tags.
- */
 export async function auditAndCorrectBooks() {
     if (!supabase) throw new Error("Supabase required.");
-    
     const { data: books } = await supabase.from('bookstore').select('*');
-    if (!books || books.length === 0) return { message: "No books to audit." };
-
+    if (!books || books.length === 0) return { message: "No books." };
     const updated = books.map(book => {
-        // Ensure affiliate link is present
         let link = book.amazonLink || '';
-        if (link && !link.includes(AFFILIATE_TAG)) {
-            link = formatAffiliateLink(link);
-        }
-        
-        return {
-            ...book,
-            amazonLink: link
-        };
+        if (link && !link.includes(AFFILIATE_TAG)) link = formatAffiliateLink(link);
+        return { ...book, amazonLink: link };
     });
-
     await upsertSupabaseData('bookstore', updated);
-    for (const b of updated) {
-        await findAndUpsertRow('Bookstore', String(b.id), [b.id, b.title, b.author, b.imageUrl, b.amazonLink]);
-    }
-    
-    return { message: `Audited and repaired ${updated.length} books in store.` };
+    return { message: `Audited ${updated.length} books.` };
 }
