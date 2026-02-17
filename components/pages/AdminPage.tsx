@@ -40,6 +40,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [books, setBooks] = useState<Book[]>([]);
     const [dbStatus, setDbStatus] = useState({sheets: false, supabase: false});
     const [status, setStatus] = useState<string | null>(null);
+    const [auditInfo, setAuditInfo] = useState<{ nextId?: number, message?: string } | null>(null);
     const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -47,7 +48,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
     const [auditReport, setAuditReport] = useState<any[]>([]);
 
-    // Single Question Form
     const [sq, setSq] = useState({ topic: '', question: '', options: ['', '', '', ''], correct: 1, subject: '' });
 
     const refreshData = useCallback(async (silent = false) => {
@@ -83,11 +83,17 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleAction = async (action: string, payload: any = {}) => {
-        setStatus("Processing operation..."); setIsError(false);
+        setStatus("Processing operation..."); 
+        setIsError(false);
+        setAuditInfo(null);
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
-            // Refresh relevant data
+            
+            if (action === 'run-batch-qa' && r.nextId !== undefined) {
+                setAuditInfo({ nextId: r.nextId, message: r.message });
+            }
+
             if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'run-book-audit'].includes(action)) {
                 refreshData(true);
             }
@@ -132,7 +138,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-32 px-4 animate-fade-in text-slate-800 dark:text-slate-100">
-            {/* Header Controls */}
             <div className="flex flex-wrap items-center justify-between gap-6">
                 <div className="bg-white dark:bg-slate-900 px-6 py-4 rounded-[1.5rem] shadow-xl border border-slate-100 dark:border-slate-800 flex items-center space-x-6">
                     <div className="flex items-center space-x-2"><div className={`w-3 h-3 rounded-full ${dbStatus.sheets ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`}></div><span className="text-[10px] font-black uppercase tracking-widest">Sheets: {dbStatus.sheets ? 'ONLINE' : 'OFFLINE'}</span></div>
@@ -141,7 +146,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <button onClick={onBack} className="bg-slate-800 text-white px-8 py-4 rounded-2xl shadow-lg flex items-center space-x-2 font-black text-xs uppercase hover:bg-slate-950 transition-all"><ChevronLeftIcon className="h-4 w-4" /><span>Dashboard</span></button>
             </div>
 
-            {/* Status Messages */}
             {status && (
                 <div className={`p-6 rounded-[2rem] border-2 shadow-xl flex items-center justify-between animate-fade-in ${isError ? 'bg-red-50 border-red-200 text-red-800' : 'bg-indigo-50 border-indigo-200 text-indigo-800'}`}>
                     <div className="flex items-center space-x-3">{isError ? <XMarkIcon className="h-5 w-5" /> : <CheckCircleIcon className="h-5 w-5" />}<p className="font-black text-xs uppercase tracking-widest">{status}</p></div>
@@ -149,7 +153,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
             )}
 
-            {/* Navigation Tabs */}
             <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {[
                     { id: 'automation', label: 'Automation', icon: BeakerIcon },
@@ -165,7 +168,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 ))}
             </div>
 
-            {/* Content Area */}
             <main className="bg-white dark:bg-slate-950 p-8 md:p-12 rounded-[3rem] shadow-2xl border dark:border-slate-800 min-h-[600px] relative overflow-hidden">
                 {loading && <div className="absolute inset-0 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center"><div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>}
 
@@ -185,7 +187,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'qbank' && (
                     <div className="space-y-16">
-                        {/* Reports Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border dark:border-slate-800">
                                 <div className="flex items-center justify-between mb-6">
@@ -203,17 +204,25 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to see question coverage across topics.</p>}
                             </div>
-                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center">
+                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden">
+                                <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
                                 <h3 className="text-xl font-black uppercase mb-4">QA Quality Audit</h3>
-                                <p className="text-indigo-100 text-xs font-bold mb-8">AI scans questions sequentially to fix formatting and add explanations.</p>
-                                <div className="flex space-x-3">
+                                <p className="text-indigo-100 text-xs font-bold mb-4">AI scans questions sequentially to fix formatting and add explanations.</p>
+                                
+                                {auditInfo?.nextId && (
+                                    <div className="mb-6 bg-white/10 p-4 rounded-2xl border border-white/20 animate-fade-in">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1">Audit Status</p>
+                                        <p className="text-sm font-black text-emerald-300">Next Audit Starts from ID: {auditInfo.nextId}</p>
+                                    </div>
+                                )}
+
+                                <div className="flex space-x-3 relative z-10">
                                     <button onClick={() => handleAction('run-batch-qa')} className="flex-1 bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all">Start Audit</button>
                                     <button onClick={() => { if(confirm("Are you sure you want to reset the audit cursor to the beginning (ID 0)?")) handleAction('reset-qa-audit'); }} className="flex-1 bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all">Reset Progress</button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Input Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                             <div className="space-y-6">
                                 <h3 className="text-xl font-black uppercase tracking-tight flex items-center space-x-3"><CloudArrowUpIcon className="h-6 w-6 text-indigo-500" /><span>CSV Bulk Upload</span></h3>

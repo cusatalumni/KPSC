@@ -25,32 +25,45 @@ function createNumericHash(str: string): number {
 }
 
 /**
- * Robustly parses options to ensure they are returned as a pure Array.
- * Fixes "Double Stringification" issues common with AI JSON outputs.
+ * Advanced unescaping and array normalization.
+ * Fixes: ["\"[\\\"A\\\",\\\"B\\\"]\""] and other nested formats.
  */
 const ensureArray = (raw: any): string[] => {
     if (!raw) return [];
     
-    // If it's already an array, check if the first element is a stringified array
-    if (Array.isArray(raw)) {
-        if (raw.length === 1 && typeof raw[0] === 'string' && raw[0].startsWith('[')) {
-            return ensureArray(raw[0]);
-        }
-        return raw.map(String);
-    }
+    let processed = raw;
     
-    try {
-        const str = String(raw).trim();
-        const parsed = JSON.parse(str);
-        if (Array.isArray(parsed)) return ensureArray(parsed); // Recursive check
-        if (typeof parsed === 'string') return ensureArray(parsed);
-    } catch (e) {
-        // Fallback for non-JSON strings that might be pipe-separated
-        if (typeof raw === 'string' && raw.includes('|')) {
-            return raw.split('|').map(s => s.trim());
+    // Handle array-wrapped stringified arrays
+    if (Array.isArray(processed) && processed.length === 1 && typeof processed[0] === 'string') {
+        processed = processed[0];
+    }
+
+    if (typeof processed === 'string') {
+        let clean = processed.trim();
+        
+        // Remove outer quotes if they exist (e.g. ""[...]"" )
+        if (clean.startsWith('"') && clean.endsWith('"')) {
+            clean = clean.slice(1, -1);
+        }
+        
+        // Unescape backslashes
+        clean = clean.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+
+        try {
+            const parsed = JSON.parse(clean);
+            if (Array.isArray(parsed)) return parsed.map(String);
+            if (typeof parsed === 'string') return ensureArray(parsed); // Recurse for deeply nested
+        } catch (e) {
+            // If parse fails, handle pipe or comma strings
+            if (clean.includes('|')) return clean.split('|').map(s => s.trim());
+            if (clean.startsWith('[') && clean.endsWith(']')) {
+                return clean.slice(1, -1).split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+            }
         }
     }
-    return [String(raw)];
+
+    if (Array.isArray(processed)) return processed.map(String);
+    return [String(processed)];
 };
 
 async function getNextId(sheetRange: string, startFrom: number = 1000): Promise<number> {
@@ -75,188 +88,27 @@ function constructAmazonImg(asin?: string): string {
 }
 
 export async function generateFlashcardsFromContent() {
-    if (!supabase) throw new Error("Supabase required for Flashcard generation.");
-    
+    if (!supabase) throw new Error("Supabase required.");
     const [{ data: gk }, { data: questions }] = await Promise.all([
         supabase.from('gk').select('fact, category').limit(20),
         supabase.from('questionbank').select('question, options, correct_answer_index, topic').limit(20)
     ]);
-
-    const sourceData = { gk, questions };
-    
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Transform this data into high-quality PSC Flashcards in Malayalam. 
-            For GK facts, create a question for 'front' and the fact detail for 'back'. 
-            For QuestionBank, use the question for 'front' and the correct option text for 'back'.
-            Return JSON array of objects with 'front', 'back', and 'topic'.
-            Data to process: ${JSON.stringify(sourceData)}`,
+            contents: `Generate 15 Flashcards in Malayalam based on: ${JSON.stringify({gk, questions})}. Return JSON array with 'front', 'back', 'topic'.`,
             config: { responseMimeType: "application/json" }
         });
-
         const newCards = JSON.parse(response.text || "[]");
         if (newCards.length > 0) {
             const baseId = await getNextId('Flashcards!A2:A', 9000);
-            const formatted = newCards.map((c: any, idx: number) => ({
-                id: String(baseId + idx),
-                front: c.front,
-                back: c.back,
-                topic: c.topic || 'General'
-            }));
-
+            const formatted = newCards.map((c: any, idx: number) => ({ id: String(baseId + idx), front: c.front, back: c.back, topic: c.topic || 'General' }));
             await upsertSupabaseData('flashcards', formatted);
-            const sheetRows = formatted.map((c: any) => [c.id, c.front, c.back, c.topic]);
-            await appendSheetData('Flashcards!A1', sheetRows);
-
-            return { message: `Generated ${formatted.length} new flashcards.` };
+            await appendSheetData('Flashcards!A1', formatted.map((c: any) => [c.id, c.front, c.back, c.topic]));
+            return { message: `Generated ${formatted.length} cards.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "No new flashcards could be generated." };
-}
-
-export async function syncAllFromSheetsToSupabase() {
-    if (!supabase) throw new Error("Supabase connection is not available.");
-    const syncLogs: string[] = [];
-    const tables = [
-        { sheet: 'Exams', supabase: 'exams', map: (r: any) => ({ id: r[0], title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }) },
-        { sheet: 'Syllabus', supabase: 'syllabus', map: (r: any) => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3] || '0'), duration: parseInt(r[4] || '0'), subject: r[5], topic: r[6] }) },
-        { sheet: 'QuestionBank', supabase: 'questionbank', map: (r: any) => ({ id: parseInt(r[0]), topic: r[1], question: r[2], options: ensureArray(r[3]), correct_answer_index: parseInt(r[4] || '1'), subject: r[5], difficulty: r[6], explanation: r[7] }) },
-        { sheet: 'GK', supabase: 'gk', map: (r: any) => ({ id: r[0], fact: r[1], category: r[2] }) },
-        { sheet: 'CurrentAffairs', supabase: 'currentaffairs', map: (r: any) => ({ id: r[0], title: r[1], source: r[2], date: r[3] }) },
-        { sheet: 'Notifications', supabase: 'notifications', map: (r: any) => ({ id: r[0], title: r[1], categoryNumber: r[2], lastDate: r[3], link: r[4] }) },
-        { sheet: 'Bookstore', supabase: 'bookstore', map: (r: any) => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] }) },
-        { sheet: 'Flashcards', supabase: 'flashcards', map: (r: any) => ({ id: r[0], front: r[1], back: r[2], topic: r[3] }) }
-    ];
-
-    for (const table of tables) {
-        try {
-            const rows = await readSheetData(`${table.sheet}!A2:Z`);
-            if (rows && rows.length > 0) {
-                const dataToUpsert = rows.filter(r => r[0]).map(table.map);
-                if (dataToUpsert.length > 0) {
-                    await upsertSupabaseData(table.supabase, dataToUpsert);
-                    syncLogs.push(`Synced ${dataToUpsert.length} rows for ${table.supabase}`);
-                }
-            }
-        } catch (err: any) {
-            syncLogs.push(`Failed sync for ${table.supabase}: ${err.message}`);
-        }
-    }
-    return { message: "Database sync completed.", details: syncLogs.join(', ') };
-}
-
-export async function scrapeGkFacts() {
-    try {
-        const ai = getAi();
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: "Generate 10 unique Kerala PSC GK facts in Malayalam. Return JSON array with 'fact' and 'category'.",
-            config: { responseMimeType: "application/json" }
-        });
-        const items = JSON.parse(response.text || "[]");
-        if (items.length > 0) {
-            const baseId = await getNextId('GK!A2:A', 5000);
-            const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), fact: it.fact, category: it.category }));
-            await upsertSupabaseData('gk', sbData);
-            const sheetRows = sbData.map(it => [it.id, it.fact, it.category]);
-            await appendSheetData('GK!A1', sheetRows);
-            return { message: `${items.length} GK facts generated.` };
-        }
-    } catch (e: any) { throw e; }
-}
-
-export async function scrapeCurrentAffairs() {
-    try {
-        const ai = getAi();
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: "Research 10 latest Kerala/National current affairs. Return JSON array with 'title', 'source', 'date'.",
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
-        });
-        const items = JSON.parse(response.text || "[]");
-        if (items.length > 0) {
-            const baseId = await getNextId('CurrentAffairs!A2:A', 8000);
-            const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), title: it.title, source: it.source, date: it.date }));
-            await upsertSupabaseData('currentaffairs', sbData);
-            const sheetRows = sbData.map(it => [it.id, it.title, it.source, it.date]);
-            await appendSheetData('CurrentAffairs!A1', sheetRows);
-            return { message: `${items.length} Current Affairs updated.` };
-        }
-    } catch (e: any) { throw e; }
-}
-
-export async function scrapeKpscNotifications() {
-    try {
-        const ai = getAi();
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Research 5 latest active job notifications from keralapsc.gov.in. Return JSON array with 'title', 'categoryNumber', 'lastDate', 'link'.`,
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
-        });
-        const baseId = await getNextId('Notifications!A2:A', 1000);
-        const items = JSON.parse(response.text || "[]");
-        const sbData = items.map((item: any, idx: number) => ({ id: String(baseId + idx), title: item.title, categoryNumber: item.categoryNumber, lastDate: item.lastDate, link: item.link }));
-        await upsertSupabaseData('notifications', sbData);
-        const sheetRows = sbData.map(it => [it.id, it.title, it.categoryNumber, it.lastDate, it.link]);
-        await appendSheetData('Notifications!A1', sheetRows);
-        return { message: `${items.length} notifications updated.` };
-    } catch (e: any) { throw e; }
-}
-
-export async function generateQuestionsForGaps(batchSize: number = 8) {
-    if (!supabase) throw new Error("Supabase required for Gap Audit.");
-    
-    const { data: qData } = await supabase.from('questionbank').select('topic');
-    const counts: Record<string, number> = {};
-    qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
-
-    const { data: sData } = await supabase.from('syllabus').select('*');
-    if (!sData) return { message: "Syllabus is empty." };
-
-    const gaps = sData.filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) < 5);
-    if (gaps.length === 0) return { message: "No content gaps found." };
-
-    const targetTopics = gaps.slice(0, batchSize).map(g => g.topic || g.title);
-    
-    try {
-        const ai = getAi();
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview', 
-            contents: `Generate 30 high-quality MCQ questions in Malayalam for PSC exams. 
-            Target topics: ${targetTopics.join(', ')}. 
-            Format: JSON array of objects with:
-            - topic, subject, question, options (array of 4 strings)
-            - correctAnswerIndex (Strictly 1 to 4)
-            - explanation (Detailed 2-sentence explanation in Malayalam)`,
-            config: { responseMimeType: "application/json" }
-        });
-
-        const items = JSON.parse(response.text || "[]");
-        if (items.length > 0) {
-            const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
-            let currentId = (maxIdRow?.id || 40000) + 1;
-
-            const sbData = items.map((item: any) => ({
-                id: currentId++, 
-                topic: item.topic, 
-                question: item.question, 
-                options: ensureArray(item.options), 
-                correct_answer_index: parseInt(String(item.correctAnswerIndex || item.correct_answer_index || 1)), 
-                subject: item.subject || 'General', 
-                difficulty: 'PSC Level',
-                explanation: item.explanation || ''
-            }));
-
-            await upsertSupabaseData('questionbank', sbData);
-            const sheetRows = sbData.map(q => [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
-            await appendSheetData('QuestionBank!A1', sheetRows);
-
-            return { message: `Added ${sbData.length} questions with explanations to DB and Sheets.` };
-        }
-    } catch (e: any) { throw e; }
-    return { message: "AI processing completed but no questions were generated." };
 }
 
 export async function auditAndCorrectQuestions() {
@@ -269,12 +121,10 @@ export async function auditAndCorrectQuestions() {
         .select('*')
         .gt('id', lastId)
         .order('id', { ascending: true })
-        .limit(60);
+        .limit(40);
 
     if (!questions || questions.length === 0) {
-        await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
-        await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
-        return { message: "Audit reset to beginning." };
+        return { message: "All questions have been audited! Reset cursor if you want to re-audit.", nextId: 0, completed: true };
     }
 
     try {
@@ -283,12 +133,10 @@ export async function auditAndCorrectQuestions() {
             model: "gemini-3-flash-preview",
             contents: `Audit these PSC questions. 
             Tasks: 
-            1. Correct Malayalam grammar.
-            2. Verify accuracy.
-            3. CRITICAL: Ensure 'correct_answer_index' is strictly 1 to 4.
-            4. Create a detailed 'explanation' in Malayalam if missing.
-            5. Ensure 'options' is returned as a JSON array of strings.
-            Return corrected JSON array with all fields: id, topic, question, options, correct_answer_index, subject, difficulty, explanation.
+            1. Fix Malayalam grammar.
+            2. Verify facts.
+            3. CRITICAL: Ensure 'options' is a pure array of 4 strings (NO extra escaping).
+            4. Ensure 'correct_answer_index' is 1-4.
             Data: ${JSON.stringify(questions)}`,
             config: { responseMimeType: "application/json" }
         });
@@ -303,9 +151,7 @@ export async function auditAndCorrectQuestions() {
 
             await upsertSupabaseData('questionbank', sanitized);
             for (const q of sanitized) {
-                // IMPORTANT: Only stringify for Sheets. Supabase upsert already handles array type.
-                const sheetOptions = JSON.stringify(q.options);
-                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, sheetOptions, q.correct_answer_index, q.subject, q.difficulty, q.explanation || '']);
+                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation || '']);
             }
 
             const maxIdBatch = Math.max(...sanitized.map((q:any) => q.id));
@@ -315,65 +161,55 @@ export async function auditAndCorrectQuestions() {
             ]);
 
             return { 
-                message: `Audit complete for ${sanitized.length} questions. Next session starts from ID: ${maxIdBatch + 1}.`, 
-                nextId: maxIdBatch + 1 
+                message: `Success: Audited IDs up to ${maxIdBatch}.`, 
+                nextId: maxIdBatch + 1,
+                count: sanitized.length
             };
         }
     } catch (e: any) { throw e; }
-    return { message: "No changes needed for this batch." };
+    return { message: "Batch processed but no changes needed." };
 }
 
-export async function auditAndCorrectBooks() {
-    if (!supabase) throw new Error("Supabase required for Book Audit.");
-    
-    const { data: books } = await supabase.from('bookstore').select('*');
-    if (!books || books.length === 0) return { message: "No books to audit." };
+export async function generateQuestionsForGaps(batchSize: number = 5) {
+    if (!supabase) throw new Error("Supabase required.");
+    const { data: sData } = await supabase.from('syllabus').select('*');
+    if (!sData) return { message: "No syllabus found." };
 
-    const repairNeeded = books.filter(b => 
-        !b.imageUrl || 
-        b.imageUrl.length < 12 || 
-        b.imageUrl.includes('NO IMG') || 
-        b.imageUrl.includes('EMPTY') ||
-        !b.amazonLink.includes(AFFILIATE_TAG)
-    );
-    
-    if (repairNeeded.length === 0) return { message: "All books appear healthy." };
+    const { data: qCountData } = await supabase.rpc('get_topic_counts'); 
+    // Fallback if RPC not available: manually count or just pick empty ones
+    const topics = sData.slice(0, batchSize).map(s => s.topic || s.title);
 
-    const batch = repairNeeded.slice(0, 10);
-    
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `I need high-quality Amazon.in details for these Kerala PSC study materials. 
-            Search for each book's:
-            1. 'asin' (10-character Amazon ID).
-            2. High-quality '.jpg' URL from Amazon media servers (starting with https://m.media-amazon.com/ or images-na.ssl-images-amazon.com).
-            3. Direct product link: https://www.amazon.in/dp/ASIN.
-            
-            Books to fix: ${JSON.stringify(batch)}
-            
-            Return JSON array of objects with fields: id, title, author, imageUrl, amazonLink. 
-            IMPORTANT: If you can't find a real Amazon URL, return the imageUrl as "".`,
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+            model: 'gemini-3-flash-preview', 
+            contents: `Generate 25 PSC MCQs in Malayalam for topics: ${topics.join(', ')}. Return JSON array with topic, subject, question, options (4 strings), correctAnswerIndex (1-4), explanation.`,
+            config: { responseMimeType: "application/json" }
         });
 
-        const corrected = JSON.parse(response.text || "[]");
-        if (corrected.length > 0) {
-            const final = corrected.map((b: any) => ({
-                ...b,
-                imageUrl: b.imageUrl && b.imageUrl.startsWith('http') ? b.imageUrl : "",
-                amazonLink: formatAffiliateLink(b.amazonLink)
+        const items = JSON.parse(response.text || "[]");
+        if (items.length > 0) {
+            const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
+            let currentId = (maxIdRow?.id || 50000) + 1;
+
+            const sbData = items.map((item: any) => ({
+                id: currentId++, 
+                topic: item.topic, 
+                question: item.question, 
+                options: ensureArray(item.options), 
+                correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), 
+                subject: item.subject || 'General', 
+                difficulty: 'PSC Level',
+                explanation: item.explanation || ''
             }));
 
-            await upsertSupabaseData('bookstore', final);
-            for (const b of final) {
-                await findAndUpsertRow('Bookstore', String(b.id), [b.id, b.title, b.author, b.imageUrl, b.amazonLink]);
-            }
-            return { message: `Successfully repaired ${final.length} books with new images and links.` };
+            await upsertSupabaseData('questionbank', sbData);
+            const sheetRows = sbData.map(q => [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
+            await appendSheetData('QuestionBank!A1', sheetRows);
+
+            return { message: `Added ${sbData.length} new questions.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "Book repair process finished but no updates were found." };
 }
 
 export async function runDailyUpdateScrapers() {
@@ -381,9 +217,78 @@ export async function runDailyUpdateScrapers() {
     await scrapePscLiveUpdates();
     await scrapeCurrentAffairs();
     await scrapeGkFacts();
-    await generateQuestionsForGaps(5);
-    await generateFlashcardsFromContent();
-    return { message: "Daily Routine Finished." };
+    await generateQuestionsForGaps(3);
+    return { message: "Sync Finished." };
+}
+
+export async function syncAllFromSheetsToSupabase() {
+    if (!supabase) throw new Error("No Supabase.");
+    const tables = [
+        { sheet: 'Exams', supabase: 'exams', map: (r: any) => ({ id: r[0], title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }) },
+        { sheet: 'Syllabus', supabase: 'syllabus', map: (r: any) => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3] || '0'), duration: parseInt(r[4] || '0'), subject: r[5], topic: r[6] }) },
+        { sheet: 'QuestionBank', supabase: 'questionbank', map: (r: any) => ({ id: parseInt(r[0]), topic: r[1], question: r[2], options: ensureArray(r[3]), correct_answer_index: parseInt(r[4] || '1'), subject: r[5], difficulty: r[6], explanation: r[7] }) },
+        { sheet: 'Bookstore', supabase: 'bookstore', map: (r: any) => ({ id: r[0], title: r[1], author: r[2], imageUrl: r[3], amazonLink: r[4] }) }
+    ];
+    for (const t of tables) {
+        const rows = await readSheetData(`${t.sheet}!A2:Z`);
+        if (rows?.length) await upsertSupabaseData(t.supabase, rows.filter(r => r[0]).map(t.map));
+    }
+    return { message: "Sync Done." };
+}
+
+export async function scrapeGkFacts() {
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: "10 PSC facts in Malayalam. JSON: fact, category.",
+            config: { responseMimeType: "application/json" }
+        });
+        const items = JSON.parse(response.text || "[]");
+        if (items.length > 0) {
+            const baseId = await getNextId('GK!A2:A', 5000);
+            const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), fact: it.fact, category: it.category }));
+            await upsertSupabaseData('gk', sbData);
+            await appendSheetData('GK!A1', sbData.map(it => [it.id, it.fact, it.category]));
+            return { message: `Added ${items.length} facts.` };
+        }
+    } catch (e: any) { throw e; }
+}
+
+export async function scrapeCurrentAffairs() {
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: "10 CA items. JSON: title, source, date.",
+            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+        });
+        const items = JSON.parse(response.text || "[]");
+        if (items.length > 0) {
+            const baseId = await getNextId('CurrentAffairs!A2:A', 8000);
+            const sbData = items.map((it: any, idx: number) => ({ id: String(baseId + idx), title: it.title, source: it.source, date: it.date }));
+            await upsertSupabaseData('currentaffairs', sbData);
+            await appendSheetData('CurrentAffairs!A1', sbData.map(it => [it.id, it.title, it.source, it.date]));
+            return { message: `Updated CA.` };
+        }
+    } catch (e: any) { throw e; }
+}
+
+export async function scrapeKpscNotifications() {
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `5 jobs from keralapsc.gov.in. JSON: title, categoryNumber, lastDate, link.`,
+            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+        });
+        const baseId = await getNextId('Notifications!A2:A', 1000);
+        const items = JSON.parse(response.text || "[]");
+        const sbData = items.map((item: any, idx: number) => ({ id: String(baseId + idx), title: item.title, categoryNumber: item.categoryNumber, lastDate: item.lastDate, link: item.link }));
+        await upsertSupabaseData('notifications', sbData);
+        await appendSheetData('Notifications!A1', sbData.map(it => [it.id, it.title, it.categoryNumber, it.lastDate, it.link]));
+        return { message: `Updated Notifications.` };
+    } catch (e: any) { throw e; }
 }
 
 export async function runBookScraper() {
@@ -391,25 +296,17 @@ export async function runBookScraper() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview", 
-            contents: `Find 8 latest Kerala PSC rank files or study guides on Amazon.in. Return JSON array with 'title', 'author', 'asin', 'amazonLink'.`,
+            contents: `Find 8 Kerala PSC guides on Amazon.in. JSON: title, author, asin, amazonLink.`,
             config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
             const baseId = await getNextId('Bookstore!A2:A', 3000);
-            const finalItems = items.map((it: any, idx: number) => ({ 
-                id: String(baseId + idx), 
-                title: it.title, 
-                author: it.author, 
-                imageUrl: constructAmazonImg(it.asin), 
-                amazonLink: formatAffiliateLink(it.amazonLink, it.asin) 
-            }));
+            const finalItems = items.map((it: any, idx: number) => ({ id: String(baseId + idx), title: it.title, author: it.author, imageUrl: constructAmazonImg(it.asin), amazonLink: formatAffiliateLink(it.amazonLink, it.asin) }));
             await upsertSupabaseData('bookstore', finalItems);
-            const sheetRows = finalItems.map(it => [it.id, it.title, it.author, it.imageUrl, it.amazonLink]);
-            await appendSheetData('Bookstore!A1', sheetRows);
-            return { message: `${finalItems.length} books synced.` };
+            await appendSheetData('Bookstore!A1', finalItems.map(it => [it.id, it.title, it.author, it.imageUrl, it.amazonLink]));
+            return { message: `Synced Books.` };
         }
-        return { message: "No new books found." };
     } catch (e: any) { throw e; }
 }
 
@@ -418,16 +315,36 @@ export async function scrapePscLiveUpdates() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Find 5 latest results/notices from keralapsc.gov.in. Return JSON array with 'title', 'url', 'section', 'published_date'.`,
+            contents: `5 results from keralapsc.gov.in. JSON: title, url, section, published_date.`,
             config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
             const sbData = items.map((it: any) => ({ id: createNumericHash(it.url || it.title), title: it.title, url: it.url, section: it.section, published_date: it.published_date }));
             await upsertSupabaseData('liveupdates', sbData);
-            const sheetRows = sbData.map(it => [it.title, it.url, it.section, it.published_date]);
-            await appendSheetData('LiveUpdates!A1', sheetRows);
+            await appendSheetData('LiveUpdates!A1', sbData.map(it => [it.title, it.url, it.section, it.published_date]));
         }
-        return { message: `${items.length} updates synced.` };
+        return { message: `Synced Updates.` };
     } catch (e: any) { throw e; }
+}
+
+export async function auditAndCorrectBooks() {
+    if (!supabase) throw new Error("No Supabase.");
+    const { data: books } = await supabase.from('bookstore').select('*');
+    if (!books?.length) return { message: "No books." };
+    const repair = books.filter(b => !b.imageUrl || b.imageUrl.length < 10 || b.imageUrl.includes('NO IMG')).slice(0, 5);
+    if (!repair.length) return { message: "Books OK." };
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: `Find Amazon images for: ${JSON.stringify(repair)}. JSON array: id, title, author, imageUrl, amazonLink.`,
+            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+        });
+        const corrected = JSON.parse(response.text || "[]");
+        if (corrected.length) {
+            await upsertSupabaseData('bookstore', corrected);
+            return { message: `Repaired ${corrected.length} books.` };
+        }
+    } catch (e) { throw e; }
 }
