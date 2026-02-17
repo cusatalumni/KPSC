@@ -14,43 +14,86 @@ import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 export const EXAMS_DATA: Exam[] = [
   {
     id: 'ldc_lgs',
-    title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്)', en: 'LDC / LGS' },
-    description: { ml: 'പത്താം ക്ലാസ്സ് യോഗ്യതയുള്ള പ്രധാന പരീക്ഷകൾ.', en: 'Major exams for 10th level qualification.' },
+    title: { ml: 'LDC / LGS Full Syllabus', en: 'LDC / LGS Full Syllabus' },
+    description: { ml: '10-ാം ക്ലാസ്സ് തലത്തിലുള്ള എല്ലാ പരീക്ഷകൾക്കും വേണ്ടിയുള്ള പരിശീലനം.', en: 'Full training for all 10th level exams.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
     category: 'General',
     level: 'Preliminary'
   },
   {
-    id: 'plus_two_prelims',
-    title: { ml: 'Plus Two Prelims (CPO / Excise)', en: 'Plus Two Level Prelims' },
-    description: { ml: 'സിവിൽ പോലീസ് ഓഫീസർ, എക്സൈസ് ഇൻസ്പെക്ടർ തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-indigo-600" }),
+    id: 'university_assistant',
+    title: { ml: 'University Assistant / Sub Inspector', en: 'University Assistant / SI' },
+    description: { ml: 'ഡിഗ്രി ലെവൽ മെയിൻ പരീക്ഷകൾക്ക് വേണ്ടിയുള്ള പ്രത്യേക പരിശീലനം.', en: 'Special training for Degree Level Main exams.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
     category: 'General',
-    level: 'Preliminary'
+    level: 'Main'
   },
   {
-    id: 'degree_prelims',
-    title: { ml: 'Degree Level Exams (ഡിഗ്രി ലെവൽ)', en: 'Degree Level Exams' },
-    description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള ബിരുദതല പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
+    id: 'plus_two_prelims',
+    title: { ml: 'Plus Two Level Prelims (CPO / Excise)', en: 'Plus Two Level Prelims' },
+    description: { ml: 'സിവിൽ പോലീസ് ഓഫീസർ, എക്സൈസ് ഇൻസ്പെക്ടർ തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-indigo-600" }),
     category: 'General',
     level: 'Preliminary'
   }
 ];
 
+export const MOCK_TESTS_DATA: MockTest[] = [
+  { 
+    id: 'mock_ldc_full_1', 
+    examId: 'ldc_lgs', 
+    title: { ml: 'LDC Model Exam 2025 #1', en: 'LDC Model Exam 2025 #1' }, 
+    description: { ml: 'KPSC സിലബസ് പ്രകാരമുള്ള 100 ചോദ്യങ്ങൾ, 75 മിനിറ്റ്.', en: '100 Qs as per KPSC syllabus, 75 Minutes.' }, 
+    questionsCount: 100, 
+    duration: 75, 
+    negativeMarking: 0.33, 
+    isPro: false 
+  },
+  { 
+    id: 'mock_ua_full_1', 
+    examId: 'university_assistant', 
+    title: { ml: 'University Assistant Main Model #1', en: 'University Assistant Main Model #1' }, 
+    description: { ml: 'ഡിഗ്രി ലെവൽ മെയിൻ പരീക്ഷയുടെ അതേ മാതൃകയിൽ 100 ചോദ്യങ്ങൾ.', en: '100 Questions in exact Degree Level Main model.' }, 
+    questionsCount: 100, 
+    duration: 75, 
+    negativeMarking: 0.33, 
+    isPro: true 
+  },
+  { 
+    id: 'mock_cpo_full_1', 
+    examId: 'plus_two_prelims', 
+    title: { ml: 'CPO / Constable Model Exam', en: 'CPO / Constable Model Exam' }, 
+    description: { ml: 'പ്ലസ് ടു ലെവൽ പ്രിലിംസ് മാതൃകാ പരീക്ഷ (100 Qs).', en: 'Plus Two Level Prelims Model Exam (100 Qs).' }, 
+    questionsCount: 100, 
+    duration: 75, 
+    negativeMarking: 0.33, 
+    isPro: true 
+  },
+  { 
+    id: 'mock_lgs_full_1', 
+    examId: 'ldc_lgs', 
+    title: { ml: 'LGS Model Exam 2025', en: 'LGS Model Exam 2025' }, 
+    description: { ml: 'ലസ്റ്റ് ഗ്രേഡ് സർവന്റ്സ് പരീക്ഷയുടെ അതേ സിലബസ്.', en: 'Exact syllabus for Last Grade Servants exam.' }, 
+    questionsCount: 100, 
+    duration: 75, 
+    negativeMarking: 0.33, 
+    isPro: false 
+  }
+];
+
 export const LDC_EXAM_CONTENT: ExamPageContent = {
   practiceTests: [
-    { id: 'ldc_gk_1', title: 'Kerala History', questions: 20, duration: 20, subject: 'History', topic: 'Kerala' },
-    { id: 'ldc_comp_hw', title: 'Information Technology', questions: 10, duration: 10, subject: 'Computer Science', topic: 'Hardware' }
+    { id: 'ldc_full_mod', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: 'ldc_gk_1', title: 'Kerala Geography', questions: 20, duration: 20, subject: 'Geography', topic: 'Kerala' }
   ],
-  studyNotes: [{ id: 'sn_kh', title: 'Kerala History', subject: 'History' }],
-  previousPapers: [{ id: 'pp_ldc21', title: 'LDC 2021 Previous Paper' }]
+  studyNotes: [],
+  previousPapers: []
 };
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
     'ldc_lgs': LDC_EXAM_CONTENT,
+    'university_assistant': LDC_EXAM_CONTENT,
     'plus_two_prelims': LDC_EXAM_CONTENT,
-    'degree_prelims': LDC_EXAM_CONTENT,
 };
 
 export const NAV_STRUCTURE: NavLink[] = [
@@ -91,11 +134,6 @@ export const QUIZ_CATEGORIES: QuizCategory[] = [
   { id: 'indian_constitution', title: { ml: 'ഭരണഘടന', en: 'Indian Constitution' }, description: { ml: 'ഇന്ത്യൻ ഭരണഘടനയുടെ പ്രസക്ത ഭാഗങ്ങളെക്കുറിച്ചുള്ള ക്വിസ്.', en: 'Quiz on essential parts of the Indian Constitution.' }, icon: React.createElement(ScaleIcon, { className: "h-6 w-6 text-amber-600" }) },
   { id: 'kerala_history', title: { ml: 'കേരള ചരിത്രം', en: 'Kerala History' }, description: { ml: 'ചരിത്രപ്രധാനമായ സംഭവങ്ങളും ഭരണാധികാരികളും.', en: 'Historical events and rulers of Kerala.' }, icon: React.createElement(BookOpenIcon, { className: "h-6 w-6 text-rose-600" }) },
   { id: 'science', title: { ml: 'ശാസ്ത്രം', en: 'General Science' }, description: { ml: 'ഭൗതികശാസ്ത്രം, രസതന്ത്രം, ജീവശാസ്ത്രം.', en: 'Physics, Chemistry, and Biology essentials.' }, icon: React.createElement(BeakerIcon, { className: "h-6 w-6 text-cyan-600" }) },
-];
-
-export const MOCK_TESTS_DATA: MockTest[] = [
-  { id: 'mock_ldc_1', examId: 'ldc_lgs', title: { ml: 'LDC Full Length Mock #1', en: 'LDC Full Length Mock #1' }, description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ സമ്പൂർണ്ണ മോക്ക് ടെസ്റ്റ്.', en: 'Full length mock test with 100 questions.' }, questionsCount: 100, duration: 75, negativeMarking: 0.33, isPro: false },
-  { id: 'mock_degree_1', examId: 'degree_prelims', title: { ml: 'Degree Level Model Exam', en: 'Degree Level Model Exam' }, description: { ml: 'ഡിഗ്രി ലെവൽ പ്രിലിംസ് മാതൃകാ പരീക്ഷ.', en: 'Degree level preliminary model exam.' }, questionsCount: 100, duration: 75, negativeMarking: 0.33, isPro: true }
 ];
 
 export const MARCH_EXAMS_DATA: ExamCalendarEntry[] = [

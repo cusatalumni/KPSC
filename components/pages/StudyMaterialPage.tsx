@@ -7,6 +7,7 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import AdsenseWidget from '../AdsenseWidget';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
+import { ArrowPathIcon } from '../icons/ArrowPathIcon';
 
 interface PageProps {
   topic: string;
@@ -17,35 +18,50 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
     const { t } = useTranslation();
     const [content, setContent] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [isExpanding, setIsExpanding] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTopic, setActiveTopic] = useState(topic);
 
-    // If initial topic is just 'General Study', we show the subject grid first
     const showGrid = activeTopic === 'General Study';
 
-    useEffect(() => {
-        if (showGrid) return;
-
-        const fetchContent = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const data = await getStudyMaterial(activeTopic);
+    const fetchContent = async (forceRefresh = false) => {
+        if (forceRefresh) setIsExpanding(true);
+        else setLoading(true);
+        
+        setError(null);
+        try {
+            // Updated API call to support optional force refresh for expanding content
+            const res = await fetch('/api/study-material', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: activeTopic, forceRefresh }),
+            });
+            const data = await res.json();
+            
+            if (forceRefresh) {
+                // If expanding, we can either append or replace. Replacing with fresh, deeper content is usually better.
                 setContent(data.notes);
-            } catch (err) {
-                setError(t('error.fetchData'));
-            } finally {
-                setLoading(false);
+            } else {
+                setContent(data.notes);
             }
-        };
-        fetchContent();
-    }, [activeTopic, showGrid, t]);
+        } catch (err) {
+            setError(t('error.fetchData'));
+        } finally {
+            setLoading(false);
+            setIsExpanding(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!showGrid) {
+            fetchContent();
+        }
+    }, [activeTopic, showGrid]);
 
     const handleSubjectClick = (subjectTitle: string) => {
         setActiveTopic(subjectTitle);
     };
 
-    // Simple markdown to HTML renderer
     const renderMarkdown = (text: string) => {
         let html = text
             .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold text-slate-800 dark:text-white mt-8 mb-4 border-l-4 border-indigo-600 pl-4">$1</h2>')
@@ -113,10 +129,25 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
                                     <div className="bg-red-50 p-10 rounded-[3rem] border border-red-100 text-red-600 font-bold">{error}</div>
                                 </div>
                             ) : (
-                                <div 
-                                    className="prose prose-slate dark:prose-invert max-w-none text-xl leading-[1.8] text-slate-700 dark:text-slate-300 relative z-10"
-                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-                                >
+                                <div className="relative z-10">
+                                    <div 
+                                        className="prose prose-slate dark:prose-invert max-w-none text-xl leading-[1.8] text-slate-700 dark:text-slate-300"
+                                        dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                                    >
+                                    </div>
+                                    
+                                    <div className="mt-16 pt-10 border-t-4 border-slate-50 dark:border-slate-800 flex flex-col items-center">
+                                         <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em] mb-6">ഈ വിഷയം കൂടുതൽ പഠിക്കണോ?</p>
+                                         <button 
+                                            onClick={() => fetchContent(true)}
+                                            disabled={isExpanding}
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-10 py-5 rounded-[2rem] shadow-2xl flex items-center space-x-3 transition-all active:scale-95 disabled:opacity-50"
+                                         >
+                                            {isExpanding ? <ArrowPathIcon className="h-6 w-6 animate-spin" /> : <SparklesIcon className="h-6 w-6" />}
+                                            <span className="uppercase tracking-widest text-sm">{isExpanding ? 'Updating Info...' : 'കൂടുതൽ വിവരങ്ങൾ ചേർക്കുക (AI)'}</span>
+                                         </button>
+                                         <p className="mt-4 text-[10px] text-slate-400 font-bold">ഇത് ക്ലിക്ക് ചെയ്താൽ AI ഈ വിഷയത്തിൽ കൂടുതൽ ആഴത്തിലുള്ള പോയിന്റുകൾ കണ്ടെത്തും.</p>
+                                    </div>
                                 </div>
                             )}
                         </article>
@@ -126,15 +157,15 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
                     </div>
 
                     <aside className="space-y-8">
-                        <div className="bg-indigo-600 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                             <h4 className="text-xl font-black mb-4 tracking-tight">Master this topic!</h4>
-                             <p className="text-indigo-100 text-sm font-bold leading-relaxed mb-6">The notes on the left are generated using advanced AI based on official PSC syllabus patterns.</p>
+                        <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group border-b-[10px] border-indigo-600">
+                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                             <h4 className="text-xl font-black mb-4 tracking-tight">Advanced Mode</h4>
+                             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">AI updates these notes based on recent PSC patterns. Use the button below the notes to get even more details.</p>
                              <button 
                                 onClick={() => setActiveTopic('General Study')}
                                 className="w-full bg-white text-indigo-600 font-black py-4 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest"
                              >
-                                Browse Other Subjects
+                                Change Subject
                              </button>
                         </div>
                         <div className="sticky top-28">
