@@ -32,10 +32,15 @@ import { TagIcon } from '../icons/TagIcon';
 import { WrenchScrewdriverIcon } from '../icons/WrenchScrewdriverIcon';
 import { Cog6ToothIcon } from '../icons/Cog6ToothIcon';
 import { LanguageIcon } from '../icons/LanguageIcon';
-import { ExclamationTriangleIcon } from '../icons/ExclamationTriangleIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
 type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users' | 'settings';
+
+interface AuditReport {
+    syllabusReport: { id: string; topic: string; count: number }[];
+    orphanCount: number;
+    orphanTopics: string[];
+}
 
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { getToken } = useAuth();
@@ -50,12 +55,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
     const [selectedExamId, setSelectedExamId] = useState('');
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
-    const [auditReport, setAuditReport] = useState<any[]>([]);
+    const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
     const [settings, setSettings] = useState<any>({});
 
-    const [sq, setSq] = useState({ topic: '', question: '', options: ['', '', '', ''], correct: 1, subject: '' });
-
-    const totalGaps = useMemo(() => auditReport.filter(r => r.count === 0).length, [auditReport]);
+    const totalGaps = useMemo(() => auditReport?.syllabusReport.filter(r => r.count === 0).length || 0, [auditReport]);
 
     const refreshData = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -77,8 +80,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (activeTab === 'syllabus' && selectedExamId) {
             getExamSyllabus(selectedExamId).then(items => setSyllabusItems(items));
         }
-        if (activeTab === 'qbank' && auditReport.length === 0) {
-            // Auto-fetch report if empty when entering qbank tab
+        if (activeTab === 'qbank' && !auditReport) {
             adminOp('get-audit-report').then(report => setAuditReport(report)).catch(() => {});
         }
     }, [selectedExamId, activeTab]);
@@ -111,7 +113,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 await refreshData(true);
             }
             
-            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps') {
+            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps' || action === 'run-batch-qa') {
                 setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
@@ -217,9 +219,9 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     )}
                                 </div>
 
-                                {auditReport.length > 0 ? (
+                                {auditReport ? (
                                     <div className="max-h-80 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                        {auditReport.map((r, i) => (
+                                        {auditReport.syllabusReport.map((r, i) => (
                                             <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
                                                 <div className="flex-1 min-w-0 pr-4">
                                                     <p className="font-bold text-xs truncate">{r.topic}</p>
@@ -244,6 +246,19 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
                                 <p className="text-indigo-100 text-xs font-bold mb-4 leading-relaxed">AI realigns questions to provided syllabus mappings and fixes answers automatically.</p>
                                 
+                                {/* ORPHAN COUNT DISPLAY */}
+                                <div className={`mb-6 p-5 rounded-2xl border flex items-center justify-between animate-fade-in ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">Orphan Topics</p>
+                                        <p className={`text-sm font-black ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'text-orange-300 animate-pulse' : 'text-emerald-300'}`}>
+                                            {auditReport ? `${auditReport.orphanCount} detected` : 'Report Pending...'}
+                                        </p>
+                                    </div>
+                                    <div className={`p-2 rounded-lg ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-600' : 'bg-emerald-600'}`}>
+                                        <ShieldCheckIcon className="h-4 w-4 text-white" />
+                                    </div>
+                                </div>
+
                                 {auditInfo?.nextId && (
                                     <div className="mb-6 bg-white/10 p-4 rounded-2xl border border-white/20 animate-fade-in">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1">Audit Cursor</p>
