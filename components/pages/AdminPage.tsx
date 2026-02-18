@@ -49,7 +49,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [books, setBooks] = useState<Book[]>([]);
     const [dbStatus, setDbStatus] = useState({sheets: false, supabase: false});
     const [status, setStatus] = useState<string | null>(null);
-    const [auditInfo, setAuditInfo] = useState<{ nextId?: number, message?: string } | null>(null);
     const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -57,6 +56,18 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
     const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
     const [settings, setSettings] = useState<any>({});
+    const [bulkQuestions, setBulkQuestions] = useState<any[]>([]);
+    
+    // Form for single question
+    const [showSingleModal, setShowSingleModal] = useState(false);
+    const [singleQ, setSingleQ] = useState({
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswerIndex: 1,
+        topic: '',
+        subject: '',
+        explanation: ''
+    });
 
     const totalGaps = useMemo(() => auditReport?.syllabusReport.filter(r => r.count === 0).length || 0, [auditReport]);
 
@@ -99,29 +110,64 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleAction = async (action: string, payload: any = {}) => {
         setStatus("Processing operation..."); 
         setIsError(false);
-        if (action === 'run-batch-qa' || action === 'reset-qa-audit' || action === 'run-language-repair' || action === 'run-explanation-repair') setAuditInfo(null);
         
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
             
-            if (action === 'run-batch-qa' && r.nextId !== undefined) {
-                setAuditInfo({ nextId: r.nextId, message: r.message });
-            }
-
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair', 'run-explanation-repair'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair', 'run-explanation-repair', 'upload-questions', 'run-batch-qa', 'reset-qa-audit'].includes(action)) {
                 await refreshData(true);
             }
             
-            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps' || action === 'run-batch-qa' || action === 'run-explanation-repair') {
+            if (['run-targeted-gap-fill', 'run-all-gaps', 'run-batch-qa', 'run-explanation-repair', 'upload-questions'].includes(action)) {
                 setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
     };
 
-    const handleToggleSetting = async (key: string, currentVal: any) => {
-        const newVal = (String(currentVal) === 'true') ? 'false' : 'true';
-        await handleAction('update-setting', { setting: { key, value: newVal } });
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target?.result as string;
+            const lines = text.split('\n').filter(l => l.trim().length > 0);
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            
+            const parsed = lines.slice(1).map(line => {
+                const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                const obj: any = {};
+                headers.forEach((h, i) => {
+                    if (h === 'options') {
+                        obj[h] = values[i].includes('|') ? values[i].split('|') : [values[i]];
+                    } else {
+                        obj[h] = values[i];
+                    }
+                });
+                return obj;
+            });
+            
+            setBulkQuestions(parsed);
+            setStatus(`${parsed.length} questions ready for upload.`);
+        };
+        reader.readAsText(file);
+    };
+
+    const submitBulk = async () => {
+        if (!bulkQuestions.length) return;
+        await handleAction('upload-questions', { questions: bulkQuestions });
+        setBulkQuestions([]);
+    };
+
+    const submitSingle = async () => {
+        if (!singleQ.question || !singleQ.topic) {
+            alert("Question and Topic are required.");
+            return;
+        }
+        await handleAction('upload-questions', { questions: [singleQ] });
+        setShowSingleModal(false);
+        setSingleQ({ question: '', options: ['', '', '', ''], correctAnswerIndex: 1, topic: '', subject: '', explanation: '' });
     };
 
     const ToolCard = ({ title, icon: Icon, action, color, desc }: any) => (
@@ -201,7 +247,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 </div>
 
-                                {/* TOTAL GAPS HERO STAT */}
                                 <div className={`mb-8 p-6 rounded-[2rem] flex items-center justify-between border-2 transition-all duration-700 ${totalGaps > 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50'}`}>
                                     <div className="flex items-center space-x-4">
                                         <div className={`p-4 rounded-2xl ${totalGaps > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white shadow-lg`}>
@@ -258,9 +303,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         </div>
                                     </div>
                                     
-                                    {auditInfo?.nextId && (
+                                    {settings?.last_audited_id && (
                                         <div className="mb-4 bg-white/10 p-3 rounded-xl border border-white/20 animate-fade-in">
-                                            <p className="text-[9px] font-black uppercase text-indigo-200">Resuming from ID: {auditInfo.nextId}</p>
+                                            <p className="text-[9px] font-black uppercase text-indigo-200">Audit Cursor (Setting)</p>
+                                            <p className="text-sm font-black text-emerald-300">Resuming from ID: {settings.last_audited_id}</p>
                                         </div>
                                     )}
 
@@ -285,6 +331,96 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         <button onClick={() => handleAction('run-explanation-repair')} className="bg-white text-amber-600 font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Backfill Notes</button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* DATA IMPORT SECTION */}
+                        <div className="bg-slate-50 dark:bg-slate-900 p-10 rounded-[3rem] border-2 border-slate-200 dark:border-slate-800">
+                             <div className="flex flex-col md:row items-center justify-between mb-10 gap-6">
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Manual Question Management</h3>
+                                    <p className="text-slate-500 font-bold text-sm">Add individual questions or bulk import from CSV files.</p>
+                                </div>
+                                <div className="flex space-x-3">
+                                    <button onClick={() => setShowSingleModal(true)} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 transition-all flex items-center space-x-2">
+                                        <PlusIcon className="h-5 w-5" />
+                                        <span>Single Entry</span>
+                                    </button>
+                                    <div className="relative">
+                                        <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" id="csv-upload" />
+                                        <label htmlFor="csv-upload" className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-slate-50 transition-all flex items-center space-x-2 cursor-pointer">
+                                            <CloudArrowUpIcon className="h-5 w-5" />
+                                            <span>Bulk CSV</span>
+                                        </label>
+                                    </div>
+                                </div>
+                             </div>
+
+                             {bulkQuestions.length > 0 && (
+                                 <div className="bg-emerald-50 dark:bg-emerald-950/20 p-8 rounded-[2rem] border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between animate-fade-in">
+                                     <div className="flex items-center space-x-4">
+                                         <div className="p-4 bg-emerald-600 text-white rounded-2xl shadow-lg"><ClipboardListIcon className="h-6 w-6" /></div>
+                                         <div>
+                                             <h4 className="text-lg font-black text-emerald-900 dark:text-emerald-100 uppercase">Ready to Import</h4>
+                                             <p className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">{bulkQuestions.length} valid questions detected in CSV.</p>
+                                         </div>
+                                     </div>
+                                     <div className="flex space-x-3">
+                                         <button onClick={submitBulk} className="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-emerald-700 transition-all">Commit to Database</button>
+                                         <button onClick={() => setBulkQuestions([])} className="bg-white text-slate-400 px-6 py-4 rounded-2xl font-black text-xs uppercase hover:text-red-500 transition-all">Cancel</button>
+                                     </div>
+                                 </div>
+                             )}
+                        </div>
+                    </div>
+                )}
+
+                {/* SINGLE QUESTION MODAL */}
+                {showSingleModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-2xl font-black uppercase tracking-tight">Manual Question Entry</h3>
+                                <button onClick={() => setShowSingleModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><XMarkIcon className="h-6 w-6" /></button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Subject</label>
+                                        <input type="text" value={singleQ.subject} onChange={e=>setSingleQ({...singleQ, subject: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="e.g. History" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Topic (Required)</label>
+                                        <input type="text" value={singleQ.topic} onChange={e=>setSingleQ({...singleQ, topic: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="e.g. Kerala History" />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Question Text</label>
+                                    <textarea value={singleQ.question} onChange={e=>setSingleQ({...singleQ, question: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold min-h-[100px]" placeholder="Enter full question..." />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Options & Correct Answer</label>
+                                    {singleQ.options.map((opt, i) => (
+                                        <div key={i} className="flex items-center space-x-3">
+                                            <button onClick={()=>setSingleQ({...singleQ, correctAnswerIndex: i+1})} className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${singleQ.correctAnswerIndex === i+1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-indigo-50'}`}>{i+1}</button>
+                                            <input type="text" value={opt} onChange={e => {
+                                                const newOpts = [...singleQ.options];
+                                                newOpts[i] = e.target.value;
+                                                setSingleQ({...singleQ, options: newOpts});
+                                            }} className="flex-1 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder={`Option ${i+1}`} />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Explanation (AI-Repairable)</label>
+                                    <textarea value={singleQ.explanation} onChange={e=>setSingleQ({...singleQ, explanation: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="Optional explanation..." />
+                                </div>
+
+                                <button onClick={submitSingle} className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition-all uppercase tracking-widest text-xs">Save Question</button>
                             </div>
                         </div>
                     </div>
