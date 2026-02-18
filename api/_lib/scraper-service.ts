@@ -34,6 +34,39 @@ const ensureArray = (raw: any): string[] => {
 };
 
 /**
+ * BULK UPLOAD LOGIC: Handles manual entries
+ */
+export async function bulkUploadQuestions(questions: any[]) {
+    if (!supabase) throw new Error("Supabase required.");
+    if (!questions.length) return { message: "No questions provided." };
+
+    const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
+    let currentId = (maxIdRow?.id || 50000) + 1;
+
+    const sanitized = questions.map(q => ({
+        id: q.id || currentId++,
+        topic: q.topic || 'General',
+        question: q.question,
+        options: ensureArray(q.options),
+        correct_answer_index: parseInt(String(q.correct_answer_index || q.correctAnswerIndex || 1)),
+        subject: q.subject || 'General',
+        difficulty: q.difficulty || 'PSC Level',
+        explanation: q.explanation || ''
+    }));
+
+    await upsertSupabaseData('questionbank', sanitized);
+    
+    // Mirror to Sheets
+    for (const q of sanitized) {
+        await findAndUpsertRow('QuestionBank', String(q.id), [
+            q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation
+        ]);
+    }
+
+    return { message: `Successfully uploaded ${sanitized.length} questions.` };
+}
+
+/**
  * BACKFILL LOGIC: Repairs questions missing explanations
  */
 export async function backfillExplanations() {
