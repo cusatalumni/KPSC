@@ -48,7 +48,7 @@ export async function auditAndCorrectQuestions() {
         .select('*')
         .gt('id', lastId)
         .order('id', { ascending: true })
-        .limit(20);
+        .limit(50);
 
     if (qErr) throw qErr;
     if (!questions || questions.length === 0) return { message: "QA Audit complete. All records verified.", completed: true };
