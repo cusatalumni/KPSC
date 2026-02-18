@@ -10,7 +10,8 @@ import {
     scrapeCurrentAffairs,
     generateQuestionsForGaps,
     syncAllFromSheetsToSupabase,
-    repairLanguageMismatches
+    repairLanguageMismatches,
+    backfillExplanations
 } from "./_lib/scraper-service.js";
 import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
@@ -62,6 +63,7 @@ export default async function handler(req: any, res: any) {
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-language-repair': return res.status(200).json(await repairLanguageMismatches());
+            case 'run-explanation-repair': return res.status(200).json(await backfillExplanations());
             
             case 'run-all-gaps': {
                 if (!supabase) throw new Error("Supabase required.");
