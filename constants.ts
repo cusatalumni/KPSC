@@ -58,26 +58,6 @@ export const MOCK_TESTS_DATA: MockTest[] = [
     duration: 75, 
     negativeMarking: 0.33, 
     isPro: true 
-  },
-  { 
-    id: 'mock_cpo_full_1', 
-    examId: 'plus_two_prelims', 
-    title: { ml: 'CPO / Constable Model Exam', en: 'CPO / Constable Model Exam' }, 
-    description: { ml: 'പ്ലസ് ടു ലെവൽ പ്രിലിംസ് മാതൃകാ പരീക്ഷ (100 Qs).', en: 'Plus Two Level Prelims Model Exam (100 Qs).' }, 
-    questionsCount: 100, 
-    duration: 75, 
-    negativeMarking: 0.33, 
-    isPro: true 
-  },
-  { 
-    id: 'mock_lgs_full_1', 
-    examId: 'ldc_lgs', 
-    title: { ml: 'LGS Model Exam 2025', en: 'LGS Model Exam 2025' }, 
-    description: { ml: 'ലസ്റ്റ് ഗ്രേഡ് സർവന്റ്സ് പരീക്ഷയുടെ അതേ സിലബസ്.', en: 'Exact syllabus for Last Grade Servants exam.' }, 
-    questionsCount: 100, 
-    duration: 75, 
-    negativeMarking: 0.33, 
-    isPro: false 
   }
 ];
 
@@ -122,11 +102,16 @@ export const STUDY_SUBJECTS: StudyMaterial[] = [
 ];
 
 export const MOCK_QUESTION_PAPERS: QuestionPaper[] = [
-    { title: 'LDC 2021 (Phase 1)', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/021_2021.pdf', date: '20-02-2021', year: '2021', size: '1.2 MB' },
-    { title: 'University Assistant 2023', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/ua_2023.pdf', date: '15-06-2023', year: '2023', size: '2.4 MB' },
-    { title: 'LGS 2021 (Various)', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/lgs_2021.pdf', date: '12-03-2021', year: '2021', size: '0.8 MB' },
-    { title: 'Secretariat Assistant 2018', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/sa_2018.pdf', date: '13-10-2018', year: '2018', size: '3.1 MB' },
-    { title: 'CPO / Constable 2022', url: 'https://keralapsc.gov.in/sites/default/files/question_paper/cpo_2022.pdf', date: '04-11-2022', year: '2022', size: '1.5 MB' }
+    { title: 'TRADESMAN – AUTOMOBILE MECHANIC – TECHNICAL EDUCATION', url: 'https://keralapsc.gov.in/sites/default/files/2018-08/175-2016.pdf', year: '2016', category: 'OMR Question' },
+    { title: 'TRADESMAN – SM LAB – TECHNICAL EDUCATION', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'UP SCHOOL ASSISTANT – KANNADA MEDIUM – EDUCATION', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'PLUMBER / PLUMBER-CUM-OPERATOR – IMS', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'UP SCHOOL ASSISTANT – MALAYALAM MEDIUM – EDUCATION', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'LECTURER IN CIVIL ENGINEERING – GOVT POLYTECHNICS', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'TRADESMAN – REFRIGERATION AND AIR CONDITIONING', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'LABORATORY TECHNICIAN GR II – ANIMAL HUSBANDRY', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'LECTURER IN ELECTRICAL & ELECTRONICS ENGINEERING', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' },
+    { title: 'PHARMACIST GR II – IMS / MEDICAL EDUCATION', url: 'https://keralapsc.gov.in/previous-question-papers', year: '2016', category: 'OMR Question' }
 ];
 
 export const QUIZ_CATEGORIES: QuizCategory[] = [

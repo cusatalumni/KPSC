@@ -9,12 +9,10 @@ import {
     scrapeGkFacts,
     scrapeCurrentAffairs,
     generateQuestionsForGaps,
-    auditAndCorrectQuestions,
     syncAllFromSheetsToSupabase,
-    generateFlashcardsFromContent,
-    auditAndCorrectBooks,
     repairLanguageMismatches
 } from "./_lib/scraper-service.js";
+import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
 export default async function handler(req: any, res: any) {
@@ -61,6 +59,9 @@ export default async function handler(req: any, res: any) {
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-gap-filler': return res.status(200).json(await generateQuestionsForGaps(8));
             case 'run-targeted-gap-fill': return res.status(200).json(await generateQuestionsForGaps(topic));
+            case 'run-book-scraper': return res.status(200).json(await runBookScraper());
+            case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
+            case 'run-language-repair': return res.status(200).json(await repairLanguageMismatches());
             
             case 'run-all-gaps': {
                 if (!supabase) throw new Error("Supabase required.");
@@ -68,77 +69,36 @@ export default async function handler(req: any, res: any) {
                 const { data: qData } = await supabase.from('questionbank').select('topic');
                 const counts: Record<string, number> = {};
                 qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
-                
-                const emptyTopics = (sData || [])
-                    .filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) === 0)
-                    .map(s => s.topic || s.title);
-
+                const emptyTopics = (sData || []).filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) === 0).map(s => s.topic || s.title);
                 if (emptyTopics.length === 0) return res.status(200).json({ message: "No empty topics found." });
-                
-                // Process top 5 to avoid timeout
                 const batch = emptyTopics.slice(0, 5);
-                for (const t of batch) {
-                    try { await generateQuestionsForGaps(t); } catch (err) {}
-                }
-                return res.status(200).json({ message: `Filled gaps for ${batch.length} topics. Total remaining: ${emptyTopics.length - batch.length}` });
+                for (const t of batch) { try { await generateQuestionsForGaps(t); } catch (err) {} }
+                return res.status(200).json({ message: `Filled gaps for ${batch.length} topics.` });
             }
 
-            case 'run-book-scraper': return res.status(200).json(await runBookScraper());
-            case 'run-book-audit': return res.status(200).json(await auditAndCorrectBooks());
-            case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
-            case 'run-flashcard-generator': return res.status(200).json(await generateFlashcardsFromContent());
-            case 'run-language-repair': return res.status(200).json(await repairLanguageMismatches());
-            
             case 'update-setting': {
                 if (supabase) await upsertSupabaseData('settings', [setting], 'key');
                 await findAndUpsertRow('Settings', setting.key, [setting.key, setting.value]);
-                return res.status(200).json({ message: `Setting "${setting.key}" updated to ${setting.value}` });
+                return res.status(200).json({ message: `Setting updated.` });
             }
 
             case 'reset-qa-audit': {
                 if (supabase) await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
                 await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
-                return res.status(200).json({ message: 'QA Audit progress has been reset to ID 0.' });
+                return res.status(200).json({ message: 'QA Audit progress reset.' });
             }
-            
-            case 'save-question': 
-                if (supabase) await upsertSupabaseData('questionbank', [data]);
-                await appendSheetData('QuestionBank!A1', [[data.id, data.topic, data.question, JSON.stringify(data.options), data.correct_answer_index, data.subject, data.difficulty]]);
-                return res.status(200).json({ message: 'Question saved to bank.' });
-
-            case 'bulk-upload-questions':
-                if (supabase) await upsertSupabaseData('questionbank', data);
-                const sheetRows = data.map((q:any) => [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty]);
-                await appendSheetData('QuestionBank!A1', sheetRows);
-                return res.status(200).json({ message: `Bulk upload successful. Processed ${data.length} questions.` });
 
             case 'get-audit-report': {
                 if (!supabase) throw new Error("Supabase required.");
-                const { data: qData, error: qError } = await supabase.from('questionbank').select('topic');
-                if (qError) throw qError;
-                
+                const { data: qData } = await supabase.from('questionbank').select('topic');
                 const counts: Record<string, number> = {};
-                qData?.forEach(q => { 
-                    const t = String(q.topic || '').toLowerCase().trim(); 
-                    if (t) counts[t] = (counts[t] || 0) + 1; 
-                });
-
-                const { data: sData, error: sError } = await supabase.from('syllabus').select('id, topic, title');
-                if (sError) throw sError;
-
-                const report = (sData || []).map(s => ({
-                    id: s.id,
-                    topic: s.topic || s.title,
-                    count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0
-                }));
-
+                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
+                const { data: sData } = await supabase.from('syllabus').select('id, topic, title');
+                const report = (sData || []).map(s => ({ id: s.id, topic: s.topic || s.title, count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 }));
                 return res.status(200).json(report);
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });
         }
-    } catch (e: any) { 
-        console.error("Admin Error:", e.message);
-        return res.status(500).json({ error: `Admin Action Failed: ${e.message}` }); 
-    }
+    } catch (e: any) { return res.status(500).json({ error: e.message }); }
 }

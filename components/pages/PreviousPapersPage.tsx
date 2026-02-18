@@ -148,8 +148,8 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                                         <div className="mt-auto">
                                             <div className="flex flex-wrap gap-2 mb-4">
-                                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md ${item.isDirectPdf || item.url?.endsWith('.pdf') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                                                    {item.isDirectPdf || item.url?.endsWith('.pdf') ? 'Direct PDF' : 'Official Web Page'}
+                                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md ${item.url?.endsWith('.pdf') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                                    {item.url?.endsWith('.pdf') ? 'Direct PDF' : 'Official Web Page'}
                                                 </span>
                                             </div>
                                             <a 
@@ -159,7 +159,7 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                 className="w-full bg-slate-50 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white p-4 rounded-xl flex items-center justify-between transition-all group/btn"
                                             >
                                                 <span className="text-[10px] font-black uppercase tracking-widest">
-                                                    {item.isDirectPdf || item.url?.endsWith('.pdf') ? 'Download PDF' : 'Go to Download Page'}
+                                                    {item.url?.endsWith('.pdf') ? 'Download PDF' : 'Go to Download Page'}
                                                 </span>
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                             </a>

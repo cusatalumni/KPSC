@@ -16,6 +16,18 @@ export interface Exam {
   description: BilingualText;
   icon: React.ReactNode;
   category: ExamCategory;
+  level: NewExamLevel;
+}
+
+// Fixed minor inconsistency: types used 'Preliminary' | 'Main' etc. but implementation in constants used level names directly.
+export type NewExamLevel = 'Preliminary' | 'Main' | 'Departmental' | 'Special';
+
+export interface Exam {
+  id: string;
+  title: BilingualText;
+  description: BilingualText;
+  icon: React.ReactNode;
+  category: ExamCategory;
   level: ExamLevel;
 }
 
@@ -198,12 +210,20 @@ export interface PscUpdateItem {
   published_date: string;
 }
 
+/**
+ * QuestionPaper interface updated to fix type errors in constants.ts.
+ */
 export interface QuestionPaper {
   title: string;
   url: string;
-  date: string;
+  // Made optional as MOCK_QUESTION_PAPERS in constants.ts doesn't provide it.
+  date?: string;
   size?: string;
   year?: string;
+  // Added category property to match usage in constants.ts and PreviousPapersPage.tsx
+  category?: string;
+  // Added isDirectPdf to align with the response schema in geminiService.ts
+  isDirectPdf?: boolean;
 }
 
 export interface CurrentAffairsItem {
