@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
@@ -32,6 +32,7 @@ import { TagIcon } from '../icons/TagIcon';
 import { WrenchScrewdriverIcon } from '../icons/WrenchScrewdriverIcon';
 import { Cog6ToothIcon } from '../icons/Cog6ToothIcon';
 import { LanguageIcon } from '../icons/LanguageIcon';
+import { ExclamationTriangleIcon } from '../icons/ExclamationTriangleIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
 type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users' | 'settings';
@@ -54,6 +55,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const [sq, setSq] = useState({ topic: '', question: '', options: ['', '', '', ''], correct: 1, subject: '' });
 
+    const totalGaps = useMemo(() => auditReport.filter(r => r.count === 0).length, [auditReport]);
+
     const refreshData = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
         const token = await getToken();
@@ -73,6 +76,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     useEffect(() => { 
         if (activeTab === 'syllabus' && selectedExamId) {
             getExamSyllabus(selectedExamId).then(items => setSyllabusItems(items));
+        }
+        if (activeTab === 'qbank' && auditReport.length === 0) {
+            // Auto-fetch report if empty when entering qbank tab
+            adminOp('get-audit-report').then(report => setAuditReport(report)).catch(() => {});
         }
     }, [selectedExamId, activeTab]);
 
@@ -113,25 +120,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleToggleSetting = async (key: string, currentVal: any) => {
         const newVal = (String(currentVal) === 'true') ? 'false' : 'true';
         await handleAction('update-setting', { setting: { key, value: newVal } });
-    };
-
-    const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setStatus("Parsing CSV file...");
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const text = event.target?.result as string;
-            const rows = text.split('\n').filter(r => r.trim()).slice(1);
-            const parsed = rows.map((row, i) => {
-                const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-                if (cols.length < 5) return null;
-                return { id: Date.now() + i, topic: cols[0], question: cols[1], options: [cols[2], cols[3], cols[4], cols[5] || ''], correct_answer_index: parseInt(cols[6] || '1'), subject: cols[7] || 'General', difficulty: 'PSC Level' };
-            }).filter(Boolean);
-            if (parsed.length > 0) handleAction('bulk-upload-questions', { data: parsed });
-            else { setStatus("No valid data found in CSV."); setIsError(true); }
-        };
-        reader.readAsText(file);
     };
 
     const ToolCard = ({ title, icon: Icon, action, color, desc }: any) => (
@@ -198,21 +186,41 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {activeTab === 'qbank' && (
                     <div className="space-y-16">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border dark:border-slate-800">
-                                <div className="flex items-center justify-between mb-6">
+                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative">
+                                <div className="flex items-center justify-between mb-8">
                                     <div>
                                         <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
                                         <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Identify empty mapped topics</p>
                                     </div>
                                     <div className="flex space-x-2">
-                                        <button onClick={() => handleAction('run-all-gaps')} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase shadow-lg hover:bg-emerald-700">Fill All Gaps</button>
-                                        <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase shadow-lg">Refresh Report</button>
+                                        <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-md border dark:border-slate-700 hover:scale-110 transition-all text-indigo-600">
+                                            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                        </button>
                                     </div>
                                 </div>
+
+                                {/* TOTAL GAPS HERO STAT */}
+                                <div className={`mb-8 p-6 rounded-[2rem] flex items-center justify-between border-2 transition-all duration-700 ${totalGaps > 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50'}`}>
+                                    <div className="flex items-center space-x-4">
+                                        <div className={`p-4 rounded-2xl ${totalGaps > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white shadow-lg`}>
+                                            {totalGaps > 0 ? <ExclamationTriangleIcon className="h-6 w-6" /> : <CheckCircleIcon className="h-6 w-6" />}
+                                        </div>
+                                        <div>
+                                            <p className={`text-[10px] font-black uppercase tracking-widest ${totalGaps > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>Content Coverage</p>
+                                            <p className={`text-2xl font-black ${totalGaps > 0 ? 'text-red-900 dark:text-red-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
+                                                {totalGaps === 0 ? 'Fully Mapped' : `${totalGaps} Empty Topics`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {totalGaps > 0 && (
+                                        <button onClick={() => handleAction('run-all-gaps')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Fill All</button>
+                                    )}
+                                </div>
+
                                 {auditReport.length > 0 ? (
                                     <div className="max-h-80 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                                         {auditReport.map((r, i) => (
-                                            <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                                            <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
                                                 <div className="flex-1 min-w-0 pr-4">
                                                     <p className="font-bold text-xs truncate">{r.topic}</p>
                                                     <p className={`text-[9px] font-black uppercase mt-1 ${r.count === 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
@@ -231,38 +239,37 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to identify empty mapped topics from your Syllabus table.</p>}
                             </div>
                             
-                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden">
+                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl">
                                 <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
-                                <h3 className="text-xl font-black uppercase mb-4">QA Quality Audit</h3>
-                                <p className="text-indigo-100 text-xs font-bold mb-4">AI realigns questions to provided syllabus mappings and fixes answers.</p>
+                                <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
+                                <p className="text-indigo-100 text-xs font-bold mb-4 leading-relaxed">AI realigns questions to provided syllabus mappings and fixes answers automatically.</p>
                                 
                                 {auditInfo?.nextId && (
                                     <div className="mb-6 bg-white/10 p-4 rounded-2xl border border-white/20 animate-fade-in">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1">Audit Status</p>
-                                        <p className="text-sm font-black text-emerald-300">Next Audit Starts from ID: {auditInfo.nextId}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1">Audit Cursor</p>
+                                        <p className="text-sm font-black text-emerald-300">Resuming from ID: {auditInfo.nextId}</p>
                                     </div>
                                 )}
 
                                 <div className="flex flex-col space-y-3 relative z-10">
                                     <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full">Start Sequential Audit</button>
-                                    <button onClick={() => { if(confirm("Are you sure?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">Reset Cursor</button>
+                                    <button onClick={() => { if(confirm("Are you sure?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">Reset Progress</button>
                                 </div>
                             </div>
 
-                            <div className="bg-rose-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden">
+                            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[10px] border-rose-600">
                                 <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-32 w-32" /></div>
-                                <h3 className="text-xl font-black uppercase mb-4">Language Repair</h3>
-                                <p className="text-rose-100 text-xs font-bold mb-6">Forces technical mapped subjects (Engineering, IT, English) back into English format.</p>
+                                <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Language Repair</h3>
+                                <p className="text-slate-400 text-xs font-bold mb-6 leading-relaxed">Forces technical subjects (Engineering, IT, English) back into English format to ensure professional accuracy.</p>
                                 <button 
                                     onClick={() => handleAction('run-language-repair')} 
-                                    className="bg-white text-rose-600 font-black py-5 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full flex items-center justify-center space-x-2"
+                                    className="bg-rose-600 text-white font-black py-5 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full flex items-center justify-center space-x-2"
                                 >
                                     <ArrowPathIcon className="h-4 w-4" />
-                                    <span>Repair Mappings</span>
+                                    <span>Restore Technical Terms</span>
                                 </button>
                             </div>
                         </div>
-                        {/* CSV and Single Entry sections remain the same */}
                     </div>
                 )}
 
@@ -278,12 +285,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                         </div>
 
-                        <select value={selectedExamId} onChange={e=>setSelectedExamId(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 p-4 rounded-xl text-xs font-black border-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <select value={selectedExamId} onChange={e=>setSelectedExamId(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 p-4 rounded-xl text-xs font-black border-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner">
                             <option value="">Select Exam to view Mappings</option>
                             {exams.map(e=><option key={e.id} value={e.id}>{e.title.ml} ({e.title.en})</option>)}
                         </select>
 
-                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800">
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
                                     <tr>
@@ -318,11 +325,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                 )}
                 
-                {/* Other tabs remain the same as existing files */}
                 {activeTab === 'exams' && (
                     <div className="space-y-8">
                         <div className="flex items-center justify-between"><h3 className="text-2xl font-black uppercase tracking-tight">Active Exams</h3><button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2"><PlusIcon className="h-4 w-4" /><span>Add Exam</span></button></div>
-                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800">
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500"><tr><th className="px-8 py-5">Exam</th><th className="px-8 py-5">Category</th><th className="px-8 py-5 text-right">Actions</th></tr></thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{exams.map(ex => (<tr key={ex.id} className="text-sm font-bold"><td className="px-8 py-6">{ex.title.ml}<span className="block text-[10px] opacity-40 uppercase">{ex.id}</span></td><td className="px-8 py-6"><span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[9px] uppercase font-black">{ex.category}</span></td><td className="px-8 py-6 text-right"><button onClick={() => handleAction('delete-row', { sheet: 'Exams', id: ex.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button></td></tr>))}</tbody>
@@ -340,7 +346,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <button onClick={() => handleAction('run-book-scraper')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2 hover:bg-indigo-700 transition-all"><SparklesIcon className="h-4 w-4" /><span>Scrape New</span></button>
                             </div>
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800">
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500"><tr><th className="px-8 py-5">Book Title</th><th className="px-8 py-5 text-right">Actions</th></tr></thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{books.map(book => (<tr key={book.id} className="text-sm font-bold"><td className="px-8 py-6">{book.title}</td><td className="px-8 py-6 text-right"><button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button></td></tr>))}</tbody>
@@ -352,5 +358,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
     );
 };
+
+// Internal icon component for the audit hero stat
+const ExclamationTriangleIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+    </svg>
+);
 
 export default AdminPage;
