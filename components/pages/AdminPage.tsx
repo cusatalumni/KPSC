@@ -115,11 +115,12 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
             
+            // Force refresh settings and audit report after critical actions
             if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair', 'run-explanation-repair', 'upload-questions', 'run-batch-qa', 'reset-qa-audit'].includes(action)) {
                 await refreshData(true);
             }
             
-            if (['run-targeted-gap-fill', 'run-all-gaps', 'run-batch-qa', 'run-explanation-repair', 'upload-questions'].includes(action)) {
+            if (['run-targeted-gap-fill', 'run-all-gaps', 'run-batch-qa', 'run-explanation-repair', 'upload-questions', 'reset-qa-audit'].includes(action)) {
                 setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
@@ -292,7 +293,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
                                     
                                     <div className="flex items-center justify-between gap-4 mb-4">
-                                        <p className="text-indigo-100 text-xs font-bold leading-relaxed">AI realigns questions to provided syllabus mappings and fixes answers automatically.</p>
+                                        <p className="text-indigo-100 text-xs font-bold leading-relaxed">AI realigns questions to syllabus and fixes answers automatically.</p>
                                         <div className={`p-4 rounded-2xl border flex items-center justify-between whitespace-nowrap ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
                                             <div>
                                                 <p className="text-[8px] font-black uppercase tracking-widest text-indigo-200">Orphans</p>
@@ -303,16 +304,19 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         </div>
                                     </div>
                                     
-                                    {settings?.last_audited_id && (
-                                        <div className="mb-4 bg-white/10 p-3 rounded-xl border border-white/20 animate-fade-in">
-                                            <p className="text-[9px] font-black uppercase text-indigo-200">Audit Cursor (Setting)</p>
-                                            <p className="text-sm font-black text-emerald-300">Resuming from ID: {settings.last_audited_id}</p>
+                                    <div className="mb-4 bg-white/10 p-3 rounded-xl border border-white/20 animate-fade-in flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-indigo-200">Current Progress</p>
+                                            <p className="text-sm font-black text-emerald-300">Verified up to ID: {settings?.last_audited_id || '0'}</p>
                                         </div>
-                                    )}
+                                        <div className="p-2 bg-white/10 rounded-lg">
+                                            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                        </div>
+                                    </div>
 
                                     <div className="flex space-x-3 relative z-10">
-                                        <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all flex-1">Start Audit</button>
-                                        <button onClick={() => { if(confirm("Are you sure?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all px-6">Reset</button>
+                                        <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all flex-1">Start Audit Batch</button>
+                                        <button onClick={() => { if(confirm("Are you sure? This will restart the audit from the first question.")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all px-6">Reset</button>
                                     </div>
                                 </div>
 
