@@ -90,12 +90,38 @@ export default async function handler(req: any, res: any) {
 
             case 'get-audit-report': {
                 if (!supabase) throw new Error("Supabase required.");
+                
+                // Fetch topics from both tables
                 const { data: qData } = await supabase.from('questionbank').select('topic');
-                const counts: Record<string, number> = {};
-                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
                 const { data: sData } = await supabase.from('syllabus').select('id, topic, title');
-                const report = (sData || []).map(s => ({ id: s.id, topic: s.topic || s.title, count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 }));
-                return res.status(200).json(report);
+                
+                // 1. Calculate Topic Counts and Syllabus Gap Report
+                const counts: Record<string, number> = {};
+                qData?.forEach(q => { 
+                    const t = String(q.topic || '').toLowerCase().trim(); 
+                    if (t) counts[t] = (counts[t] || 0) + 1; 
+                });
+                
+                const gapReport = (sData || []).map(s => {
+                    const topicKey = String(s.topic || s.title).toLowerCase().trim();
+                    return { 
+                        id: s.id, 
+                        topic: s.topic || s.title, 
+                        count: counts[topicKey] || 0 
+                    };
+                });
+
+                // 2. Calculate Orphans (Topics in QBank but NOT in Syllabus)
+                const syllabusTopics = new Set((sData || []).map(s => String(s.topic || s.title).toLowerCase().trim()));
+                const questionTopics = new Set(Object.keys(counts));
+                
+                const orphanTopics = Array.from(questionTopics).filter(qt => !syllabusTopics.has(qt));
+                
+                return res.status(200).json({
+                    syllabusReport: gapReport,
+                    orphanCount: orphanTopics.length,
+                    orphanTopics: orphanTopics
+                });
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });
