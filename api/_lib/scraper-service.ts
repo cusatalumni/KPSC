@@ -34,6 +34,60 @@ const ensureArray = (raw: any): string[] => {
 };
 
 /**
+ * BACKFILL LOGIC: Repairs questions missing explanations
+ */
+export async function backfillExplanations() {
+    if (!supabase) throw new Error("Supabase required.");
+
+    // Find questions where explanation is empty or null
+    const { data: missing, error } = await supabase
+        .from('questionbank')
+        .select('*')
+        .or('explanation.is.null,explanation.eq.""')
+        .limit(15);
+
+    if (error) throw error;
+    if (!missing || missing.length === 0) return { message: "All questions already have explanations." };
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Generate high-quality Kerala PSC explanations (in Malayalam) for these questions. 
+            Keep technical subjects (IT/English) in English.
+            
+            Data: ${JSON.stringify(missing)}
+            
+            Return JSON array of objects: {id, explanation}`,
+            config: { responseMimeType: "application/json" }
+        });
+
+        const updates = JSON.parse(response.text || "[]");
+        if (updates.length > 0) {
+            const finalData = missing.map(q => {
+                const update = updates.find((u: any) => u.id == q.id);
+                return {
+                    ...q,
+                    explanation: update?.explanation || q.explanation
+                };
+            });
+
+            await upsertSupabaseData('questionbank', finalData);
+            
+            // Sync to sheets for consistency
+            for (const q of finalData) {
+                await findAndUpsertRow('QuestionBank', String(q.id), [
+                    q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation
+                ]);
+            }
+
+            return { message: `Successfully added explanations to ${finalData.length} questions.` };
+        }
+    } catch (e: any) { throw e; }
+    return { message: "Explanation repair batch failed." };
+}
+
+/**
  * GENERATION LOGIC: Strictly uses Syllabus Table for Mappings
  */
 export async function generateQuestionsForGaps(batchSizeOrTopic: number | string = 5) {
