@@ -99,7 +99,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleAction = async (action: string, payload: any = {}) => {
         setStatus("Processing operation..."); 
         setIsError(false);
-        if (action === 'run-batch-qa' || action === 'reset-qa-audit' || action === 'run-language-repair') setAuditInfo(null);
+        if (action === 'run-batch-qa' || action === 'reset-qa-audit' || action === 'run-language-repair' || action === 'run-explanation-repair') setAuditInfo(null);
         
         try {
             const r = await adminOp(action, payload);
@@ -109,11 +109,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 setAuditInfo({ nextId: r.nextId, message: r.message });
             }
 
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair', 'run-explanation-repair'].includes(action)) {
                 await refreshData(true);
             }
             
-            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps' || action === 'run-batch-qa') {
+            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps' || action === 'run-batch-qa' || action === 'run-explanation-repair') {
                 setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
@@ -187,8 +187,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'qbank' && (
                     <div className="space-y-16">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative lg:col-span-2">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
                                         <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
@@ -241,48 +241,50 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to identify empty mapped topics from your Syllabus table.</p>}
                             </div>
                             
-                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl">
-                                <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
-                                <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
-                                <p className="text-indigo-100 text-xs font-bold mb-4 leading-relaxed">AI realigns questions to provided syllabus mappings and fixes answers automatically.</p>
-                                
-                                {/* ORPHAN COUNT DISPLAY */}
-                                <div className={`mb-6 p-5 rounded-2xl border flex items-center justify-between animate-fade-in ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
-                                    <div>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">Orphan Topics</p>
-                                        <p className={`text-sm font-black ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'text-orange-300 animate-pulse' : 'text-emerald-300'}`}>
-                                            {auditReport ? `${auditReport.orphanCount} detected` : 'Report Pending...'}
-                                        </p>
+                            <div className="space-y-6 lg:col-span-2">
+                                <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl h-1/2">
+                                    <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
+                                    <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
+                                    
+                                    <div className="flex items-center justify-between gap-4 mb-4">
+                                        <p className="text-indigo-100 text-xs font-bold leading-relaxed">AI realigns questions to provided syllabus mappings and fixes answers automatically.</p>
+                                        <div className={`p-4 rounded-2xl border flex items-center justify-between whitespace-nowrap ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
+                                            <div>
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-indigo-200">Orphans</p>
+                                                <p className={`text-xs font-black ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'text-orange-300 animate-pulse' : 'text-emerald-300'}`}>
+                                                    {auditReport ? `${auditReport.orphanCount} detected` : '...'}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className={`p-2 rounded-lg ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-600' : 'bg-emerald-600'}`}>
-                                        <ShieldCheckIcon className="h-4 w-4 text-white" />
+                                    
+                                    {auditInfo?.nextId && (
+                                        <div className="mb-4 bg-white/10 p-3 rounded-xl border border-white/20 animate-fade-in">
+                                            <p className="text-[9px] font-black uppercase text-indigo-200">Resuming from ID: {auditInfo.nextId}</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex space-x-3 relative z-10">
+                                        <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all flex-1">Start Audit</button>
+                                        <button onClick={() => { if(confirm("Are you sure?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all px-6">Reset</button>
                                     </div>
                                 </div>
 
-                                {auditInfo?.nextId && (
-                                    <div className="mb-6 bg-white/10 p-4 rounded-2xl border border-white/20 animate-fade-in">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1">Audit Cursor</p>
-                                        <p className="text-sm font-black text-emerald-300">Resuming from ID: {auditInfo.nextId}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-1/2">
+                                    <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[6px] border-rose-600">
+                                        <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-24 w-24" /></div>
+                                        <h3 className="text-base font-black uppercase mb-2">Language Repair</h3>
+                                        <p className="text-slate-400 text-[10px] font-bold mb-4 leading-relaxed">Fix technical questions in Malayalam.</p>
+                                        <button onClick={() => handleAction('run-language-repair')} className="bg-rose-600 text-white font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Restore English</button>
                                     </div>
-                                )}
 
-                                <div className="flex flex-col space-y-3 relative z-10">
-                                    <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full">Start Sequential Audit</button>
-                                    <button onClick={() => { if(confirm("Are you sure?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">Reset Progress</button>
+                                    <div className="bg-amber-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[6px] border-amber-900">
+                                        <div className="absolute -right-4 -bottom-4 opacity-10"><PencilSquareIcon className="h-24 w-24" /></div>
+                                        <h3 className="text-base font-black uppercase mb-2">AI Note Repair</h3>
+                                        <p className="text-amber-100 text-[10px] font-bold mb-4 leading-relaxed">Fill missing descriptions for old questions.</p>
+                                        <button onClick={() => handleAction('run-explanation-repair')} className="bg-white text-amber-600 font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Backfill Notes</button>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[10px] border-rose-600">
-                                <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-32 w-32" /></div>
-                                <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Language Repair</h3>
-                                <p className="text-slate-400 text-xs font-bold mb-6 leading-relaxed">Forces technical subjects (Engineering, IT, English) back into English format to ensure professional accuracy.</p>
-                                <button 
-                                    onClick={() => handleAction('run-language-repair')} 
-                                    className="bg-rose-600 text-white font-black py-5 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full flex items-center justify-center space-x-2"
-                                >
-                                    <ArrowPathIcon className="h-4 w-4" />
-                                    <span>Restore Technical Terms</span>
-                                </button>
                             </div>
                         </div>
                     </div>
