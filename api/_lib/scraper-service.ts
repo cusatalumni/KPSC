@@ -42,11 +42,26 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
     let targetMappings: { topic: string, subject: string }[] = [];
 
     if (typeof batchSizeOrTopic === 'string') {
-        const { data: mapping } = await supabase.from('syllabus').select('topic, subject').ilike('topic', batchSizeOrTopic).single();
-        if (mapping) targetMappings = [mapping];
-        else throw new Error(`Topic "${batchSizeOrTopic}" is not mapped.`);
+        const cleanSearch = batchSizeOrTopic.trim();
+        // Robust search: Check topic, title, or id columns
+        const { data: mappings, error } = await supabase
+            .from('syllabus')
+            .select('topic, subject, title, id')
+            .or(`topic.ilike.%${cleanSearch}%,title.ilike.%${cleanSearch}%,id.eq.${cleanSearch}`)
+            .limit(1);
+
+        if (mappings && mappings.length > 0) {
+            const m = mappings[0];
+            // Prefer 'topic' field for the prompt, fallback to 'title'
+            targetMappings = [{ 
+                topic: m.topic || m.title || cleanSearch, 
+                subject: m.subject || 'General' 
+            }];
+        } else {
+            throw new Error(`The requested area "${cleanSearch}" is not currently mapped to any exam in your Syllabus. Please add it to the Syllabus first.`);
+        }
     } else {
-        const { data: sData } = await supabase.from('syllabus').select('topic, subject');
+        const { data: sData } = await supabase.from('syllabus').select('topic, subject, title');
         if (!sData || sData.length === 0) return { message: "No syllabus mappings found." };
         
         const { data: qData } = await supabase.from('questionbank').select('topic');
@@ -54,17 +69,29 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
         qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
 
         const gaps = sData
-            .map(s => ({ topic: s.topic, subject: s.subject, count: counts[String(s.topic).toLowerCase().trim()] || 0 }))
+            .map(s => ({ 
+                topic: s.topic || s.title, 
+                subject: s.subject || 'General', 
+                count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 
+            }))
             .sort((a, b) => a.count - b.count);
         
         targetMappings = gaps.slice(0, batchSizeOrTopic as number);
     }
 
+    if (targetMappings.length === 0) return { message: "No topics identified for generation." };
+
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview', 
-            contents: `Generate MCQs for: ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}. JSON array format.`,
+            contents: `Generate 5 high-quality PSC MCQs in Malayalam for these specific syllabus topics: 
+            ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}.
+            
+            Technical subjects (IT, Engineering) should be in English. 
+            Ensure correct_answer_index is accurate (1-4).
+            
+            Return JSON array: {topic, subject, question, options, correctAnswerIndex, explanation}`,
             config: { responseMimeType: "application/json" }
         });
 
@@ -73,15 +100,20 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
             const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
             let currentId = (maxIdRow?.id || 50000) + 1;
             const sbData = items.map((item: any) => ({
-                id: currentId++, topic: item.topic, question: item.question, options: ensureArray(item.options), 
+                id: currentId++, 
+                topic: item.topic, 
+                question: item.question, 
+                options: ensureArray(item.options), 
                 correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), 
-                subject: item.subject, difficulty: 'PSC Level', explanation: item.explanation || ''
+                subject: item.subject, 
+                difficulty: 'PSC Level', 
+                explanation: item.explanation || ''
             }));
             await upsertSupabaseData('questionbank', sbData);
-            return { message: `Generated ${sbData.length} questions.` };
+            return { message: `Successfully generated ${sbData.length} questions for "${targetMappings[0].topic}".` };
         }
     } catch (e: any) { throw e; }
-    return { message: "No questions generated." };
+    return { message: "No questions could be generated at this time." };
 }
 
 export async function runDailyUpdateScrapers() {
