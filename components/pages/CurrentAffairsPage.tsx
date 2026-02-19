@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, Fragment, useRef } from 'export const translations = {';
+import React, { useState, useEffect, useCallback, Fragment, useRef } from 'react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { useTranslation } from '../../contexts/LanguageContext';

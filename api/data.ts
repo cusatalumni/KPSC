@@ -43,55 +43,57 @@ const smartParseOptions = (raw: any): string[] => {
 };
 
 /**
- * Normalizes subject names to strictly follow the Official Approved List.
- * Remaps generic terms like 'Maths', 'Logic', 'Renaissance', etc.
+ * Normalizes subject names to strictly follow the Official Approved List provided by user.
  */
-const normalizeSubject = (subject: string, topic: string): string => {
+const normalizeSubject = (subject: string, topic: string, question: string = ''): string => {
     const s = String(subject || '').toLowerCase().trim();
     const t = String(topic || '').toLowerCase().trim();
-    const full = `${s} ${t}`;
+    const q = String(question || '').toLowerCase().trim();
+    const context = `${s} ${t} ${q}`;
 
-    // 1. Specific Keyword Mapping for the Approved List
-    if (full.includes('renaissance') || full.includes('നവോത്ഥാനം')) return "Kerala History / Renaissance";
-    if (full.includes('kerala hist') || full.includes('കേരള ചരിത്രം')) return "Kerala History";
-    if (full.includes('kerala geo') || full.includes('കേരള ഭൂമിശാസ്ത്രം')) return "Kerala Geography";
-    if (full.includes('kerala gk') || full.includes('കേരള സംബന്ധിയായ')) return "Kerala Specific GK";
-    if (full.includes('indian hist') || full.includes('ഇന്ത്യൻ ചരിത്രം')) return "Indian History";
-    if (full.includes('indian geo') || full.includes('ഇന്ത്യൻ ഭൂമിശാസ്ത്രം')) return "Indian Geography";
-    if (full.includes('polity') || full.includes('const') || full.includes('ഭരണഘടന')) return "Indian Polity / Constitution";
-    if (full.includes('economy') || full.includes('സാമ്പത്തിക')) return "Indian Economy";
+    // 1. Core Subject Mapping
+    if (context.includes('renaissance') || context.includes('നവോത്ഥാനം')) return "Kerala History / Renaissance";
+    if (context.includes('kerala history') || context.includes('കേരള ചരിത്രം')) return "Kerala History";
+    if (context.includes('kerala geo') || context.includes('കേരള ഭൂമിശാസ്ത്രം') || context.includes('river') || context.includes('district')) {
+        if (context.includes('kerala')) return "Kerala Geography";
+    }
+    if (context.includes('kerala gk') || context.includes('കേരള സംബന്ധിയായ')) return "Kerala Specific GK";
     
-    if (full.includes('biology') || full.includes('ജീവശാസ്ത്രം') || full.includes('life science')) return "Biology / Life Science";
-    if (full.includes('chemistry') || full.includes('രസതന്ത്രം')) return "Chemistry";
-    if (full.includes('physics') || full.includes('ഭൗതികശാസ്ത്രം')) return "Physics";
-    if (full.includes('gen science') || full.includes('ശാസ്ത്രം') || full.includes('tech')) return "General Science / Science & Tech";
+    if (context.includes('indian history') || context.includes('ഇന്ത്യൻ ചരിത്രം') || context.includes('freedom struggle')) return "Indian History";
+    if (context.includes('indian geo') || context.includes('ഇന്ത്യൻ ഭൂമിശാസ്ത്രം') || context.includes('himalaya') || context.includes('ganga')) return "Indian Geography";
+    if (context.includes('polity') || context.includes('const') || context.includes('ഭരണഘടന') || context.includes('article') || context.includes('panchayat')) return "Indian Polity / Constitution";
+    if (context.includes('economy') || context.includes('സാമ്പത്തിക') || context.includes('gdp') || context.includes('budget')) return "Indian Economy";
     
-    if (full.includes('math') || full.includes('arithmetic') || full.includes('ഗണിതം')) return "Quantitative Aptitude";
-    if (full.includes('reasoning') || full.includes('logic') || full.includes('mental')) return "Reasoning / Mental Ability";
+    if (context.includes('biology') || context.includes('ജീവശാസ്ത്രം') || context.includes('life science') || context.includes('cell') || context.includes('human body')) return "Biology / Life Science";
+    if (context.includes('chemistry') || context.includes('രസതന്ത്രം') || context.includes('element') || context.includes('formula')) return "Chemistry";
+    if (context.includes('physics') || context.includes('ഭൗതികശാസ്ത്രം') || context.includes('motion') || context.includes('energy')) return "Physics";
+    if (context.includes('gen science') || context.includes('ശാസ്ത്രം') || context.includes('tech') || context.includes('space')) return "General Science / Science & Tech";
     
-    if (full.includes('it') || full.includes('computer') || full.includes('cyber')) return "Computer Science / IT / Cyber Laws";
-    if (full.includes('english') || full.includes('ഇംഗ്ലീഷ്')) return "English";
-    if (full.includes('malayalam') || full.includes('മലയാളം')) return "Malayalam";
+    if (context.includes('math') || context.includes('arithmetic') || context.includes('ഗണിതം') || context.includes('percentage') || context.includes('interest')) return "Quantitative Aptitude";
+    if (context.includes('reasoning') || context.includes('logic') || context.includes('mental') || context.includes('coding-decoding')) return "Reasoning / Mental Ability";
     
-    if (full.includes('arts') || full.includes('sports') || full.includes('culture') || full.includes('കായികം')) return "Arts, Culture & Sports";
-    if (full.includes('nursing') || full.includes('health') || full.includes('മെഡിക്കൽ')) return "Nursing Science / Health Care";
-    if (full.includes('electrical') || full.includes('എഞ്ചിനീയറിംഗ്')) return "Electrical Engineering";
-    if (full.includes('psychology') || full.includes('pedagogy') || full.includes('ബോധന')) return "Educational Psychology / Pedagogy";
-    if (full.includes('environment') || full.includes('പരിസ്ഥിതി')) return "Environment";
-    if (full.includes('social science') || full.includes('sociology') || full.includes('സമൂഹ')) return "Social Science / Sociology";
-    if (full.includes('current') || full.includes('ആനുകാലികം')) return "Current Affairs";
+    if (context.includes('it') || context.includes('computer') || context.includes('cyber') || context.includes('internet') || context.includes('software')) return "Computer Science / IT / Cyber Laws";
+    if (context.includes('english') || context.includes('ഇംഗ്ലീഷ്') || context.includes('grammar') || context.includes('synonym')) return "English";
+    if (context.includes('malayalam') || context.includes('മലയാളം') || context.includes('സാഹിത്യം')) return "Malayalam";
+    
+    if (context.includes('arts') || context.includes('sports') || context.includes('culture') || context.includes('കായികം') || context.includes('award') || context.includes('film')) return "Arts, Culture & Sports";
+    if (context.includes('nursing') || context.includes('health') || context.includes('മെഡിക്കൽ') || context.includes('disease')) return "Nursing Science / Health Care";
+    if (context.includes('electrical') || context.includes('എഞ്ചിനീയറിംഗ്')) return "Electrical Engineering";
+    if (context.includes('psychology') || context.includes('pedagogy') || context.includes('ബോധന') || context.includes('teaching')) return "Educational Psychology / Pedagogy";
+    if (context.includes('environment') || context.includes('പരിസ്ഥിതി') || context.includes('pollution') || context.includes('climate')) return "Environment";
+    if (context.includes('social science') || context.includes('sociology') || context.includes('സമൂഹ')) return "Social Science / Sociology";
+    if (context.includes('current') || context.includes('news') || context.includes('ആനുകാലികം')) return "Current Affairs";
 
-    // 2. Fallbacks for Static GK
-    if (full.includes('gk') || full.includes('static')) return "General Knowledge / Static GK";
+    // 2. Static GK Fallback
+    if (context.includes('gk') || context.includes('first in') || context.includes('largest')) return "General Knowledge / Static GK";
     
-    // 3. Blacklist / Unknown catch-all
+    // 3. Blacklist Catch-all (Default to General Knowledge)
     const blacklist = ['other', 'manual check', 'unknown', 'n/a', 'none', '', 'null', 'undefined', 'manual correction required'];
     if (blacklist.includes(s)) {
         return "General Knowledge";
     }
 
-    // Default to Title Case
-    return subject.charAt(0).toUpperCase() + subject.slice(1);
+    return subject; // Return original if it doesn't match a context-fix but isn't blacklisted
 };
 
 /**
@@ -152,7 +154,7 @@ export default async function handler(req: any, res: any) {
                 if (tableName === 'questionbank') {
                     const processedQuestions = data.map(q => {
                         const originalOptions = smartParseOptions(q.options);
-                        if (originalOptions.length === 0) return { ...q, options: [], correctAnswerIndex: 1, subject: normalizeSubject(q.subject, q.topic) };
+                        if (originalOptions.length === 0) return { ...q, options: [], correctAnswerIndex: 1, subject: normalizeSubject(q.subject, q.topic, q.question) };
                         const originalCorrectIdx = Math.max(0, Math.min(parseInt(String(q.correct_answer_index || '1')) - 1, originalOptions.length - 1));
                         const correctText = originalOptions[originalCorrectIdx];
                         const shuffled = shuffleArray(originalOptions);
@@ -162,7 +164,7 @@ export default async function handler(req: any, res: any) {
                             ...q,
                             options: shuffled,
                             correctAnswerIndex: newCorrectIdx || 1,
-                            subject: normalizeSubject(q.subject, q.topic)
+                            subject: normalizeSubject(q.subject, q.topic, q.question)
                         };
                     });
 
@@ -192,7 +194,7 @@ export default async function handler(req: any, res: any) {
                         question: r[2], 
                         options: shuffled, 
                         correctAnswerIndex: newCorrectIdx || 1, 
-                        subject: normalizeSubject(r[5], r[1]), 
+                        subject: normalizeSubject(r[5], r[1], r[2]), 
                         difficulty: r[6]
                     };
                  }).sort(() => 0.5 - Math.random()));

@@ -11,16 +11,6 @@ function getAi() {
     return new GoogleGenAI({ apiKey: key.trim() });
 }
 
-function createNumericHash(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash);
-}
-
 const ensureArray = (raw: any): string[] => {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw.map(String);
@@ -33,57 +23,57 @@ const ensureArray = (raw: any): string[] => {
 };
 
 /**
- * Normalizes subject names to strictly follow the Official Approved List.
+ * Normalizes subject names based on content keywords.
  */
-const normalizeSubjectLocal = (subject: string): string => {
+const normalizeSubjectLocal = (subject: string, topic: string, question: string): string => {
     const s = String(subject || '').toLowerCase().trim();
+    const t = String(topic || '').toLowerCase().trim();
+    const q = String(question || '').toLowerCase().trim();
+    const full = `${s} ${t} ${q}`;
+
+    // Priority mapping based on keyword detection for items labeled 'Other'
+    if (full.includes('math') || full.includes('arithmetic') || full.includes('ഗണിതം')) return "Quantitative Aptitude";
+    if (full.includes('reasoning') || full.includes('logic') || full.includes('mental')) return "Reasoning / Mental Ability";
+    if (full.includes('it') || full.includes('computer') || full.includes('cyber')) return "Computer Science / IT / Cyber Laws";
+    if (full.includes('english') || full.includes('ഇംഗ്ലീഷ്')) return "English";
+    if (full.includes('malayalam') || full.includes('മലയാളം')) return "Malayalam";
+    if (full.includes('polity') || full.includes('const') || full.includes('ഭരണഘടന') || full.includes('article')) return "Indian Polity / Constitution";
+    if (full.includes('renaissance') || full.includes('നവോത്ഥാനം')) return "Kerala History / Renaissance";
+    if (full.includes('current affairs') || full.includes('ആനുകാലികം')) return "Current Affairs";
     
-    // Exact Map (Key: Lowercase Input, Value: Official Approved Name)
+    // Direct mapping table
     const map: Record<string, string> = {
         "arts": "Arts, Culture & Sports",
         "sports": "Arts, Culture & Sports",
-        "culture": "Arts, Culture & Sports",
         "biology": "Biology / Life Science",
         "life science": "Biology / Life Science",
         "chemistry": "Chemistry",
-        "it": "Computer Science / IT / Cyber Laws",
-        "computer": "Computer Science / IT / Cyber Laws",
-        "cyber": "Computer Science / IT / Cyber Laws",
+        "physics": "Physics",
         "current affairs": "Current Affairs",
         "psychology": "Educational Psychology / Pedagogy",
-        "pedagogy": "Educational Psychology / Pedagogy",
         "electrical": "Electrical Engineering",
-        "english": "English",
         "environment": "Environment",
         "gk": "General Knowledge",
-        "general knowledge": "General Knowledge",
         "static gk": "General Knowledge / Static GK",
         "science": "General Science / Science & Tech",
-        "science & tech": "General Science / Science & Tech",
         "economy": "Indian Economy",
         "indian geo": "Indian Geography",
         "indian history": "Indian History",
-        "constitution": "Indian Polity / Constitution",
-        "polity": "Indian Polity / Constitution",
         "kerala geography": "Kerala Geography",
         "kerala history": "Kerala History",
-        "renaissance": "Kerala History / Renaissance",
-        "kerala specific gk": "Kerala Specific GK",
         "malayalam": "Malayalam",
         "nursing": "Nursing Science / Health Care",
-        "health": "Nursing Science / Health Care",
-        "physics": "Physics",
-        "aptitude": "Quantitative Aptitude",
-        "math": "Quantitative Aptitude",
-        "maths": "Quantitative Aptitude",
-        "arithmetic": "Quantitative Aptitude",
-        "reasoning": "Reasoning / Mental Ability",
-        "mental ability": "Reasoning / Mental Ability",
-        "social science": "Social Science / Sociology",
-        "sociology": "Social Science / Sociology"
+        "social science": "Social Science / Sociology"
     };
 
-    return map[s] || subject;
+    for (const key in map) {
+        if (s.includes(key)) return map[key];
+    }
+
+    const blacklist = ['other', 'manual check', 'unknown', 'n/a', 'none', '', 'null', 'undefined'];
+    if (blacklist.includes(s)) return "General Knowledge";
+
+    return subject;
 };
 
 /**
@@ -117,6 +107,7 @@ export async function auditAndCorrectQuestions() {
             1. DO NOT USE "Other", "Manual Check", or "Unknown" as a subject.
             2. Analyze each question text and map it to exactly ONE of these official approved subjects:
                [Arts, Culture & Sports, Biology / Life Science, Chemistry, Computer Science / IT / Cyber Laws, Current Affairs, Educational Psychology / Pedagogy, Electrical Engineering, English, Environment, General Knowledge, General Knowledge / Static GK, General Science / Science & Tech, Indian Economy, Indian Geography, Indian History, Indian Polity / Constitution, Kerala Geography, Kerala History, Kerala History / Renaissance, Kerala Specific GK, Malayalam, Nursing Science / Health Care, Physics, Quantitative Aptitude, Reasoning / Mental Ability, Social Science / Sociology]
+            3. Ensure the question language is appropriate (Malayalam or English).
             
             Strictly follow this JSON format:
             {
@@ -162,7 +153,7 @@ export async function auditAndCorrectQuestions() {
                 question: q.question, 
                 options: ensureArray(q.options),
                 correct_answer_index: parseInt(String(q.correct_answer_index || 1)),
-                subject: normalizeSubjectLocal(q.subject), 
+                subject: normalizeSubjectLocal(q.subject, q.topic, q.question), 
                 difficulty: 'PSC Level', 
                 explanation: q.explanation || ''
             }));
