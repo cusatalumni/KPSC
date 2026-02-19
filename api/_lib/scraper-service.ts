@@ -59,30 +59,15 @@ export async function bulkUploadQuestions(questions: any[]) {
         question: q.question,
         options: ensureArray(q.options),
         correct_answer_index: parseInt(String(q.correct_answer_index || q.correctAnswerIndex || 1)),
-<<<<<<< HEAD
         subject: q.subject || 'General Knowledge',
-=======
-        subject: q.subject || 'General',
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
         difficulty: q.difficulty || 'PSC Level',
         explanation: q.explanation || ''
     }));
 
     await upsertSupabaseData('questionbank', sanitized);
-<<<<<<< HEAD
     for (const q of sanitized) {
         await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
     }
-=======
-    
-    // Mirror to Sheets
-    for (const q of sanitized) {
-        await findAndUpsertRow('QuestionBank', String(q.id), [
-            q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation
-        ]);
-    }
-
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
     return { message: `Successfully uploaded ${sanitized.length} questions.` };
 }
 
@@ -91,17 +76,7 @@ export async function bulkUploadQuestions(questions: any[]) {
  */
 export async function backfillExplanations() {
     if (!supabase) throw new Error("Supabase required.");
-<<<<<<< HEAD
     const { data: missing, error } = await supabase.from('questionbank').select('*').or('explanation.is.null,explanation.eq.""').limit(15);
-=======
-
-    const { data: missing, error } = await supabase
-        .from('questionbank')
-        .select('*')
-        .or('explanation.is.null,explanation.eq.""')
-        .limit(15);
-
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
     if (error) throw error;
     if (!missing || missing.length === 0) return { message: "All questions already have explanations." };
 
@@ -109,7 +84,6 @@ export async function backfillExplanations() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-<<<<<<< HEAD
             contents: `Generate high-quality Kerala PSC explanations (in Malayalam) for these questions. Data: ${JSON.stringify(missing)}`,
             config: { responseMimeType: "application/json" }
         });
@@ -118,26 +92,6 @@ export async function backfillExplanations() {
             const finalData = missing.map(q => ({ ...q, explanation: updates.find((u: any) => u.id == q.id)?.explanation || q.explanation }));
             await upsertSupabaseData('questionbank', finalData);
             for (const q of finalData) await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
-=======
-            contents: `Generate high-quality Kerala PSC explanations (in Malayalam) for these questions. 
-            Keep technical subjects (IT/English) in English.
-            Data: ${JSON.stringify(missing)}
-            Return JSON array of objects: {id, explanation}`,
-            config: { responseMimeType: "application/json" }
-        });
-
-        const updates = JSON.parse(response.text || "[]");
-        if (updates.length > 0) {
-            const finalData = missing.map(q => {
-                const update = updates.find((u: any) => u.id == q.id);
-                return { ...q, explanation: update?.explanation || q.explanation };
-            });
-
-            await upsertSupabaseData('questionbank', finalData);
-            for (const q of finalData) {
-                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
-            }
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
             return { message: `Successfully added explanations to ${finalData.length} questions.` };
         }
     } catch (e: any) { throw e; }
@@ -152,7 +106,6 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
     let targetMappings: { topic: string, subject: string }[] = [];
 
     if (typeof batchSizeOrTopic === 'string') {
-<<<<<<< HEAD
         const { data: mappings } = await supabase.from('syllabus').select('topic, subject, title, id').or(`topic.ilike.%${batchSizeOrTopic}%,title.ilike.%${batchSizeOrTopic}%,id.eq.${batchSizeOrTopic}`).limit(1);
         if (mappings?.[0]) targetMappings = [{ topic: mappings[0].topic || mappings[0].title || batchSizeOrTopic, subject: mappings[0].subject || 'General Knowledge' }];
         else throw new Error(`Area "${batchSizeOrTopic}" not found.`);
@@ -163,45 +116,18 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
         const counts: Record<string, number> = {};
         qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
         targetMappings = sData.map(s => ({ topic: s.topic || s.title, subject: s.subject || 'General Knowledge', count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 })).sort((a, b) => a.count - b.count).slice(0, batchSizeOrTopic as number);
-=======
-        const cleanSearch = batchSizeOrTopic.trim();
-        const { data: mappings } = await supabase
-            .from('syllabus')
-            .select('topic, subject, title, id')
-            .or(`topic.ilike.%${cleanSearch}%,title.ilike.%${cleanSearch}%,id.eq.${cleanSearch}`)
-            .limit(1);
-
-        if (mappings && mappings.length > 0) {
-            const m = mappings[0];
-            targetMappings = [{ topic: m.topic || m.title || cleanSearch, subject: m.subject || 'General' }];
-        } else {
-            throw new Error(`The requested area "${cleanSearch}" is not in Syllabus.`);
-        }
-    } else {
-        const { data: sData } = await supabase.from('syllabus').select('topic, subject, title');
-        if (!sData || sData.length === 0) return { message: "No syllabus found." };
-        const { data: qData } = await supabase.from('questionbank').select('topic');
-        const counts: Record<string, number> = {};
-        qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
-        const gaps = sData.map(s => ({ topic: s.topic || s.title, subject: s.subject || 'General', count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 })).sort((a, b) => a.count - b.count);
-        targetMappings = gaps.slice(0, batchSizeOrTopic as number);
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
     }
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview', 
-<<<<<<< HEAD
             contents: `Generate 5 Kerala PSC MCQs for: ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}.
             
             CRITICAL: Subject field MUST be exactly one from this list:
             [${APPROVED_SUBJECTS.join(', ')}]
             
             JSON format: { "topic": "string", "subject": "string", "question": "string", "options": ["A","B","C","D"], "correctAnswerIndex": 1-4, "explanation": "string" }`,
-=======
-            contents: `Generate 5 PSC MCQs for: ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}. JSON format.`,
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
             config: { responseMimeType: "application/json" }
         });
         const items = JSON.parse(response.text || "[]");
@@ -214,16 +140,8 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
                 difficulty: 'PSC Level', explanation: item.explanation || ''
             }));
             await upsertSupabaseData('questionbank', sbData);
-<<<<<<< HEAD
             for (const q of sbData) await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
             return { message: `Generated ${sbData.length} questions.` };
-=======
-            // SYNC TO SHEETS
-            for (const q of sbData) {
-                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
-            }
-            return { message: `Generated ${sbData.length} questions for "${targetMappings[0].topic}".` };
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
         }
     } catch (e: any) { throw e; }
     return { message: "No questions generated." };

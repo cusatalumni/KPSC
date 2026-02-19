@@ -92,24 +92,15 @@ const normalizeSubjectLocal = (subject: string): string => {
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase required for auditing.");
     
-    // 1. Get current progress
     const { data: settings } = await supabase.from('settings').select('value').eq('key', 'last_audited_id').single();
     const lastId = parseInt(settings?.value || '0');
     
-<<<<<<< HEAD
-=======
-    // 2. Fetch next batch
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
     const { data: questions, error: qErr } = await supabase
         .from('questionbank')
         .select('*')
         .gt('id', lastId)
         .order('id', { ascending: true })
-<<<<<<< HEAD
         .limit(20);
-=======
-        .limit(50);
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
 
     if (qErr) throw qErr;
     if (!questions || questions.length === 0) return { message: "QA Audit complete. All records verified.", completed: true };
@@ -120,7 +111,6 @@ export async function auditAndCorrectQuestions() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-<<<<<<< HEAD
             contents: `You are a Kerala PSC Quality Controller. Audit these questions for accuracy and syllabus mapping.
             
             CRITICAL RULES:
@@ -132,14 +122,6 @@ export async function auditAndCorrectQuestions() {
             {
               "correctedQuestions": [
                 { "id": original_id, "topic": "string", "subject": "Official Subject Name", "question": "string", "options": ["A","B","C","D"], "correct_answer_index": 1-4, "explanation": "string" }
-=======
-            contents: `You are a Kerala PSC Quality Controller. Audit these questions for accuracy, language (Malayalam/English mix), and correct syllabus mapping.
-            
-            Strictly follow this JSON format:
-            {
-              "correctedQuestions": [
-                { "id": original_id, "topic": "string", "subject": "string", "question": "string", "options": ["A","B","C","D"], "correct_answer_index": 1-4, "explanation": "string" }
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
               ]
             }
             
@@ -180,22 +162,13 @@ export async function auditAndCorrectQuestions() {
                 question: q.question, 
                 options: ensureArray(q.options),
                 correct_answer_index: parseInt(String(q.correct_answer_index || 1)),
-<<<<<<< HEAD
                 subject: normalizeSubjectLocal(q.subject), 
-=======
-                subject: q.subject, 
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
                 difficulty: 'PSC Level', 
                 explanation: q.explanation || ''
             }));
             
-            // Upsert to Supabase
             await upsertSupabaseData('questionbank', sanitized);
             
-<<<<<<< HEAD
-=======
-            // Mirror to Sheets
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
             for (const q of sanitized) {
                 await findAndUpsertRow('QuestionBank', String(q.id), [
                     q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, 'PSC Level', q.explanation
@@ -203,10 +176,6 @@ export async function auditAndCorrectQuestions() {
             }
         }
 
-<<<<<<< HEAD
-=======
-        // 3. ALWAYS Update Cursor to move past this batch, even if no changes were made
->>>>>>> 52b1909eddb60d3e9e08afff31573681a09cf25b
         const nextCursorValue = String(batchMaxId);
         await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: nextCursorValue }], 'key');
         await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', nextCursorValue]);
