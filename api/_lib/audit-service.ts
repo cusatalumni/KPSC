@@ -18,7 +18,7 @@ const ensureArray = (raw: any): string[] => {
         const parsed = JSON.parse(raw);
         return Array.isArray(parsed) ? parsed.map(String) : [String(raw)];
     } catch {
-        return String(raw).split('|').map(s => s.trim());
+        return [String(raw)];
     }
 };
 
@@ -38,16 +38,15 @@ const APPROVED_SUBJECTS = [
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase required for auditing.");
     
-    // 1. Fetch only items that need manual classification or are tagged as 'Other'
-    // This targets the specific issue and speeds up processing.
+    // Fetch items that need manual classification, are tagged as 'Other', or are completely blank/null
     const { data: questions, error: qErr } = await supabase
         .from('questionbank')
         .select('*')
         .or('subject.ilike.other,subject.ilike.%manual%,subject.eq.,subject.is.null')
-        .limit(50); // Increased batch size for speed
+        .limit(50);
 
     if (qErr) throw qErr;
-    if (!questions || questions.length === 0) return { message: "No 'Other' subjects found. Classification complete.", completed: true };
+    if (!questions || questions.length === 0) return { message: "No 'Other' or blank subjects found. Classification is up to date.", completed: true };
 
     try {
         const ai = getAi();
@@ -102,10 +101,8 @@ export async function auditAndCorrectQuestions() {
                 };
             });
             
-            // Batch update Supabase
             await upsertSupabaseData('questionbank', finalData);
             
-            // Mirror only changed subjects to Sheets (can be slow, but essential for sync)
             for (const q of finalData) {
                 await findAndUpsertRow('QuestionBank', String(q.id), [
                     q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation
@@ -114,7 +111,7 @@ export async function auditAndCorrectQuestions() {
         }
         
         return { 
-            message: `Fast-audit: Successfully re-classified ${updates.length} items.`, 
+            message: `Successfully re-classified ${updates.length} unmapped questions.`, 
             changesCount: updates.length 
         };
 

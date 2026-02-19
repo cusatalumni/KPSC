@@ -14,7 +14,7 @@ import {
     backfillExplanations,
     bulkUploadQuestions
 } from "./_lib/scraper-service.js";
-import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
+import { auditAndCorrectQuestions } from "./_lib/audit-service.ts";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
 export default async function handler(req: any, res: any) {
@@ -102,26 +102,30 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ message: `Setting updated.` });
             }
 
-            case 'reset-qa-audit': {
-                if (supabase) await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: '0' }], 'key');
-                await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', '0']);
-                return res.status(200).json({ message: 'QA Audit progress reset.' });
-            }
-
             case 'get-audit-report': {
                 if (!supabase) throw new Error("Supabase required.");
-                const { data: qData } = await supabase.from('questionbank').select('topic');
+                const { data: qData } = await supabase.from('questionbank').select('topic, subject');
                 const { data: sData } = await supabase.from('syllabus').select('id, topic, title');
+                
                 const counts: Record<string, number> = {};
-                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
+                let unclassifiedCount = 0;
+                
+                qData?.forEach(q => { 
+                    const t = String(q.topic || '').toLowerCase().trim(); 
+                    if (t) counts[t] = (counts[t] || 0) + 1; 
+                    
+                    const s = String(q.subject || '').toLowerCase().trim();
+                    if (s === 'other' || s.includes('manual') || s === '' || s === 'null') {
+                        unclassifiedCount++;
+                    }
+                });
+
                 const gapReport = (sData || []).map(s => {
                     const topicKey = String(s.topic || s.title).toLowerCase().trim();
                     return { id: s.id, topic: s.topic || s.title, count: counts[topicKey] || 0 };
                 });
-                const syllabusTopics = new Set((sData || []).map(s => String(s.topic || s.title).toLowerCase().trim()));
-                const questionTopics = new Set(Object.keys(counts));
-                const orphanTopics = Array.from(questionTopics).filter(qt => !syllabusTopics.has(qt));
-                return res.status(200).json({ syllabusReport: gapReport, orphanCount: orphanTopics.length, orphanTopics: orphanTopics });
+
+                return { syllabusReport: gapReport, unclassifiedCount };
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });

@@ -39,8 +39,7 @@ type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users
 
 interface AuditReport {
     syllabusReport: { id: string; topic: string; count: number }[];
-    orphanCount: number;
-    orphanTopics: string[];
+    unclassifiedCount: number;
 }
 
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -57,21 +56,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
     const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
     const [settings, setSettings] = useState<any>({});
-    const [bulkQuestions, setBulkQuestions] = useState<any[]>([]);
     
     // Modals
-    const [showSingleModal, setShowSingleModal] = useState(false);
     const [editingExam, setEditingExam] = useState<any | null>(null);
     const [editingBook, setEditingBook] = useState<any | null>(null);
-
-    const [singleQ, setSingleQ] = useState({
-        question: '',
-        options: ['', '', '', ''],
-        correctAnswerIndex: 1,
-        topic: '',
-        subject: '',
-        explanation: ''
-    });
 
     const totalGaps = useMemo(() => auditReport?.syllabusReport.filter(r => r.count === 0).length || 0, [auditReport]);
 
@@ -86,8 +74,14 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             setSubscriptions(subs || []);
             setBooks(bks || []);
             if (s) setSettings(s);
+            
+            // Refresh audit report if in qbank tab
+            if (activeTab === 'qbank') {
+                const report = await adminOp('get-audit-report');
+                setAuditReport(report);
+            }
         } catch (e) { console.error("Admin refresh error:", e); } finally { if (!silent) setLoading(false); }
-    }, [getToken]);
+    }, [getToken, activeTab]);
 
     useEffect(() => { refreshData(); }, [refreshData]);
 
@@ -95,7 +89,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (activeTab === 'syllabus' && selectedExamId) {
             getExamSyllabus(selectedExamId).then(items => setSyllabusItems(items));
         }
-        if (activeTab === 'qbank' && !auditReport) {
+        if (activeTab === 'qbank') {
             adminOp('get-audit-report').then(report => setAuditReport(report)).catch(() => {});
         }
     }, [selectedExamId, activeTab]);
@@ -119,30 +113,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
             
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'upload-questions', 'save-row'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'save-row', 'run-batch-qa', 'run-language-repair', 'run-explanation-repair', 'run-all-gaps'].includes(action)) {
                 await refreshData(true);
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
-    };
-
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const text = event.target?.result as string;
-            const lines = text.split('\n').filter(l => l.trim().length > 0);
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            const parsed = lines.slice(1).map(line => {
-                const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                const obj: any = {};
-                headers.forEach((h, i) => { if (h === 'options') obj[h] = values[i].includes('|') ? values[i].split('|') : [values[i]]; else obj[h] = values[i]; });
-                return obj;
-            });
-            setBulkQuestions(parsed);
-            setStatus(`${parsed.length} questions ready for upload.`);
-        };
-        reader.readAsText(file);
     };
 
     const ToolCard = ({ title, icon: Icon, action, color, desc }: any) => (
@@ -176,7 +150,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {[
                     { id: 'automation', label: 'Automation', icon: BeakerIcon },
-                    { id: 'qbank', label: 'Q-Bank', icon: ClipboardListIcon },
+                    { id: 'qbank', label: 'QA Audit', icon: ShieldCheckIcon },
                     { id: 'exams', label: 'Exams', icon: AcademicCapIcon },
                     { id: 'syllabus', label: 'Syllabus', icon: PlusIcon },
                     { id: 'books', label: 'Books', icon: BookOpenIcon },
@@ -196,10 +170,112 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <ToolCard title="Full DB Sync" icon={ArrowPathIcon} action="rebuild-db" color="bg-red-600" desc="Synchronizes all records from Google Sheets to Supabase production database." />
                         <ToolCard title="PSC Daily Sync" icon={SparklesIcon} action="run-daily-sync" color="bg-indigo-600" desc="Full cycle sync: Jobs, Live Updates, CA, GK and Gap Filler." />
-                        <ToolCard title="Job Notifications" icon={BellIcon} action="run-scraper-notifications" color="bg-emerald-600" desc="Scrapes official PSC site for active job announcements." />
-                        <ToolCard title="PSC Live Updates" icon={RssIcon} action="run-scraper-updates" color="bg-cyan-600" desc="Real-time sync for results, rank lists and exam schedules." />
-                        <ToolCard title="GK Fact Scraper" icon={LightBulbIcon} action="run-gk-scraper" color="bg-amber-500" desc="Generates unique study facts for the daily widget." />
+                        <ToolCard title="Language Repair" icon={LanguageIcon} action="run-language-repair" color="bg-cyan-600" desc="Fixes questions that were accidentally translated to Malayalam instead of English." />
+                        <ToolCard title="AI Explanations" icon={SparklesIcon} action="run-explanation-repair" color="bg-emerald-600" desc="AI generation of missing explanations for questions in the database." />
                         <ToolCard title="Book Store Sync" icon={BookOpenIcon} action="run-book-scraper" color="bg-slate-800" desc="Updates bookstore with top Amazon PSC guides." />
+                        <ToolCard title="GK Fact Scraper" icon={LightBulbIcon} action="run-gk-scraper" color="bg-amber-500" desc="Generates unique study facts for the daily widget." />
+                    </div>
+                )}
+
+                {activeTab === 'qbank' && (
+                    <div className="space-y-8 animate-fade-in">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-orange-50 dark:bg-orange-900/20 p-8 rounded-[2.5rem] border-2 border-orange-100 dark:border-orange-800 shadow-xl flex flex-col justify-between">
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase text-orange-600 tracking-widest mb-2">Unclassified Items</h4>
+                                    <p className="text-5xl font-black text-orange-700 dark:text-orange-300">{auditReport?.unclassifiedCount || 0}</p>
+                                    <p className="text-xs font-bold text-orange-500 mt-2">Questions labeled as 'Other' or 'Manual Check'</p>
+                                </div>
+                                <button onClick={() => handleAction('run-batch-qa')} className="mt-6 w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 transition-all text-[10px] uppercase tracking-widest">Fix All Subjects</button>
+                            </div>
+
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-800 shadow-xl flex flex-col justify-between">
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase text-indigo-600 tracking-widest mb-2">Syllabus Gaps</h4>
+                                    <p className="text-5xl font-black text-indigo-700 dark:text-indigo-300">{totalGaps}</p>
+                                    <p className="text-xs font-bold text-indigo-500 mt-2">Micro-topics with zero questions</p>
+                                </div>
+                                <button onClick={() => handleAction('run-all-gaps')} className="mt-6 w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all text-[10px] uppercase tracking-widest">Auto-Fill Gaps</button>
+                            </div>
+                            
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-8 rounded-[2.5rem] border-2 border-emerald-100 dark:border-emerald-800 shadow-xl flex flex-col justify-between">
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest mb-2">Total Topics</h4>
+                                    <p className="text-5xl font-black text-emerald-700 dark:text-emerald-300">{auditReport?.syllabusReport.length || 0}</p>
+                                    <p className="text-xs font-bold text-emerald-500 mt-2">Verified micro-topics in syllabus</p>
+                                </div>
+                                <button onClick={() => refreshData()} className="mt-6 w-full bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all text-[10px] uppercase tracking-widest">Refresh Report</button>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
+                                    <tr><th className="px-8 py-5">Syllabus Topic</th><th className="px-8 py-5">Question Count</th><th className="px-8 py-5 text-right">Actions</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {auditReport?.syllabusReport.map(report => (
+                                        <tr key={report.id} className="text-sm font-bold">
+                                            <td className="px-8 py-6">{report.topic}</td>
+                                            <td className="px-8 py-6">
+                                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${report.count === 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                                    {report.count} Questions
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button onClick={() => handleAction('run-targeted-gap-fill', { topic: report.topic })} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg">
+                                                    <SparklesIcon className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'syllabus' && (
+                    <div className="space-y-8 animate-fade-in">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <h3 className="text-2xl font-black uppercase tracking-tight">Micro-Topic Manager</h3>
+                            <select 
+                                value={selectedExamId}
+                                onChange={(e) => setSelectedExamId(e.target.value)}
+                                className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border-none font-bold text-sm shadow-inner min-w-[250px]"
+                            >
+                                <option value="">Select an Exam</option>
+                                {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.title.ml}</option>)}
+                            </select>
+                        </div>
+
+                        {selectedExamId ? (
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
+                                        <tr><th className="px-8 py-5">Topic Name</th><th className="px-8 py-5">Subject</th><th className="px-8 py-5 text-right">Actions</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {syllabusItems.map(item => (
+                                            <tr key={item.id} className="text-sm font-bold">
+                                                <td className="px-8 py-6">{item.topic}</td>
+                                                <td className="px-8 py-6"><span className="text-[10px] text-slate-400">{item.subject}</span></td>
+                                                <td className="px-8 py-6 text-right">
+                                                    <button onClick={() => handleAction('delete-row', { sheet: 'Syllabus', id: item.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="py-20 text-center bg-slate-50 dark:bg-slate-900/50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                                <PlusIcon className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500 font-bold">Select an exam above to manage its syllabus items.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
