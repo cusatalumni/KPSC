@@ -11,6 +11,7 @@ import AboutUsPage from './components/pages/AboutUsPage';
 import PrivacyPolicyPage from './components/pages/PrivacyPolicyPage';
 import TermsPage from './components/pages/TermsPage';
 import DisclosurePage from './components/pages/DisclosurePage';
+import DisclaimerPage from './components/pages/DisclaimerPage';
 import BookstorePage from './components/pages/BookstorePage';
 import ExamCalendarPage from './components/pages/ExamCalendarPage';
 import QuizHomePage from './components/pages/QuizHomePage';
@@ -158,6 +159,7 @@ const App: React.FC = () => {
             case 'privacy': return <PrivacyPolicyPage onBack={() => handleNavigate('dashboard')} />;
             case 'terms': return <TermsPage onBack={() => handleNavigate('dashboard')} />;
             case 'disclosure': return <DisclosurePage onBack={() => handleNavigate('dashboard')} />;
+            case 'disclaimer': return <DisclaimerPage onBack={() => handleNavigate('dashboard')} />;
             default: return <Dashboard onNavigateToExam={e => handleNavigate(`exam_details/${e.id}`)} onNavigate={handleNavigate} onStartStudy={(t) => handleNavigate(`study_material/${encodeURIComponent(t)}`)} />;
           }
         })()}

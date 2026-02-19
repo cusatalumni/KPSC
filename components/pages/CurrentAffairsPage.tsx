@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect, useCallback, Fragment, useRef } from 'react';
+import React, { useState, useEffect, useCallback, Fragment, useRef } from 'export const translations = {';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { NewspaperIcon } from '../icons/NewspaperIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
 import AdsenseWidget from '../AdsenseWidget';
+import AiDisclaimer from '../AiDisclaimer';
 
 const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
@@ -60,6 +61,8 @@ const CurrentAffairsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-2xl"><NewspaperIcon className="h-8 w-8 text-teal-600" /></div>
                     <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Latest Current Affairs</h2>
                 </div>
+
+                <AiDisclaimer className="mb-8" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {items.map((item, index) => (

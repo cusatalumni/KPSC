@@ -10,7 +10,9 @@ import {
     scrapeCurrentAffairs,
     generateQuestionsForGaps,
     syncAllFromSheetsToSupabase,
-    repairLanguageMismatches
+    repairLanguageMismatches,
+    backfillExplanations,
+    bulkUploadQuestions
 } from "./_lib/scraper-service.js";
 import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
@@ -26,7 +28,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, id, resultData, sheet, data, topic, setting } = req.body;
+    const { action, id, resultData, sheet, data, topic, setting, questions } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -62,6 +64,8 @@ export default async function handler(req: any, res: any) {
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-language-repair': return res.status(200).json(await repairLanguageMismatches());
+            case 'run-explanation-repair': return res.status(200).json(await backfillExplanations());
+            case 'upload-questions': return res.status(200).json(await bulkUploadQuestions(questions));
             
             case 'run-all-gaps': {
                 if (!supabase) throw new Error("Supabase required.");

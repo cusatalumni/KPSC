@@ -4,6 +4,7 @@ import type { FlashCard } from '../../types';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { SparklesIcon } from '../icons/SparklesIcon';
+import AiDisclaimer from '../AiDisclaimer';
 
 const Card: React.FC<{ card: FlashCard }> = ({ card }) => {
     const [flipped, setFlipped] = useState(false);
@@ -91,6 +92,8 @@ const FlashCardsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     ))}
                 </div>
             </header>
+
+            <AiDisclaimer className="mb-12" />
 
             {filtered.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

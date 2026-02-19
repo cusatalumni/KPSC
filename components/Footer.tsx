@@ -16,6 +16,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     { nameKey: 'footer.privacy', target: 'privacy' },
     { nameKey: 'footer.terms', target: 'terms' },
     { nameKey: 'footer.disclosure', target: 'disclosure' },
+    { nameKey: 'footer.disclaimer', target: 'disclaimer' },
     { nameKey: 'nav.sitemap', target: 'sitemap' },
     { nameKey: 'nav.feedback', target: 'feedback' },
   ];
@@ -48,7 +49,7 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               {footerLinks.map(link => (
                 <li key={link.nameKey}>
                   <button onClick={() => onNavigate(link.target)} className="text-slate-300 hover:text-white text-sm transition">
-                    {t(link.nameKey) || link.nameKey.replace('nav.', '')}
+                    {t(link.nameKey) || link.nameKey.replace('footer.', '')}
                   </button>
                 </li>
               ))}

@@ -114,6 +114,7 @@ export type Page =
   | 'privacy' 
   | 'terms' 
   | 'disclosure'
+  | 'disclaimer'
   | 'exam_calendar'
   | 'quiz_home'
   | 'mock_test_home'

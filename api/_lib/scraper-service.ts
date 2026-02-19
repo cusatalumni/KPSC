@@ -33,87 +33,118 @@ const ensureArray = (raw: any): string[] => {
     }
 };
 
+const APPROVED_SUBJECTS = [
+    "Arts, Culture & Sports", "Biology / Life Science", "Chemistry", "Computer Science / IT / Cyber Laws",
+    "Current Affairs", "Educational Psychology / Pedagogy", "Electrical Engineering", "English",
+    "Environment", "General Knowledge", "General Knowledge / Static GK", "General Science / Science & Tech",
+    "Indian Economy", "Indian Geography", "Indian History", "Indian Polity / Constitution",
+    "Kerala Geography", "Kerala History", "Kerala History / Renaissance", "Kerala Specific GK",
+    "Malayalam", "Nursing Science / Health Care", "Physics", "Quantitative Aptitude",
+    "Reasoning / Mental Ability", "Social Science / Sociology"
+];
+
 /**
- * GENERATION LOGIC: Strictly uses Syllabus Table for Mappings
+ * BULK UPLOAD LOGIC: Handles manual entries
+ */
+export async function bulkUploadQuestions(questions: any[]) {
+    if (!supabase) throw new Error("Supabase required.");
+    if (!questions.length) return { message: "No questions provided." };
+
+    const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
+    let currentId = (maxIdRow?.id || 50000) + 1;
+
+    const sanitized = questions.map(q => ({
+        id: q.id || currentId++,
+        topic: q.topic || 'General',
+        question: q.question,
+        options: ensureArray(q.options),
+        correct_answer_index: parseInt(String(q.correct_answer_index || q.correctAnswerIndex || 1)),
+        subject: q.subject || 'General Knowledge',
+        difficulty: q.difficulty || 'PSC Level',
+        explanation: q.explanation || ''
+    }));
+
+    await upsertSupabaseData('questionbank', sanitized);
+    for (const q of sanitized) {
+        await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
+    }
+    return { message: `Successfully uploaded ${sanitized.length} questions.` };
+}
+
+/**
+ * BACKFILL LOGIC: Repairs questions missing explanations
+ */
+export async function backfillExplanations() {
+    if (!supabase) throw new Error("Supabase required.");
+    const { data: missing, error } = await supabase.from('questionbank').select('*').or('explanation.is.null,explanation.eq.""').limit(15);
+    if (error) throw error;
+    if (!missing || missing.length === 0) return { message: "All questions already have explanations." };
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Generate high-quality Kerala PSC explanations (in Malayalam) for these questions. Data: ${JSON.stringify(missing)}`,
+            config: { responseMimeType: "application/json" }
+        });
+        const updates = JSON.parse(response.text || "[]");
+        if (updates.length > 0) {
+            const finalData = missing.map(q => ({ ...q, explanation: updates.find((u: any) => u.id == q.id)?.explanation || q.explanation }));
+            await upsertSupabaseData('questionbank', finalData);
+            for (const q of finalData) await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
+            return { message: `Successfully added explanations to ${finalData.length} questions.` };
+        }
+    } catch (e: any) { throw e; }
+    return { message: "Explanation repair batch failed." };
+}
+
+/**
+ * GENERATION LOGIC: Mirror to Sheets added
  */
 export async function generateQuestionsForGaps(batchSizeOrTopic: number | string = 5) {
     if (!supabase) throw new Error("Supabase required.");
-    
     let targetMappings: { topic: string, subject: string }[] = [];
 
     if (typeof batchSizeOrTopic === 'string') {
-        const cleanSearch = batchSizeOrTopic.trim();
-        // Robust search: Check topic, title, or id columns
-        const { data: mappings, error } = await supabase
-            .from('syllabus')
-            .select('topic, subject, title, id')
-            .or(`topic.ilike.%${cleanSearch}%,title.ilike.%${cleanSearch}%,id.eq.${cleanSearch}`)
-            .limit(1);
-
-        if (mappings && mappings.length > 0) {
-            const m = mappings[0];
-            // Prefer 'topic' field for the prompt, fallback to 'title'
-            targetMappings = [{ 
-                topic: m.topic || m.title || cleanSearch, 
-                subject: m.subject || 'General' 
-            }];
-        } else {
-            throw new Error(`The requested area "${cleanSearch}" is not currently mapped to any exam in your Syllabus. Please add it to the Syllabus first.`);
-        }
+        const { data: mappings } = await supabase.from('syllabus').select('topic, subject, title, id').or(`topic.ilike.%${batchSizeOrTopic}%,title.ilike.%${batchSizeOrTopic}%,id.eq.${batchSizeOrTopic}`).limit(1);
+        if (mappings?.[0]) targetMappings = [{ topic: mappings[0].topic || mappings[0].title || batchSizeOrTopic, subject: mappings[0].subject || 'General Knowledge' }];
+        else throw new Error(`Area "${batchSizeOrTopic}" not found.`);
     } else {
         const { data: sData } = await supabase.from('syllabus').select('topic, subject, title');
-        if (!sData || sData.length === 0) return { message: "No syllabus mappings found." };
-        
+        if (!sData?.length) return { message: "No syllabus found." };
         const { data: qData } = await supabase.from('questionbank').select('topic');
         const counts: Record<string, number> = {};
         qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
-
-        const gaps = sData
-            .map(s => ({ 
-                topic: s.topic || s.title, 
-                subject: s.subject || 'General', 
-                count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 
-            }))
-            .sort((a, b) => a.count - b.count);
-        
-        targetMappings = gaps.slice(0, batchSizeOrTopic as number);
+        targetMappings = sData.map(s => ({ topic: s.topic || s.title, subject: s.subject || 'General Knowledge', count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 })).sort((a, b) => a.count - b.count).slice(0, batchSizeOrTopic as number);
     }
-
-    if (targetMappings.length === 0) return { message: "No topics identified for generation." };
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview', 
-            contents: `Generate 5 high-quality PSC MCQs in Malayalam for these specific syllabus topics: 
-            ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}.
+            contents: `Generate 5 Kerala PSC MCQs for: ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}.
             
-            Technical subjects (IT, Engineering) should be in English. 
-            Ensure correct_answer_index is accurate (1-4).
+            CRITICAL: Subject field MUST be exactly one from this list:
+            [${APPROVED_SUBJECTS.join(', ')}]
             
-            Return JSON array: {topic, subject, question, options, correctAnswerIndex, explanation}`,
+            JSON format: { "topic": "string", "subject": "string", "question": "string", "options": ["A","B","C","D"], "correctAnswerIndex": 1-4, "explanation": "string" }`,
             config: { responseMimeType: "application/json" }
         });
-
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
             const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
             let currentId = (maxIdRow?.id || 50000) + 1;
             const sbData = items.map((item: any) => ({
-                id: currentId++, 
-                topic: item.topic, 
-                question: item.question, 
-                options: ensureArray(item.options), 
-                correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), 
-                subject: item.subject, 
-                difficulty: 'PSC Level', 
-                explanation: item.explanation || ''
+                id: currentId++, topic: item.topic, question: item.question, options: ensureArray(item.options), 
+                correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), subject: item.subject, 
+                difficulty: 'PSC Level', explanation: item.explanation || ''
             }));
             await upsertSupabaseData('questionbank', sbData);
-            return { message: `Successfully generated ${sbData.length} questions for "${targetMappings[0].topic}".` };
+            for (const q of sbData) await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
+            return { message: `Generated ${sbData.length} questions.` };
         }
     } catch (e: any) { throw e; }
-    return { message: "No questions could be generated at this time." };
+    return { message: "No questions generated." };
 }
 
 export async function runDailyUpdateScrapers() {
@@ -132,7 +163,9 @@ export async function scrapeGkFacts() {
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
-            await upsertSupabaseData('gk', items.map((it: any) => ({ fact: it.fact, category: it.category })));
+            const sbData = items.map((it: any) => ({ id: createNumericHash(it.fact), fact: it.fact, category: it.category }));
+            await upsertSupabaseData('gk', sbData);
+            for (const it of sbData) await findAndUpsertRow('GK', String(it.id), [it.id, it.fact, it.category]);
         }
     } catch (e: any) { throw e; }
 }
@@ -142,12 +175,14 @@ export async function scrapeCurrentAffairs() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: "10 Latest CA items for Kerala Exams. JSON: {title, source, date}",
+            contents: "10 Latest CA items for Kerala. JSON: {title, source, date}",
             config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
-            await upsertSupabaseData('currentaffairs', items.map((it: any) => ({ title: it.title, source: it.source, date: it.date })));
+            const sbData = items.map((it: any) => ({ id: createNumericHash(it.title), title: it.title, source: it.source, date: it.date }));
+            await upsertSupabaseData('currentaffairs', sbData);
+            for (const it of sbData) await findAndUpsertRow('CurrentAffairs', String(it.id), [it.id, it.title, it.source, it.date]);
         }
     } catch (e: any) { throw e; }
 }
@@ -161,7 +196,11 @@ export async function scrapeKpscNotifications() {
             config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
         });
         const items = JSON.parse(response.text || "[]");
-        if (items.length > 0) await upsertSupabaseData('notifications', items);
+        if (items.length > 0) {
+            const sbData = items.map((it: any) => ({ ...it, id: createNumericHash(it.categoryNumber || it.title) }));
+            await upsertSupabaseData('notifications', sbData);
+            for (const it of sbData) await findAndUpsertRow('Notifications', String(it.id), [it.id, it.title, it.categoryNumber, it.lastDate, it.link]);
+        }
     } catch (e: any) { throw e; }
 }
 
@@ -177,6 +216,7 @@ export async function scrapePscLiveUpdates() {
         if (items.length > 0) {
             const sbData = items.map((it: any) => ({ id: createNumericHash(it.url || it.title), title: it.title, url: it.url, section: it.section, published_date: it.published_date }));
             await upsertSupabaseData('liveupdates', sbData);
+            for (const it of sbData) await findAndUpsertRow('LiveUpdates', String(it.id), [it.title, it.url, it.section, it.published_date]);
         }
     } catch (e: any) { throw e; }
 }
@@ -192,11 +232,13 @@ export async function runBookScraper() {
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
             const finalItems = items.map((it: any) => ({ 
+                id: it.asin || createNumericHash(it.title),
                 title: it.title, author: it.author, 
                 imageUrl: it.asin ? `https://images-na.ssl-images-amazon.com/images/P/${it.asin.toUpperCase()}.01._SCLZZZZZZZ_SX400_.jpg` : "", 
                 amazonLink: it.amazonLink + (it.amazonLink.includes('?') ? '&' : '?') + AFFILIATE_TAG 
             }));
             await upsertSupabaseData('bookstore', finalItems);
+            for (const it of finalItems) await findAndUpsertRow('Bookstore', String(it.id), [it.id, it.title, it.author, it.imageUrl, it.amazonLink]);
         }
     } catch (e: any) { throw e; }
 }
@@ -211,11 +253,16 @@ export async function repairLanguageMismatches() {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `Restore these technical questions to professional ENGLISH. Data: ${JSON.stringify(mismatches)}`,
+            contents: `Restore these questions to ENGLISH: ${JSON.stringify(mismatches)}`,
             config: { responseMimeType: "application/json" }
         });
         const repaired = JSON.parse(response.text || "[]");
-        if (repaired.length > 0) await upsertSupabaseData('questionbank', repaired);
+        if (repaired.length > 0) {
+            await upsertSupabaseData('questionbank', repaired);
+            for (const q of repaired) {
+                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
+            }
+        }
     } catch (e: any) { throw e; }
     return { message: "Language repair batch finished." };
 }

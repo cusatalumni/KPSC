@@ -49,7 +49,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [books, setBooks] = useState<Book[]>([]);
     const [dbStatus, setDbStatus] = useState({sheets: false, supabase: false});
     const [status, setStatus] = useState<string | null>(null);
-    const [auditInfo, setAuditInfo] = useState<{ nextId?: number, message?: string } | null>(null);
     const [isError, setIsError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -57,6 +56,18 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [syllabusItems, setSyllabusItems] = useState<PracticeTest[]>([]);
     const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
     const [settings, setSettings] = useState<any>({});
+    const [bulkQuestions, setBulkQuestions] = useState<any[]>([]);
+    
+    // Form for single question
+    const [showSingleModal, setShowSingleModal] = useState(false);
+    const [singleQ, setSingleQ] = useState({
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswerIndex: 1,
+        topic: '',
+        subject: '',
+        explanation: ''
+    });
 
     const totalGaps = useMemo(() => auditReport?.syllabusReport.filter(r => r.count === 0).length || 0, [auditReport]);
 
@@ -99,29 +110,65 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleAction = async (action: string, payload: any = {}) => {
         setStatus("Processing operation..."); 
         setIsError(false);
-        if (action === 'run-batch-qa' || action === 'reset-qa-audit' || action === 'run-language-repair') setAuditInfo(null);
         
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
             
-            if (action === 'run-batch-qa' && r.nextId !== undefined) {
-                setAuditInfo({ nextId: r.nextId, message: r.message });
-            }
-
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair'].includes(action)) {
+            // Force refresh settings and audit report after critical actions
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair', 'run-explanation-repair', 'upload-questions', 'run-batch-qa', 'reset-qa-audit'].includes(action)) {
                 await refreshData(true);
             }
             
-            if (action === 'run-targeted-gap-fill' || action === 'run-all-gaps' || action === 'run-batch-qa') {
+            if (['run-targeted-gap-fill', 'run-all-gaps', 'run-batch-qa', 'run-explanation-repair', 'upload-questions', 'reset-qa-audit'].includes(action)) {
                 setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
     };
 
-    const handleToggleSetting = async (key: string, currentVal: any) => {
-        const newVal = (String(currentVal) === 'true') ? 'false' : 'true';
-        await handleAction('update-setting', { setting: { key, value: newVal } });
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target?.result as string;
+            const lines = text.split('\n').filter(l => l.trim().length > 0);
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            
+            const parsed = lines.slice(1).map(line => {
+                const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                const obj: any = {};
+                headers.forEach((h, i) => {
+                    if (h === 'options') {
+                        obj[h] = values[i].includes('|') ? values[i].split('|') : [values[i]];
+                    } else {
+                        obj[h] = values[i];
+                    }
+                });
+                return obj;
+            });
+            
+            setBulkQuestions(parsed);
+            setStatus(`${parsed.length} questions ready for upload.`);
+        };
+        reader.readAsText(file);
+    };
+
+    const submitBulk = async () => {
+        if (!bulkQuestions.length) return;
+        await handleAction('upload-questions', { questions: bulkQuestions });
+        setBulkQuestions([]);
+    };
+
+    const submitSingle = async () => {
+        if (!singleQ.question || !singleQ.topic) {
+            alert("Question and Topic are required.");
+            return;
+        }
+        await handleAction('upload-questions', { questions: [singleQ] });
+        setShowSingleModal(false);
+        setSingleQ({ question: '', options: ['', '', '', ''], correctAnswerIndex: 1, topic: '', subject: '', explanation: '' });
     };
 
     const ToolCard = ({ title, icon: Icon, action, color, desc }: any) => (
@@ -187,8 +234,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 {activeTab === 'qbank' && (
                     <div className="space-y-16">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative lg:col-span-2">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
                                         <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
@@ -201,7 +248,6 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                 </div>
 
-                                {/* TOTAL GAPS HERO STAT */}
                                 <div className={`mb-8 p-6 rounded-[2rem] flex items-center justify-between border-2 transition-all duration-700 ${totalGaps > 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50'}`}>
                                     <div className="flex items-center space-x-4">
                                         <div className={`p-4 rounded-2xl ${totalGaps > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white shadow-lg`}>
@@ -241,48 +287,144 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to identify empty mapped topics from your Syllabus table.</p>}
                             </div>
                             
-                            <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl">
-                                <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
-                                <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
-                                <p className="text-indigo-100 text-xs font-bold mb-4 leading-relaxed">AI realigns questions to provided syllabus mappings and fixes answers automatically.</p>
-                                
-                                {/* ORPHAN COUNT DISPLAY */}
-                                <div className={`mb-6 p-5 rounded-2xl border flex items-center justify-between animate-fade-in ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
-                                    <div>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-indigo-200">Orphan Topics</p>
-                                        <p className={`text-sm font-black ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'text-orange-300 animate-pulse' : 'text-emerald-300'}`}>
-                                            {auditReport ? `${auditReport.orphanCount} detected` : 'Report Pending...'}
-                                        </p>
+                            <div className="space-y-6 lg:col-span-2">
+                                <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl h-1/2">
+                                    <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
+                                    <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
+                                    
+                                    <div className="flex items-center justify-between gap-4 mb-4">
+                                        <p className="text-indigo-100 text-xs font-bold leading-relaxed">AI realigns questions to syllabus and fixes answers automatically.</p>
+                                        <div className={`p-4 rounded-2xl border flex items-center justify-between whitespace-nowrap ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
+                                            <div>
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-indigo-200">Orphans</p>
+                                                <p className={`text-xs font-black ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'text-orange-300 animate-pulse' : 'text-emerald-300'}`}>
+                                                    {auditReport ? `${auditReport.orphanCount} detected` : '...'}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className={`p-2 rounded-lg ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-600' : 'bg-emerald-600'}`}>
-                                        <ShieldCheckIcon className="h-4 w-4 text-white" />
+                                    
+                                    <div className="mb-4 bg-white/10 p-3 rounded-xl border border-white/20 animate-fade-in flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-indigo-200">Current Progress</p>
+                                            <p className="text-sm font-black text-emerald-300">Verified up to ID: {settings?.last_audited_id || '0'}</p>
+                                        </div>
+                                        <div className="p-2 bg-white/10 rounded-lg">
+                                            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex space-x-3 relative z-10">
+                                        <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all flex-1">Start Audit Batch</button>
+                                        <button onClick={() => { if(confirm("Are you sure? This will restart the audit from the first question.")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all px-6">Reset</button>
                                     </div>
                                 </div>
 
-                                {auditInfo?.nextId && (
-                                    <div className="mb-6 bg-white/10 p-4 rounded-2xl border border-white/20 animate-fade-in">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1">Audit Cursor</p>
-                                        <p className="text-sm font-black text-emerald-300">Resuming from ID: {auditInfo.nextId}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-1/2">
+                                    <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[6px] border-rose-600">
+                                        <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-24 w-24" /></div>
+                                        <h3 className="text-base font-black uppercase mb-2">Language Repair</h3>
+                                        <p className="text-slate-400 text-[10px] font-bold mb-4 leading-relaxed">Fix technical questions in Malayalam.</p>
+                                        <button onClick={() => handleAction('run-language-repair')} className="bg-rose-600 text-white font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Restore English</button>
                                     </div>
-                                )}
 
-                                <div className="flex flex-col space-y-3 relative z-10">
-                                    <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full">Start Sequential Audit</button>
-                                    <button onClick={() => { if(confirm("Are you sure?")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all w-full">Reset Progress</button>
+                                    <div className="bg-amber-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[6px] border-amber-900">
+                                        <div className="absolute -right-4 -bottom-4 opacity-10"><PencilSquareIcon className="h-24 w-24" /></div>
+                                        <h3 className="text-base font-black uppercase mb-2">AI Note Repair</h3>
+                                        <p className="text-amber-100 text-[10px] font-bold mb-4 leading-relaxed">Fill missing descriptions for old questions.</p>
+                                        <button onClick={() => handleAction('run-explanation-repair')} className="bg-white text-amber-600 font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Backfill Notes</button>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[10px] border-rose-600">
-                                <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-32 w-32" /></div>
-                                <h3 className="text-xl font-black uppercase mb-4 tracking-tight">Language Repair</h3>
-                                <p className="text-slate-400 text-xs font-bold mb-6 leading-relaxed">Forces technical subjects (Engineering, IT, English) back into English format to ensure professional accuracy.</p>
-                                <button 
-                                    onClick={() => handleAction('run-language-repair')} 
-                                    className="bg-rose-600 text-white font-black py-5 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all w-full flex items-center justify-center space-x-2"
-                                >
-                                    <ArrowPathIcon className="h-4 w-4" />
-                                    <span>Restore Technical Terms</span>
-                                </button>
+                        {/* DATA IMPORT SECTION */}
+                        <div className="bg-slate-50 dark:bg-slate-900 p-10 rounded-[3rem] border-2 border-slate-200 dark:border-slate-800">
+                             <div className="flex flex-col md:row items-center justify-between mb-10 gap-6">
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Manual Question Management</h3>
+                                    <p className="text-slate-500 font-bold text-sm">Add individual questions or bulk import from CSV files.</p>
+                                </div>
+                                <div className="flex space-x-3">
+                                    <button onClick={() => setShowSingleModal(true)} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 transition-all flex items-center space-x-2">
+                                        <PlusIcon className="h-5 w-5" />
+                                        <span>Single Entry</span>
+                                    </button>
+                                    <div className="relative">
+                                        <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" id="csv-upload" />
+                                        <label htmlFor="csv-upload" className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-slate-50 transition-all flex items-center space-x-2 cursor-pointer">
+                                            <CloudArrowUpIcon className="h-5 w-5" />
+                                            <span>Bulk CSV</span>
+                                        </label>
+                                    </div>
+                                </div>
+                             </div>
+
+                             {bulkQuestions.length > 0 && (
+                                 <div className="bg-emerald-50 dark:bg-emerald-950/20 p-8 rounded-[2rem] border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between animate-fade-in">
+                                     <div className="flex items-center space-x-4">
+                                         <div className="p-4 bg-emerald-600 text-white rounded-2xl shadow-lg"><ClipboardListIcon className="h-6 w-6" /></div>
+                                         <div>
+                                             <h4 className="text-lg font-black text-emerald-900 dark:text-emerald-100 uppercase">Ready to Import</h4>
+                                             <p className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">{bulkQuestions.length} valid questions detected in CSV.</p>
+                                         </div>
+                                     </div>
+                                     <div className="flex space-x-3">
+                                         <button onClick={submitBulk} className="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-emerald-700 transition-all">Commit to Database</button>
+                                         <button onClick={() => setBulkQuestions([])} className="bg-white text-slate-400 px-6 py-4 rounded-2xl font-black text-xs uppercase hover:text-red-500 transition-all">Cancel</button>
+                                     </div>
+                                 </div>
+                             )}
+                        </div>
+                    </div>
+                )}
+
+                {/* SINGLE QUESTION MODAL */}
+                {showSingleModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-2xl font-black uppercase tracking-tight">Manual Question Entry</h3>
+                                <button onClick={() => setShowSingleModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><XMarkIcon className="h-6 w-6" /></button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Subject</label>
+                                        <input type="text" value={singleQ.subject} onChange={e=>setSingleQ({...singleQ, subject: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="e.g. History" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Topic (Required)</label>
+                                        <input type="text" value={singleQ.topic} onChange={e=>setSingleQ({...singleQ, topic: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="e.g. Kerala History" />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Question Text</label>
+                                    <textarea value={singleQ.question} onChange={e=>setSingleQ({...singleQ, question: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold min-h-[100px]" placeholder="Enter full question..." />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Options & Correct Answer</label>
+                                    {singleQ.options.map((opt, i) => (
+                                        <div key={i} className="flex items-center space-x-3">
+                                            <button onClick={()=>setSingleQ({...singleQ, correctAnswerIndex: i+1})} className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${singleQ.correctAnswerIndex === i+1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-indigo-50'}`}>{i+1}</button>
+                                            <input type="text" value={opt} onChange={e => {
+                                                const newOpts = [...singleQ.options];
+                                                newOpts[i] = e.target.value;
+                                                setSingleQ({...singleQ, options: newOpts});
+                                            }} className="flex-1 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder={`Option ${i+1}`} />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Explanation (AI-Repairable)</label>
+                                    <textarea value={singleQ.explanation} onChange={e=>setSingleQ({...singleQ, explanation: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="Optional explanation..." />
+                                </div>
+
+                                <button onClick={submitSingle} className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition-all uppercase tracking-widest text-xs">Save Question</button>
                             </div>
                         </div>
                     </div>

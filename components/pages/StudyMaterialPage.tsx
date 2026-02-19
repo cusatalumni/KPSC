@@ -8,6 +8,7 @@ import AdsenseWidget from '../AdsenseWidget';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import { BookOpenIcon } from '../icons/BookOpenIcon';
 import { ArrowPathIcon } from '../icons/ArrowPathIcon';
+import AiDisclaimer from '../AiDisclaimer';
 
 interface PageProps {
   topic: string;
@@ -30,20 +31,13 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
         
         setError(null);
         try {
-            // Updated API call to support optional force refresh for expanding content
             const res = await fetch('/api/study-material', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic: activeTopic, forceRefresh }),
             });
             const data = await res.json();
-            
-            if (forceRefresh) {
-                // If expanding, we can either append or replace. Replacing with fresh, deeper content is usually better.
-                setContent(data.notes);
-            } else {
-                setContent(data.notes);
-            }
+            setContent(data.notes);
         } catch (err) {
             setError(t('error.fetchData'));
         } finally {
@@ -116,7 +110,7 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
                     <div className="lg:col-span-3">
-                        <article className="bg-white dark:bg-slate-900 p-8 md:p-16 rounded-[3.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 relative overflow-hidden">
+                        <article className="bg-white dark:bg-slate-900 p-8 md:p-16 rounded-[3.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 relative overflow-hidden mb-10">
                             <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-indigo-500/5 rounded-full blur-[100px] -mr-64 -mt-64"></div>
                             
                             {loading ? (
@@ -131,10 +125,12 @@ const StudyMaterialPage: React.FC<PageProps> = ({ topic, onBack }) => {
                             ) : (
                                 <div className="relative z-10">
                                     <div 
-                                        className="prose prose-slate dark:prose-invert max-w-none text-xl leading-[1.8] text-slate-700 dark:text-slate-300"
+                                        className="prose prose-slate dark:prose-invert max-w-none text-xl leading-[1.8] text-slate-700 dark:text-slate-300 mb-12"
                                         dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
                                     >
                                     </div>
+
+                                    <AiDisclaimer className="mb-12" />
                                     
                                     <div className="mt-16 pt-10 border-t-4 border-slate-50 dark:border-slate-800 flex flex-col items-center">
                                          <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em] mb-6">ഈ വിഷയം കൂടുതൽ പഠിക്കണോ?</p>

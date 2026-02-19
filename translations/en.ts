@@ -4,6 +4,9 @@ export const translations = {
     title: "Kerala PSC Guru",
     subtitle: "Your AI-Powered Success Guide"
   },
+  common: {
+    aiDisclaimer: "AI can make mistakes. We scrutiny content manually, but daily updates might have errors. Please verify with official PSC notifications."
+  },
   login: "Login",
   welcome: "Welcome",
   myAccount: "My Account",
@@ -47,7 +50,8 @@ export const translations = {
     examCalendar: "Exam Calendar",
     sitemap: "Sitemap",
     adminPanel: "Admin Panel",
-    feedback: "Feedback"
+    feedback: "Feedback",
+    disclaimer: "AI Disclaimer"
   },
   flashCards: {
     title: "Flash Cards",
@@ -152,7 +156,8 @@ export const translations = {
     about: "About Us",
     privacy: "Privacy Policy",
     terms: "Terms & Conditions",
-    disclosure: "Affiliate Disclosure"
+    disclosure: "Affiliate Disclosure",
+    disclaimer: "AI Disclaimer"
   },
   examPage: {
     recommendedBooks: "Recommended Books",

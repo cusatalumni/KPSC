@@ -10,6 +10,7 @@ import type { QuizQuestion, UserAnswers } from '../types';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XCircleIcon } from './icons/XCircleIcon';
 import { SparklesIcon } from './icons/SparklesIcon';
+import AiDisclaimer from './AiDisclaimer';
 
 interface TestResultPageProps {
   score: number;
@@ -75,15 +76,15 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
 
       {showReview && questions && (
           <div className="w-full space-y-6 animate-fade-in-up">
-              <h2 className="text-2xl font-black text-slate-800 dark:text-white border-b dark:border-slate-800 pb-4">Detailed Review</h2>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b dark:border-slate-800 pb-4">
+                  <h2 className="text-2xl font-black text-slate-800 dark:text-white">Detailed Review</h2>
+                  <AiDisclaimer variant="minimal" />
+              </div>
               <div className="space-y-4">
                   {questions.map((q, idx) => {
                       const userAns = answers[idx];
-                      
-                      // NORMALIZE INDEX: handle 0-3 and 1-4
                       let correctIdx = Number(q.correctAnswerIndex);
                       if (correctIdx === 0) correctIdx = 1;
-
                       const isCorrect = userAns !== undefined && (Number(userAns) + 1) === correctIdx;
                       const isSkipped = userAns === undefined;
 
@@ -97,11 +98,9 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
                                           {q.options.map((opt, optIdx) => {
                                               const isThisCorrect = (Number(optIdx) + 1) === correctIdx;
                                               const isThisUserSelection = userAns !== undefined && Number(optIdx) === Number(userAns);
-                                              
                                               let bClass = "border-slate-100 dark:border-slate-800";
                                               if (isThisCorrect) bClass = "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 font-bold";
                                               else if (isThisUserSelection) bClass = "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 font-bold";
-
                                               return (
                                                   <div key={optIdx} className={`p-3 rounded-xl border-2 flex items-center justify-between ${bClass}`}>
                                                       <span className="text-sm leading-tight">{opt}</span>
@@ -115,7 +114,7 @@ const TestResultPage: React.FC<TestResultPageProps> = ({ score, total, stats, qu
                                           <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800 flex items-start space-x-3">
                                               <SparklesIcon className="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" />
                                               <div>
-                                                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Explanation</p>
+                                                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">AI Explanation</p>
                                                   <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">{q.explanation}</p>
                                               </div>
                                           </div>

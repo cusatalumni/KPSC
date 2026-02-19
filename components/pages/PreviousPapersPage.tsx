@@ -10,6 +10,7 @@ import AdsenseWidget from '../AdsenseWidget';
 import { ArrowPathIcon } from '../icons/ArrowPathIcon';
 import { SparklesIcon } from '../icons/SparklesIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
+import AiDisclaimer from '../AiDisclaimer';
 
 const CategoryBadge: React.FC<{ category?: string }> = ({ category }) => {
     const styleMap: Record<string, string> = {
@@ -127,6 +128,8 @@ const PreviousPapersPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 </div>
                                 {searched && <button onClick={() => {setSearched(false); setQuery(''); setSources([]);}} className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-5 py-2.5 rounded-xl hover:bg-indigo-100 uppercase tracking-widest transition-all">Reset Search</button>}
                             </div>
+
+                            {searched && <AiDisclaimer className="mb-10" />}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {paperList.map((item, index) => (

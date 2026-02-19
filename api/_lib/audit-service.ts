@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { findAndUpsertRow } from './sheets-service.js';
 import { supabase, upsertSupabaseData } from './supabase-service.js';
 
@@ -33,8 +33,61 @@ const ensureArray = (raw: any): string[] => {
 };
 
 /**
+ * Normalizes subject names to strictly follow the Official Approved List.
+ */
+const normalizeSubjectLocal = (subject: string): string => {
+    const s = String(subject || '').toLowerCase().trim();
+    
+    // Exact Map (Key: Lowercase Input, Value: Official Approved Name)
+    const map: Record<string, string> = {
+        "arts": "Arts, Culture & Sports",
+        "sports": "Arts, Culture & Sports",
+        "culture": "Arts, Culture & Sports",
+        "biology": "Biology / Life Science",
+        "life science": "Biology / Life Science",
+        "chemistry": "Chemistry",
+        "it": "Computer Science / IT / Cyber Laws",
+        "computer": "Computer Science / IT / Cyber Laws",
+        "cyber": "Computer Science / IT / Cyber Laws",
+        "current affairs": "Current Affairs",
+        "psychology": "Educational Psychology / Pedagogy",
+        "pedagogy": "Educational Psychology / Pedagogy",
+        "electrical": "Electrical Engineering",
+        "english": "English",
+        "environment": "Environment",
+        "gk": "General Knowledge",
+        "general knowledge": "General Knowledge",
+        "static gk": "General Knowledge / Static GK",
+        "science": "General Science / Science & Tech",
+        "science & tech": "General Science / Science & Tech",
+        "economy": "Indian Economy",
+        "indian geo": "Indian Geography",
+        "indian history": "Indian History",
+        "constitution": "Indian Polity / Constitution",
+        "polity": "Indian Polity / Constitution",
+        "kerala geography": "Kerala Geography",
+        "kerala history": "Kerala History",
+        "renaissance": "Kerala History / Renaissance",
+        "kerala specific gk": "Kerala Specific GK",
+        "malayalam": "Malayalam",
+        "nursing": "Nursing Science / Health Care",
+        "health": "Nursing Science / Health Care",
+        "physics": "Physics",
+        "aptitude": "Quantitative Aptitude",
+        "math": "Quantitative Aptitude",
+        "maths": "Quantitative Aptitude",
+        "arithmetic": "Quantitative Aptitude",
+        "reasoning": "Reasoning / Mental Ability",
+        "mental ability": "Reasoning / Mental Ability",
+        "social science": "Social Science / Sociology",
+        "sociology": "Social Science / Sociology"
+    };
+
+    return map[s] || subject;
+};
+
+/**
  * CORE AUDIT LOGIC: Realignment and Answer Verification
- * Ensures NO ORPHAN TOPICS remain after the batch is processed.
  */
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase required for auditing.");
@@ -42,95 +95,99 @@ export async function auditAndCorrectQuestions() {
     const { data: settings } = await supabase.from('settings').select('value').eq('key', 'last_audited_id').single();
     const lastId = parseInt(settings?.value || '0');
     
-    // 1. Fetch data for context
-    const [qRes, sRes, eRes] = await Promise.all([
-        supabase.from('questionbank').select('*').gt('id', lastId).order('id', { ascending: true }).limit(25),
-        supabase.from('syllabus').select('topic, subject, exam_id'),
-        supabase.from('exams').select('id, title_en')
-    ]);
+    const { data: questions, error: qErr } = await supabase
+        .from('questionbank')
+        .select('*')
+        .gt('id', lastId)
+        .order('id', { ascending: true })
+        .limit(20);
 
-    const questions = qRes.data;
+    if (qErr) throw qErr;
     if (!questions || questions.length === 0) return { message: "QA Audit complete. All records verified.", completed: true };
 
-    const existingSyllabus = sRes.data || [];
-    const validExams = eRes.data || [];
+    const batchMaxId = Math.max(...questions.map(q => q.id));
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `As a Kerala PSC Data Integrity Expert, audit these questions.
+            contents: `You are a Kerala PSC Quality Controller. Audit these questions for accuracy and syllabus mapping.
             
-            REFERENCE:
-            - Valid Exams: ${JSON.stringify(validExams)}
-            - Existing Syllabus Mappings: ${JSON.stringify(existingSyllabus.slice(0, 100))}
-
-            STRICT AUDIT RULES:
-            1. VERIFY ANSWER: Ensure 'correct_answer_index' (1-4) is 100% accurate.
-            2. SYLLABUS ALIGNMENT: 
-               - Every question must belong to a 'topic'.
-               - If the topic is not in 'Existing Syllabus Mappings', suggest a NEW mapping in 'newSyllabusItems'.
-               - DO NOT add 'exam_id' to the question object itself. Only use it in 'newSyllabusItems'.
-            3. LANGUAGE: English for IT/Technical/Nursing, Malayalam for general.
-            4. EXPLANATION: Add helpful PSC-style explanation.
+            CRITICAL RULES:
+            1. DO NOT USE "Other", "Manual Check", or "Unknown" as a subject.
+            2. Analyze each question text and map it to exactly ONE of these official approved subjects:
+               [Arts, Culture & Sports, Biology / Life Science, Chemistry, Computer Science / IT / Cyber Laws, Current Affairs, Educational Psychology / Pedagogy, Electrical Engineering, English, Environment, General Knowledge, General Knowledge / Static GK, General Science / Science & Tech, Indian Economy, Indian Geography, Indian History, Indian Polity / Constitution, Kerala Geography, Kerala History, Kerala History / Renaissance, Kerala Specific GK, Malayalam, Nursing Science / Health Care, Physics, Quantitative Aptitude, Reasoning / Mental Ability, Social Science / Sociology]
             
-            Data to audit: ${JSON.stringify(questions)}
-            
-            Return JSON:
+            Strictly follow this JSON format:
             {
-                "correctedQuestions": [
-                  {"id": number, "topic": "string", "question": "string", "options": [], "correct_answer_index": number, "subject": "string", "difficulty": "string", "explanation": "string"}
-                ],
-                "newSyllabusItems": [
-                  {"exam_id": "string", "subject": "string", "topic": "string", "title": "string"}
-                ]
-            }`,
-            config: { responseMimeType: "application/json" }
+              "correctedQuestions": [
+                { "id": original_id, "topic": "string", "subject": "Official Subject Name", "question": "string", "options": ["A","B","C","D"], "correct_answer_index": 1-4, "explanation": "string" }
+              ]
+            }
+            
+            Data to Audit: ${JSON.stringify(questions)}`,
+            config: { 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        correctedQuestions: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    id: { type: Type.INTEGER },
+                                    topic: { type: Type.STRING },
+                                    subject: { type: Type.STRING },
+                                    question: { type: Type.STRING },
+                                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    correct_answer_index: { type: Type.INTEGER },
+                                    explanation: { type: Type.STRING }
+                                },
+                                required: ["id", "topic", "subject", "question", "options", "correct_answer_index", "explanation"]
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         const result = JSON.parse(response.text || "{}");
-        const { correctedQuestions = [], newSyllabusItems = [] } = result;
+        const corrected = result.correctedQuestions || [];
 
-        // 1. Sync new syllabus mappings first
-        if (newSyllabusItems.length > 0) {
-            const syllabusToInsert = newSyllabusItems.map((item: any) => ({
-                id: `auto_${createNumericHash(item.topic)}`,
-                exam_id: item.exam_id,
-                subject: item.subject,
-                topic: item.topic,
-                title: item.title || item.topic,
-                questions: 0,
-                duration: 20
-            }));
-            await upsertSupabaseData('syllabus', syllabusToInsert);
-            for (const s of syllabusToInsert) {
-                await findAndUpsertRow('Syllabus', s.id, [s.id, s.exam_id, s.title, s.questions, s.duration, s.subject, s.topic]);
-            }
-        }
-
-        // 2. Save corrected questions - ONLY valid columns
-        if (correctedQuestions.length > 0) {
-            const sanitized = correctedQuestions.map((q: any) => ({
-                id: q.id,
-                topic: q.topic,
-                question: q.question,
+        if (corrected.length > 0) {
+            const sanitized = corrected.map((q: any) => ({
+                id: q.id, 
+                topic: q.topic, 
+                question: q.question, 
                 options: ensureArray(q.options),
                 correct_answer_index: parseInt(String(q.correct_answer_index || 1)),
-                subject: q.subject,
-                difficulty: q.difficulty || 'PSC Level',
+                subject: normalizeSubjectLocal(q.subject), 
+                difficulty: 'PSC Level', 
                 explanation: q.explanation || ''
             }));
             
             await upsertSupabaseData('questionbank', sanitized);
             
-            const maxIdBatch = Math.max(...sanitized.map((q:any) => q.id));
-            await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: String(maxIdBatch) }], 'key');
-            
-            return { 
-                message: `Verified ${sanitized.length} questions. Added ${newSyllabusItems.length} new mappings. Cursor: ${maxIdBatch}`, 
-                nextId: maxIdBatch + 1 
-            };
+            for (const q of sanitized) {
+                await findAndUpsertRow('QuestionBank', String(q.id), [
+                    q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, 'PSC Level', q.explanation
+                ]);
+            }
         }
-    } catch (e: any) { throw e; }
-    return { message: "Audit batch processed." };
+
+        const nextCursorValue = String(batchMaxId);
+        await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: nextCursorValue }], 'key');
+        await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', nextCursorValue]);
+        
+        return { 
+            message: `Batch processed. Verified up to ID: ${batchMaxId}.`, 
+            nextId: batchMaxId,
+            changesCount: corrected.length 
+        };
+
+    } catch (e: any) { 
+        console.error("Audit Logic Error:", e.message);
+        throw e; 
+    }
 }

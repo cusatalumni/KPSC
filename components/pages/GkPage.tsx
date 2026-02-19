@@ -4,6 +4,7 @@ import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { useTranslation } from '../../contexts/LanguageContext';
 import AdsenseWidget from '../AdsenseWidget';
+import AiDisclaimer from '../AiDisclaimer';
 
 const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { t } = useTranslation();
@@ -60,6 +61,8 @@ const GkPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-2xl"><LightBulbIcon className="h-8 w-8 text-amber-500" /></div>
                     <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">GK Fact Bank</h2>
                 </div>
+
+                <AiDisclaimer className="mb-8" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {items.map((item, index) => (
