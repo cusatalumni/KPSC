@@ -44,14 +44,29 @@ export default async function handler(req: any, res: any) {
     try {
         switch (action) {
             case 'test-connection': {
-                let sheetsOk = false;
-                let supabaseOk = !!supabase;
-                try { await readSheetData('Settings!A1:A1'); sheetsOk = true; } catch (e) { sheetsOk = false; }
-                if (supabaseOk) {
-                    try { const { error } = await supabase!.from('settings').select('key').limit(1); if (error) supabaseOk = false; }
-                    catch (e) { supabaseOk = false; }
+                let sheetsStatus: any = { ok: false, error: null };
+                let supabaseStatus: any = { ok: false, error: null };
+                
+                try { 
+                    await readSheetData('Settings!A1:A1'); 
+                    sheetsStatus.ok = true; 
+                } catch (e: any) { 
+                    sheetsStatus.error = e.message || "Failed to access spreadsheet";
                 }
-                return res.status(200).json({ status: { sheets: sheetsOk, supabase: supabaseOk } });
+
+                if (supabase) {
+                    try { 
+                        const { error } = await supabase.from('settings').select('key').limit(1); 
+                        if (error) throw error;
+                        supabaseStatus.ok = true; 
+                    } catch (e: any) { 
+                        supabaseStatus.error = e.message || "Failed to query Supabase table";
+                    }
+                } else {
+                    supabaseStatus.error = "SUPABASE_URL or KEY is missing from server env";
+                }
+
+                return res.status(200).json({ status: { sheets: sheetsStatus.ok, supabase: supabaseStatus.ok, sheetsErr: sheetsStatus.error, supabaseErr: supabaseStatus.error } });
             }
             case 'rebuild-db': return res.status(200).json(await syncAllFromSheetsToSupabase());
             case 'run-daily-sync': return res.status(200).json(await runDailyUpdateScrapers());
@@ -70,15 +85,12 @@ export default async function handler(req: any, res: any) {
             case 'save-row': {
                 const tableName = sheet.toLowerCase();
                 if (supabase) await upsertSupabaseData(tableName, [rowData]);
-                
-                // Construct sheet values array based on table
                 let sheetValues: any[] = [];
                 if (tableName === 'exams') {
                     sheetValues = [rowData.id, rowData.title_ml, rowData.title_en, rowData.description_ml, rowData.description_en, rowData.category, rowData.level, rowData.icon_type];
                 } else if (tableName === 'bookstore') {
                     sheetValues = [rowData.id, rowData.title, rowData.author, rowData.imageUrl, rowData.amazonLink];
                 }
-                
                 await findAndUpsertRow(sheet, rowData.id, sheetValues);
                 return res.status(200).json({ message: `${sheet} entry updated.` });
             }
@@ -106,25 +118,18 @@ export default async function handler(req: any, res: any) {
                 if (!supabase) throw new Error("Supabase required.");
                 const { data: qData } = await supabase.from('questionbank').select('topic, subject');
                 const { data: sData } = await supabase.from('syllabus').select('id, topic, title');
-                
                 const counts: Record<string, number> = {};
                 let unclassifiedCount = 0;
-                
                 qData?.forEach(q => { 
                     const t = String(q.topic || '').toLowerCase().trim(); 
                     if (t) counts[t] = (counts[t] || 0) + 1; 
-                    
                     const s = String(q.subject || '').toLowerCase().trim();
-                    if (s === 'other' || s.includes('manual') || s === '' || s === 'null') {
-                        unclassifiedCount++;
-                    }
+                    if (s === 'other' || s.includes('manual') || s === '' || s === 'null') unclassifiedCount++;
                 });
-
                 const gapReport = (sData || []).map(s => {
                     const topicKey = String(s.topic || s.title).toLowerCase().trim();
                     return { id: s.id, topic: s.topic || s.title, count: counts[topicKey] || 0 };
                 });
-
                 return { syllabusReport: gapReport, unclassifiedCount };
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });

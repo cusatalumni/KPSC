@@ -38,35 +38,36 @@ const APPROVED_SUBJECTS = [
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase required for auditing.");
     
-    // Fetch items that need manual classification, are tagged as 'Other', or are completely blank/null
+    // FETCH CONDITION: Only target unclassified or manually tagged items for speed
     const { data: questions, error: qErr } = await supabase
         .from('questionbank')
-        .select('*')
+        .select('id, question, topic, subject, options, correct_answer_index, difficulty, explanation')
         .or('subject.ilike.other,subject.ilike.%manual%,subject.eq.,subject.is.null')
-        .limit(50);
+        .limit(50); // Batch size for processing
 
     if (qErr) throw qErr;
-    if (!questions || questions.length === 0) return { message: "No 'Other' or blank subjects found. Classification is up to date.", completed: true };
+    if (!questions || questions.length === 0) return { message: "No 'Other' or blank subjects found. Classification complete.", completed: true };
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `You are a Subject Classifier for Kerala PSC. Re-categorize the following questions.
+            contents: `As a PSC Data Architect, your ONLY task is to categorize these questions into a valid subject.
             
-            STRICT RULES:
-            1. Analyze the 'question' and 'topic' text.
-            2. Map it to exactly ONE subject from this list: [${APPROVED_SUBJECTS.join(', ')}]
-            3. Do not modify the question text or options. Just fix the 'subject' field.
+            RULES:
+            1. Look at 'question' and 'topic'.
+            2. Choose the best matching subject from: [${APPROVED_SUBJECTS.join(', ')}]
+            3. Do NOT change question text, options, or answers.
+            4. Only provide the correct 'subject' mapping.
             
-            JSON format:
+            Return JSON array:
             {
               "classified": [
-                { "id": original_id, "subject": "Official Subject Name" }
+                { "id": ID, "subject": "Subject Name" }
               ]
             }
             
-            Data: ${JSON.stringify(questions.map(q => ({ id: q.id, question: q.question, topic: q.topic, subject: q.subject })))}`,
+            Data to process: ${JSON.stringify(questions.map(q => ({ id: q.id, question: q.question, topic: q.topic })))}`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -94,15 +95,18 @@ export async function auditAndCorrectQuestions() {
         if (updates.length > 0) {
             const finalData = updates.map((upd: any) => {
                 const original = questions.find(q => q.id === upd.id);
+                if (!original) return null;
                 return {
                     ...original,
                     options: ensureArray(original.options),
                     subject: upd.subject
                 };
-            });
+            }).filter(Boolean);
             
+            // 1. Update Supabase (Fast batch)
             await upsertSupabaseData('questionbank', finalData);
             
+            // 2. Sync to Sheets (Required to maintain sheet accuracy)
             for (const q of finalData) {
                 await findAndUpsertRow('QuestionBank', String(q.id), [
                     q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation
@@ -111,7 +115,7 @@ export async function auditAndCorrectQuestions() {
         }
         
         return { 
-            message: `Successfully re-classified ${updates.length} unmapped questions.`, 
+            message: `Processed ${updates.length} items. All mapped to official subjects.`, 
             changesCount: updates.length 
         };
 

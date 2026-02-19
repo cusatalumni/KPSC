@@ -6,22 +6,27 @@ declare var process: any;
 const getSanitizedKey = (key: string | undefined): string | undefined => {
     if (!key) return undefined;
     let sanitized = key.trim();
-    // Handle quotes that often appear in Vercel env variables
+    
+    // Handle double-escaped or quoted strings from environment providers
     if ((sanitized.startsWith('"') && sanitized.endsWith('"')) || (sanitized.startsWith("'") && sanitized.endsWith("'"))) {
         sanitized = sanitized.substring(1, sanitized.length - 1);
     }
-    // Correctly replace escaped newlines
+    
+    // Standardize newline characters which are often broken in ENV injection
     sanitized = sanitized.replace(/\\n/g, '\n');
-    // Ensure header/footer are present
+    sanitized = sanitized.replace(/\n\s+/g, '\n'); // Remove trailing spaces per line
+    
+    // Wrap with PEM headers if the user only pasted the middle block
     if (!sanitized.includes('-----BEGIN PRIVATE KEY-----')) {
         sanitized = `-----BEGIN PRIVATE KEY-----\n${sanitized}\n-----END PRIVATE KEY-----`;
     }
+    
     return sanitized;
 };
 
 const getSpreadsheetId = (): string => {
     const id = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
-    if (!id) throw new Error('SPREADSHEET_ID is missing.');
+    if (!id) throw new Error('MISSING_SPREADSHEET_ID');
     return id.trim().replace(/['"]/g, '');
 };
 
@@ -30,9 +35,8 @@ async function getSheetsClient() {
     const rawKey = process.env.GOOGLE_PRIVATE_KEY;
     const privateKey = getSanitizedKey(rawKey);
 
-    if (!clientEmail || !privateKey) {
-        throw new Error('Google Credentials missing. Check GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY.');
-    }
+    if (!clientEmail) throw new Error('MISSING_CLIENT_EMAIL');
+    if (!privateKey || privateKey.length < 50) throw new Error('INVALID_PRIVATE_KEY');
 
     try {
         const auth = new google.auth.GoogleAuth({
@@ -42,7 +46,7 @@ async function getSheetsClient() {
         const authClient = await auth.getClient();
         return google.sheets({ version: 'v4', auth: authClient as any });
     } catch (e: any) { 
-        throw new Error(`Google Sheets Auth failed: ${e.message}`); 
+        throw new Error(`AUTH_FAILURE: ${e.message}`); 
     }
 }
 
