@@ -28,7 +28,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, id, resultData, sheet, data, topic, setting, questions } = req.body;
+    const { action, id, resultData, sheet, data, topic, setting, questions, rowData } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -67,6 +67,22 @@ export default async function handler(req: any, res: any) {
             case 'run-explanation-repair': return res.status(200).json(await backfillExplanations());
             case 'upload-questions': return res.status(200).json(await bulkUploadQuestions(questions));
             
+            case 'save-row': {
+                const tableName = sheet.toLowerCase();
+                if (supabase) await upsertSupabaseData(tableName, [rowData]);
+                
+                // Construct sheet values array based on table
+                let sheetValues: any[] = [];
+                if (tableName === 'exams') {
+                    sheetValues = [rowData.id, rowData.title_ml, rowData.title_en, rowData.description_ml, rowData.description_en, rowData.category, rowData.level, rowData.icon_type];
+                } else if (tableName === 'bookstore') {
+                    sheetValues = [rowData.id, rowData.title, rowData.author, rowData.imageUrl, rowData.amazonLink];
+                }
+                
+                await findAndUpsertRow(sheet, rowData.id, sheetValues);
+                return res.status(200).json({ message: `${sheet} entry updated.` });
+            }
+
             case 'run-all-gaps': {
                 if (!supabase) throw new Error("Supabase required.");
                 const { data: sData } = await supabase.from('syllabus').select('topic, title');
@@ -94,38 +110,18 @@ export default async function handler(req: any, res: any) {
 
             case 'get-audit-report': {
                 if (!supabase) throw new Error("Supabase required.");
-                
-                // Fetch topics from both tables
                 const { data: qData } = await supabase.from('questionbank').select('topic');
                 const { data: sData } = await supabase.from('syllabus').select('id, topic, title');
-                
-                // 1. Calculate Topic Counts and Syllabus Gap Report
                 const counts: Record<string, number> = {};
-                qData?.forEach(q => { 
-                    const t = String(q.topic || '').toLowerCase().trim(); 
-                    if (t) counts[t] = (counts[t] || 0) + 1; 
-                });
-                
+                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
                 const gapReport = (sData || []).map(s => {
                     const topicKey = String(s.topic || s.title).toLowerCase().trim();
-                    return { 
-                        id: s.id, 
-                        topic: s.topic || s.title, 
-                        count: counts[topicKey] || 0 
-                    };
+                    return { id: s.id, topic: s.topic || s.title, count: counts[topicKey] || 0 };
                 });
-
-                // 2. Calculate Orphans (Topics in QBank but NOT in Syllabus)
                 const syllabusTopics = new Set((sData || []).map(s => String(s.topic || s.title).toLowerCase().trim()));
                 const questionTopics = new Set(Object.keys(counts));
-                
                 const orphanTopics = Array.from(questionTopics).filter(qt => !syllabusTopics.has(qt));
-                
-                return res.status(200).json({
-                    syllabusReport: gapReport,
-                    orphanCount: orphanTopics.length,
-                    orphanTopics: orphanTopics
-                });
+                return res.status(200).json({ syllabusReport: gapReport, orphanCount: orphanTopics.length, orphanTopics: orphanTopics });
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });

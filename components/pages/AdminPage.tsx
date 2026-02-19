@@ -32,6 +32,7 @@ import { TagIcon } from '../icons/TagIcon';
 import { WrenchScrewdriverIcon } from '../icons/WrenchScrewdriverIcon';
 import { Cog6ToothIcon } from '../icons/Cog6ToothIcon';
 import { LanguageIcon } from '../icons/LanguageIcon';
+import { UserGroupIcon } from '../icons/UserGroupIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
 type AdminTab = 'automation' | 'qbank' | 'exams' | 'syllabus' | 'books' | 'users' | 'settings';
@@ -58,8 +59,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [settings, setSettings] = useState<any>({});
     const [bulkQuestions, setBulkQuestions] = useState<any[]>([]);
     
-    // Form for single question
+    // Modals
     const [showSingleModal, setShowSingleModal] = useState(false);
+    const [editingExam, setEditingExam] = useState<any | null>(null);
+    const [editingBook, setEditingBook] = useState<any | null>(null);
+
     const [singleQ, setSingleQ] = useState({
         question: '',
         options: ['', '', '', ''],
@@ -115,13 +119,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
             
-            // Force refresh settings and audit report after critical actions
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-targeted-gap-fill', 'run-all-gaps', 'run-book-scraper', 'run-book-audit', 'update-setting', 'run-language-repair', 'run-explanation-repair', 'upload-questions', 'run-batch-qa', 'reset-qa-audit'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'upload-questions', 'save-row'].includes(action)) {
                 await refreshData(true);
-            }
-            
-            if (['run-targeted-gap-fill', 'run-all-gaps', 'run-batch-qa', 'run-explanation-repair', 'upload-questions', 'reset-qa-audit'].includes(action)) {
-                setAuditReport(await adminOp('get-audit-report'));
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
     };
@@ -129,46 +128,21 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
             const text = event.target?.result as string;
             const lines = text.split('\n').filter(l => l.trim().length > 0);
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-            
             const parsed = lines.slice(1).map(line => {
                 const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
                 const obj: any = {};
-                headers.forEach((h, i) => {
-                    if (h === 'options') {
-                        obj[h] = values[i].includes('|') ? values[i].split('|') : [values[i]];
-                    } else {
-                        obj[h] = values[i];
-                    }
-                });
+                headers.forEach((h, i) => { if (h === 'options') obj[h] = values[i].includes('|') ? values[i].split('|') : [values[i]]; else obj[h] = values[i]; });
                 return obj;
             });
-            
             setBulkQuestions(parsed);
             setStatus(`${parsed.length} questions ready for upload.`);
         };
         reader.readAsText(file);
-    };
-
-    const submitBulk = async () => {
-        if (!bulkQuestions.length) return;
-        await handleAction('upload-questions', { questions: bulkQuestions });
-        setBulkQuestions([]);
-    };
-
-    const submitSingle = async () => {
-        if (!singleQ.question || !singleQ.topic) {
-            alert("Question and Topic are required.");
-            return;
-        }
-        await handleAction('upload-questions', { questions: [singleQ] });
-        setShowSingleModal(false);
-        setSingleQ({ question: '', options: ['', '', '', ''], correctAnswerIndex: 1, topic: '', subject: '', explanation: '' });
     };
 
     const ToolCard = ({ title, icon: Icon, action, color, desc }: any) => (
@@ -206,7 +180,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     { id: 'exams', label: 'Exams', icon: AcademicCapIcon },
                     { id: 'syllabus', label: 'Syllabus', icon: PlusIcon },
                     { id: 'books', label: 'Books', icon: BookOpenIcon },
-                    { id: 'users', label: 'Users', icon: ShieldCheckIcon },
+                    { id: 'users', label: 'Users', icon: UserGroupIcon },
                     { id: 'settings', label: 'Settings', icon: Cog6ToothIcon }
                 ].map(t => (
                     <button key={t.id} onClick={() => setActiveTab(t.id as AdminTab)} className={`flex items-center space-x-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === t.id ? 'bg-indigo-600 text-white shadow-xl' : 'bg-white dark:bg-slate-900 text-slate-500 border border-transparent hover:border-indigo-500'}`}>
@@ -221,306 +195,130 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 {activeTab === 'automation' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <ToolCard title="Full DB Sync" icon={ArrowPathIcon} action="rebuild-db" color="bg-red-600" desc="Synchronizes all records from Google Sheets to Supabase production database." />
-                        <ToolCard title="Flashcard Generator" icon={TagIcon} action="run-flashcard-generator" color="bg-orange-600" desc="AI generates study cards from existing GK and Question Bank data." />
                         <ToolCard title="PSC Daily Sync" icon={SparklesIcon} action="run-daily-sync" color="bg-indigo-600" desc="Full cycle sync: Jobs, Live Updates, CA, GK and Gap Filler." />
                         <ToolCard title="Job Notifications" icon={BellIcon} action="run-scraper-notifications" color="bg-emerald-600" desc="Scrapes official PSC site for active job announcements." />
                         <ToolCard title="PSC Live Updates" icon={RssIcon} action="run-scraper-updates" color="bg-cyan-600" desc="Real-time sync for results, rank lists and exam schedules." />
-                        <ToolCard title="Current Affairs" icon={NewspaperIcon} action="run-ca-scraper" color="bg-indigo-500" desc="AI researches latest news specifically for Kerala exams." />
                         <ToolCard title="GK Fact Scraper" icon={LightBulbIcon} action="run-gk-scraper" color="bg-amber-500" desc="Generates unique study facts for the daily widget." />
-                        <ToolCard title="Auto Gap Filler" icon={BeakerIcon} action="run-gap-filler" color="bg-rose-600" desc="Detects empty syllabus topics and generates questions." />
                         <ToolCard title="Book Store Sync" icon={BookOpenIcon} action="run-book-scraper" color="bg-slate-800" desc="Updates bookstore with top Amazon PSC guides." />
                     </div>
                 )}
 
-                {activeTab === 'qbank' && (
-                    <div className="space-y-16">
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                            <div className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative lg:col-span-2">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h3 className="text-xl font-black uppercase tracking-tight">Syllabus Gap Audit</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Identify empty mapped topics</p>
-                                    </div>
-                                    <div className="flex space-x-2">
-                                        <button onClick={async () => { setLoading(true); try { setAuditReport(await adminOp('get-audit-report')); } finally { setLoading(false); } }} className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-md border dark:border-slate-700 hover:scale-110 transition-all text-indigo-600">
-                                            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className={`mb-8 p-6 rounded-[2rem] flex items-center justify-between border-2 transition-all duration-700 ${totalGaps > 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/50'}`}>
-                                    <div className="flex items-center space-x-4">
-                                        <div className={`p-4 rounded-2xl ${totalGaps > 0 ? 'bg-red-600' : 'bg-emerald-600'} text-white shadow-lg`}>
-                                            {totalGaps > 0 ? <ExclamationTriangleIcon className="h-6 w-6" /> : <CheckCircleIcon className="h-6 w-6" />}
-                                        </div>
-                                        <div>
-                                            <p className={`text-[10px] font-black uppercase tracking-widest ${totalGaps > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>Content Coverage</p>
-                                            <p className={`text-2xl font-black ${totalGaps > 0 ? 'text-red-900 dark:text-red-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
-                                                {totalGaps === 0 ? 'Fully Mapped' : `${totalGaps} Empty Topics`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {totalGaps > 0 && (
-                                        <button onClick={() => handleAction('run-all-gaps')} className="bg-red-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Fill All</button>
-                                    )}
-                                </div>
-
-                                {auditReport ? (
-                                    <div className="max-h-80 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                                        {auditReport.syllabusReport.map((r, i) => (
-                                            <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
-                                                <div className="flex-1 min-w-0 pr-4">
-                                                    <p className="font-bold text-xs truncate">{r.topic}</p>
-                                                    <p className={`text-[9px] font-black uppercase mt-1 ${r.count === 0 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                                                        {r.count === 0 ? 'Empty Mapping: Questions Needed' : `${r.count} Questions Available`}
-                                                    </p>
-                                                </div>
-                                                <button 
-                                                    onClick={() => handleAction('run-targeted-gap-fill', { topic: r.topic })}
-                                                    className={`px-4 py-2 rounded-lg font-black text-[8px] uppercase tracking-widest transition-all ${r.count === 0 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'}`}
-                                                >
-                                                    {r.count === 0 ? 'Fill Now' : 'Add More'}
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : <p className="text-slate-400 text-xs font-bold text-center py-10">Run report to identify empty mapped topics from your Syllabus table.</p>}
-                            </div>
-                            
-                            <div className="space-y-6 lg:col-span-2">
-                                <div className="bg-indigo-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl h-1/2">
-                                    <div className="absolute -right-4 -bottom-4 opacity-10"><SparklesIcon className="h-32 w-32" /></div>
-                                    <h3 className="text-xl font-black uppercase mb-4 tracking-tight">QA Quality Audit</h3>
-                                    
-                                    <div className="flex items-center justify-between gap-4 mb-4">
-                                        <p className="text-indigo-100 text-xs font-bold leading-relaxed">AI realigns questions to syllabus and fixes answers automatically.</p>
-                                        <div className={`p-4 rounded-2xl border flex items-center justify-between whitespace-nowrap ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'bg-orange-500/20 border-orange-400/30' : 'bg-white/10 border-white/20'}`}>
-                                            <div>
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-indigo-200">Orphans</p>
-                                                <p className={`text-xs font-black ${auditReport?.orphanCount && auditReport.orphanCount > 0 ? 'text-orange-300 animate-pulse' : 'text-emerald-300'}`}>
-                                                    {auditReport ? `${auditReport.orphanCount} detected` : '...'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mb-4 bg-white/10 p-3 rounded-xl border border-white/20 animate-fade-in flex items-center justify-between">
-                                        <div>
-                                            <p className="text-[9px] font-black uppercase text-indigo-200">Current Progress</p>
-                                            <p className="text-sm font-black text-emerald-300">Verified up to ID: {settings?.last_audited_id || '0'}</p>
-                                        </div>
-                                        <div className="p-2 bg-white/10 rounded-lg">
-                                            <ArrowPathIcon className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex space-x-3 relative z-10">
-                                        <button onClick={() => handleAction('run-batch-qa')} className="bg-white text-indigo-600 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:scale-105 transition-all flex-1">Start Audit Batch</button>
-                                        <button onClick={() => { if(confirm("Are you sure? This will restart the audit from the first question.")) handleAction('reset-qa-audit'); }} className="bg-indigo-800/50 text-white border border-indigo-400/30 font-black py-4 rounded-xl text-[10px] uppercase shadow-xl hover:bg-indigo-700 transition-all px-6">Reset</button>
+                {activeTab === 'settings' && (
+                    <div className="space-y-8 animate-fade-in max-w-2xl mx-auto">
+                        <h3 className="text-2xl font-black uppercase tracking-tight">App Configuration</h3>
+                        <div className="space-y-6">
+                            {Object.entries(settings).map(([key, value]) => (
+                                <div key={key} className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+                                    <label className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">{key.replace(/_/g, ' ')}</label>
+                                    <div className="flex items-center space-x-3">
+                                        <input 
+                                            type="text" 
+                                            defaultValue={String(value)}
+                                            onBlur={async (e) => await handleAction('update-setting', { setting: { key, value: e.target.value } })}
+                                            className="flex-1 bg-white dark:bg-slate-800 p-3 rounded-xl border-none font-bold text-sm shadow-inner" 
+                                        />
+                                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircleIcon className="h-4 w-4" /></div>
                                     </div>
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-1/2">
-                                    <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[6px] border-rose-600">
-                                        <div className="absolute -right-4 -bottom-4 opacity-10"><LanguageIcon className="h-24 w-24" /></div>
-                                        <h3 className="text-base font-black uppercase mb-2">Language Repair</h3>
-                                        <p className="text-slate-400 text-[10px] font-bold mb-4 leading-relaxed">Fix technical questions in Malayalam.</p>
-                                        <button onClick={() => handleAction('run-language-repair')} className="bg-rose-600 text-white font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Restore English</button>
-                                    </div>
-
-                                    <div className="bg-amber-600 p-8 rounded-[2.5rem] text-white flex flex-col justify-center relative overflow-hidden shadow-2xl border-b-[6px] border-amber-900">
-                                        <div className="absolute -right-4 -bottom-4 opacity-10"><PencilSquareIcon className="h-24 w-24" /></div>
-                                        <h3 className="text-base font-black uppercase mb-2">AI Note Repair</h3>
-                                        <p className="text-amber-100 text-[10px] font-bold mb-4 leading-relaxed">Fill missing descriptions for old questions.</p>
-                                        <button onClick={() => handleAction('run-explanation-repair')} className="bg-white text-amber-600 font-black py-3 rounded-xl text-[9px] uppercase shadow-xl hover:scale-105 transition-all">Backfill Notes</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* DATA IMPORT SECTION */}
-                        <div className="bg-slate-50 dark:bg-slate-900 p-10 rounded-[3rem] border-2 border-slate-200 dark:border-slate-800">
-                             <div className="flex flex-col md:row items-center justify-between mb-10 gap-6">
-                                <div>
-                                    <h3 className="text-2xl font-black uppercase tracking-tight">Manual Question Management</h3>
-                                    <p className="text-slate-500 font-bold text-sm">Add individual questions or bulk import from CSV files.</p>
-                                </div>
-                                <div className="flex space-x-3">
-                                    <button onClick={() => setShowSingleModal(true)} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 transition-all flex items-center space-x-2">
-                                        <PlusIcon className="h-5 w-5" />
-                                        <span>Single Entry</span>
-                                    </button>
-                                    <div className="relative">
-                                        <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" id="csv-upload" />
-                                        <label htmlFor="csv-upload" className="bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-slate-50 transition-all flex items-center space-x-2 cursor-pointer">
-                                            <CloudArrowUpIcon className="h-5 w-5" />
-                                            <span>Bulk CSV</span>
-                                        </label>
-                                    </div>
-                                </div>
-                             </div>
-
-                             {bulkQuestions.length > 0 && (
-                                 <div className="bg-emerald-50 dark:bg-emerald-950/20 p-8 rounded-[2rem] border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between animate-fade-in">
-                                     <div className="flex items-center space-x-4">
-                                         <div className="p-4 bg-emerald-600 text-white rounded-2xl shadow-lg"><ClipboardListIcon className="h-6 w-6" /></div>
-                                         <div>
-                                             <h4 className="text-lg font-black text-emerald-900 dark:text-emerald-100 uppercase">Ready to Import</h4>
-                                             <p className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">{bulkQuestions.length} valid questions detected in CSV.</p>
-                                         </div>
-                                     </div>
-                                     <div className="flex space-x-3">
-                                         <button onClick={submitBulk} className="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-emerald-700 transition-all">Commit to Database</button>
-                                         <button onClick={() => setBulkQuestions([])} className="bg-white text-slate-400 px-6 py-4 rounded-2xl font-black text-xs uppercase hover:text-red-500 transition-all">Cancel</button>
-                                     </div>
-                                 </div>
-                             )}
+                            ))}
                         </div>
                     </div>
                 )}
 
-                {/* SINGLE QUESTION MODAL */}
-                {showSingleModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-                        <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-8 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-2xl font-black uppercase tracking-tight">Manual Question Entry</h3>
-                                <button onClick={() => setShowSingleModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><XMarkIcon className="h-6 w-6" /></button>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Subject</label>
-                                        <input type="text" value={singleQ.subject} onChange={e=>setSingleQ({...singleQ, subject: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="e.g. History" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Topic (Required)</label>
-                                        <input type="text" value={singleQ.topic} onChange={e=>setSingleQ({...singleQ, topic: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="e.g. Kerala History" />
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Question Text</label>
-                                    <textarea value={singleQ.question} onChange={e=>setSingleQ({...singleQ, question: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold min-h-[100px]" placeholder="Enter full question..." />
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Options & Correct Answer</label>
-                                    {singleQ.options.map((opt, i) => (
-                                        <div key={i} className="flex items-center space-x-3">
-                                            <button onClick={()=>setSingleQ({...singleQ, correctAnswerIndex: i+1})} className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-all ${singleQ.correctAnswerIndex === i+1 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-indigo-50'}`}>{i+1}</button>
-                                            <input type="text" value={opt} onChange={e => {
-                                                const newOpts = [...singleQ.options];
-                                                newOpts[i] = e.target.value;
-                                                setSingleQ({...singleQ, options: newOpts});
-                                            }} className="flex-1 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder={`Option ${i+1}`} />
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Explanation (AI-Repairable)</label>
-                                    <textarea value={singleQ.explanation} onChange={e=>setSingleQ({...singleQ, explanation: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" placeholder="Optional explanation..." />
-                                </div>
-
-                                <button onClick={submitSingle} className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 transition-all uppercase tracking-widest text-xs">Save Question</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'syllabus' && (
+                {activeTab === 'users' && (
                     <div className="space-y-8 animate-fade-in">
-                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800 flex items-start space-x-4 mb-6">
-                            <LightBulbIcon className="h-6 w-6 text-indigo-600 mt-1 flex-shrink-0" />
-                            <div>
-                                <h4 className="font-black uppercase text-indigo-700 dark:text-indigo-400 text-sm">Exam-to-Topic Mapping</h4>
-                                <p className="text-xs font-medium text-indigo-800/60 dark:text-indigo-200/50 leading-relaxed">
-                                    The table below shows which **Subjects** and **Topics** are mapped to each **Exam**. The AI Scraper uses this exact list to generate new questions. To add a new exam area, add a row to the 'Syllabus' tab in Google Sheets.
-                                </p>
-                            </div>
-                        </div>
-
-                        <select value={selectedExamId} onChange={e=>setSelectedExamId(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 p-4 rounded-xl text-xs font-black border-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner">
-                            <option value="">Select Exam to view Mappings</option>
-                            {exams.map(e=><option key={e.id} value={e.id}>{e.title.ml} ({e.title.en})</option>)}
-                        </select>
-
-                        <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
+                         <div className="flex items-center justify-between"><h3 className="text-2xl font-black uppercase tracking-tight">Registered Subscribers</h3><p className="text-sm font-bold text-slate-400">{subscriptions.length} Users Total</p></div>
+                         <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
-                                    <tr>
-                                        <th className="px-8 py-5">Subject Mapping</th>
-                                        <th className="px-8 py-5">Specific Topic</th>
-                                        <th className="px-8 py-5 text-center">Questions</th>
-                                        <th className="px-8 py-5 text-right">Actions</th>
-                                    </tr>
+                                    <tr><th className="px-8 py-5">User ID</th><th className="px-8 py-5">Plan</th><th className="px-8 py-5">Status</th><th className="px-8 py-5 text-right">Expiry</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {syllabusItems.length > 0 ? syllabusItems.map(s => (
-                                        <tr key={s.id} className="text-sm font-bold group hover:bg-white dark:hover:bg-slate-800 transition-colors">
-                                            <td className="px-8 py-6">
-                                                <span className="bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-lg text-[9px] uppercase font-black text-slate-600 dark:text-slate-300">
-                                                    {s.subject}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6 text-slate-800 dark:text-slate-100">{s.topic}</td>
-                                            <td className="px-8 py-6 text-center text-slate-400 font-mono">{s.questions} Qs</td>
-                                            <td className="px-8 py-6 text-right">
-                                                <button onClick={() => handleAction('delete-row', { sheet: 'Syllabus', id: s.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                                    <TrashIcon className="h-4 w-4" />
-                                                </button>
-                                            </td>
+                                    {subscriptions.map(sub => (
+                                        <tr key={sub.user_id} className="text-sm font-bold">
+                                            <td className="px-8 py-6 font-mono text-xs">{sub.user_id}</td>
+                                            <td className="px-8 py-6">{sub.plan_type}</td>
+                                            <td className="px-8 py-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${sub.status === 'pro' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>{sub.status}</span></td>
+                                            <td className="px-8 py-6 text-right text-slate-400 text-xs">{new Date(sub.expiry_date).toLocaleDateString()}</td>
                                         </tr>
-                                    )) : (
-                                        <tr><td colSpan={4} className="px-8 py-12 text-center text-slate-400 font-bold">Select an exam to view its mapped subject-topic combinations.</td></tr>
-                                    )}
+                                    ))}
                                 </tbody>
                             </table>
-                        </div>
+                         </div>
                     </div>
                 )}
-                
+
                 {activeTab === 'exams' && (
-                    <div className="space-y-8">
+                    <div className="space-y-8 animate-fade-in">
                         <div className="flex items-center justify-between"><h3 className="text-2xl font-black uppercase tracking-tight">Active Exams</h3><button className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2"><PlusIcon className="h-4 w-4" /><span>Add Exam</span></button></div>
                         <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500"><tr><th className="px-8 py-5">Exam</th><th className="px-8 py-5">Category</th><th className="px-8 py-5 text-right">Actions</th></tr></thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{exams.map(ex => (<tr key={ex.id} className="text-sm font-bold"><td className="px-8 py-6">{ex.title.ml}<span className="block text-[10px] opacity-40 uppercase">{ex.id}</span></td><td className="px-8 py-6"><span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[9px] uppercase font-black">{ex.category}</span></td><td className="px-8 py-6 text-right"><button onClick={() => handleAction('delete-row', { sheet: 'Exams', id: ex.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button></td></tr>))}</tbody>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{exams.map(ex => (<tr key={ex.id} className="text-sm font-bold"><td className="px-8 py-6">{ex.title.ml}<span className="block text-[10px] opacity-40 uppercase">{ex.id}</span></td><td className="px-8 py-6"><span className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[9px] uppercase font-black">{ex.category}</span></td><td className="px-8 py-6 text-right">
+                                    <div className="flex justify-end space-x-2">
+                                        <button onClick={() => setEditingExam({...ex, title_ml: ex.title.ml, title_en: ex.title.en, description_ml: ex.description.ml, description_en: ex.description.en, icon_type: 'book'})} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"><PencilSquareIcon className="h-4 w-4" /></button>
+                                        <button onClick={() => handleAction('delete-row', { sheet: 'Exams', id: ex.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button>
+                                    </div>
+                                </td></tr>))}</tbody>
                             </table>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'books' && (
-                    <div className="space-y-8">
+                    <div className="space-y-8 animate-fade-in">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                             <h3 className="text-2xl font-black uppercase tracking-tight">Manage Bookstore</h3>
-                            <div className="flex flex-wrap gap-3">
-                                <button onClick={() => handleAction('run-book-audit')} className="bg-amber-500 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2 hover:bg-amber-600 transition-all"><WrenchScrewdriverIcon className="h-4 w-4" /><span>Auto-Repair</span></button>
-                                <button onClick={() => handleAction('run-book-scraper')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2 hover:bg-indigo-700 transition-all"><SparklesIcon className="h-4 w-4" /><span>Scrape New</span></button>
-                            </div>
+                            <button onClick={() => handleAction('run-book-scraper')} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[9px] uppercase shadow-lg flex items-center space-x-2 hover:bg-indigo-700 transition-all"><SparklesIcon className="h-4 w-4" /><span>Scrape New</span></button>
                         </div>
                         <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500"><tr><th className="px-8 py-5">Book Title</th><th className="px-8 py-5 text-right">Actions</th></tr></thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{books.map(book => (<tr key={book.id} className="text-sm font-bold"><td className="px-8 py-6">{book.title}</td><td className="px-8 py-6 text-right"><button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button></td></tr>))}</tbody>
+                                <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500"><tr><th className="px-8 py-5">Book Title</th><th className="px-8 py-5">Author</th><th className="px-8 py-5 text-right">Actions</th></tr></thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{books.map(book => (<tr key={book.id} className="text-sm font-bold"><td className="px-8 py-6 max-w-xs truncate">{book.title}</td><td className="px-8 py-6">{book.author}</td><td className="px-8 py-6 text-right">
+                                    <div className="flex justify-end space-x-2">
+                                        <button onClick={() => setEditingBook(book)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"><PencilSquareIcon className="h-4 w-4" /></button>
+                                        <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><TrashIcon className="h-4 w-4" /></button>
+                                    </div>
+                                </td></tr>))}</tbody>
                             </table>
                         </div>
                     </div>
                 )}
             </main>
+
+            {/* EDIT EXAM MODAL */}
+            {editingExam && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl">
+                        <div className="flex justify-between items-center mb-8"><h3 className="text-2xl font-black uppercase tracking-tight">Edit Exam Data</h3><button onClick={() => setEditingExam(null)} className="p-2 hover:bg-slate-100 rounded-full"><XMarkIcon className="h-6 w-6" /></button></div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2 space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Title (Malayalam)</label><input type="text" value={editingExam.title_ml} onChange={e=>setEditingExam({...editingExam, title_ml: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                            <div className="col-span-2 space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Title (English)</label><input type="text" value={editingExam.title_en} onChange={e=>setEditingExam({...editingExam, title_en: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Category</label><input type="text" value={editingExam.category} onChange={e=>setEditingExam({...editingExam, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Level</label><input type="text" value={editingExam.level} onChange={e=>setEditingExam({...editingExam, level: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                        </div>
+                        <button onClick={async () => { await handleAction('save-row', { sheet: 'Exams', rowData: editingExam }); setEditingExam(null); }} className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 mt-10 uppercase tracking-widest text-xs">Save Changes</button>
+                    </div>
+                </div>
+            )}
+
+            {/* EDIT BOOK MODAL */}
+            {editingBook && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl">
+                        <div className="flex justify-between items-center mb-8"><h3 className="text-2xl font-black uppercase tracking-tight">Edit Book Details</h3><button onClick={() => setEditingBook(null)} className="p-2 hover:bg-slate-100 rounded-full"><XMarkIcon className="h-6 w-6" /></button></div>
+                        <div className="space-y-4">
+                            <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Book Title</label><input type="text" value={editingBook.title} onChange={e=>setEditingBook({...editingBook, title: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Author</label><input type="text" value={editingBook.author} onChange={e=>setEditingBook({...editingBook, author: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Amazon Affiliate Link</label><input type="text" value={editingBook.amazonLink} onChange={e=>setEditingBook({...editingBook, amazonLink: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                            <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Image URL</label><input type="text" value={editingBook.imageUrl} onChange={e=>setEditingBook({...editingBook, imageUrl: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border-none font-bold" /></div>
+                        </div>
+                        <button onClick={async () => { await handleAction('save-row', { sheet: 'Bookstore', rowData: editingBook }); setEditingBook(null); }} className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 mt-10 uppercase tracking-widest text-xs">Update Book</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
-
-// Internal icon component for the audit hero stat
-const ExclamationTriangleIcon = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-    </svg>
-);
 
 export default AdminPage;
