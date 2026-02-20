@@ -270,13 +270,16 @@ export async function repairLanguageMismatches() {
 export async function syncAllFromSheetsToSupabase() {
     if (!supabase) throw new Error("No Supabase.");
     const tables = [
-        { sheet: 'Exams', supabase: 'exams', map: (r: any) => ({ id: r[0], title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }) },
-        { sheet: 'Syllabus', supabase: 'syllabus', map: (r: any) => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3] || '0'), duration: parseInt(r[4] || '0'), subject: r[5], topic: r[6] }) },
-        { sheet: 'QuestionBank', supabase: 'questionbank', map: (r: any) => ({ id: parseInt(r[0]), topic: r[1], question: r[2], options: ensureArray(r[3]), correct_answer_index: parseInt(r[4] || '1'), subject: r[5], difficulty: r[6], explanation: r[7] }) }
+        { sheet: 'Exams', supabase: 'exams', map: (r: any[]) => ({ id: r[0], title_ml: r[1], title_en: r[2], description_ml: r[3], description_en: r[4], category: r[5], level: r[6], icon_type: r[7] }) },
+        { sheet: 'Syllabus', supabase: 'syllabus', map: (r: any[]) => ({ id: r[0], exam_id: r[1], title: r[2], questions: parseInt(r[3] || '0'), duration: parseInt(r[4] || '0'), subject: r[5], topic: r[6] }) },
+        { sheet: 'QuestionBank', supabase: 'questionbank', map: (r: any[]) => ({ id: parseInt(r[0]), topic: r[1], question: r[2], options: ensureArray(r[3]), correct_answer_index: parseInt(r[4] || '1'), subject: r[5], difficulty: r[6], explanation: r[7] }) }
     ];
     for (const t of tables) {
         const rows = await readSheetData(`${t.sheet}!A2:Z`);
-        if (rows?.length) await upsertSupabaseData(t.supabase, rows.filter(r => r[0]).map(t.map));
+        if (rows?.length) {
+            const mappedData = rows.filter(r => r[0]).map(t.map as any);
+            await upsertSupabaseData(t.supabase, mappedData);
+        }
     }
     return { message: "Sync complete." };
 }

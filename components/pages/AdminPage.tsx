@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { ChevronLeftIcon } from '../icons/ChevronLeftIcon';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { 
@@ -38,6 +38,7 @@ interface AuditReport {
 
 const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { getToken } = useAuth();
+    const { user, isLoaded: userLoaded } = useUser();
     const [activeTab, setActiveTab] = useState<AdminTab>('automation');
     const [exams, setExams] = useState<Exam[]>([]);
     const [books, setBooks] = useState<Book[]>([]);
@@ -55,6 +56,8 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [editingBook, setEditingBook] = useState<any | null>(null);
 
     const totalGaps = useMemo(() => auditReport?.syllabusReport.filter(r => r.count === 0).length || 0, [auditReport]);
+
+    const isAdmin = useMemo(() => user?.publicMetadata?.role === 'admin', [user]);
 
     const refreshData = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -80,6 +83,19 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }, [getToken, activeTab]);
 
     useEffect(() => { refreshData(); }, [refreshData]);
+    
+    if (userLoaded && !isAdmin) {
+        return (
+            <div className="max-w-7xl mx-auto py-20 px-4 text-center animate-fade-in">
+                <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <ShieldCheckIcon className="h-10 w-10" />
+                </div>
+                <h2 className="text-3xl font-black uppercase tracking-tighter">Access Denied</h2>
+                <p className="text-slate-500 mt-4 max-w-md mx-auto font-medium">You do not have administrative privileges to access this panel. Please contact the system administrator if you believe this is an error.</p>
+                <button onClick={onBack} className="mt-8 bg-slate-800 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-950 transition-all">Back to Dashboard</button>
+            </div>
+        );
+    }
 
     useEffect(() => { 
         if (activeTab === 'syllabus' && selectedExamId) {
@@ -328,8 +344,174 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 </div>
                             </div>
                         )}
-                        
-                        {/* Users, Exams, Books omitted for brevity as they are unchanged from user's provided code but wrapped in the same logic */}
+
+                        {activeTab === 'exams' && (
+                            <div className="space-y-8 animate-fade-in">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Exams Manager</h3>
+                                    <button onClick={() => setEditingExam({ id: '', title_ml: '', title_en: '', description_ml: '', description_en: '', category: 'General', level: 'Preliminary', icon_type: 'cap' })} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center space-x-2 shadow-lg">
+                                        <PlusIcon className="h-4 w-4" /><span>Add Exam</span>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {exams.map(ex => (
+                                        <div key={ex.id} className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between shadow-sm">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm"><AcademicCapIcon className="h-6 w-6 text-indigo-600" /></div>
+                                                <div>
+                                                    <h4 className="font-black text-sm uppercase">{ex.title.ml}</h4>
+                                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">{ex.category} • {ex.level}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <button onClick={() => setEditingExam({ ...ex, title_ml: ex.title.ml, title_en: ex.title.en, description_ml: ex.description.ml, description_en: ex.description.en })} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"><PencilSquareIcon className="h-4 w-4" /></button>
+                                                <button onClick={() => handleAction('delete-row', { sheet: 'Exams', id: ex.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"><TrashIcon className="h-4 w-4" /></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'books' && (
+                            <div className="space-y-8 animate-fade-in">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Bookstore Manager</h3>
+                                    <button onClick={() => setEditingBook({ id: '', title: '', author: '', imageUrl: '', amazonLink: '' })} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center space-x-2 shadow-lg">
+                                        <PlusIcon className="h-4 w-4" /><span>Add Book</span>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {books.map(book => (
+                                        <div key={book.id} className="bg-slate-50 dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col">
+                                            <div className="aspect-[3/4] bg-white dark:bg-slate-800 rounded-2xl mb-4 overflow-hidden shadow-inner flex items-center justify-center">
+                                                {book.imageUrl ? <img src={book.imageUrl} alt={book.title} className="w-full h-full object-cover" /> : <BookOpenIcon className="h-12 w-12 text-slate-200" />}
+                                            </div>
+                                            <h4 className="font-black text-xs uppercase line-clamp-2 h-8 mb-1">{book.title}</h4>
+                                            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-4">{book.author}</p>
+                                            <div className="flex items-center justify-end space-x-2 mt-auto">
+                                                <button onClick={() => setEditingBook(book)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"><PencilSquareIcon className="h-4 w-4" /></button>
+                                                <button onClick={() => handleAction('delete-row', { sheet: 'Bookstore', id: book.id })} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"><TrashIcon className="h-4 w-4" /></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'users' && (
+                            <div className="space-y-8 animate-fade-in">
+                                <h3 className="text-2xl font-black uppercase tracking-tight">Subscription Manager</h3>
+                                <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border dark:border-slate-800 shadow-xl">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-500">
+                                            <tr><th className="px-8 py-5">User ID</th><th className="px-8 py-5">Status</th><th className="px-8 py-5">Expiry</th><th className="px-8 py-5 text-right">Actions</th></tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                            {subscriptions.map(sub => (
+                                                <tr key={sub.id} className="text-sm font-bold">
+                                                    <td className="px-8 py-6 font-mono text-[10px]">{sub.user_id}</td>
+                                                    <td className="px-8 py-6">
+                                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${sub.status === 'pro' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
+                                                            {sub.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-[10px] text-slate-500">{sub.expiry_date ? new Date(sub.expiry_date).toLocaleDateString() : 'N/A'}</td>
+                                                    <td className="px-8 py-6 text-right">
+                                                        <button onClick={() => handleAction('delete-row', { sheet: 'Subscriptions', id: sub.id })} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                                                            <TrashIcon className="h-4 w-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Modals for Editing */}
+                        {editingExam && (
+                            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                                <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-fade-in-up border dark:border-slate-800">
+                                    <div className="p-8 border-b dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                                        <h3 className="text-xl font-black uppercase tracking-tight">Edit Exam</h3>
+                                        <button onClick={() => setEditingExam(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"><XMarkIcon className="h-6 w-6" /></button>
+                                    </div>
+                                    <div className="p-8 space-y-4 max-h-[70vh] overflow-y-auto">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400">Exam ID</label>
+                                                <input type="text" value={editingExam.id} onChange={e => setEditingExam({...editingExam, id: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400">Icon Type</label>
+                                                <input type="text" value={editingExam.icon_type} onChange={e => setEditingExam({...editingExam, icon_type: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Title (Malayalam)</label>
+                                            <input type="text" value={editingExam.title_ml} onChange={e => setEditingExam({...editingExam, title_ml: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Title (English)</label>
+                                            <input type="text" value={editingExam.title_en} onChange={e => setEditingExam({...editingExam, title_en: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400">Category</label>
+                                                <input type="text" value={editingExam.category} onChange={e => setEditingExam({...editingExam, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400">Level</label>
+                                                <input type="text" value={editingExam.level} onChange={e => setEditingExam({...editingExam, level: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-t dark:border-slate-800 flex justify-end space-x-4">
+                                        <button onClick={() => setEditingExam(null)} className="px-8 py-4 rounded-2xl font-black uppercase text-xs text-slate-500">Cancel</button>
+                                        <button onClick={async () => { await handleAction('save-row', { sheet: 'Exams', rowData: editingExam }); setEditingExam(null); }} className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs shadow-xl hover:bg-indigo-700 transition-all">Save Changes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {editingBook && (
+                            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                                <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-fade-in-up border dark:border-slate-800">
+                                    <div className="p-8 border-b dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                                        <h3 className="text-xl font-black uppercase tracking-tight">Edit Book</h3>
+                                        <button onClick={() => setEditingBook(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"><XMarkIcon className="h-6 w-6" /></button>
+                                    </div>
+                                    <div className="p-8 space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Book ID</label>
+                                            <input type="text" value={editingBook.id} onChange={e => setEditingBook({...editingBook, id: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Title</label>
+                                            <input type="text" value={editingBook.title} onChange={e => setEditingBook({...editingBook, title: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Author</label>
+                                            <input type="text" value={editingBook.author} onChange={e => setEditingBook({...editingBook, author: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Image URL</label>
+                                            <input type="text" value={editingBook.imageUrl} onChange={e => setEditingBook({...editingBook, imageUrl: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-slate-400">Amazon Link</label>
+                                            <input type="text" value={editingBook.amazonLink} onChange={e => setEditingBook({...editingBook, amazonLink: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none font-bold text-sm shadow-inner" />
+                                        </div>
+                                    </div>
+                                    <div className="p-8 bg-slate-50 dark:bg-slate-900/50 border-t dark:border-slate-800 flex justify-end space-x-4">
+                                        <button onClick={() => setEditingBook(null)} className="px-8 py-4 rounded-2xl font-black uppercase text-xs text-slate-500">Cancel</button>
+                                        <button onClick={async () => { await handleAction('save-row', { sheet: 'Bookstore', rowData: editingBook }); setEditingBook(null); }} className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs shadow-xl hover:bg-indigo-700 transition-all">Save Changes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
             </main>

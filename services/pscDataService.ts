@@ -166,10 +166,18 @@ export const testConnection = async (token: string | null) => {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ action: 'test-connection' })
         });
-        if (!res.ok) return { status: { sheets: false, supabase: false } };
+        if (!res.ok) {
+            const errorText = await res.text();
+            let errorMessage = errorText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.error || errorText;
+            } catch (e) {}
+            return { status: { sheets: false, supabase: false, sheetsErr: errorMessage, supabaseErr: errorMessage } };
+        }
         return await res.json();
-    } catch (e) {
-        return { status: { sheets: false, supabase: false } };
+    } catch (e: any) {
+        return { status: { sheets: false, supabase: false, sheetsErr: e.message, supabaseErr: e.message } };
     }
 };
 

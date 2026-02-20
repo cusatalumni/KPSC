@@ -14,7 +14,7 @@ import {
     backfillExplanations,
     bulkUploadQuestions
 } from "./_lib/scraper-service.js";
-import { auditAndCorrectQuestions } from "./_lib/audit-service.ts";
+import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
 import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
 export default async function handler(req: any, res: any) {
