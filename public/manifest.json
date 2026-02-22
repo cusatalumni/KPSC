@@ -1,0 +1,12 @@
+{
+  "name": "Kerala PSC Guru - PSC Exam Preparation in Malayalam",
+  "short_name": "PSC Guru",
+  "description": "Kerala PSC പരീക്ഷകൾക്കുള്ള മികച്ച മലയാളം പഠന ആപ്പ്. PSC question bank, mock tests, quizzes, current affairs Malayalam, previous year questions, study notes, fun learning modules എന്നിവയെല്ലാം ഒരുമിച്ച്. Staff Nurse, LDC, Degree Level, Tenth Level PSC exams-ന് pro version-ൽ advanced features & offline access. Kerala PSC preparation Malayalam app -കളിൽ ഏറ്റവും നല്ലത്!",
+  "keywords": "Kerala PSC, PSC Guru, Kerala PSC app, PSC question bank Malayalam, Kerala PSC mock test, PSC previous questions, current affairs Malayalam, Kerala PSC study notes, LDC exam preparation, Degree level PSC, Tenth level PSC, Staff Nurse PSC, Kerala PSC online coaching, PSC quiz Malayalam, Kerala public service commission preparation, PSC exam app, malayalam psc study material",
+  "categories": ["education", "books", "reference"],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "icons": []
+}

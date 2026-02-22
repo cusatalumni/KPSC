@@ -1,6 +1,6 @@
 
-import { readSheetData } from './_lib/sheets-service';
-import { supabase } from './_lib/supabase-service';
+import { readSheetData } from './_lib/sheets-service.js';
+import { supabase } from './_lib/supabase-service.js';
 
 /**
  * Enhanced option parser that unwraps multiple layers of stringification.

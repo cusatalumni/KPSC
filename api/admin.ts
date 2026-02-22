@@ -1,6 +1,6 @@
 
-import { verifyAdmin } from "./_lib/clerk-auth";
-import { findAndUpsertRow, deleteRowById, appendSheetData, readSheetData } from './_lib/sheets-service';
+import { verifyAdmin } from "./_lib/clerk-auth.js";
+import { findAndUpsertRow, deleteRowById, appendSheetData, readSheetData } from './_lib/sheets-service.js';
 import { 
     runDailyUpdateScrapers, 
     runBookScraper, 
@@ -13,9 +13,9 @@ import {
     repairLanguageMismatches,
     backfillExplanations,
     bulkUploadQuestions
-} from "./_lib/scraper-service";
-import { auditAndCorrectQuestions } from "./_lib/audit-service";
-import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service";
+} from "./_lib/scraper-service.js";
+import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
+import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
 
 export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {

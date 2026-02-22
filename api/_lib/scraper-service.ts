@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { readSheetData, findAndUpsertRow } from './sheets-service';
-import { supabase, upsertSupabaseData } from './supabase-service';
+import { readSheetData, findAndUpsertRow } from './sheets-service.js';
+import { supabase, upsertSupabaseData } from './supabase-service.js';
 
 declare var process: any;
 const AFFILIATE_TAG = 'tag=malayalambooks-21';
