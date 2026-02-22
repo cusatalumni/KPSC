@@ -13,47 +13,89 @@ import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
   {
-    id: 'ldc_lgs',
-    title: { ml: 'LDC / LGS Full Syllabus', en: 'LDC / LGS Full Syllabus' },
-    description: { ml: '10-ാം ക്ലാസ്സ് തലത്തിലുള്ള എല്ലാ പരീക്ഷകൾക്കും വേണ്ടിയുള്ള പരിശീലനം.', en: 'Full training for all 10th level exams.' },
+    id: '10th_level',
+    title: { ml: '10th Level (LGS, Office Attendant)', en: '10th Level (LGS, Office Attendant)' },
+    description: { ml: 'LGS, Office Attendant, Peon തുടങ്ങിയ പത്താം ക്ലാസ്സ് തലത്തിലുള്ള പരീക്ഷകൾ.', en: '10th level exams including LGS, Office Attendant, Peon.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
-    category: 'General',
-    level: 'Preliminary'
+    category: '10th Level',
+    level: 'Preliminary & Main'
   },
   {
-    id: 'university_assistant',
-    title: { ml: 'University Assistant / Sub Inspector', en: 'University Assistant / SI' },
-    description: { ml: 'ഡിഗ്രി ലെവൽ മെയിൻ പരീക്ഷകൾക്ക് വേണ്ടിയുള്ള പ്രത്യേക പരിശീലനം.', en: 'Special training for Degree Level Main exams.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-700" }),
-    category: 'General',
+    id: 'plus_two_level',
+    title: { ml: 'Plus Two Level (LDC, VEO)', en: 'Plus Two Level (LDC, VEO)' },
+    description: { ml: 'LDC, VEO, Fireman തുടങ്ങിയ പ്ലസ് ടു തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Plus Two level exams including LDC, VEO, Fireman.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-blue-500" }),
+    category: 'Plus Two Level',
+    level: 'Preliminary & Main'
+  },
+  {
+    id: 'degree_level',
+    title: { ml: 'Degree Level (University Asst, SI)', en: 'Degree Level (University Asst, SI)' },
+    description: { ml: 'University Assistant, Secretariat Assistant, SI തുടങ്ങിയ ഡിഗ്രി തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Degree level exams including University Assistant, Secretariat Assistant, SI.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-emerald-500" }),
+    category: 'Degree Level',
+    level: 'Preliminary & Main'
+  },
+  {
+    id: 'police_security',
+    title: { ml: 'Police / Security (CPO)', en: 'Police / Security (CPO)' },
+    description: { ml: 'CPO, Women Police Constable തുടങ്ങിയ പോലീസ് പരീക്ഷകൾ.', en: 'Police exams including CPO, Women Police Constable.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-rose-500" }),
+    category: 'Police',
+    level: 'Preliminary & Main'
+  },
+  {
+    id: 'kas',
+    title: { ml: 'KAS (Kerala Administrative Service)', en: 'KAS (Kerala Administrative Service)' },
+    description: { ml: 'KAS Officer പരീക്ഷകൾക്കുള്ള പരിശീലനം.', en: 'Training for KAS Officer exams.' },
+    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-amber-500" }),
+    category: 'KAS',
+    level: 'Preliminary & Main'
+  },
+  {
+    id: 'health_teaching',
+    title: { ml: 'Health & Teaching (Staff Nurse, HST)', en: 'Health & Teaching (Staff Nurse, HST)' },
+    description: { ml: 'Staff Nurse, Pharmacist, HST തുടങ്ങിയ പരീക്ഷകൾ.', en: 'Exams like Staff Nurse, Pharmacist, HST.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-cyan-500" }),
+    category: 'Health & Teaching',
     level: 'Main'
   },
   {
-    id: 'plus_two_prelims',
-    title: { ml: 'Plus Two Level Prelims (CPO / Excise)', en: 'Plus Two Level Prelims' },
-    description: { ml: 'സിവിൽ പോലീസ് ഓഫീസർ, എക്സൈസ് ഇൻസ്പെക്ടർ തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-indigo-600" }),
-    category: 'General',
-    level: 'Preliminary'
+    id: 'technical_engg',
+    title: { ml: 'Technical / Engineering (AE, Overseer)', en: 'Technical / Engineering (AE, Overseer)' },
+    description: { ml: 'Assistant Engineer, Overseer തുടങ്ങിയ സാങ്കേതിക പരീക്ഷകൾ.', en: 'Technical exams like Assistant Engineer, Overseer.' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-teal-500" }),
+    category: 'Technical',
+    level: 'Main'
   }
 ];
 
 export const MOCK_TESTS_DATA: MockTest[] = [
   { 
-    id: 'mock_ldc_full_1', 
-    examId: 'ldc_lgs', 
-    title: { ml: 'LDC Model Exam 2025 #1', en: 'LDC Model Exam 2025 #1' }, 
-    description: { ml: 'KPSC സിലബസ് പ്രകാരമുള്ള 100 ചോദ്യങ്ങൾ, 75 മിനിറ്റ്.', en: '100 Qs as per KPSC syllabus, 75 Minutes.' }, 
+    id: 'mock_10th_1', 
+    examId: '10th_level', 
+    title: { ml: '10th Level Prelims Model #1', en: '10th Level Prelims Model #1' }, 
+    description: { ml: 'LGS, Office Attendant മാതൃകയിലുള്ള 100 ചോദ്യങ്ങൾ.', en: '100 Qs in LGS, Office Attendant model.' }, 
     questionsCount: 100, 
     duration: 75, 
     negativeMarking: 0.33, 
     isPro: false 
   },
   { 
-    id: 'mock_ua_full_1', 
-    examId: 'university_assistant', 
-    title: { ml: 'University Assistant Main Model #1', en: 'University Assistant Main Model #1' }, 
-    description: { ml: 'ഡിഗ്രി ലെവൽ മെയിൻ പരീക്ഷയുടെ അതേ മാതൃകയിൽ 100 ചോദ്യങ്ങൾ.', en: '100 Questions in exact Degree Level Main model.' }, 
+    id: 'mock_plus_two_1', 
+    examId: 'plus_two_level', 
+    title: { ml: 'Plus Two Level (LDC) Model #1', en: 'Plus Two Level (LDC) Model #1' }, 
+    description: { ml: 'LDC പരീക്ഷയുടെ അതേ മാതൃകയിൽ 100 ചോദ്യങ്ങൾ.', en: '100 Questions in exact LDC model.' }, 
+    questionsCount: 100, 
+    duration: 75, 
+    negativeMarking: 0.33, 
+    isPro: false 
+  },
+  { 
+    id: 'mock_degree_1', 
+    examId: 'degree_level', 
+    title: { ml: 'Degree Level Prelims Model #1', en: 'Degree Level Prelims Model #1' }, 
+    description: { ml: 'University Assistant, SI മാതൃകയിലുള്ള 100 ചോദ്യങ്ങൾ.', en: '100 Qs in University Assistant, SI model.' }, 
     questionsCount: 100, 
     duration: 75, 
     negativeMarking: 0.33, 
@@ -61,19 +103,68 @@ export const MOCK_TESTS_DATA: MockTest[] = [
   }
 ];
 
-export const LDC_EXAM_CONTENT: ExamPageContent = {
-  practiceTests: [
-    { id: 'ldc_full_mod', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: 'ldc_gk_1', title: 'Kerala Geography', questions: 20, duration: 20, subject: 'Geography', topic: 'Kerala' }
-  ],
-  studyNotes: [],
-  previousPapers: []
-};
+const COMMON_10TH_SYLLABUS = [
+    { id: '10th_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: '10th_gk', title: 'General Knowledge', questions: 20, duration: 20, subject: 'General Knowledge', topic: 'Static GK' },
+    { id: '10th_kerala', title: 'Kerala History & Geography', questions: 20, duration: 20, subject: 'Kerala History', topic: 'Kerala' },
+    { id: '10th_science', title: 'General Science', questions: 20, duration: 20, subject: 'General Science / Science & Tech', topic: 'Science' },
+    { id: '10th_math', title: 'Quantitative Aptitude', questions: 20, duration: 20, subject: 'Quantitative Aptitude', topic: 'Maths' }
+];
+
+const COMMON_12TH_SYLLABUS = [
+    { id: '12th_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: '12th_eng', title: 'General English', questions: 20, duration: 20, subject: 'English', topic: 'Grammar & Vocab' },
+    { id: '12th_mal', title: 'Regional Language (Malayalam)', questions: 20, duration: 20, subject: 'Malayalam', topic: 'Grammar & Vocab' },
+    { id: '12th_const', title: 'Indian Constitution', questions: 20, duration: 20, subject: 'Indian Polity / Constitution', topic: 'Constitution' },
+    { id: '12th_it', title: 'Computer Science / IT', questions: 20, duration: 20, subject: 'Computer Science / IT / Cyber Laws', topic: 'IT' }
+];
+
+const COMMON_DEGREE_SYLLABUS = [
+    { id: 'deg_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: 'deg_hist', title: 'Indian History', questions: 20, duration: 20, subject: 'Indian History', topic: 'History' },
+    { id: 'deg_geo', title: 'Indian Geography', questions: 20, duration: 20, subject: 'Indian Geography', topic: 'Geography' },
+    { id: 'deg_eco', title: 'Indian Economy', questions: 20, duration: 20, subject: 'Indian Economy', topic: 'Economy' },
+    { id: 'deg_reasoning', title: 'Reasoning & Mental Ability', questions: 20, duration: 20, subject: 'Reasoning / Mental Ability', topic: 'Reasoning' }
+];
+
+const POLICE_SYLLABUS = [
+    { id: 'pol_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: 'pol_const', title: 'Indian Constitution', questions: 20, duration: 20, subject: 'Indian Polity / Constitution', topic: 'Constitution' },
+    { id: 'pol_kerala', title: 'Kerala Renaissance', questions: 20, duration: 20, subject: 'Kerala History / Renaissance', topic: 'Renaissance' },
+    { id: 'pol_ca', title: 'Current Affairs', questions: 20, duration: 20, subject: 'Current Affairs', topic: 'Current Affairs' }
+];
+
+const KAS_SYLLABUS = [
+    { id: 'kas_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: 'kas_hist', title: 'History (India & Kerala)', questions: 20, duration: 20, subject: 'Indian History', topic: 'History' },
+    { id: 'kas_geo', title: 'Geography (World, India, Kerala)', questions: 20, duration: 20, subject: 'Indian Geography', topic: 'Geography' },
+    { id: 'kas_eco', title: 'Economy & Planning', questions: 20, duration: 20, subject: 'Indian Economy', topic: 'Economy' },
+    { id: 'kas_pol', title: 'Polity & Governance', questions: 20, duration: 20, subject: 'Indian Polity / Constitution', topic: 'Polity' },
+    { id: 'kas_sci', title: 'Science & Technology', questions: 20, duration: 20, subject: 'General Science / Science & Tech', topic: 'Science' }
+];
+
+const HEALTH_TEACHING_SYLLABUS = [
+    { id: 'ht_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: 'ht_nurse', title: 'Nursing Science', questions: 20, duration: 20, subject: 'Nursing Science / Health Care', topic: 'Nursing' },
+    { id: 'ht_bio', title: 'Biology / Life Science', questions: 20, duration: 20, subject: 'Biology / Life Science', topic: 'Biology' },
+    { id: 'ht_pedagogy', title: 'Educational Psychology', questions: 20, duration: 20, subject: 'Educational Psychology / Pedagogy', topic: 'Pedagogy' }
+];
+
+const TECH_ENGG_SYLLABUS = [
+    { id: 'te_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
+    { id: 'te_ee', title: 'Electrical Engineering', questions: 20, duration: 20, subject: 'Electrical Engineering', topic: 'Electrical' },
+    { id: 'te_math', title: 'Quantitative Aptitude', questions: 20, duration: 20, subject: 'Quantitative Aptitude', topic: 'Maths' },
+    { id: 'te_it', title: 'Computer Science / IT', questions: 20, duration: 20, subject: 'Computer Science / IT / Cyber Laws', topic: 'IT' }
+];
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
-    'ldc_lgs': LDC_EXAM_CONTENT,
-    'university_assistant': LDC_EXAM_CONTENT,
-    'plus_two_prelims': LDC_EXAM_CONTENT,
+    '10th_level': { practiceTests: COMMON_10TH_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'plus_two_level': { practiceTests: COMMON_12TH_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'degree_level': { practiceTests: COMMON_DEGREE_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'police_security': { practiceTests: POLICE_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'kas': { practiceTests: KAS_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'health_teaching': { practiceTests: HEALTH_TEACHING_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'technical_engg': { practiceTests: TECH_ENGG_SYLLABUS, studyNotes: [], previousPapers: [] },
 };
 
 export const NAV_STRUCTURE: NavLink[] = [
