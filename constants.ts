@@ -13,158 +13,136 @@ import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
   {
-    id: '10th_level',
-    title: { ml: '10th Level (LGS, Office Attendant)', en: '10th Level (LGS, Office Attendant)' },
-    description: { ml: 'LGS, Office Attendant, Peon തുടങ്ങിയ പത്താം ക്ലാസ്സ് തലത്തിലുള്ള പരീക്ഷകൾ.', en: '10th level exams including LGS, Office Attendant, Peon.' },
+    id: 'hsst_physics',
+    title: { ml: 'HSST Physics', en: 'HSST Physics' },
+    description: { ml: 'HSST Physics പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for HSST Physics.' },
     icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
-    category: '10th Level',
-    level: 'Preliminary & Main'
-  },
-  {
-    id: 'plus_two_level',
-    title: { ml: 'Plus Two Level (LDC, VEO)', en: 'Plus Two Level (LDC, VEO)' },
-    description: { ml: 'LDC, VEO, Fireman തുടങ്ങിയ പ്ലസ് ടു തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Plus Two level exams including LDC, VEO, Fireman.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-blue-500" }),
-    category: 'Plus Two Level',
-    level: 'Preliminary & Main'
-  },
-  {
-    id: 'degree_level',
-    title: { ml: 'Degree Level (University Asst, SI)', en: 'Degree Level (University Asst, SI)' },
-    description: { ml: 'University Assistant, Secretariat Assistant, SI തുടങ്ങിയ ഡിഗ്രി തലത്തിലുള്ള പരീക്ഷകൾ.', en: 'Degree level exams including University Assistant, Secretariat Assistant, SI.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-emerald-500" }),
-    category: 'Degree Level',
-    level: 'Preliminary & Main'
-  },
-  {
-    id: 'police_security',
-    title: { ml: 'Police / Security (CPO)', en: 'Police / Security (CPO)' },
-    description: { ml: 'CPO, Women Police Constable തുടങ്ങിയ പോലീസ് പരീക്ഷകൾ.', en: 'Police exams including CPO, Women Police Constable.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-rose-500" }),
-    category: 'Police',
-    level: 'Preliminary & Main'
-  },
-  {
-    id: 'kas',
-    title: { ml: 'KAS (Kerala Administrative Service)', en: 'KAS (Kerala Administrative Service)' },
-    description: { ml: 'KAS Officer പരീക്ഷകൾക്കുള്ള പരിശീലനം.', en: 'Training for KAS Officer exams.' },
-    icon: React.createElement(StarIcon, { className: "h-8 w-8 text-amber-500" }),
-    category: 'KAS',
-    level: 'Preliminary & Main'
-  },
-  {
-    id: 'health_teaching',
-    title: { ml: 'Health & Teaching (Staff Nurse, HST)', en: 'Health & Teaching (Staff Nurse, HST)' },
-    description: { ml: 'Staff Nurse, Pharmacist, HST തുടങ്ങിയ പരീക്ഷകൾ.', en: 'Exams like Staff Nurse, Pharmacist, HST.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-cyan-500" }),
-    category: 'Health & Teaching',
+    category: 'Higher Secondary',
     level: 'Main'
   },
   {
-    id: 'technical_engg',
-    title: { ml: 'Technical / Engineering (AE, Overseer)', en: 'Technical / Engineering (AE, Overseer)' },
-    description: { ml: 'Assistant Engineer, Overseer തുടങ്ങിയ സാങ്കേതിക പരീക്ഷകൾ.', en: 'Technical exams like Assistant Engineer, Overseer.' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-teal-500" }),
-    category: 'Technical',
+    id: 'hsst_chemistry',
+    title: { ml: 'HSST Chemistry', en: 'HSST Chemistry' },
+    description: { ml: 'HSST Chemistry പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for HSST Chemistry.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-cyan-500" }),
+    category: 'Higher Secondary',
+    level: 'Main'
+  },
+  {
+    id: 'pharmacist_siddha',
+    title: { ml: 'Pharmacist Gr II (Siddha)', en: 'Pharmacist Gr II (Siddha)' },
+    description: { ml: 'സിദ്ധ ഫാർമസിസ്റ്റ് പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for Siddha Pharmacist.' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-emerald-500" }),
+    category: 'Medical',
+    level: 'Main'
+  },
+  {
+    id: 'pharmacist_homoeopathy',
+    title: { ml: 'Pharmacist Gr II (Homoeopathy)', en: 'Pharmacist Gr II (Homoeopathy)' },
+    description: { ml: 'ഹോമിയോപ്പതി ഫാർമസിസ്റ്റ് പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for Homoeopathy Pharmacist.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-rose-500" }),
+    category: 'Medical',
     level: 'Main'
   }
 ];
 
 export const MOCK_TESTS_DATA: MockTest[] = [
-  { 
-    id: 'mock_10th_1', 
-    examId: '10th_level', 
-    title: { ml: '10th Level Prelims Model #1', en: '10th Level Prelims Model #1' }, 
-    description: { ml: 'LGS, Office Attendant മാതൃകയിലുള്ള 100 ചോദ്യങ്ങൾ.', en: '100 Qs in LGS, Office Attendant model.' }, 
-    questionsCount: 100, 
-    duration: 75, 
-    negativeMarking: 0.33, 
-    isPro: false 
-  },
-  { 
-    id: 'mock_plus_two_1', 
-    examId: 'plus_two_level', 
-    title: { ml: 'Plus Two Level (LDC) Model #1', en: 'Plus Two Level (LDC) Model #1' }, 
-    description: { ml: 'LDC പരീക്ഷയുടെ അതേ മാതൃകയിൽ 100 ചോദ്യങ്ങൾ.', en: '100 Questions in exact LDC model.' }, 
-    questionsCount: 100, 
-    duration: 75, 
-    negativeMarking: 0.33, 
-    isPro: false 
-  },
-  { 
-    id: 'mock_degree_1', 
-    examId: 'degree_level', 
-    title: { ml: 'Degree Level Prelims Model #1', en: 'Degree Level Prelims Model #1' }, 
-    description: { ml: 'University Assistant, SI മാതൃകയിലുള്ള 100 ചോദ്യങ്ങൾ.', en: '100 Qs in University Assistant, SI model.' }, 
-    questionsCount: 100, 
-    duration: 75, 
-    negativeMarking: 0.33, 
-    isPro: true 
-  }
+  { id: 'hsst_phy_full_1', examId: 'hsst_physics', title: { ml: 'HSST Physics Full Mock Test 1', en: 'HSST Physics Full Mock Test 1' }, description: { ml: 'Complete Syllabus (Classical + Quantum + Electrodynamics + Modern Physics)', en: 'Complete Syllabus (Classical + Quantum + Electrodynamics + Modern Physics)' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
+  { id: 'hsst_phy_full_2', examId: 'hsst_physics', title: { ml: 'HSST Physics Full Mock Test 2', en: 'HSST Physics Full Mock Test 2' }, description: { ml: 'Focus on Electronics, Microprocessor & Mathematical Methods', en: 'Focus on Electronics, Microprocessor & Mathematical Methods' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  { id: 'hsst_phy_full_3', examId: 'hsst_physics', title: { ml: 'HSST Physics Full Mock Test 3', en: 'HSST Physics Full Mock Test 3' }, description: { ml: 'Previous Year Pattern + Renaissance & GK Section', en: 'Previous Year Pattern + Renaissance & GK Section' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  
+  { id: 'hsst_chem_full_1', examId: 'hsst_chemistry', title: { ml: 'HSST Chemistry Full Mock Test 1', en: 'HSST Chemistry Full Mock Test 1' }, description: { ml: 'Inorganic + Organic Full Coverage', en: 'Inorganic + Organic Full Coverage' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
+  { id: 'hsst_chem_full_2', examId: 'hsst_chemistry', title: { ml: 'HSST Chemistry Full Mock Test 2', en: 'HSST Chemistry Full Mock Test 2' }, description: { ml: 'Physical Chemistry + Advanced Inorganic', en: 'Physical Chemistry + Advanced Inorganic' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  { id: 'hsst_chem_full_3', examId: 'hsst_chemistry', title: { ml: 'HSST Chemistry Full Mock Test 3', en: 'HSST Chemistry Full Mock Test 3' }, description: { ml: 'Mixed Modules + GK/Renaissance', en: 'Mixed Modules + GK/Renaissance' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+
+  { id: 'pharm_sid_full_1', examId: 'pharmacist_siddha', title: { ml: 'Siddha Pharmacist Full Mock Test 1', en: 'Siddha Pharmacist Full Mock Test 1' }, description: { ml: 'Fundamentals + Pharmacology + Toxicology', en: 'Fundamentals + Pharmacology + Toxicology' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
+  { id: 'pharm_sid_full_2', examId: 'pharmacist_siddha', title: { ml: 'Siddha Pharmacist Full Mock Test 2', en: 'Siddha Pharmacist Full Mock Test 2' }, description: { ml: 'Anatomy, Physiology + Pharmacy & Formulations', en: 'Anatomy, Physiology + Pharmacy & Formulations' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  { id: 'pharm_sid_full_3', examId: 'pharmacist_siddha', title: { ml: 'Siddha Pharmacist Full Mock Test 3', en: 'Siddha Pharmacist Full Mock Test 3' }, description: { ml: 'Siddha Specific Drugs + Dispensing', en: 'Siddha Specific Drugs + Dispensing' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+
+  { id: 'pharm_hom_full_1', examId: 'pharmacist_homoeopathy', title: { ml: 'Homoeopathy Pharmacist Full Mock Test 1', en: 'Homoeopathy Pharmacist Full Mock Test 1' }, description: { ml: 'Pharmacy Basics + Anatomy & Physiology', en: 'Pharmacy Basics + Anatomy & Physiology' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
+  { id: 'pharm_hom_full_2', examId: 'pharmacist_homoeopathy', title: { ml: 'Homoeopathy Pharmacist Full Mock Test 2', en: 'Homoeopathy Pharmacist Full Mock Test 2' }, description: { ml: 'Pharmacognosy + Proving + Posology', en: 'Pharmacognosy + Proving + Posology' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  { id: 'pharm_hom_full_3', examId: 'pharmacist_homoeopathy', title: { ml: 'Homoeopathy Pharmacist Full Mock Test 3', en: 'Homoeopathy Pharmacist Full Mock Test 3' }, description: { ml: 'Materia Medica & Dispensing Focus', en: 'Materia Medica & Dispensing Focus' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true }
 ];
 
-const COMMON_10TH_SYLLABUS = [
-    { id: '10th_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: '10th_gk', title: 'General Knowledge', questions: 20, duration: 20, subject: 'General Knowledge', topic: 'Static GK' },
-    { id: '10th_kerala', title: 'Kerala History & Geography', questions: 20, duration: 20, subject: 'Kerala History', topic: 'Kerala' },
-    { id: '10th_science', title: 'General Science', questions: 20, duration: 20, subject: 'General Science / Science & Tech', topic: 'Science' },
-    { id: '10th_math', title: 'Quantitative Aptitude', questions: 20, duration: 20, subject: 'Quantitative Aptitude', topic: 'Maths' }
-];
+export const HSST_PHYSICS_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'hsst_phy_m1', title: 'Classical Mechanics: Newtonian & Lagrangian Formulation', questions: 20, duration: 20, subject: 'Physics', topic: 'Classical Mechanics' },
+    { id: 'hsst_phy_m2', title: 'Classical Mechanics: Hamiltonian & Phase Space', questions: 20, duration: 20, subject: 'Physics', topic: 'Classical Mechanics' },
+    { id: 'hsst_phy_m3', title: 'Mathematical Methods: Fourier Series, Transforms & Special Functions', questions: 20, duration: 20, subject: 'Physics', topic: 'Mathematical Methods' },
+    { id: 'hsst_phy_m4', title: 'Mathematical Methods: Group Theory & Symmetry', questions: 20, duration: 20, subject: 'Physics', topic: 'Mathematical Methods' },
+    { id: 'hsst_phy_m5', title: 'Electronics: Analog (Op-amps, Filters, Amplifiers)', questions: 20, duration: 20, subject: 'Physics', topic: 'Electronics' },
+    { id: 'hsst_phy_m6', title: 'Electronics: Digital & Microprocessor 8085 Basics', questions: 20, duration: 20, subject: 'Physics', topic: 'Electronics' },
+    { id: 'hsst_phy_m7', title: 'Quantum Mechanics: Schrödinger Equation & Particle in Box', questions: 20, duration: 20, subject: 'Physics', topic: 'Quantum Mechanics' },
+    { id: 'hsst_phy_m8', title: 'Quantum Mechanics: Hydrogen Atom & Angular Momentum', questions: 20, duration: 20, subject: 'Physics', topic: 'Quantum Mechanics' },
+    { id: 'hsst_phy_m9', title: 'Electrodynamics: Maxwell\'s Equations & EM Waves', questions: 20, duration: 20, subject: 'Physics', topic: 'Electrodynamics' },
+    { id: 'hsst_phy_m10', title: 'Statistical Physics: Ensembles & Partition Function', questions: 20, duration: 20, subject: 'Physics', topic: 'Statistical Physics' },
+    { id: 'hsst_phy_m11', title: 'Spectroscopy: Rotational, Vibrational, NMR', questions: 20, duration: 20, subject: 'Physics', topic: 'Spectroscopy' },
+    { id: 'hsst_phy_m12', title: 'Condensed Matter: Crystal Structure & Band Theory', questions: 20, duration: 20, subject: 'Physics', topic: 'Condensed Matter' },
+    { id: 'hsst_phy_m13', title: 'Nuclear Physics: Models & Reactions', questions: 20, duration: 20, subject: 'Physics', topic: 'Nuclear Physics' },
+    { id: 'hsst_phy_m14', title: 'Particle Physics: Quarks & Standard Model', questions: 20, duration: 20, subject: 'Physics', topic: 'Particle Physics' }
+  ],
+  studyNotes: [],
+  previousPapers: []
+};
 
-const COMMON_12TH_SYLLABUS = [
-    { id: '12th_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: '12th_eng', title: 'General English', questions: 20, duration: 20, subject: 'English', topic: 'Grammar & Vocab' },
-    { id: '12th_mal', title: 'Regional Language (Malayalam)', questions: 20, duration: 20, subject: 'Malayalam', topic: 'Grammar & Vocab' },
-    { id: '12th_const', title: 'Indian Constitution', questions: 20, duration: 20, subject: 'Indian Polity / Constitution', topic: 'Constitution' },
-    { id: '12th_it', title: 'Computer Science / IT', questions: 20, duration: 20, subject: 'Computer Science / IT / Cyber Laws', topic: 'IT' }
-];
+export const HSST_CHEMISTRY_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'hsst_chem_m1', title: 'Inorganic Chemistry 1: Structure, Bonding & Periodicity', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Inorganic Chemistry' },
+    { id: 'hsst_chem_m2', title: 'Inorganic Chemistry 1: s-block & p-block Elements', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Inorganic Chemistry' },
+    { id: 'hsst_chem_m3', title: 'Inorganic Chemistry 2: Coordination Chemistry (CFT, LFT, MOT)', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Inorganic Chemistry' },
+    { id: 'hsst_chem_m4', title: 'Inorganic Chemistry 2: Organometallics & Bioinorganic', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Inorganic Chemistry' },
+    { id: 'hsst_chem_m5', title: 'Inorganic Chemistry 3: Nuclear Reactions & Models', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Inorganic Chemistry' },
+    { id: 'hsst_chem_m6', title: 'Inorganic Chemistry 3: Advanced Materials (Solid Electrolytes, Pigments)', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Inorganic Chemistry' },
+    { id: 'hsst_chem_m7', title: 'Organic Chemistry 1: Stereochemistry & Chirality', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Organic Chemistry' },
+    { id: 'hsst_chem_m8', title: 'Organic Chemistry 1: Reaction Mechanisms (Addition, Substitution)', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Organic Chemistry' },
+    { id: 'hsst_chem_m9', title: 'Organic Chemistry 2: Elimination & Rearrangements (Hoffmann, Beckmann etc.)', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Organic Chemistry' },
+    { id: 'hsst_chem_m10', title: 'Organic Chemistry 3: Spectroscopy & Photochemistry', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Organic Chemistry' },
+    { id: 'hsst_chem_m11', title: 'Physical Chemistry 1: Thermodynamics & Phase Equilibria', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Physical Chemistry' },
+    { id: 'hsst_chem_m12', title: 'Physical Chemistry 1: Kinetics & Catalysis', questions: 20, duration: 20, subject: 'Chemistry', topic: 'Physical Chemistry' }
+  ],
+  studyNotes: [],
+  previousPapers: []
+};
 
-const COMMON_DEGREE_SYLLABUS = [
-    { id: 'deg_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: 'deg_hist', title: 'Indian History', questions: 20, duration: 20, subject: 'Indian History', topic: 'History' },
-    { id: 'deg_geo', title: 'Indian Geography', questions: 20, duration: 20, subject: 'Indian Geography', topic: 'Geography' },
-    { id: 'deg_eco', title: 'Indian Economy', questions: 20, duration: 20, subject: 'Indian Economy', topic: 'Economy' },
-    { id: 'deg_reasoning', title: 'Reasoning & Mental Ability', questions: 20, duration: 20, subject: 'Reasoning / Mental Ability', topic: 'Reasoning' }
-];
+export const PHARMACIST_SIDDHA_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'pharm_sid_m1', title: 'Fundamentals of Siddha: Three Humoral Theory (Vali, Azhal, Iyam)', questions: 20, duration: 20, subject: 'Siddha', topic: 'Fundamentals' },
+    { id: 'pharm_sid_m2', title: 'Fundamentals of Siddha: Seven Physical Constituents (Udal Kattugal)', questions: 20, duration: 20, subject: 'Siddha', topic: 'Fundamentals' },
+    { id: 'pharm_sid_m3', title: 'Anatomy & Physiology: Nervous System & Siddha Concepts (Dasavayu, Dasanadi)', questions: 20, duration: 20, subject: 'Siddha', topic: 'Anatomy & Physiology' },
+    { id: 'pharm_sid_m4', title: 'Basic Pharmacology: Thogai Charakkugal & Dispensing', questions: 20, duration: 20, subject: 'Siddha', topic: 'Pharmacology' },
+    { id: 'pharm_sid_m5', title: 'Pharmacy & Pharmacognosy: Crude Drugs (Laxatives, Cardiotonics)', questions: 20, duration: 20, subject: 'Siddha', topic: 'Pharmacy' },
+    { id: 'pharm_sid_m6', title: 'Siddha Pharmacology 1: Properties & Classifications of Drugs', questions: 20, duration: 20, subject: 'Siddha', topic: 'Pharmacology' },
+    { id: 'pharm_sid_m7', title: 'Siddha Pharmacology 2: Internal & External Medicines Relation to Panchabotham', questions: 20, duration: 20, subject: 'Siddha', topic: 'Pharmacology' },
+    { id: 'pharm_sid_m8', title: 'Siddha Pharmaceuticals: Formulations & Quality Control', questions: 20, duration: 20, subject: 'Siddha', topic: 'Pharmaceuticals' },
+    { id: 'pharm_sid_m9', title: 'Siddha Toxicology 1: Toxic Substances & Antidotes', questions: 20, duration: 20, subject: 'Siddha', topic: 'Toxicology' },
+    { id: 'pharm_sid_m10', title: 'Siddha Toxicology 2: Poison Management & Safety', questions: 20, duration: 20, subject: 'Siddha', topic: 'Toxicology' }
+  ],
+  studyNotes: [],
+  previousPapers: []
+};
 
-const POLICE_SYLLABUS = [
-    { id: 'pol_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: 'pol_const', title: 'Indian Constitution', questions: 20, duration: 20, subject: 'Indian Polity / Constitution', topic: 'Constitution' },
-    { id: 'pol_kerala', title: 'Kerala Renaissance', questions: 20, duration: 20, subject: 'Kerala History / Renaissance', topic: 'Renaissance' },
-    { id: 'pol_ca', title: 'Current Affairs', questions: 20, duration: 20, subject: 'Current Affairs', topic: 'Current Affairs' }
-];
-
-const KAS_SYLLABUS = [
-    { id: 'kas_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: 'kas_hist', title: 'History (India & Kerala)', questions: 20, duration: 20, subject: 'Indian History', topic: 'History' },
-    { id: 'kas_geo', title: 'Geography (World, India, Kerala)', questions: 20, duration: 20, subject: 'Indian Geography', topic: 'Geography' },
-    { id: 'kas_eco', title: 'Economy & Planning', questions: 20, duration: 20, subject: 'Indian Economy', topic: 'Economy' },
-    { id: 'kas_pol', title: 'Polity & Governance', questions: 20, duration: 20, subject: 'Indian Polity / Constitution', topic: 'Polity' },
-    { id: 'kas_sci', title: 'Science & Technology', questions: 20, duration: 20, subject: 'General Science / Science & Tech', topic: 'Science' }
-];
-
-const HEALTH_TEACHING_SYLLABUS = [
-    { id: 'ht_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: 'ht_nurse', title: 'Nursing Science', questions: 20, duration: 20, subject: 'Nursing Science / Health Care', topic: 'Nursing' },
-    { id: 'ht_bio', title: 'Biology / Life Science', questions: 20, duration: 20, subject: 'Biology / Life Science', topic: 'Biology' },
-    { id: 'ht_pedagogy', title: 'Educational Psychology', questions: 20, duration: 20, subject: 'Educational Psychology / Pedagogy', topic: 'Pedagogy' }
-];
-
-const TECH_ENGG_SYLLABUS = [
-    { id: 'te_full', title: 'Full Length Model Exam', questions: 100, duration: 75, subject: 'Mixed', topic: 'Full Syllabus' },
-    { id: 'te_ee', title: 'Electrical Engineering', questions: 20, duration: 20, subject: 'Electrical Engineering', topic: 'Electrical' },
-    { id: 'te_math', title: 'Quantitative Aptitude', questions: 20, duration: 20, subject: 'Quantitative Aptitude', topic: 'Maths' },
-    { id: 'te_it', title: 'Computer Science / IT', questions: 20, duration: 20, subject: 'Computer Science / IT / Cyber Laws', topic: 'IT' }
-];
+export const PHARMACIST_HOMOEOPATHY_CONTENT: ExamPageContent = {
+  practiceTests: [
+    { id: 'pharm_hom_m1', title: 'Homoeopathic Pharmacy Basics: Philosophy, History & Pioneers', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Pharmacy Basics' },
+    { id: 'pharm_hom_m2', title: 'Homoeopathic Pharmacopoeia: HPUS/HPI Monographs & Sources', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Pharmacopoeia' },
+    { id: 'pharm_hom_m3', title: 'Pharmacognosy: Drug Substances (Botany, Zoology Identification)', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Pharmacognosy' },
+    { id: 'pharm_hom_m4', title: 'Drug Proving: Prover Selection & Pathogenetic Properties', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Drug Proving' },
+    { id: 'pharm_hom_m5', title: 'Posology & Administration: Routes, Potentization, Dosing', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Posology' },
+    { id: 'pharm_hom_m6', title: 'Anatomy: Skeletal, Muscular, Respiratory Systems', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Anatomy' },
+    { id: 'pharm_hom_m7', title: 'Physiology: Blood Composition & Functions', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Physiology' },
+    { id: 'pharm_hom_m8', title: 'First Aid & Hygiene: Vital Signs, ABC of Life Support', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'First Aid' },
+    { id: 'pharm_hom_m9', title: 'Community Health: Personal & Hospital Hygiene', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Community Health' },
+    { id: 'pharm_hom_m10', title: 'Materia Medica Basics: Common Remedies & Indications', questions: 20, duration: 20, subject: 'Homoeopathy', topic: 'Materia Medica' }
+  ],
+  studyNotes: [],
+  previousPapers: []
+};
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
-    '10th_level': { practiceTests: COMMON_10TH_SYLLABUS, studyNotes: [], previousPapers: [] },
-    'plus_two_level': { practiceTests: COMMON_12TH_SYLLABUS, studyNotes: [], previousPapers: [] },
-    'degree_level': { practiceTests: COMMON_DEGREE_SYLLABUS, studyNotes: [], previousPapers: [] },
-    'police_security': { practiceTests: POLICE_SYLLABUS, studyNotes: [], previousPapers: [] },
-    'kas': { practiceTests: KAS_SYLLABUS, studyNotes: [], previousPapers: [] },
-    'health_teaching': { practiceTests: HEALTH_TEACHING_SYLLABUS, studyNotes: [], previousPapers: [] },
-    'technical_engg': { practiceTests: TECH_ENGG_SYLLABUS, studyNotes: [], previousPapers: [] },
+    'hsst_physics': HSST_PHYSICS_CONTENT,
+    'hsst_chemistry': HSST_CHEMISTRY_CONTENT,
+    'pharmacist_siddha': PHARMACIST_SIDDHA_CONTENT,
+    'pharmacist_homoeopathy': PHARMACIST_HOMOEOPATHY_CONTENT,
 };
 
 export const NAV_STRUCTURE: NavLink[] = [
@@ -225,11 +203,11 @@ export const APRIL_EXAMS_DATA: ExamCalendarEntry[] = [
 ];
 
 export const MOCK_FLASHCARDS: FlashCard[] = [
-    { id: 'fc1', front: 'കേരളത്തിലെ ഏറ്റവും നീളം കൂടിയ നദി?', back: 'പെരിയാർ (244 കി.മീ)', topic: 'Geography' },
-    { id: 'fc2', front: 'കേരള നവോത്ഥാനത്തിന്റെ പിതാവ്?', back: 'ശ്രീനാരായണ ഗുരു', topic: 'History' },
-    { id: 'fc3', front: 'ഇന്ത്യൻ ഭരണഘടനയുടെ ശില്പി?', back: 'ഡോ. ബി. ആർ. അംബേദ്കർ', topic: 'Constitution' },
-    { id: 'fc4', front: 'കേരളത്തിൽ അവസാനം രൂപീകൃതമായ ജില്ല?', back: 'കാസർഗോഡ് (1984)', topic: 'General' },
-    { id: 'fc5', front: 'അറബിക്കടലിന്റെ റാണി എന്നറിയപ്പെടുന്നത്?', back: 'കൊച്ചി', topic: 'Geography' }
+    { id: 'fc1', front: 'കേരളത്തിലെ ഏറ്റവും നീളം കൂടിയ നദി ഏതാണ്?', back: 'പെരിയാർ (244 കി.മീ)', topic: 'Geography', explanation: 'ഇടുക്കി ജില്ലയിലെ ശിവഗിരി മലകളിൽ നിന്നാണ് പെരിയാർ ഉത്ഭവിക്കുന്നത്. ഇത് കേരളത്തിലെ ഏറ്റവും വലിയ നദിയുമാണ്.' },
+    { id: 'fc2', front: 'കേരള നവോത്ഥാനത്തിന്റെ പിതാവ് എന്നറിയപ്പെടുന്നത് ആരാണ്?', back: 'ശ്രീനാരായണ ഗുരു', topic: 'History', explanation: 'കേരളത്തിലെ സാമൂഹിക അസമത്വങ്ങൾക്കെതിരെ പോരാടിയ പ്രധാന നവോത്ഥാന നായകനാണ് ശ്രീനാരായണ ഗുരു. 1888-ലെ അരുവിപ്പുറം പ്രതിഷ്ഠ അദ്ദേഹത്തിന്റെ പ്രധാന സംഭാവനകളിലൊന്നാണ്.' },
+    { id: 'fc3', front: 'ഇന്ത്യൻ ഭരണഘടനയുടെ ശില്പി ആരാണ്?', back: 'ഡോ. ബി. ആർ. അംബേദ്കർ', topic: 'Constitution', explanation: 'ഇന്ത്യൻ ഭരണഘടനാ ഡ്രാഫ്റ്റിംഗ് കമ്മിറ്റിയുടെ ചെയർമാനായിരുന്നു ഡോ. ബി. ആർ. അംബേദ്കർ. സ്വതന്ത്ര ഇന്ത്യയുടെ ആദ്യത്തെ നിയമമന്ത്രി കൂടിയായിരുന്നു അദ്ദേഹം.' },
+    { id: 'fc4', front: 'കേരളത്തിൽ അവസാനം രൂപീകൃതമായ ജില്ല ഏതാണ്?', back: 'കാസർഗോഡ് (1984)', topic: 'General', explanation: '1984 മെയ് 24-നാണ് കാസർഗോഡ് ജില്ല രൂപീകൃതമായത്. കണ്ണൂർ ജില്ല വിഭജിച്ചാണ് ഇത് രൂപീകരിച്ചത്.' },
+    { id: 'fc5', front: 'അറബിക്കടലിന്റെ റാണി എന്നറിയപ്പെടുന്ന നഗരം ഏതാണ്?', back: 'കൊച്ചി', topic: 'Geography', explanation: 'പുരാതന കാലം മുതൽ ഒരു പ്രധാന സുഗന്ധവ്യഞ്ജന വ്യാപാര കേന്ദ്രമായിരുന്നതിനാലാണ് കൊച്ചിയെ അറബിക്കടലിന്റെ റാണി എന്ന് വിളിക്കുന്നത്.' }
 ];
 
 export const MOCK_QUESTION_BANK: QuizQuestion[] = [];

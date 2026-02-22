@@ -147,9 +147,75 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
     return { message: "No questions generated." };
 }
 
+export async function generateFlashCards(batchSize: number = 5) {
+    if (!supabase) throw new Error("Supabase required.");
+    
+    // 1. Get topics that don't have many flashcards
+    const { data: sData } = await supabase.from('syllabus').select('topic, title');
+    const { data: fData } = await supabase.from('flashcards').select('topic');
+    
+    const counts: Record<string, number> = {};
+    fData?.forEach(f => { const t = String(f.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
+    
+    const targetTopics = (sData || [])
+        .map(s => ({ topic: s.topic || s.title, count: counts[String(s.topic || s.title).toLowerCase().trim()] || 0 }))
+        .sort((a, b) => a.count - b.count)
+        .slice(0, batchSize);
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Generate 5 high-quality PSC Flashcards for these topics: ${targetTopics.map(t => t.topic).join(', ')}.
+            
+            Flashcards should be in Malayalam.
+            Front: A clear question or term.
+            Back: The concise answer.
+            Explanation: A detailed explanation of the answer.
+            
+            JSON format: { "topic": "string", "front": "string", "back": "string", "explanation": "string" }`,
+            config: { 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            topic: { type: Type.STRING },
+                            front: { type: Type.STRING },
+                            back: { type: Type.STRING },
+                            explanation: { type: Type.STRING }
+                        },
+                        required: ["topic", "front", "back", "explanation"]
+                    }
+                }
+            }
+        });
+
+        const items = JSON.parse(response.text || "[]");
+        if (items.length > 0) {
+            const sbData = items.map((item: any) => ({
+                id: createNumericHash(item.front + item.topic),
+                topic: item.topic,
+                front: item.front,
+                back: item.back,
+                explanation: item.explanation
+            }));
+            
+            await upsertSupabaseData('flashcards', sbData);
+            for (const f of sbData) {
+                await findAndUpsertRow('FlashCards', String(f.id), [f.id, f.front, f.back, f.topic, f.explanation]);
+            }
+            return { message: `Generated ${sbData.length} flashcards.` };
+        }
+    } catch (e: any) { throw e; }
+    return { message: "No flashcards generated." };
+}
+
 export async function runDailyUpdateScrapers() {
     await Promise.all([scrapeKpscNotifications(), scrapePscLiveUpdates(), scrapeCurrentAffairs(), scrapeGkFacts()]);
     await generateQuestionsForGaps(5);
+    await generateFlashCards(3);
     return { message: "Daily Update Routine Finished." };
 }
 

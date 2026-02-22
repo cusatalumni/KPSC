@@ -218,6 +218,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <ToolCard title="AI Explanations" icon={SparklesIcon} action="run-explanation-repair" color="bg-emerald-600" desc="AI generation of missing explanations for questions in the database." />
                                 <ToolCard title="Book Store Sync" icon={BookOpenIcon} action="run-book-scraper" color="bg-slate-800" desc="Updates bookstore with top Amazon PSC guides." />
                                 <ToolCard title="GK Fact Scraper" icon={LightBulbIcon} action="run-gk-scraper" color="bg-amber-500" desc="Generates unique study facts for the daily widget." />
+                                <ToolCard title="Flashcard Generator" icon={SparklesIcon} action="run-flashcard-generator" color="bg-rose-600" desc="AI generation of high-quality Malayalam flashcards with explanations." />
                             </div>
                         )}
 
@@ -226,11 +227,11 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="bg-orange-50 dark:bg-orange-900/20 p-8 rounded-[2.5rem] border-2 border-orange-100 dark:border-orange-800 shadow-xl flex flex-col justify-between">
                                         <div>
-                                            <h4 className="text-[10px] font-black uppercase text-orange-600 tracking-widest mb-2">Unclassified Items</h4>
+                                            <h4 className="text-[10px] font-black uppercase text-orange-600 tracking-widest mb-2">Sequential Audit</h4>
                                             <p className="text-5xl font-black text-orange-700 dark:text-orange-300">{auditReport?.unclassifiedCount || 0}</p>
-                                            <p className="text-xs font-bold text-orange-500 mt-2">Questions labeled as 'Other' or 'Manual Check'</p>
+                                            <p className="text-xs font-bold text-orange-500 mt-2">Batch processing by Serial Number (ID)</p>
                                         </div>
-                                        <button onClick={() => handleAction('run-batch-qa')} className="mt-6 w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 transition-all text-[10px] uppercase tracking-widest">Fix All Subjects</button>
+                                        <button onClick={() => handleAction('run-batch-qa')} className="mt-6 w-full bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-orange-700 transition-all text-[10px] uppercase tracking-widest">Audit Next Batch</button>
                                     </div>
 
                                     <div className="bg-indigo-50 dark:bg-indigo-900/20 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-800 shadow-xl flex flex-col justify-between">

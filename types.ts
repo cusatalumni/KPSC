@@ -36,6 +36,7 @@ export interface FlashCard {
   front: string;
   back: string;
   topic: string;
+  explanation?: string;
 }
 
 export interface SubscriptionData {

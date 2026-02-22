@@ -33,55 +33,71 @@ const APPROVED_SUBJECTS = [
 ];
 
 /**
- * CORE AUDIT LOGIC: Fast Re-classification of "Other" subjects
+ * CORE AUDIT LOGIC: Sequential batch processing by ID
  */
 export async function auditAndCorrectQuestions() {
     if (!supabase) throw new Error("Supabase required for auditing.");
     
-    // FETCH CONDITION: Only target unclassified or manually tagged items for speed
+    // 1. Get the last audited ID from settings
+    const { data: setting } = await supabase.from('settings').select('value').eq('key', 'last_audited_id').single();
+    const lastId = parseInt(setting?.value || '0');
+
+    // 2. FETCH CONDITION: Process the next batch of questions sequentially
     const { data: questions, error: qErr } = await supabase
         .from('questionbank')
         .select('id, question, topic, subject, options, correct_answer_index, difficulty, explanation')
-        .or('subject.ilike.other,subject.ilike.%manual%,subject.eq.,subject.is.null')
-        .limit(50); // Batch size for processing
+        .gt('id', lastId)
+        .order('id', { ascending: true })
+        .limit(20); // Smaller batch for higher quality
 
     if (qErr) throw qErr;
-    if (!questions || questions.length === 0) return { message: "No 'Other' or blank subjects found. Classification complete.", completed: true };
+    if (!questions || questions.length === 0) return { message: "All questions audited. Resetting to 0.", completed: true, reset: true };
 
     try {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
-            contents: `As a PSC Data Architect, your ONLY task is to categorize these questions into a valid subject.
+            contents: `As a PSC Quality Auditor, your task is to audit and correct these questions.
             
-            RULES:
-            1. Look at 'question' and 'topic'.
-            2. Choose the best matching subject from: [${APPROVED_SUBJECTS.join(', ')}]
-            3. Do NOT change question text, options, or answers.
-            4. Only provide the correct 'subject' mapping.
+            TASKS:
+            1. RE-CLASSIFY: Assign the best matching subject from: [${APPROVED_SUBJECTS.join(', ')}]
+            2. RE-WRITE: If the question contains phrases like "താഴെ പറയുന്നവയിൽ നിന്നും" (from the following), re-write it to be direct and clear without needing to see the options first.
+            3. EXPLAIN: Ensure a high-quality Malayalam explanation is present.
+            4. VALIDATE: Ensure options and correct_answer_index are accurate.
             
             Return JSON array:
             {
-              "classified": [
-                { "id": ID, "subject": "Subject Name" }
+              "audited": [
+                { 
+                  "id": ID, 
+                  "question": "Updated Question", 
+                  "subject": "Subject Name",
+                  "explanation": "Detailed Malayalam Explanation",
+                  "options": ["A", "B", "C", "D"],
+                  "correct_answer_index": 1-4
+                }
               ]
             }
             
-            Data to process: ${JSON.stringify(questions.map(q => ({ id: q.id, question: q.question, topic: q.topic })))}`,
+            Data: ${JSON.stringify(questions)}`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,
                     properties: {
-                        classified: {
+                        audited: {
                             type: Type.ARRAY,
                             items: {
                                 type: Type.OBJECT,
                                 properties: {
                                     id: { type: Type.INTEGER },
-                                    subject: { type: Type.STRING }
+                                    question: { type: Type.STRING },
+                                    subject: { type: Type.STRING },
+                                    explanation: { type: Type.STRING },
+                                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    correct_answer_index: { type: Type.INTEGER }
                                 },
-                                required: ["id", "subject"]
+                                required: ["id", "question", "subject", "explanation", "options", "correct_answer_index"]
                             }
                         }
                     }
@@ -90,37 +106,29 @@ export async function auditAndCorrectQuestions() {
         });
 
         const result = JSON.parse(response.text || "{}");
-        const updates = result.classified || [];
+        const updates = result.audited || [];
 
         if (updates.length > 0) {
-            const finalData = updates.map((upd: any) => {
-                const original = questions.find(q => q.id === upd.id);
-                if (!original) return null;
-                return {
-                    ...original,
-                    options: ensureArray(original.options),
-                    subject: upd.subject
-                };
-            }).filter(Boolean);
-            
-            // 1. Update Supabase (Fast batch)
-            await upsertSupabaseData('questionbank', finalData);
-            
-            // 2. Sync to Sheets (Required to maintain sheet accuracy)
-            for (const q of finalData) {
+            await upsertSupabaseData('questionbank', updates);
+            for (const q of updates) {
                 await findAndUpsertRow('QuestionBank', String(q.id), [
-                    q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation
+                    q.id, q.topic || '', q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty || 'PSC Level', q.explanation
                 ]);
             }
+            
+            // Update the last audited ID
+            const newLastId = Math.max(...updates.map((u: any) => u.id));
+            await upsertSupabaseData('settings', [{ key: 'last_audited_id', value: String(newLastId) }], 'key');
+            await findAndUpsertRow('Settings', 'last_audited_id', ['last_audited_id', String(newLastId)]);
         }
         
         return { 
-            message: `Processed ${updates.length} items. All mapped to official subjects.`, 
+            message: `Audited batch up to ID ${Math.max(...updates.map((u: any) => u.id))}.`, 
             changesCount: updates.length 
         };
 
     } catch (e: any) { 
-        console.error("Fast Audit Error:", e.message);
+        console.error("Batch Audit Error:", e.message);
         throw e; 
     }
 }

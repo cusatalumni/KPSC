@@ -9,6 +9,7 @@ import {
     scrapeGkFacts,
     scrapeCurrentAffairs,
     generateQuestionsForGaps,
+    generateFlashCards,
     syncAllFromSheetsToSupabase,
     repairLanguageMismatches,
     backfillExplanations,
@@ -75,6 +76,7 @@ export default async function handler(req: any, res: any) {
             case 'run-scraper-notifications': return res.status(200).json(await scrapeKpscNotifications());
             case 'run-scraper-updates': return res.status(200).json(await scrapePscLiveUpdates());
             case 'run-gap-filler': return res.status(200).json(await generateQuestionsForGaps(8));
+            case 'run-flashcard-generator': return res.status(200).json(await generateFlashCards(5));
             case 'run-targeted-gap-fill': return res.status(200).json(await generateQuestionsForGaps(topic));
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());

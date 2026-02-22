@@ -13,6 +13,9 @@ import RotatingDailyWidget from './RotatingDailyWidget';
 import CalendarWidget from './CalendarWidget';
 import { SparklesIcon } from './icons/SparklesIcon';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
+import { BeakerIcon } from './icons/BeakerIcon';
+import { ClipboardListIcon } from './icons/ClipboardListIcon';
+import { CalendarDaysIcon } from './icons/CalendarDaysIcon';
 
 const WelcomeBar: React.FC = () => {
     return (
@@ -77,7 +80,51 @@ const Dashboard: React.FC<{ onNavigateToExam: (exam: Exam) => void; onNavigate: 
           <div className="hidden lg:block h-full"><RotatingDailyWidget onNavigate={onNavigate} /></div>
       </div>
       <div className="px-4"><NewsTicker /></div>
+      
+      <div className="px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                  { id: 'flash_cards', label: 'Flashcards', icon: SparklesIcon, color: 'bg-rose-50 text-rose-600 border-rose-100' },
+                  { id: 'quiz_home', label: 'Daily Quiz', icon: BeakerIcon, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+                  { id: 'mock_test_home', label: 'Mock Tests', icon: ClipboardListIcon, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+                  { id: 'exam_calendar', label: 'Calendar', icon: CalendarDaysIcon, color: 'bg-amber-50 text-amber-600 border-amber-100' }
+              ].map(action => (
+                  <button 
+                    key={action.id} 
+                    onClick={() => onNavigate(action.id as Page)}
+                    className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all hover:scale-105 hover:shadow-lg ${action.color}`}
+                  >
+                      <action.icon className="h-8 w-8 mb-3" />
+                      <span className="font-black text-[10px] uppercase tracking-widest">{action.label}</span>
+                  </button>
+              ))}
+          </div>
+      </div>
+
       <div className="px-4"><WelcomeBar /></div>
+
+      <section className="px-4">
+          <div className="flex items-center space-x-4 mb-8">
+              <div className="h-10 w-2 bg-rose-600 rounded-full"></div>
+              <h3 className="text-3xl font-black tracking-tighter">വിഷയങ്ങൾ തിരിച്ചു പഠിക്കാം</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {[
+                  "General Knowledge", "Malayalam", "English", "Quantitative Aptitude", 
+                  "Reasoning / Mental Ability", "General Science / Science & Tech",
+                  "Indian History", "Indian Geography", "Indian Polity / Constitution",
+                  "Kerala History", "Kerala Geography", "Current Affairs"
+              ].map(subject => (
+                  <button 
+                    key={subject}
+                    onClick={() => onStartStudy(subject)}
+                    className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-center hover:border-indigo-500 hover:shadow-md transition-all group"
+                  >
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-600">{subject}</span>
+                  </button>
+              ))}
+          </div>
+      </section>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 px-4">
         <div className="lg:col-span-3 space-y-24">
