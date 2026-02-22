@@ -168,12 +168,7 @@ export const testConnection = async (token: string | null) => {
         });
         if (!res.ok) {
             const errorText = await res.text();
-            let errorMessage = errorText;
-            try {
-                const errorJson = JSON.parse(errorText);
-                errorMessage = errorJson.error || errorText;
-            } catch (e) {}
-            return { status: { sheets: false, supabase: false, sheetsErr: errorMessage, supabaseErr: errorMessage } };
+            return { status: { sheets: false, supabase: false, sheetsErr: errorText, supabaseErr: errorText } };
         }
         return await res.json();
     } catch (e: any) {

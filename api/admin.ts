@@ -1,6 +1,6 @@
 
-import { verifyAdmin } from "./_lib/clerk-auth.js";
-import { findAndUpsertRow, deleteRowById, appendSheetData, readSheetData } from './_lib/sheets-service.js';
+import { verifyAdmin } from "./_lib/clerk-auth";
+import { findAndUpsertRow, deleteRowById, appendSheetData, readSheetData } from './_lib/sheets-service';
 import { 
     runDailyUpdateScrapers, 
     runBookScraper, 
@@ -13,9 +13,9 @@ import {
     repairLanguageMismatches,
     backfillExplanations,
     bulkUploadQuestions
-} from "./_lib/scraper-service.js";
-import { auditAndCorrectQuestions } from "./_lib/audit-service.js";
-import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service.js";
+} from "./_lib/scraper-service";
+import { auditAndCorrectQuestions } from "./_lib/audit-service";
+import { supabase, upsertSupabaseData, deleteSupabaseRow } from "./_lib/supabase-service";
 
 export default async function handler(req: any, res: any) {
     if (req.method === 'GET') {
@@ -130,7 +130,7 @@ export default async function handler(req: any, res: any) {
                     const topicKey = String(s.topic || s.title).toLowerCase().trim();
                     return { id: s.id, topic: s.topic || s.title, count: counts[topicKey] || 0 };
                 });
-                return { syllabusReport: gapReport, unclassifiedCount };
+                return res.status(200).json({ syllabusReport: gapReport, unclassifiedCount });
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });
             default: return res.status(400).json({ error: 'Invalid Action' });

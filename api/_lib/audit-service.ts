@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { findAndUpsertRow } from './sheets-service.js';
-import { supabase, upsertSupabaseData } from './supabase-service.js';
+import { findAndUpsertRow } from './sheets-service';
+import { supabase, upsertSupabaseData } from './supabase-service';
 
 declare var process: any;
 

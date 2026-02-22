@@ -179,7 +179,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
             )}
 
-            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
                 {[
                     { id: 'automation', label: 'Automation', icon: BeakerIcon },
                     { id: 'qbank', label: 'QA Audit', icon: ShieldCheckIcon },
