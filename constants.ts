@@ -13,6 +13,86 @@ import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
 
 export const EXAMS_DATA: Exam[] = [
   {
+    id: 'lgs',
+    title: { ml: '10th Level (LGS)', en: '10th Level (LGS)' },
+    description: { ml: 'Last Grade Servant, Office Attendant, Peon പരീക്ഷകൾക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Last Grade Servant, Office Attendant, Peon.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-blue-500" }),
+    category: '10th Level',
+    level: 'Preliminary'
+  },
+  {
+    id: 'ldc',
+    title: { ml: 'Plus Two Level (LDC)', en: 'Plus Two Level (LDC)' },
+    description: { ml: 'Lower Division Clerk, LD Typist, VEO പരീക്ഷകൾക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Lower Division Clerk, LD Typist, VEO.' },
+    icon: React.createElement(ClipboardListIcon, { className: "h-8 w-8 text-indigo-500" }),
+    category: 'Plus Two Level',
+    level: 'Preliminary'
+  },
+  {
+    id: 'degree_prelims',
+    title: { ml: 'Degree Level (University Asst)', en: 'Degree Level (University Asst)' },
+    description: { ml: 'University Assistant, Secretariat Assistant, Company Board Assistant പരീക്ഷകൾ.', en: 'Mock tests for University Assistant, Secretariat Assistant.' },
+    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-purple-500" }),
+    category: 'Degree Level',
+    level: 'Preliminary'
+  },
+  {
+    id: 'staff_nurse',
+    title: { ml: 'Staff Nurse Grade II', en: 'Staff Nurse Grade II' },
+    description: { ml: 'Staff Nurse Gr II (Health Services) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Staff Nurse Gr II (Health Services).' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-rose-500" }),
+    category: 'Medical',
+    level: 'Main'
+  },
+  {
+    id: 'ae_electrical',
+    title: { ml: 'Assistant Engineer (Electrical)', en: 'Assistant Engineer (Electrical)' },
+    description: { ml: 'Assistant Engineer Electrical (KSEB) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Assistant Engineer Electrical (KSEB).' },
+    icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-yellow-500" }),
+    category: 'Engineering',
+    level: 'Main'
+  },
+  {
+    id: 'si_police',
+    title: { ml: 'Sub Inspector of Police', en: 'Sub Inspector of Police' },
+    description: { ml: 'SI Police (Trainee) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Sub Inspector of Police (Trainee).' },
+    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-slate-700" }),
+    category: 'Uniformed Services',
+    level: 'Preliminary'
+  },
+  {
+    id: 'kas',
+    title: { ml: 'KAS Officer', en: 'KAS Officer' },
+    description: { ml: 'Kerala Administrative Service (KAS) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Kerala Administrative Service (KAS).' },
+    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-emerald-600" }),
+    category: 'Administrative',
+    level: 'Preliminary'
+  },
+  {
+    id: 'hsst_social_science',
+    title: { ml: 'HSST Social Science', en: 'HSST Social Science' },
+    description: { ml: 'HSST Social Science പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for HSST Social Science.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-orange-500" }),
+    category: 'Higher Secondary',
+    level: 'Main'
+  },
+  {
+    id: 'hsst_english',
+    title: { ml: 'HSST English', en: 'HSST English' },
+    description: { ml: 'HSST English പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for HSST English.' },
+    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-pink-500" }),
+    category: 'Higher Secondary',
+    level: 'Main'
+  },
+  {
+    id: 'pharmacist_gr2',
+    title: { ml: 'Pharmacist Gr II', en: 'Pharmacist Gr II' },
+    description: { ml: 'Pharmacist Gr II (Health / Insurance) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Pharmacist Gr II.' },
+    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-teal-500" }),
+    category: 'Medical',
+    level: 'Main'
+  },
+  {
     id: 'hsst_physics',
     title: { ml: 'HSST Physics', en: 'HSST Physics' },
     description: { ml: 'HSST Physics പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for HSST Physics.' },
@@ -139,6 +219,16 @@ export const PHARMACIST_HOMOEOPATHY_CONTENT: ExamPageContent = {
 };
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
+    'lgs': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'ldc': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'degree_prelims': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'staff_nurse': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'ae_electrical': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'si_police': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'kas': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_social_science': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_english': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'pharmacist_gr2': { practiceTests: [], studyNotes: [], previousPapers: [] },
     'hsst_physics': HSST_PHYSICS_CONTENT,
     'hsst_chemistry': HSST_CHEMISTRY_CONTENT,
     'pharmacist_siddha': PHARMACIST_SIDDHA_CONTENT,

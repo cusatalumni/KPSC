@@ -236,7 +236,20 @@ export async function scrapeGkFacts() {
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: "10 Malayalam PSC facts. JSON: {fact, category}",
-            config: { responseMimeType: "application/json" }
+            config: { 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            fact: { type: Type.STRING },
+                            category: { type: Type.STRING }
+                        },
+                        required: ["fact", "category"]
+                    }
+                }
+            }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
@@ -253,7 +266,22 @@ export async function scrapeCurrentAffairs() {
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: "10 Latest CA items for Kerala. JSON: {title, source, date}",
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+            config: { 
+                tools: [{ googleSearch: {} }], 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            source: { type: Type.STRING },
+                            date: { type: Type.STRING }
+                        },
+                        required: ["title", "source", "date"]
+                    }
+                }
+            }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
@@ -270,7 +298,23 @@ export async function scrapeKpscNotifications() {
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `5 newest jobs from keralapsc.gov.in. JSON: title, categoryNumber, lastDate, link`,
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+            config: { 
+                tools: [{ googleSearch: {} }], 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            categoryNumber: { type: Type.STRING },
+                            lastDate: { type: Type.STRING },
+                            link: { type: Type.STRING }
+                        },
+                        required: ["title", "categoryNumber", "lastDate", "link"]
+                    }
+                }
+            }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
@@ -287,7 +331,23 @@ export async function scrapePscLiveUpdates() {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `5 results from keralapsc.gov.in. JSON: title, url, section, published_date`,
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+            config: { 
+                tools: [{ googleSearch: {} }], 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            url: { type: Type.STRING },
+                            section: { type: Type.STRING },
+                            published_date: { type: Type.STRING }
+                        },
+                        required: ["title", "url", "section", "published_date"]
+                    }
+                }
+            }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {
@@ -304,7 +364,23 @@ export async function runBookScraper() {
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview", 
             contents: `8 PSC guides on Amazon.in. JSON: title, author, asin, amazonLink`,
-            config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" }
+            config: { 
+                tools: [{ googleSearch: {} }], 
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            author: { type: Type.STRING },
+                            asin: { type: Type.STRING },
+                            amazonLink: { type: Type.STRING }
+                        },
+                        required: ["title", "author", "amazonLink"]
+                    }
+                }
+            }
         });
         const items = JSON.parse(response.text || "[]");
         if (items.length > 0) {

@@ -64,6 +64,11 @@ function initializeDatabase() {
       sample: [['gk1', 'Periyar is the longest river.', 'Geography']]
     },
     {
+      name: 'FlashCards',
+      headers: ['id', 'front', 'back', 'topic', 'explanation'],
+      sample: [['fc1', 'Front text', 'Back text', 'Topic', 'Explanation']]
+    },
+    {
       name: 'Feedback',
       headers: ['id', 'userId', 'q1_needs', 'q2_easeInfo', 'q3_transact', 'q4_appeal', 'q5_understand', 'q6_recommend', 'q7_improvement', 'timestamp'],
       sample: [['f1', 'guest', 'Very well', 'Extremely easy', 'Very easy', 'Very appealing', 'Extremely easy', '10', 'Great site!', new Date().toISOString()]]

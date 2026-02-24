@@ -96,8 +96,33 @@ export const findAndUpsertRow = async (sheetName: string, id: string, newRowData
     try {
         const spreadsheetId = getSpreadsheetId();
         const sheets = await getSheetsClient();
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
-        const rows = response.data.values || [];
+        let rows: any[][] = [];
+        
+        try {
+            const response = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:A` });
+            rows = response.data.values || [];
+        } catch (err: any) {
+            if (err.message && err.message.includes('Unable to parse range')) {
+                // Sheet doesn't exist. Create it.
+                await sheets.spreadsheets.batchUpdate({
+                    spreadsheetId,
+                    requestBody: {
+                        requests: [{
+                            addSheet: {
+                                properties: {
+                                    title: sheetName
+                                }
+                            }
+                        }]
+                    }
+                });
+                // Headers will be missing, but data will be appended. 
+                // The user can run SHEET_INITIALIZER.js later to format it.
+            } else {
+                throw err;
+            }
+        }
+
         const rowIndex = rows.findIndex(row => String(row[0]).trim() === String(id).trim());
         
         if (rowIndex !== -1) {
