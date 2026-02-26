@@ -11,7 +11,9 @@ import {
     generateQuestionsForGaps,
     generateFlashCards,
     syncAllFromSheetsToSupabase,
+    syncSupabaseToSheets,
     repairLanguageMismatches,
+    repairBlankTopics,
     backfillExplanations,
     bulkUploadQuestions
 } from "./_lib/scraper-service.js";
@@ -70,6 +72,7 @@ export default async function handler(req: any, res: any) {
                 return res.status(200).json({ status: { sheets: sheetsStatus.ok, supabase: supabaseStatus.ok, sheetsErr: sheetsStatus.error, supabaseErr: supabaseStatus.error } });
             }
             case 'rebuild-db': return res.status(200).json(await syncAllFromSheetsToSupabase());
+            case 'sync-to-sheets': return res.status(200).json(await syncSupabaseToSheets());
             case 'run-daily-sync': return res.status(200).json(await runDailyUpdateScrapers());
             case 'run-gk-scraper': return res.status(200).json(await scrapeGkFacts());
             case 'run-ca-scraper': return res.status(200).json(await scrapeCurrentAffairs());
@@ -81,6 +84,7 @@ export default async function handler(req: any, res: any) {
             case 'run-book-scraper': return res.status(200).json(await runBookScraper());
             case 'run-batch-qa': return res.status(200).json(await auditAndCorrectQuestions());
             case 'run-language-repair': return res.status(200).json(await repairLanguageMismatches());
+            case 'run-topic-repair': return res.status(200).json(await repairBlankTopics());
             case 'run-explanation-repair': return res.status(200).json(await backfillExplanations());
             case 'upload-questions': return res.status(200).json(await bulkUploadQuestions(questions));
             

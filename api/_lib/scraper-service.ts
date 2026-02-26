@@ -135,15 +135,27 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
             const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
             let currentId = (maxIdRow?.id || 50000) + 1;
             const sbData = items.map((item: any) => ({
-                id: currentId++, topic: item.topic, question: item.question, options: ensureArray(item.options), 
-                correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), subject: item.subject, 
+                id: currentId++, topic: item.topic || targetMappings[0].topic, question: item.question, options: ensureArray(item.options), 
+                correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), subject: item.subject || targetMappings[0].subject, 
                 difficulty: 'PSC Level', explanation: item.explanation || ''
             }));
+            
+            // Save to Supabase
             await upsertSupabaseData('questionbank', sbData);
-            for (const q of sbData) await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
-            return { message: `Generated ${sbData.length} questions.` };
+            
+            // Save to Sheets - batching would be better but findAndUpsertRow is what we have
+            // We'll use a Promise.all to speed it up slightly but be careful with rate limits
+            const sheetPromises = sbData.map((q: any) => 
+                findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation])
+            );
+            await Promise.all(sheetPromises);
+            
+            return { message: `Generated ${sbData.length} questions for ${targetMappings.map(m => m.topic).join(', ')}.` };
         }
-    } catch (e: any) { throw e; }
+    } catch (e: any) { 
+        console.error("Gap Filler Error:", e.message);
+        throw e; 
+    }
     return { message: "No questions generated." };
 }
 
@@ -418,6 +430,86 @@ export async function repairLanguageMismatches() {
         }
     } catch (e: any) { throw e; }
     return { message: "Language repair batch finished." };
+}
+
+export async function repairBlankTopics() {
+    if (!supabase) throw new Error("Supabase required.");
+    
+    // Fetch questions with blank topics or subjects
+    const { data: missing, error } = await supabase
+        .from('questionbank')
+        .select('*')
+        .or('topic.is.null,topic.eq."",subject.is.null,subject.eq.""')
+        .limit(20);
+        
+    if (error) throw error;
+    if (!missing || missing.length === 0) return { message: "No questions with blank topics found." };
+
+    try {
+        const ai = getAi();
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `Analyze these Kerala PSC questions and assign the most appropriate Topic and Subject for each.
+            
+            Subject MUST be from this list: [${APPROVED_SUBJECTS.join(', ')}]
+            Topic should be a specific micro-topic (e.g., "Rivers of Kerala", "Fundamental Rights", "Percentage").
+            
+            Questions: ${JSON.stringify(missing.map(q => ({ id: q.id, question: q.question })))}
+            
+            Return JSON array: [{ "id": number, "topic": "string", "subject": "string" }]`,
+            config: { responseMimeType: "application/json" }
+        });
+        
+        const updates = JSON.parse(response.text || "[]");
+        if (updates.length > 0) {
+            const finalData = missing.map(q => {
+                const update = updates.find((u: any) => u.id == q.id);
+                return { 
+                    ...q, 
+                    topic: update?.topic || q.topic || 'General',
+                    subject: update?.subject || q.subject || 'General Knowledge'
+                };
+            });
+            
+            await upsertSupabaseData('questionbank', finalData);
+            for (const q of finalData) {
+                await findAndUpsertRow('QuestionBank', String(q.id), [q.id, q.topic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty, q.explanation]);
+            }
+            return { message: `Successfully repaired topics for ${finalData.length} questions.` };
+        }
+    } catch (e: any) { 
+        console.error("Topic Repair Error:", e.message);
+        throw e; 
+    }
+    return { message: "Topic repair batch failed." };
+}
+
+export async function syncSupabaseToSheets() {
+    if (!supabase) throw new Error("Supabase required.");
+    
+    const tables = [
+        { name: 'Exams', table: 'exams', cols: ['id', 'title_ml', 'title_en', 'description_ml', 'description_en', 'category', 'level', 'icon_type'] },
+        { name: 'QuestionBank', table: 'questionbank', cols: ['id', 'topic', 'question', 'options', 'correct_answer_index', 'subject', 'difficulty', 'explanation'] },
+        { name: 'Syllabus', table: 'syllabus', cols: ['id', 'exam_id', 'subject', 'topic', 'title', 'description'] },
+        { name: 'Bookstore', table: 'bookstore', cols: ['id', 'title', 'author', 'imageUrl', 'amazonLink'] }
+    ];
+
+    let totalUpdated = 0;
+    for (const t of tables) {
+        const { data, error } = await supabase.from(t.table).select('*');
+        if (error) continue;
+        if (!data || data.length === 0) continue;
+
+        for (const row of data) {
+            const values = t.cols.map(col => {
+                const val = row[col];
+                return typeof val === 'object' ? JSON.stringify(val) : val;
+            });
+            await findAndUpsertRow(t.name, String(row.id), values);
+            totalUpdated++;
+        }
+    }
+    return { message: `Pushed ${totalUpdated} records from Supabase to Sheets.` };
 }
 
 export async function syncAllFromSheetsToSupabase() {

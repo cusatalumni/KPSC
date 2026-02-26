@@ -26,6 +26,8 @@ import { LightBulbIcon } from '../icons/LightBulbIcon';
 import { PencilSquareIcon } from '../icons/PencilSquareIcon';
 import { Cog6ToothIcon } from '../icons/Cog6ToothIcon';
 import { LanguageIcon } from '../icons/LanguageIcon';
+import { TagIcon } from '../icons/TagIcon';
+import { CloudArrowUpIcon } from '../icons/CloudArrowUpIcon';
 import { UserGroupIcon } from '../icons/UserGroupIcon';
 import type { Exam, PracticeTest, Book } from '../../types';
 
@@ -126,7 +128,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
-            if (['delete-row', 'rebuild-db', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'save-row', 'run-batch-qa', 'run-language-repair', 'run-explanation-repair', 'run-all-gaps'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'sync-to-sheets', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'save-row', 'run-batch-qa', 'run-language-repair', 'run-topic-repair', 'run-explanation-repair', 'run-all-gaps'].includes(action)) {
                 await refreshData(true);
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
@@ -213,8 +215,10 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         {activeTab === 'automation' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <ToolCard title="Full DB Sync" icon={ArrowPathIcon} action="rebuild-db" color="bg-red-600" desc="Synchronizes all records from Google Sheets to Supabase production database." />
+                                <ToolCard title="Push to Sheets" icon={CloudArrowUpIcon} action="sync-to-sheets" color="bg-orange-600" desc="Backup Supabase data back to Google Sheets (Emergency Use)." />
                                 <ToolCard title="PSC Daily Sync" icon={SparklesIcon} action="run-daily-sync" color="bg-indigo-600" desc="Full cycle sync: Jobs, Live Updates, CA, GK and Gap Filler." />
                                 <ToolCard title="Language Repair" icon={LanguageIcon} action="run-language-repair" color="bg-cyan-600" desc="Fixes questions that were accidentally translated to Malayalam instead of English." />
+                                <ToolCard title="Topic Repair" icon={TagIcon} action="run-topic-repair" color="bg-violet-600" desc="AI analysis to fill blank topics and subjects for questions." />
                                 <ToolCard title="AI Explanations" icon={SparklesIcon} action="run-explanation-repair" color="bg-emerald-600" desc="AI generation of missing explanations for questions in the database." />
                                 <ToolCard title="Book Store Sync" icon={BookOpenIcon} action="run-book-scraper" color="bg-slate-800" desc="Updates bookstore with top Amazon PSC guides." />
                                 <ToolCard title="GK Fact Scraper" icon={LightBulbIcon} action="run-gk-scraper" color="bg-amber-500" desc="Generates unique study facts for the daily widget." />
