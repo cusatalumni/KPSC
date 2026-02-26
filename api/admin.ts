@@ -104,10 +104,20 @@ export default async function handler(req: any, res: any) {
             case 'run-all-gaps': {
                 if (!supabase) throw new Error("Supabase required.");
                 const { data: sData } = await supabase.from('syllabus').select('topic, title');
-                const { data: qData } = await supabase.from('questionbank').select('topic');
-                const counts: Record<string, number> = {};
-                qData?.forEach(q => { const t = String(q.topic || '').toLowerCase().trim(); if (t) counts[t] = (counts[t] || 0) + 1; });
-                const emptyTopics = (sData || []).filter(s => (counts[String(s.topic || s.title).toLowerCase().trim()] || 0) === 0).map(s => s.topic || s.title);
+                const { data: qData } = await supabase.from('questionbank').select('topic, subject');
+                
+                const emptyTopics = (sData || []).filter(s => {
+                    const sTopic = String(s.topic || s.title).toLowerCase().trim();
+                    const hasQuestions = qData?.some(q => {
+                        const qTopic = String(q.topic || '').toLowerCase().trim();
+                        const qSubject = String(q.subject || '').toLowerCase().trim();
+                        if (qTopic === sTopic || qSubject === sTopic) return true;
+                        if (sTopic.length >= 3 && (qTopic.includes(sTopic) || qSubject.includes(sTopic))) return true;
+                        return false;
+                    });
+                    return !hasQuestions;
+                }).map(s => s.topic || s.title);
+
                 if (emptyTopics.length === 0) return res.status(200).json({ message: "No empty topics found." });
                 const batch = emptyTopics.slice(0, 5);
                 for (const t of batch) { try { await generateQuestionsForGaps(t); } catch (err) {} }
@@ -124,18 +134,34 @@ export default async function handler(req: any, res: any) {
                 if (!supabase) throw new Error("Supabase required.");
                 const { data: qData } = await supabase.from('questionbank').select('topic, subject');
                 const { data: sData } = await supabase.from('syllabus').select('id, topic, title');
-                const counts: Record<string, number> = {};
+                
                 let unclassifiedCount = 0;
                 qData?.forEach(q => { 
-                    const t = String(q.topic || '').toLowerCase().trim(); 
-                    if (t) counts[t] = (counts[t] || 0) + 1; 
                     const s = String(q.subject || '').toLowerCase().trim();
                     if (s === 'other' || s.includes('manual') || s === '' || s === 'null') unclassifiedCount++;
                 });
+
                 const gapReport = (sData || []).map(s => {
-                    const topicKey = String(s.topic || s.title).toLowerCase().trim();
-                    return { id: s.id, topic: s.topic || s.title, count: counts[topicKey] || 0 };
+                    const sTopic = String(s.topic || s.title).toLowerCase().trim();
+                    
+                    // Robust matching: Exact match or partial match for meaningful topics
+                    const count = qData?.filter(q => {
+                        const qTopic = String(q.topic || '').toLowerCase().trim();
+                        const qSubject = String(q.subject || '').toLowerCase().trim();
+                        
+                        if (qTopic === sTopic || qSubject === sTopic) return true;
+                        
+                        // If syllabus topic is "Computer", match "Computer Science / IT / Cyber Laws"
+                        if (sTopic.length >= 3) {
+                            if (qTopic.includes(sTopic) || qSubject.includes(sTopic)) return true;
+                            if (sTopic.includes(qTopic) && qTopic.length >= 3) return true;
+                        }
+                        return false;
+                    }).length || 0;
+
+                    return { id: s.id, topic: s.topic || s.title, count };
                 });
+
                 return res.status(200).json({ syllabusReport: gapReport, unclassifiedCount });
             }
             case 'delete-row': await deleteRowById(sheet, id); if (supabase) await deleteSupabaseRow(sheet, id); return res.status(200).json({ message: 'Item deleted.' });

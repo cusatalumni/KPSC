@@ -124,8 +124,9 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
             model: 'gemini-3-flash-preview', 
             contents: `Generate 5 Kerala PSC MCQs for: ${targetMappings.map(m => `${m.subject} -> ${m.topic}`).join(', ')}.
             
-            CRITICAL: Subject field MUST be exactly one from this list:
-            [${APPROVED_SUBJECTS.join(', ')}]
+            CRITICAL RULES:
+            1. Subject field MUST be exactly one from this list: [${APPROVED_SUBJECTS.join(', ')}]
+            2. Topic field MUST be exactly the topic name provided above (e.g. if I asked for "Computer", the topic must be "Computer").
             
             JSON format: { "topic": "string", "subject": "string", "question": "string", "options": ["A","B","C","D"], "correctAnswerIndex": 1-4, "explanation": "string" }`,
             config: { responseMimeType: "application/json" }
@@ -134,11 +135,23 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
         if (items.length > 0) {
             const { data: maxIdRow } = await supabase.from('questionbank').select('id').order('id', { ascending: false }).limit(1).single();
             let currentId = (maxIdRow?.id || 50000) + 1;
-            const sbData = items.map((item: any) => ({
-                id: currentId++, topic: item.topic || targetMappings[0].topic, question: item.question, options: ensureArray(item.options), 
-                correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), subject: item.subject || targetMappings[0].subject, 
-                difficulty: 'PSC Level', explanation: item.explanation || ''
-            }));
+            
+            const sbData = items.map((item: any) => {
+                // If we were targeting a single specific topic, enforce it regardless of what AI returned
+                const enforcedTopic = targetMappings.length === 1 ? targetMappings[0].topic : (item.topic || targetMappings[0].topic);
+                const enforcedSubject = item.subject || targetMappings[0].subject;
+
+                return {
+                    id: currentId++, 
+                    topic: enforcedTopic, 
+                    question: item.question, 
+                    options: ensureArray(item.options), 
+                    correct_answer_index: parseInt(String(item.correctAnswerIndex || 1)), 
+                    subject: enforcedSubject, 
+                    difficulty: 'PSC Level', 
+                    explanation: item.explanation || ''
+                };
+            });
             
             // Save to Supabase
             await upsertSupabaseData('questionbank', sbData);
