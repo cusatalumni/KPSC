@@ -7,51 +7,48 @@ import { SparklesIcon } from '../icons/SparklesIcon';
 import AiDisclaimer from '../AiDisclaimer';
 
 const Card: React.FC<{ card: FlashCard }> = ({ card }) => {
-    const [flipped, setFlipped] = useState(false);
     return (
-        <div className="perspective-1000 h-96 w-full max-w-2xl mx-auto cursor-pointer group" onClick={() => setFlipped(!flipped)}>
-            <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
-                {/* Front of the card (Book Cover) */}
-                <div className="absolute inset-0 backface-hidden bg-[#fdfbf7] dark:bg-slate-900 rounded-r-3xl rounded-l-md shadow-[10px_10px_30px_rgba(0,0,0,0.1),-5px_0_15px_rgba(0,0,0,0.05)] border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center p-10 text-center before:absolute before:inset-y-0 before:left-0 before:w-8 before:bg-gradient-to-r before:from-black/10 before:to-transparent before:rounded-l-md">
-                    <div className="absolute top-0 bottom-0 left-6 w-[1px] bg-black/5"></div>
-                    <div className="absolute top-0 bottom-0 left-8 w-[1px] bg-black/5"></div>
-                    <div className="bg-rose-50 dark:bg-rose-900/30 px-6 py-2 rounded-full mb-8 shadow-sm border border-rose-100 dark:border-rose-800/50">
+        <div className="w-full max-w-4xl mx-auto min-h-[400px] md:h-[500px] flex flex-col md:flex-row shadow-2xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 relative bg-[#fdfbf7] dark:bg-slate-900">
+            {/* Book Spine / Center Fold (Desktop) */}
+            <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-700 to-transparent z-20"></div>
+            <div className="hidden md:block absolute top-0 bottom-0 left-1/2 -ml-4 w-8 bg-gradient-to-r from-black/5 via-transparent to-black/5 z-10"></div>
+
+            {/* Book Spine / Center Fold (Mobile) */}
+            <div className="md:hidden absolute left-0 right-0 top-1/2 -mt-[1px] h-[2px] bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-transparent z-20"></div>
+            <div className="md:hidden absolute left-0 right-0 top-1/2 -mt-4 h-8 bg-gradient-to-b from-black/5 via-transparent to-black/5 z-10"></div>
+
+            {/* Left Page (Front / Question) */}
+            <div className="w-full md:w-1/2 h-1/2 md:h-full p-8 md:p-12 flex flex-col justify-center relative border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
+                <div className="hidden md:block absolute top-0 bottom-0 left-6 w-[1px] bg-black/5"></div>
+                <div className="hidden md:block absolute top-0 bottom-0 left-8 w-[1px] bg-black/5"></div>
+                
+                <div className="relative z-10 flex flex-col items-center text-center h-full justify-center">
+                    <div className="bg-rose-50 dark:bg-rose-900/30 px-6 py-2 rounded-full mb-6 md:mb-8 shadow-sm border border-rose-100 dark:border-rose-800/50">
                         <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">{card.topic}</p>
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-100 leading-snug font-serif">{card.front}</h3>
-                    <div className="mt-12 flex items-center space-x-2 text-slate-400 group-hover:text-rose-500 transition-colors">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Open to Reveal</span>
-                        <ChevronLeftIcon className="h-4 w-4 rotate-180" />
-                    </div>
+                    <h3 className="text-xl md:text-3xl font-black text-slate-800 dark:text-slate-100 leading-snug font-serif">{card.front}</h3>
                 </div>
+            </div>
+
+            {/* Right Page (Back / Answer) */}
+            <div className="w-full md:w-1/2 h-1/2 md:h-full p-8 md:p-12 flex flex-col relative overflow-y-auto scrollbar-hide">
+                <div className="hidden md:block absolute top-0 bottom-0 right-6 w-[1px] bg-black/5"></div>
+                <div className="hidden md:block absolute top-0 bottom-0 right-8 w-[1px] bg-black/5"></div>
                 
-                {/* Back of the card (Inside Book) */}
-                <div className="absolute inset-0 backface-hidden rotate-y-180 bg-[#fdfbf7] dark:bg-slate-900 rounded-l-3xl rounded-r-md shadow-[-10px_10px_30px_rgba(0,0,0,0.1),5px_0_15px_rgba(0,0,0,0.05)] border border-slate-200 dark:border-slate-800 flex flex-col p-8 md:p-12 text-left overflow-y-auto scrollbar-hide before:absolute before:inset-y-0 before:right-0 before:w-8 before:bg-gradient-to-l before:from-black/10 before:to-transparent before:rounded-r-md">
-                    <div className="absolute top-0 bottom-0 right-6 w-[1px] bg-black/5"></div>
-                    <div className="absolute top-0 bottom-0 right-8 w-[1px] bg-black/5"></div>
-                    
-                    <div className="relative z-10 h-full flex flex-col">
-                        <div className="flex items-center space-x-3 mb-6">
-                            <div className="h-8 w-1.5 bg-emerald-500 rounded-full"></div>
-                            <h3 className="text-2xl font-black text-slate-800 dark:text-white leading-relaxed font-serif">{card.back}</h3>
-                        </div>
-                        
-                        {card.explanation && (
-                            <div className="flex-1 mt-4">
-                                <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-3 text-slate-500">Explanation</p>
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800 shadow-inner">
-                                    {card.explanation}
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="mt-auto pt-6 flex justify-center">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center space-x-2">
-                                <ChevronLeftIcon className="h-3 w-3" />
-                                <span>Close</span>
-                            </p>
-                        </div>
+                <div className="relative z-10 flex flex-col h-full justify-center">
+                    <div className="flex items-start space-x-3 mb-6">
+                        <div className="h-6 md:h-8 w-1.5 bg-emerald-500 rounded-full shrink-0 mt-1"></div>
+                        <h3 className="text-lg md:text-2xl font-black text-slate-800 dark:text-white leading-relaxed font-serif">{card.back}</h3>
                     </div>
+                    
+                    {card.explanation && (
+                        <div className="flex-1 mt-2 md:mt-4">
+                            <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-2 md:mb-3 text-slate-500">Explanation</p>
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-2xl text-xs md:text-sm font-medium leading-relaxed text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800 shadow-inner">
+                                {card.explanation}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -158,7 +155,7 @@ const FlashCardsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             {filtered.length > 0 ? (
                 viewMode === 'flipbook' ? (
-                    <div className="max-w-2xl mx-auto space-y-10">
+                    <div className="max-w-4xl mx-auto space-y-10">
                         <div className="flex items-center justify-between px-4">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Card {currentIndex + 1} of {filtered.length}</span>
                             <div className="h-1 flex-1 mx-8 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
@@ -166,10 +163,10 @@ const FlashCardsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                         </div>
                         
-                        <div className="relative px-12 md:px-24">
+                        <div className="relative px-0 md:px-16">
                             <Card card={filtered[currentIndex]} key={filtered[currentIndex].id} />
                             
-                            <div className="absolute top-1/2 left-0 -translate-y-1/2 z-10">
+                            <div className="absolute top-1/2 left-0 md:left-2 -translate-y-1/2 z-10 -ml-4 md:ml-0">
                                 <button 
                                     onClick={prevCard}
                                     disabled={currentIndex === 0}
@@ -179,7 +176,7 @@ const FlashCardsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 </button>
                             </div>
                             
-                            <div className="absolute top-1/2 right-0 -translate-y-1/2 z-10">
+                            <div className="absolute top-1/2 right-0 md:right-2 -translate-y-1/2 z-10 -mr-4 md:mr-0">
                                 <button 
                                     onClick={nextCard}
                                     disabled={currentIndex === filtered.length - 1 && !hasMore}
