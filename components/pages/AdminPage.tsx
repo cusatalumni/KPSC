@@ -61,6 +61,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [editingBook, setEditingBook] = useState<any | null>(null);
 
     const totalGaps = useMemo(() => auditReport?.syllabusReport.filter(r => r.count === 0).length || 0, [auditReport]);
+    const totalQuestions = useMemo(() => auditReport?.syllabusReport.reduce((acc, curr) => acc + curr.count, 0) || 0, [auditReport]);
 
     const isAdmin = useMemo(() => user?.publicMetadata?.role === 'admin', [user]);
 
@@ -231,7 +232,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                         {activeTab === 'qbank' && (
                             <div className="space-y-8 animate-fade-in">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                                     <div className="bg-orange-50 dark:bg-orange-900/20 p-8 rounded-[2.5rem] border-2 border-orange-100 dark:border-orange-800 shadow-xl flex flex-col justify-between">
                                         <div>
                                             <h4 className="text-[10px] font-black uppercase text-orange-600 tracking-widest mb-2">Sequential Audit</h4>
@@ -266,6 +267,17 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                             <p className="text-xs font-bold text-emerald-500 mt-2">Verified micro-topics in syllabus</p>
                                         </div>
                                         <button onClick={() => refreshData()} className="mt-6 w-full bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all text-[10px] uppercase tracking-widest">Refresh Report</button>
+                                    </div>
+
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 p-8 rounded-[2.5rem] border-2 border-blue-100 dark:border-blue-800 shadow-xl flex flex-col justify-between">
+                                        <div>
+                                            <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest mb-2">Total Questions</h4>
+                                            <p className="text-5xl font-black text-blue-700 dark:text-blue-300">{totalQuestions}</p>
+                                            <p className="text-xs font-bold text-blue-500 mt-2">Classified questions across all topics</p>
+                                        </div>
+                                        <div className="mt-6 h-[52px] flex items-center justify-center bg-blue-100 dark:bg-blue-800/50 rounded-2xl">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-300">Database Coverage</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -321,6 +333,16 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                     </td>
                                                 </tr>
                                             ))}
+                                            {/* Total Row */}
+                                            <tr className="bg-slate-50 dark:bg-slate-800/50 font-black">
+                                                <td className="px-8 py-6 uppercase tracking-widest text-[10px] text-slate-500">Total Classified Questions</td>
+                                                <td className="px-8 py-6">
+                                                    <span className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest shadow-lg">
+                                                        {totalQuestions} Questions
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-6"></td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
