@@ -134,7 +134,7 @@ const AdminPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             const r = await adminOp(action, payload);
             setStatus(r.message || "Action completed successfully.");
-            if (['delete-row', 'rebuild-db', 'sync-to-sheets', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'save-row', 'run-batch-qa', 'run-language-repair', 'run-topic-repair', 'run-explanation-repair', 'run-all-gaps', 'run-targeted-gap-fill'].includes(action)) {
+            if (['delete-row', 'rebuild-db', 'sync-to-sheets', 'run-daily-sync', 'run-book-scraper', 'update-setting', 'save-row', 'run-batch-qa', 'run-language-repair', 'run-topic-repair', 'run-explanation-repair', 'run-all-gaps', 'run-targeted-gap-fill', 'normalize-topics'].includes(action)) {
                 await refreshData(true);
             }
         } catch(e:any) { setStatus(e.message); setIsError(true); }
