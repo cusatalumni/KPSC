@@ -112,9 +112,9 @@ export async function generateQuestionsForGaps(batchSizeOrTopic: number | string
         const { data: mappings } = await supabase.from('syllabus').select('topic, subject, title, id').or(queryOr).limit(1);
         if (mappings?.[0]) {
             let t = mappings[0].topic;
-            if (!t || t === 'null' || t.trim() === '') t = mappings[0].title;
-            if (!t || t === 'null' || t.trim() === '') t = batchSizeOrTopic;
-            targetMappings = [{ topic: t, subject: mappings[0].subject || 'General Knowledge' }];
+            if (!t || String(t).toLowerCase() === 'null' || String(t).trim() === '') t = mappings[0].title;
+            if (!t || String(t).toLowerCase() === 'null' || String(t).trim() === '') t = "General Knowledge";
+            targetMappings = [{ topic: String(t), subject: mappings[0].subject || 'General Knowledge' }];
         }
         else throw new Error(`Area "${batchSizeOrTopic}" not found.`);
     } else {

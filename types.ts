@@ -6,21 +6,9 @@ export interface BilingualText {
   en: string;
 }
 
-export type ExamLevel = 'Preliminary' | 'Main' | 'Departmental' | 'Special';
+export type ExamLevel = 'Preliminary' | 'Main' | 'Departmental' | 'Special' | 'Interview' | 'Physical' | 'Prelims + Mains' | 'Preliminary + Physical' | 'Prelims + Physical';
 export type Difficulty = 'Easy' | 'Moderate' | 'PSC Level';
-export type ExamCategory = 'General' | 'Technical' | 'Special';
-
-export interface Exam {
-  id: string;
-  title: BilingualText;
-  description: BilingualText;
-  icon: React.ReactNode;
-  category: ExamCategory;
-  level: NewExamLevel;
-}
-
-// Fixed minor inconsistency: types used 'Preliminary' | 'Main' etc. but implementation in constants used level names directly.
-export type NewExamLevel = 'Preliminary' | 'Main' | 'Departmental' | 'Special';
+export type ExamCategory = '10th Level' | 'Plus Two Level' | 'Degree Level' | 'Medical' | 'Engineering' | 'Uniformed Services' | 'Administrative' | 'Higher Secondary' | 'Technical' | 'General' | 'Special';
 
 export interface Exam {
   id: string;

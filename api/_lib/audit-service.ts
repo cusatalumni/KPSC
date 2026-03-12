@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { findAndUpsertRow } from './sheets-service.js';
 import { supabase, upsertSupabaseData } from './supabase-service.js';
+import { APPROVED_SUBJECTS } from './scraper-service.js';
 
 declare var process: any;
 
@@ -21,16 +22,6 @@ const ensureArray = (raw: any): string[] => {
         return [String(raw)];
     }
 };
-
-const APPROVED_SUBJECTS = [
-    "Arts, Culture & Sports", "Biology / Life Science", "Chemistry", "Computer Science / IT / Cyber Laws",
-    "Current Affairs", "Educational Psychology / Pedagogy", "Electrical Engineering", "English",
-    "Environment", "General Knowledge", "General Knowledge / Static GK", "General Science / Science & Tech",
-    "Indian Economy", "Indian Geography", "Indian History", "Indian Polity / Constitution",
-    "Kerala Geography", "Kerala History", "Kerala History / Renaissance", "Kerala Specific GK",
-    "Malayalam", "Nursing Science / Health Care", "Physics", "Quantitative Aptitude",
-    "Reasoning / Mental Ability", "Social Science / Sociology"
-];
 
 /**
  * CORE AUDIT LOGIC: Sequential batch processing by ID
@@ -61,9 +52,10 @@ export async function auditAndCorrectQuestions() {
             
             TASKS:
             1. RE-CLASSIFY: Assign the best matching subject from: [${APPROVED_SUBJECTS.join(', ')}]
-            2. RE-WRITE: If the question contains phrases like "താഴെ പറയുന്നവയിൽ നിന്നും" (from the following), re-write it to be direct and clear without needing to see the options first.
-            3. EXPLAIN: Ensure a high-quality Malayalam explanation is present.
-            4. VALIDATE: Ensure options and correct_answer_index are accurate.
+            2. TOPIC: Ensure the topic is accurate and specific.
+            3. RE-WRITE: If the question contains phrases like "താഴെ പറയുന്നവയിൽ നിന്നും" (from the following), re-write it to be direct and clear without needing to see the options first.
+            4. EXPLAIN: Ensure a high-quality Malayalam explanation is present.
+            5. VALIDATE: Ensure options and correct_answer_index are accurate.
             
             Return JSON array:
             {
@@ -71,6 +63,7 @@ export async function auditAndCorrectQuestions() {
                 { 
                   "id": ID, 
                   "question": "Updated Question", 
+                  "topic": "Topic Name",
                   "subject": "Subject Name",
                   "explanation": "Detailed Malayalam Explanation",
                   "options": ["A", "B", "C", "D"],
@@ -92,12 +85,13 @@ export async function auditAndCorrectQuestions() {
                                 properties: {
                                     id: { type: Type.INTEGER },
                                     question: { type: Type.STRING },
+                                    topic: { type: Type.STRING },
                                     subject: { type: Type.STRING },
                                     explanation: { type: Type.STRING },
                                     options: { type: Type.ARRAY, items: { type: Type.STRING } },
                                     correct_answer_index: { type: Type.INTEGER }
                                 },
-                                required: ["id", "question", "subject", "explanation", "options", "correct_answer_index"]
+                                required: ["id", "question", "topic", "subject", "explanation", "options", "correct_answer_index"]
                             }
                         }
                     }
@@ -121,8 +115,10 @@ export async function auditAndCorrectQuestions() {
                 }
             }
             for (const q of updates) {
+                const originalQ = questions.find(oq => oq.id === q.id);
+                const finalTopic = q.topic || originalQ?.topic || 'General';
                 await findAndUpsertRow('QuestionBank', String(q.id), [
-                    q.id, q.topic || '', q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty || 'PSC Level', q.explanation
+                    q.id, finalTopic, q.question, JSON.stringify(q.options), q.correct_answer_index, q.subject, q.difficulty || 'PSC Level', q.explanation
                 ]);
             }
             

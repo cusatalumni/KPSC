@@ -156,11 +156,11 @@ export default async function handler(req: any, res: any) {
 
                 const gapReport = (sData || []).map(s => {
                     let topicName = s.topic;
-                    if (!topicName || topicName === 'null' || topicName.trim() === '') {
+                    if (!topicName || String(topicName).toLowerCase() === 'null' || String(topicName).trim() === '') {
                         topicName = s.title;
                     }
-                    if (!topicName || topicName === 'null' || topicName.trim() === '') {
-                        topicName = "Unnamed Topic";
+                    if (!topicName || String(topicName).toLowerCase() === 'null' || String(topicName).trim() === '') {
+                        topicName = "General Topic";
                     }
                     
                     const sTopic = String(topicName).toLowerCase().trim();

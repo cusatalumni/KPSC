@@ -10,138 +10,63 @@ import { GlobeAltIcon } from './components/icons/GlobeAltIcon';
 import { LightBulbIcon } from './components/icons/LightBulbIcon';
 import { ScaleIcon } from './components/icons/ScaleIcon';
 import { ClipboardListIcon } from './components/icons/ClipboardListIcon';
+import { Cog6ToothIcon } from './components/icons/Cog6ToothIcon';
+import { WrenchScrewdriverIcon } from './components/icons/WrenchScrewdriverIcon';
 
 export const EXAMS_DATA: Exam[] = [
-  {
-    id: 'lgs',
-    title: { ml: '10th Level (LGS)', en: '10th Level (LGS)' },
-    description: { ml: 'Last Grade Servant, Office Attendant, Peon പരീക്ഷകൾക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Last Grade Servant, Office Attendant, Peon.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-blue-500" }),
-    category: '10th Level',
-    level: 'Preliminary'
-  },
-  {
-    id: 'ldc',
-    title: { ml: 'Plus Two Level (LDC)', en: 'Plus Two Level (LDC)' },
-    description: { ml: 'Lower Division Clerk, LD Typist, VEO പരീക്ഷകൾക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Lower Division Clerk, LD Typist, VEO.' },
-    icon: React.createElement(ClipboardListIcon, { className: "h-8 w-8 text-indigo-500" }),
-    category: 'Plus Two Level',
-    level: 'Preliminary'
-  },
-  {
-    id: 'degree_prelims',
-    title: { ml: 'Degree Level (University Asst)', en: 'Degree Level (University Asst)' },
-    description: { ml: 'University Assistant, Secretariat Assistant, Company Board Assistant പരീക്ഷകൾ.', en: 'Mock tests for University Assistant, Secretariat Assistant.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-purple-500" }),
-    category: 'Degree Level',
-    level: 'Preliminary'
-  },
-  {
-    id: 'staff_nurse',
-    title: { ml: 'Staff Nurse Grade II', en: 'Staff Nurse Grade II' },
-    description: { ml: 'Staff Nurse Gr II (Health Services) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Staff Nurse Gr II (Health Services).' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-rose-500" }),
-    category: 'Medical',
-    level: 'Main'
-  },
-  {
-    id: 'ae_electrical',
-    title: { ml: 'Assistant Engineer (Electrical)', en: 'Assistant Engineer (Electrical)' },
-    description: { ml: 'Assistant Engineer Electrical (KSEB) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Assistant Engineer Electrical (KSEB).' },
-    icon: React.createElement(LightBulbIcon, { className: "h-8 w-8 text-yellow-500" }),
-    category: 'Engineering',
-    level: 'Main'
-  },
-  {
-    id: 'si_police',
-    title: { ml: 'Sub Inspector of Police', en: 'Sub Inspector of Police' },
-    description: { ml: 'SI Police (Trainee) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Sub Inspector of Police (Trainee).' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-slate-700" }),
-    category: 'Uniformed Services',
-    level: 'Preliminary'
-  },
-  {
-    id: 'kas',
-    title: { ml: 'KAS Officer', en: 'KAS Officer' },
-    description: { ml: 'Kerala Administrative Service (KAS) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Kerala Administrative Service (KAS).' },
-    icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-emerald-600" }),
-    category: 'Administrative',
-    level: 'Preliminary'
-  },
-  {
-    id: 'hsst_social_science',
-    title: { ml: 'HSST Social Science', en: 'HSST Social Science' },
-    description: { ml: 'HSST Social Science പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for HSST Social Science.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-orange-500" }),
-    category: 'Higher Secondary',
-    level: 'Main'
-  },
-  {
-    id: 'hsst_english',
-    title: { ml: 'HSST English', en: 'HSST English' },
-    description: { ml: 'HSST English പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for HSST English.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-pink-500" }),
-    category: 'Higher Secondary',
-    level: 'Main'
-  },
-  {
-    id: 'pharmacist_gr2',
-    title: { ml: 'Pharmacist Gr II', en: 'Pharmacist Gr II' },
-    description: { ml: 'Pharmacist Gr II (Health / Insurance) പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകൾ.', en: 'Mock tests for Pharmacist Gr II.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-teal-500" }),
-    category: 'Medical',
-    level: 'Main'
-  },
-  {
-    id: 'hsst_physics',
-    title: { ml: 'HSST Physics', en: 'HSST Physics' },
-    description: { ml: 'HSST Physics പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for HSST Physics.' },
-    icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }),
-    category: 'Higher Secondary',
-    level: 'Main'
-  },
-  {
-    id: 'hsst_chemistry',
-    title: { ml: 'HSST Chemistry', en: 'HSST Chemistry' },
-    description: { ml: 'HSST Chemistry പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for HSST Chemistry.' },
-    icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-cyan-500" }),
-    category: 'Higher Secondary',
-    level: 'Main'
-  },
-  {
-    id: 'pharmacist_siddha',
-    title: { ml: 'Pharmacist Gr II (Siddha)', en: 'Pharmacist Gr II (Siddha)' },
-    description: { ml: 'സിദ്ധ ഫാർമസിസ്റ്റ് പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for Siddha Pharmacist.' },
-    icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-emerald-500" }),
-    category: 'Medical',
-    level: 'Main'
-  },
-  {
-    id: 'pharmacist_homoeopathy',
-    title: { ml: 'Pharmacist Gr II (Homoeopathy)', en: 'Pharmacist Gr II (Homoeopathy)' },
-    description: { ml: 'ഹോമിയോപ്പതി ഫാർമസിസ്റ്റ് പരീക്ഷയ്ക്കുള്ള മോക്ക് ടെസ്റ്റുകളും മൈക്രോ ടെസ്റ്റുകളും.', en: 'Mock tests and micro tests for Homoeopathy Pharmacist.' },
-    icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-rose-500" }),
-    category: 'Medical',
-    level: 'Main'
-  }
+  { id: 'ldc_lgs', title: { ml: 'LDC / LGS (എൽ.ഡി.സി / എൽ.ജി.എസ്) 2026', en: 'LDC / LGS' }, description: { ml: 'പത്താം ക്ലാസ്സ് യോഗ്യതയുള്ള പ്രധാന പരീക്ഷകൾ.', en: 'Major exams for 10th level qualification.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-blue-500" }), category: 'General', level: 'Preliminary' },
+  { id: 'plus_two_prelims', title: { ml: 'Plus Two Prelims (CPO / Excise)', en: 'Plus Two Level Prelims' }, description: { ml: 'സിവിൽ പോലീസ് ഓഫീസർ, എക്സൈസ് ഇൻസ്പെക്ടർ തുടങ്ങിയ പരീക്ഷകൾ.', en: 'CPO, Excise Inspector and related exams.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Preliminary' },
+  { id: 'degree_prelims', title: { ml: 'Degree Level Exams (ഡിഗ്രി ലെവൽ)', en: 'Degree Level Exams' }, description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് ഉൾപ്പെടെയുള്ള ബിരുദതല പരീക്ഷകൾ.', en: 'Exams including Secretariat Assistant.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-purple-500" }), category: 'General', level: 'Preliminary' },
+  { id: 'veo_exam', title: { ml: 'VEO (വില്ലേജ് എക്സ്റ്റൻഷൻ ഓഫീസർ)', en: 'Village Extension Officer' }, description: { ml: 'ഗ്രാമവികസന വകുപ്പിലെ പ്രധാന പരീക്ഷ.', en: 'Key exam in Rural Development department.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-emerald-500" }), category: 'General', level: 'Main' },
+  { id: 'fireman_exam', title: { ml: 'Fireman / Firewoman (ഫയർമാൻ)', en: 'Fireman / Firewoman' }, description: { ml: 'ഫയർ ആന്റ് റെസ്ക്യൂ സർവീസിലെ പരീക്ഷകൾ.', en: 'Fire and Rescue services exams.' }, icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-orange-500" }), category: 'Special', level: 'Preliminary' },
+  { id: 'lp_up_assistant_malayalam', title: { ml: 'LP/UP Assistant Malayalam Medium (എൽ.പി/യു.പി അസിസ്റ്റന്റ് മലയാളം മീഡിയം)', en: 'LP/UP Assistant (Malayalam Medium)' }, description: { ml: 'വിദ്യാഭ്യാസ വകുപ്പിലെ മലയാളം മീഡിയം അദ്ധ്യാപക തസ്തികകൾ.', en: 'Teaching posts in Education department (Malayalam Medium).' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-rose-500" }), category: 'General', level: 'Main' },
+  { id: 'staff_nurse', title: { ml: 'Staff Nurse Gr II (സ്റ്റാഫ് നഴ്സ്)', en: 'Staff Nurse Gr II' }, description: { ml: 'ആരോഗ്യ വകുപ്പിലെ നഴ്സിംഗ് തസ്തികകളിലേക്കുള്ള പരീക്ഷ.', en: 'Nursing post exams in Health Department.' }, icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-rose-500" }), category: 'Technical', level: 'Main' },
+  { id: 'kseb_sub_eng', title: { ml: 'KSEB Sub Engineer (സബ് എൻജിനീയർ)', en: 'KSEB Sub Engineer' }, description: { ml: 'കെ.എസ്.ഇ.ബി ഇലക്ട്രിക്കൽ വിഭാഗം പരീക്ഷകൾ.', en: 'KSEB Electrical Engineering exams.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-yellow-500" }), category: 'Technical', level: 'Main' },
+  { id: 'si_police_2026', title: { ml: 'SI Police (സബ് ഇൻസ്പെക്ടർ പോലീസ്) 2026', en: 'SI Police' }, description: { ml: 'സബ് ഇൻസ്പെക്ടർ ഓഫ് പോലീസ് (ട്രെയിനി) പരീക്ഷകൾ.', en: 'Sub Inspector of Police (Trainee) exams.' }, icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-slate-700" }), category: 'General', level: 'Prelims + Mains' },
+  { id: 'cpo_exam_2026', title: { ml: 'Civil Police Officer (സിവിൽ പോലീസ് ഓഫീസർ)', en: 'CPO' }, description: { ml: 'പോലീസ് വകുപ്പിലെ സിവിൽ പോലീസ് ഓഫീസർ പരീക്ഷകൾ.', en: 'Civil Police Officer exams in Police Department.' }, icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-blue-600" }), category: 'General', level: 'Preliminary + Physical' },
+  { id: 'assistant_engineer_civil', title: { ml: 'Assistant Engineer Civil (അസിസ്റ്റന്റ് എഞ്ചിനീയർ - സിവിൽ)', en: 'Assistant Engineer Civil' }, description: { ml: 'KSEB / PWD / Irrigation വകുപ്പുകളിലെ സിവിൽ അസിസ്റ്റന്റ് എഞ്ചിനീയർ പരീക്ഷ.', en: 'Assistant Engineer (Civil) in various departments.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-cyan-500" }), category: 'Technical', level: 'Prelims + Mains' },
+  { id: 'assistant_engineer_electrical', title: { ml: 'Assistant Engineer Electrical (അസിസ്റ്റന്റ് എഞ്ചിനീയർ - ഇലക്ട്രിക്കൽ)', en: 'Assistant Engineer Electrical' }, description: { ml: 'KSEB / Electrical വകുപ്പുകളിലെ ഇലക്ട്രിക്കൽ അസിസ്റ്റന്റ് എഞ്ചിനീയർ പരീക്ഷ.', en: 'Assistant Engineer (Electrical) in KSEB etc.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-cyan-500" }), category: 'Technical', level: 'Prelims + Mains' },
+  { id: 'assistant_engineer_mechanical', title: { ml: 'Assistant Engineer Mechanical (അസിസ്റ്റന്റ് എഞ്ചിനീയർ - മെക്കാനിക്കൽ)', en: 'Assistant Engineer Mechanical' }, description: { ml: 'വിവിധ വകുപ്പുകളിലെ മെക്കാനിക്കൽ അസിസ്റ്റന്റ് എഞ്ചിനീയർ പരീക്ഷ.', en: 'Assistant Engineer (Mechanical) posts.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-cyan-500" }), category: 'Technical', level: 'Prelims + Mains' },
+  { id: 'jphn_anm', title: { ml: 'Junior Public Health Nurse / ANM (ജെ.പി.എച്ച്.എൻ / എ.എൻ.എം)', en: 'Junior Public Health Nurse / ANM' }, description: { ml: 'ആരോഗ്യ വകുപ്പിലെ ജൂനിയർ പബ്ലിക് ഹെൽത്ത് നഴ്സ് / ANM പരീക്ഷകൾ.', en: 'JPHN / ANM exams in Health Services.' }, icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-emerald-500" }), category: 'Technical', level: 'Main' },
+  { id: 'kseb_ae', title: { ml: 'KSEB Assistant Engineer (കെ.എസ്.ഇ.ബി അസിസ്റ്റന്റ് എഞ്ചിനീയർ)', en: 'KSEB Assistant Engineer' }, description: { ml: 'കെ.എസ്.ഇ.ബി ഇലക്ട്രിക്കൽ / സിവിൽ അസിസ്റ്റന്റ് എഞ്ചിനീയർ പരീക്ഷകൾ.', en: 'Assistant Engineer in Kerala State Electricity Board.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-yellow-600" }), category: 'Technical', level: 'Prelims + Mains' },
+  { id: 'kas_2026', title: { ml: 'KAS (കേരള അഡ്മിനിസ്ട്രേറ്റീവ് സർവീസ്)', en: 'KAS' }, description: { ml: 'KAS ഓഫീസർ (Junior Time Scale) പരീക്ഷകൾ.', en: 'Kerala Administrative Service exams.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-emerald-600" }), category: 'General', level: 'Prelims + Mains' },
+  { id: 'pharmacist_gr2', title: { ml: 'Pharmacist Gr II (ഫാർമസിസ്റ്റ്)', en: 'Pharmacist Gr II' }, description: { ml: 'ആരോഗ്യ / ഇൻഷുറൻസ് മെഡിക്കൽ സർവീസസിലെ ഫാർമസിസ്റ്റ് പരീക്ഷകൾ.', en: 'Pharmacist posts in Health / Insurance Medical Services.' }, icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-teal-500" }), category: 'Technical', level: 'Main' },
+  { id: 'beat_forest_officer', title: { ml: 'Beat Forest Officer (ബീറ്റ് ഫോറസ്റ്റ് ഓഫീസർ)', en: 'Beat Forest Officer' }, description: { ml: 'വന വകുപ്പിലെ ബീറ്റ് ഫോറസ്റ്റ് ഓഫീസർ പരീക്ഷകൾ.', en: 'Beat Forest Officer exams (frequent notifications).' }, icon: React.createElement(GlobeAltIcon, { className: "h-8 w-8 text-green-600" }), category: 'Special', level: 'Prelims + Physical' },
+  { id: 'civil_excise_officer', title: { ml: 'Civil Excise Officer (സിവിൽ എക്സൈസ് ഓഫീസർ)', en: 'Civil Excise Officer' }, description: { ml: 'എക്സൈസ് വകുപ്പിലെ സിവിൽ എക്സൈസ് ഓഫീസർ പരീക്ഷകൾ.', en: 'Civil Excise Officer (Plus Two level).' }, icon: React.createElement(ShieldCheckIcon, { className: "h-8 w-8 text-amber-600" }), category: 'General', level: 'Prelims + Physical' },
+  { id: 'junior_health_inspector', title: { ml: 'Junior Health Inspector (ജൂനിയർ ഹെൽത്ത് ഇൻസ്പെക്ടർ)', en: 'Junior Health Inspector' }, description: { ml: 'ആരോഗ്യ വകുപ്പിലെ ജൂനിയർ ഹെൽത്ത് ഇൻസ്പെക്ടർ പരീക്ഷകൾ.', en: 'Junior Health Inspector Gr II exams.' }, icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-blue-400" }), category: 'Technical', level: 'Main' },
+  { id: 'tradesman_civil', title: { ml: 'Tradesman Civil (ട്രേഡ്സ്മാൻ - സിവിൽ)', en: 'Tradesman Civil' }, description: { ml: 'ടെക്നിക്കൽ എഡ്യൂക്കേഷൻ / ITI-യിലെ സിവിൽ ട്രേഡ്സ്മാൻ പരീക്ഷ.', en: 'Tradesman (Civil) posts.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-slate-500" }), category: 'Technical', level: 'Main' },
+  { id: 'tradesman_mechanical', title: { ml: 'Tradesman Mechanical (ട്രേഡ്സ്മാൻ - മെക്കാനിക്കൽ)', en: 'Tradesman Mechanical' }, description: { ml: 'മെക്കാനിക്കൽ ട്രേഡുകളിലുള്ള ട്രേഡ്സ്മാൻ പരീക്ഷ.', en: 'Tradesman (Mechanical/Fitter/Turner etc.).' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-slate-500" }), category: 'Technical', level: 'Main' },
+  { id: 'tradesman_electrical', title: { ml: 'Tradesman Electrical (ട്രേഡ്സ്മാൻ - ഇലക്ട്രിക്കൽ)', en: 'Tradesman Electrical' }, description: { ml: 'ഇലക്ട്രിക്കൽ ട്രേഡുകളിലുള്ള ട്രേഡ്സ്മാൻ പരീക്ഷ.', en: 'Tradesman (Electrical) posts.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-slate-500" }), category: 'Technical', level: 'Main' },
+  { id: 'tradesman_fitter', title: { ml: 'Tradesman Fitter (ട്രേഡ്സ്മാൻ - ഫിറ്റർ)', en: 'Tradesman Fitter' }, description: { ml: 'ഫിറ്റർ ട്രേഡിലുള്ള ജൂനിയർ ഇൻസ്ട്രക്ടർ / ട്രേഡ്സ്മാൻ പരീക്ഷ.', en: 'Fitter trade exams.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-slate-500" }), category: 'Technical', level: 'Main' },
+  { id: 'tradesman_turner', title: { ml: 'Tradesman Turner (ട്രേഡ്സ്മാൻ - ടർണർ)', en: 'Tradesman Turner' }, description: { ml: 'ടർണർ ട്രേഡിലുള്ള പരീക്ഷകൾ.', en: 'Turner trade in ITI/Technical Education.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-slate-500" }), category: 'Technical', level: 'Main' },
+  { id: 'tradesman_draughtsman_civil', title: { ml: 'Tradesman Draughtsman Civil (ട്രേഡ്സ്മാൻ - ഡ്രോട്ട്സ്മാൻ സിവിൽ)', en: 'Tradesman Draughtsman Civil' }, description: { ml: 'ഡ്രോട്ട്സ്മാൻ സിവിൽ ട്രേഡ് പരീക്ഷ.', en: 'Draughtsman Civil trade.' }, icon: React.createElement(Cog6ToothIcon, { className: "h-8 w-8 text-slate-500" }), category: 'Technical', level: 'Main' },
+  { id: 'blood_bank_tech', title: { ml: 'Blood Bank Technician (ബ്ലഡ് ബാങ്ക് ടെക്നീഷ്യൻ)', en: 'Blood Bank Technician' }, description: { ml: 'ആരോഗ്യ വകുപ്പിലെ ബ്ലഡ് ബാങ്ക് ടെക്നീഷ്യൻ പരീക്ഷകൾ.', en: 'Blood Bank Technician (NCA variants).' }, icon: React.createElement(BeakerIcon, { className: "h-8 w-8 text-red-500" }), category: 'Technical', level: 'Main' },
+  { id: 'prof_assistant_library', title: { ml: 'Professional Assistant Gr II (Library) (പ്രൊഫഷണൽ അസിസ്റ്റന്റ് (ലൈബ്രറി))', en: 'Professional Assistant (Library)' }, description: { ml: 'യൂണിവേഴ്സിറ്റികളിലെ പ്രൊഫഷണൽ അസിസ്റ്റന്റ് (ലൈബ്രറി) പരീക്ഷകൾ.', en: 'Library posts in Universities.' }, icon: React.createElement(BookOpenIcon, { className: "h-8 w-8 text-indigo-400" }), category: 'General', level: 'Main' },
+  { id: 'hsst_sanskrit', title: { ml: 'HSST Sanskrit (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - സംസ്കൃതം)', en: 'HSST Sanskrit' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ സംസ്കൃതം വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Sanskrit.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_english', title: { ml: 'HSST English (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - ഇംഗ്ലീഷ്)', en: 'HSST English' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ ഇംഗ്ലീഷ് വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - English.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_kannada', title: { ml: 'HSST Kannada (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - കന്നഡ)', en: 'HSST Kannada' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ കന്നഡ വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Kannada.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_sociology', title: { ml: 'HSST Sociology (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - സോഷ്യോളജി)', en: 'HSST Sociology' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ സോഷ്യോളജി വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Sociology.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_statistics', title: { ml: 'HSST Statistics (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - സ്റ്റാറ്റിസ്റ്റിക്സ്)', en: 'HSST Statistics' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ സ്റ്റാറ്റിസ്റ്റിക്സ് വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Statistics.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_political_science', title: { ml: 'HSST Political Science (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - പൊളിറ്റിക്കൽ സയൻസ്)', en: 'HSST Political Science' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ പൊളിറ്റിക്കൽ സയൻസ് വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Political Science.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_economics', title: { ml: 'HSST Economics (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - എക്കണോമിക്സ്)', en: 'HSST Economics' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുിലെ എക്കണോമിക്സ് വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Economics.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_botany', title: { ml: 'HSST Botany (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - ബോട്ടണി)', en: 'HSST Botany' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ ബോട്ടണി വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Botany.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_zoology', title: { ml: 'HSST Zoology (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - സൂയോളജി)', en: 'HSST Zoology' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ സൂയോളജി വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Zoology.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_geography', title: { ml: 'HSST Geography (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - ജിയോഗ്രഫി)', en: 'HSST Geography' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ ജിയോഗ്രഫി വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Geography.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_chemistry', title: { ml: 'HSST Chemistry (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - കെമിസ്ട്രി)', en: 'HSST Chemistry' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ കെമിസ്ട്രി വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Chemistry.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_mathematics', title: { ml: 'HSST Mathematics (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - മാത്തമാറ്റിക്സ്)', en: 'HSST Mathematics' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ മാത്തമാറ്റിക്സ് വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Mathematics.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' },
+  { id: 'hsst_physics', title: { ml: 'HSST Physics (ഹയർ സെക്കൻഡറി സ്കൂൾ ടീച്ചർ - ഫിസിക്സ്)', en: 'HSST Physics' }, description: { ml: 'ഹയർ സെക്കൻഡറി വിദ്യാഭ്യാസ വകുപ്പിലെ ഫിസിക്സ് വിഷയത്തിലുള്ള HSST പരീക്ഷ.', en: 'Higher Secondary School Teacher - Physics.' }, icon: React.createElement(AcademicCapIcon, { className: "h-8 w-8 text-indigo-500" }), category: 'General', level: 'Main' }
 ];
 
 export const MOCK_TESTS_DATA: MockTest[] = [
-  { id: 'hsst_phy_full_1', examId: 'hsst_physics', title: { ml: 'HSST Physics Full Mock Test 1', en: 'HSST Physics Full Mock Test 1' }, description: { ml: 'Complete Syllabus (Classical + Quantum + Electrodynamics + Modern Physics)', en: 'Complete Syllabus (Classical + Quantum + Electrodynamics + Modern Physics)' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
-  { id: 'hsst_phy_full_2', examId: 'hsst_physics', title: { ml: 'HSST Physics Full Mock Test 2', en: 'HSST Physics Full Mock Test 2' }, description: { ml: 'Focus on Electronics, Microprocessor & Mathematical Methods', en: 'Focus on Electronics, Microprocessor & Mathematical Methods' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-  { id: 'hsst_phy_full_3', examId: 'hsst_physics', title: { ml: 'HSST Physics Full Mock Test 3', en: 'HSST Physics Full Mock Test 3' }, description: { ml: 'Previous Year Pattern + Renaissance & GK Section', en: 'Previous Year Pattern + Renaissance & GK Section' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-  
-  { id: 'hsst_chem_full_1', examId: 'hsst_chemistry', title: { ml: 'HSST Chemistry Full Mock Test 1', en: 'HSST Chemistry Full Mock Test 1' }, description: { ml: 'Inorganic + Organic Full Coverage', en: 'Inorganic + Organic Full Coverage' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
-  { id: 'hsst_chem_full_2', examId: 'hsst_chemistry', title: { ml: 'HSST Chemistry Full Mock Test 2', en: 'HSST Chemistry Full Mock Test 2' }, description: { ml: 'Physical Chemistry + Advanced Inorganic', en: 'Physical Chemistry + Advanced Inorganic' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-  { id: 'hsst_chem_full_3', examId: 'hsst_chemistry', title: { ml: 'HSST Chemistry Full Mock Test 3', en: 'HSST Chemistry Full Mock Test 3' }, description: { ml: 'Mixed Modules + GK/Renaissance', en: 'Mixed Modules + GK/Renaissance' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-
-  { id: 'pharm_sid_full_1', examId: 'pharmacist_siddha', title: { ml: 'Siddha Pharmacist Full Mock Test 1', en: 'Siddha Pharmacist Full Mock Test 1' }, description: { ml: 'Fundamentals + Pharmacology + Toxicology', en: 'Fundamentals + Pharmacology + Toxicology' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
-  { id: 'pharm_sid_full_2', examId: 'pharmacist_siddha', title: { ml: 'Siddha Pharmacist Full Mock Test 2', en: 'Siddha Pharmacist Full Mock Test 2' }, description: { ml: 'Anatomy, Physiology + Pharmacy & Formulations', en: 'Anatomy, Physiology + Pharmacy & Formulations' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-  { id: 'pharm_sid_full_3', examId: 'pharmacist_siddha', title: { ml: 'Siddha Pharmacist Full Mock Test 3', en: 'Siddha Pharmacist Full Mock Test 3' }, description: { ml: 'Siddha Specific Drugs + Dispensing', en: 'Siddha Specific Drugs + Dispensing' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-
-  { id: 'pharm_hom_full_1', examId: 'pharmacist_homoeopathy', title: { ml: 'Homoeopathy Pharmacist Full Mock Test 1', en: 'Homoeopathy Pharmacist Full Mock Test 1' }, description: { ml: 'Pharmacy Basics + Anatomy & Physiology', en: 'Pharmacy Basics + Anatomy & Physiology' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: false },
-  { id: 'pharm_hom_full_2', examId: 'pharmacist_homoeopathy', title: { ml: 'Homoeopathy Pharmacist Full Mock Test 2', en: 'Homoeopathy Pharmacist Full Mock Test 2' }, description: { ml: 'Pharmacognosy + Proving + Posology', en: 'Pharmacognosy + Proving + Posology' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
-  { id: 'pharm_hom_full_3', examId: 'pharmacist_homoeopathy', title: { ml: 'Homoeopathy Pharmacist Full Mock Test 3', en: 'Homoeopathy Pharmacist Full Mock Test 3' }, description: { ml: 'Materia Medica & Dispensing Focus', en: 'Materia Medica & Dispensing Focus' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true }
+  { id: 'ldc_lgs_p1', examId: 'ldc_lgs', title: { ml: 'LDC/LGS Prelims Mock Test 1', en: 'LDC/LGS Prelims Mock Test 1' }, description: { ml: '100 ചോദ്യങ്ങൾ അടങ്ങിയ പ്രിലിംസ് മോക്ക് ടെസ്റ്റ്.', en: '100 Questions Preliminary Mock Test.' }, questionsCount: 100, duration: 90, negativeMarking: 0.33, isPro: false },
+  { id: 'plus_two_p1', examId: 'plus_two_prelims', title: { ml: 'Plus Two Prelims Mock Test 1', en: 'Plus Two Prelims Mock Test 1' }, description: { ml: 'CPO, Excise തുടങ്ങിയവയ്ക്കുള്ള പ്രിലിംസ് മോക്ക് ടെസ്റ്റ്.', en: 'Prelims Mock Test for CPO, Excise, etc.' }, questionsCount: 100, duration: 90, negativeMarking: 0.33, isPro: false },
+  { id: 'degree_p1', examId: 'degree_prelims', title: { ml: 'Degree Prelims Mock Test 1', en: 'Degree Prelims Mock Test 1' }, description: { ml: 'സെക്രട്ടേറിയറ്റ് അസിസ്റ്റന്റ് തുടങ്ങിയവയ്ക്കുള്ള പ്രിലിംസ് മോക്ക് ടെസ്റ്റ്.', en: 'Prelims Mock Test for Secretariat Asst, etc.' }, questionsCount: 100, duration: 90, negativeMarking: 0.33, isPro: false },
+  { id: 'si_p1', examId: 'si_police_2026', title: { ml: 'SI Police Prelims Mock Test 1', en: 'SI Police Prelims Mock Test 1' }, description: { ml: 'SI പോലീസ് 2026 പ്രിലിംസ് മോക്ക് ടെസ്റ്റ്.', en: 'SI Police 2026 Prelims Mock Test.' }, questionsCount: 100, duration: 90, negativeMarking: 0.33, isPro: false },
+  { id: 'si_m1', examId: 'si_police_2026', title: { ml: 'SI Police Mains Paper I', en: 'SI Police Mains Paper I' }, description: { ml: 'English + GK (Mains Paper I).', en: 'English + GK (Mains Paper I).' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  { id: 'kas_p1', examId: 'kas_2026', title: { ml: 'KAS Prelims Mock Test 1', en: 'KAS Prelims Mock Test 1' }, description: { ml: 'KAS 2026 പ്രിലിംസ് മോക്ക് ടെസ്റ്റ്.', en: 'KAS 2026 Prelims Mock Test.' }, questionsCount: 100, duration: 90, negativeMarking: 0.33, isPro: false },
+  { id: 'kas_m1', examId: 'kas_2026', title: { ml: 'KAS Mains Paper I', en: 'KAS Mains Paper I' }, description: { ml: 'KAS മെയിൻസ് പേപ്പർ I.', en: 'KAS Mains Paper I.' }, questionsCount: 100, duration: 120, negativeMarking: 0.33, isPro: true },
+  { id: 'fireman_p1', examId: 'fireman_exam', title: { ml: 'Fireman Prelims Mock Test 1', en: 'Fireman Prelims Mock Test 1' }, description: { ml: 'ഫയർമാൻ പ്രിലിംസ് മോക്ക് ടെസ്റ്റ്.', en: 'Fireman Prelims Mock Test.' }, questionsCount: 100, duration: 90, negativeMarking: 0.33, isPro: false },
+  { id: 'fireman_phys_1', examId: 'fireman_exam', title: { ml: 'Physical Efficiency Test Simulation', en: 'Physical Efficiency Test Simulation' }, description: { ml: 'കായികക്ഷമത പരിശോധനയ്ക്കുള്ള ചോദ്യങ്ങൾ.', en: 'Simulation questions for Physical Efficiency Test.' }, questionsCount: 50, duration: 60, negativeMarking: 0, isPro: true }
 ];
 
 export const HSST_PHYSICS_CONTENT: ExamPageContent = {
@@ -219,20 +144,47 @@ export const PHARMACIST_HOMOEOPATHY_CONTENT: ExamPageContent = {
 };
 
 export const EXAM_CONTENT_MAP: Record<string, ExamPageContent> = {
-    'lgs': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'ldc': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'ldc_lgs': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'plus_two_prelims': { practiceTests: [], studyNotes: [], previousPapers: [] },
     'degree_prelims': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'veo_exam': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'fireman_exam': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'lp_up_assistant_malayalam': { practiceTests: [], studyNotes: [], previousPapers: [] },
     'staff_nurse': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'ae_electrical': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'si_police': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'kas': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'hsst_social_science': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'hsst_english': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'kseb_sub_eng': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'si_police_2026': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'cpo_exam_2026': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'assistant_engineer_civil': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'assistant_engineer_electrical': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'assistant_engineer_mechanical': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'jphn_anm': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'kseb_ae': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'kas_2026': { practiceTests: [], studyNotes: [], previousPapers: [] },
     'pharmacist_gr2': { practiceTests: [], studyNotes: [], previousPapers: [] },
-    'hsst_physics': HSST_PHYSICS_CONTENT,
+    'beat_forest_officer': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'civil_excise_officer': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'junior_health_inspector': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'tradesman_civil': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'tradesman_mechanical': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'tradesman_electrical': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'tradesman_fitter': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'tradesman_turner': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'tradesman_draughtsman_civil': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'blood_bank_tech': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'prof_assistant_library': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_sanskrit': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_english': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_kannada': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_sociology': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_statistics': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_political_science': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_economics': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_botany': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_zoology': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_geography': { practiceTests: [], studyNotes: [], previousPapers: [] },
     'hsst_chemistry': HSST_CHEMISTRY_CONTENT,
-    'pharmacist_siddha': PHARMACIST_SIDDHA_CONTENT,
-    'pharmacist_homoeopathy': PHARMACIST_HOMOEOPATHY_CONTENT,
+    'hsst_mathematics': { practiceTests: [], studyNotes: [], previousPapers: [] },
+    'hsst_physics': HSST_PHYSICS_CONTENT,
 };
 
 export const NAV_STRUCTURE: NavLink[] = [
