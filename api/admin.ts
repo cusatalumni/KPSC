@@ -116,8 +116,9 @@ export default async function handler(req: any, res: any) {
                     const hasQuestions = qData?.some(q => {
                         const qTopic = String(q.topic || '').toLowerCase().trim();
                         const qSubject = String(q.subject || '').toLowerCase().trim();
-                        if (qTopic === sTopic || qSubject === sTopic) return true;
-                        if (sTopic.length >= 3 && (qTopic.includes(sTopic) || qSubject.includes(sTopic))) return true;
+                        
+                        if (qTopic === sTopic) return true;
+                        if (qTopic === '' && qSubject === sTopic) return true;
                         return false;
                     });
                     return !hasQuestions;
@@ -166,33 +167,38 @@ export default async function handler(req: any, res: any) {
                 });
 
                 const gapReport = (sData || []).map(s => {
+                    // Prioritize 'topic' field as it's the "Syllabus Topic" in the sheet
                     let topicName = s.topic;
                     if (!topicName || String(topicName).toLowerCase() === 'null' || String(topicName).trim() === '') {
-                        topicName = s.title;
+                        topicName = s.title; // Fallback to title if topic is truly empty
                     }
                     if (!topicName || String(topicName).toLowerCase() === 'null' || String(topicName).trim() === '') {
                         topicName = "General Topic";
                     }
                     
                     const sTopic = String(topicName).toLowerCase().trim();
-                    const sSubject = String(s.subject || '').trim();
+                    const sSubject = String(s.subject || '').toLowerCase().trim();
 
-                    if (sSubject && !approvedLower.includes(sSubject.toLowerCase().trim())) {
-                        if (!subjectMismatches.includes(sSubject)) subjectMismatches.push(sSubject);
+                    if (s.subject && !approvedLower.includes(s.subject.toLowerCase().trim())) {
+                        if (!subjectMismatches.includes(s.subject)) subjectMismatches.push(s.subject);
                     }
                     
-                    // Robust matching: Exact match or partial match for meaningful topics
+                    // Stricter matching: 
+                    // 1. Exact match on topic
+                    // 2. If topic is very specific, don't just match subject
                     const count = qData?.filter(q => {
                         const qTopic = String(q.topic || '').toLowerCase().trim();
                         const qSubject = String(q.subject || '').toLowerCase().trim();
                         
-                        if (qTopic === sTopic || qSubject === sTopic) return true;
+                        // Exact topic match is the gold standard
+                        if (qTopic === sTopic) return true;
                         
-                        // If syllabus topic is "Computer", match "Computer Science / IT / Cyber Laws"
-                        if (sTopic.length >= 3) {
-                            if (qTopic.includes(sTopic) || qSubject.includes(sTopic)) return true;
-                            if (sTopic.includes(qTopic) && qTopic.length >= 3) return true;
-                        }
+                        // If the question's topic is empty but its subject matches this syllabus topic
+                        // (Only if the syllabus topic is actually a subject name)
+                        if (qTopic === '' && qSubject === sTopic) return true;
+
+                        // Support for slight variations if they are clearly the same
+                        // But avoid "Kerala" matching "Kerala History" if "Kerala History" is a separate topic
                         return false;
                     }).length || 0;
 
