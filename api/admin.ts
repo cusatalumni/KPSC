@@ -33,7 +33,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
-    const { action, id, resultData, sheet, data, topic, setting, questions, rowData } = req.body;
+    const { action, id, resultData, sheet, data, topic, setting, questions, rowData, feedback } = req.body;
 
     if (action === 'save-result') {
         try {
@@ -44,35 +44,44 @@ export default async function handler(req: any, res: any) {
         } catch (e: any) { return res.status(500).json({ error: e.message }); }
     }
 
+    if (action === 'submit-feedback') {
+        try {
+            const feedbackId = Date.now();
+            await appendSheetData('Feedback!A1', [[feedbackId, feedback.userId || 'guest', feedback.userEmail || '', feedback.rating, feedback.comment, feedback.topic || '', new Date().toISOString()]]);
+            return res.status(200).json({ message: 'Feedback submitted' });
+        } catch (e: any) { return res.status(500).json({ error: e.message }); }
+    }
+
+    if (action === 'test-connection') {
+        let sheetsStatus: any = { ok: false, error: null };
+        let supabaseStatus: any = { ok: false, error: null };
+        
+        try { 
+            await readSheetData('Settings!A1:A1'); 
+            sheetsStatus.ok = true; 
+        } catch (e: any) { 
+            sheetsStatus.error = e.message || "Failed to access spreadsheet";
+        }
+
+        if (supabase) {
+            try { 
+                const { error } = await supabase.from('settings').select('key').limit(1); 
+                if (error) throw error;
+                supabaseStatus.ok = true; 
+            } catch (e: any) { 
+                supabaseStatus.error = e.message || "Failed to query Supabase table";
+            }
+        } else {
+            supabaseStatus.error = "SUPABASE_URL or KEY is missing from server env";
+        }
+
+        return res.status(200).json({ status: { sheets: sheetsStatus.ok, supabase: supabaseStatus.ok, sheetsErr: sheetsStatus.error, supabaseErr: supabaseStatus.error } });
+    }
+
     try { await verifyAdmin(req); } catch (e: any) { return res.status(401).json({ error: e.message }); }
 
     try {
         switch (action) {
-            case 'test-connection': {
-                let sheetsStatus: any = { ok: false, error: null };
-                let supabaseStatus: any = { ok: false, error: null };
-                
-                try { 
-                    await readSheetData('Settings!A1:A1'); 
-                    sheetsStatus.ok = true; 
-                } catch (e: any) { 
-                    sheetsStatus.error = e.message || "Failed to access spreadsheet";
-                }
-
-                if (supabase) {
-                    try { 
-                        const { error } = await supabase.from('settings').select('key').limit(1); 
-                        if (error) throw error;
-                        supabaseStatus.ok = true; 
-                    } catch (e: any) { 
-                        supabaseStatus.error = e.message || "Failed to query Supabase table";
-                    }
-                } else {
-                    supabaseStatus.error = "SUPABASE_URL or KEY is missing from server env";
-                }
-
-                return res.status(200).json({ status: { sheets: sheetsStatus.ok, supabase: supabaseStatus.ok, sheetsErr: sheetsStatus.error, supabaseErr: supabaseStatus.error } });
-            }
             case 'rebuild-db': return res.status(200).json(await syncAllFromSheetsToSupabase());
             case 'sync-to-sheets': return res.status(200).json(await syncSupabaseToSheets());
             case 'run-daily-sync': return res.status(200).json(await runDailyUpdateScrapers());
