@@ -3,10 +3,26 @@ import { readSheetData, findAndUpsertRow } from './_lib/sheets-service.js';
 import { supabase, upsertSupabaseData } from './_lib/supabase-service.js';
 import { GoogleGenAI } from "@google/genai";
 
+async function getRequestBody(req: any) {
+    if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) return req.body;
+    if (typeof req.body === 'string' && req.body.length > 0) {
+        try { return JSON.parse(req.body); } catch (e) { return {}; }
+    }
+    return new Promise((resolve) => {
+        let body = '';
+        req.on('data', (chunk: any) => { body += chunk.toString(); });
+        req.on('end', () => {
+            try { resolve(body ? JSON.parse(body) : {}); } catch (e) { resolve({}); }
+        });
+        setTimeout(() => resolve({}), 2000); // Timeout guard
+    });
+}
+
 export default async function handler(req: any, res: any) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
 
-    const { topic, forceRefresh } = req.body;
+    const body: any = await getRequestBody(req);
+    const { topic, forceRefresh } = body || {};
     if (!topic) return res.status(400).json({ error: 'Topic is required' });
 
     try {
